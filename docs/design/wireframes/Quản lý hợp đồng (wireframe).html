@@ -2,253 +2,357 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Góc Trọ - Quản lý hợp đồng P2</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Góc Trọ - Wireframe Quản lý hợp đồng - Admin P2</title>
 <style>
-*{box-sizing:border-box}
-body{font-family:Arial,sans-serif;margin:20px;color:#000;background:#fff}
-.container{border:1px solid #000;padding:15px}
-.header{border:1px solid #000;padding:15px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
-.logo{border:1px dashed #000;padding:10px 14px;font-weight:bold;font-size:28px}
-.nav{display:flex;gap:10px;flex-wrap:wrap}
-.nav button{padding:10px 20px}
-.section-title{border:1px solid #000;padding:12px;margin-bottom:20px;font-weight:bold;font-size:24px}
-.page-title{font-size:40px;font-weight:bold;margin-bottom:10px}
-.card-group{display:flex;gap:15px;margin-bottom:25px}
-.card{flex:1;border:1px solid #000;padding:15px;text-align:center}
-.card .number{font-size:32px;font-weight:bold;margin-top:10px}
-.box{border:1px solid #000;margin-bottom:20px}
-.box-header{border-bottom:1px solid #000;padding:12px;font-weight:bold}
-.box-body{padding:15px}
-.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}
-.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:15px}
-label{display:block;margin-bottom:5px;font-weight:bold}
-input,select,textarea{width:100%;padding:8px;border:1px solid #000;background:#fff}
-textarea{height:100px;resize:vertical}
-button{padding:8px 15px;cursor:pointer;background:#fff;border:1px solid #000}
-.action{display:flex;justify-content:flex-end;gap:10px;margin-top:15px}
-table{width:100%;border-collapse:collapse}
-th,td{border:1px solid #000;padding:10px;text-align:left}
-.step{border:1px solid #000;padding:15px;margin-bottom:15px}
-.step-title{font-size:18px;font-weight:bold;margin-bottom:15px;padding-bottom:8px;border-bottom:1px dashed #000}
-.note{border:1px dashed #000;padding:10px;margin:10px 0 15px}
-.status-list{display:flex;gap:10px;flex-wrap:wrap}
-.status{border:1px solid #000;padding:8px 12px}
-.small{font-size:13px}
-.selected{border:2px solid #000;padding:15px;margin-top:15px}
-@media(max-width:900px){.grid-4,.grid-2{grid-template-columns:1fr 1fr}.header{flex-direction:column;align-items:flex-start;gap:15px}}
-@media(max-width:600px){.grid-4,.grid-2,.card-group{display:grid;grid-template-columns:1fr}}
+*{box-sizing:border-box}body{font-family:Arial,sans-serif;margin:20px;color:#000;background:#fff}.container{border:1px solid #000;padding:15px}.header{border:1px solid #000;padding:15px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}.logo{border:1px dashed #000;padding:10px 14px;font-weight:bold;font-size:28px}.nav{display:flex;gap:10px;flex-wrap:wrap}.nav button{padding:10px 20px}.section-title{border:1px solid #000;padding:12px;margin-bottom:20px;font-weight:bold;font-size:24px}.page-title{font-size:40px;font-weight:bold;margin-bottom:10px}.card-group{display:flex;gap:15px;margin-bottom:25px}.card{flex:1;border:1px solid #000;padding:15px;text-align:center}.card .number{font-size:32px;font-weight:bold;margin-top:10px}.box{border:1px solid #000;margin-bottom:20px}.box-header{border-bottom:1px solid #000;padding:12px;font-weight:bold}.box-body{padding:15px}.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:15px}label{display:block;margin-bottom:5px;font-weight:bold}input,select,textarea{width:100%;padding:8px;border:1px solid #000;background:#fff}input[readonly]{background:#f7f7f7}textarea{height:100px;resize:vertical}button{padding:8px 15px;cursor:pointer;background:#fff;border:1px solid #000}.primary{font-weight:bold;border:2px solid #000}.action{display:flex;justify-content:flex-end;gap:10px;margin-top:15px;flex-wrap:wrap}table{width:100%;border-collapse:collapse}th,td{border:1px solid #000;padding:10px;text-align:left}.step{border:1px solid #000;padding:15px;margin-bottom:15px}.step-title{font-size:18px;font-weight:bold;margin-bottom:15px;padding-bottom:8px;border-bottom:1px dashed #000}.note{border:1px dashed #000;padding:10px;margin:10px 0 15px}.status-list{display:flex;gap:10px;flex-wrap:wrap}.status{border:1px solid #000;padding:8px 12px}.small{font-size:13px}.selected{border:2px solid #000;padding:15px;margin-top:15px}.ok{border:1px solid #000;padding:12px;margin-top:12px}.required{font-weight:bold}.photo-box{border:1px dashed #000;min-height:170px;padding:20px;text-align:center;display:flex;flex-direction:column;justify-content:center;gap:10px}.ocr-result{border:1px solid #000;padding:12px}.tag{display:inline-block;border:1px solid #000;padding:4px 8px;margin-right:5px}.detail-actions{display:flex;gap:8px;flex-wrap:wrap}.divider{border-top:1px dashed #000;margin:20px 0}.muted{font-size:13px}.danger-note{border:2px solid #000;padding:12px;margin-top:12px}.timeline{border-left:2px solid #000;padding-left:15px}.timeline div{margin-bottom:12px}.search-row{display:flex;gap:10px;align-items:end}.search-row>div:first-child{flex:1}@media(max-width:900px){.grid-4,.grid-3,.grid-2{grid-template-columns:1fr 1fr}.header{flex-direction:column;align-items:flex-start;gap:15px}}@media(max-width:600px){.grid-4,.grid-3,.grid-2,.card-group{display:grid;grid-template-columns:1fr}.search-row{display:block}.search-row>div{margin-bottom:10px}}
 </style>
 </head>
-
 <body>
 <div class="container">
 
 <div class="header">
-    <div class="logo">GÓC TRỌ</div>
-    <div class="nav">
-        <button>Quản lý khách thuê</button>
-        <button><b>Quản lý hợp đồng</b></button>
-        <button>Tiện ích</button>
-        <button>Tài khoản</button>
-    </div>
+  <div class="logo">GÓC TRỌ</div>
+  <div class="nav">
+    <button>Quản lý khách thuê</button>
+    <button><b>Quản lý hợp đồng</b></button>
+    <button>Tiện ích</button>
+    <button>Tài khoản</button>
+  </div>
 </div>
 
-<div class="section-title">PHẦN 2 — QUẢN LÝ HỢP ĐỒNG | Role: Admin (P2)</div>
+<div class="section-title">PHẦN 2 — QUẢN LÝ HỢP ĐỒNG | ROLE: ADMIN (P2)</div>
 <div class="page-title">Quản lý hợp đồng</div>
-<p>Quản lý vòng đời hợp đồng thuê phòng, tạo mới, gia hạn, thanh lý, quản lý tiền cọc và nhắc hết hạn tự động.</p>
+<p>Quản lý vòng đời hợp đồng thuê phòng: tạo mới, ghi nhận điện nước đầu kỳ, ký, gia hạn, thanh lý, tiền cọc và nhắc hết hạn.</p>
+
+<div class="note"><b>Phạm vi wireframe:</b> Chỉ dành cho <b>Admin</b>. Không gộp giao diện User/Member vào file này.</div>
 
 <div class="card-group">
-    <div class="card">Tổng hợp đồng<div class="number">128</div></div>
-    <div class="card">Sắp hết hạn<div class="number">15</div></div>
-    <div class="card">Đang hiệu lực<div class="number">110</div></div>
-    <div class="card">Đã thanh lý<div class="number">18</div></div>
+  <div class="card">Tổng hợp đồng<div class="number">128</div></div>
+  <div class="card">Sắp hết hạn<div class="number">15</div></div>
+  <div class="card">Đang hiệu lực<div class="number">110</div></div>
+  <div class="card">Đã thanh lý<div class="number">18</div></div>
 </div>
 
-<div style="display:flex;justify-content:space-between;margin-bottom:15px">
-    <button>+ Tạo hợp đồng</button>
-    <div>Tổng: 128 hợp đồng</div>
+<div style="display:flex;justify-content:space-between;margin-bottom:15px;gap:10px;flex-wrap:wrap">
+  <button class="primary">+ Tạo hợp đồng</button>
+  <div>Tổng: 128 hợp đồng</div>
 </div>
 
 <div class="box">
-    <div class="box-header">Tìm kiếm &amp; Bộ lọc</div>
-    <div class="box-body">
-        <div class="grid-4">
-            <div><label>Số phòng</label><input placeholder="Nhập số phòng"></div>
-            <div><label>Họ tên</label><input placeholder="Nhập họ tên"></div>
-            <div><label>CCCD</label><input placeholder="Nhập CCCD"></div>
-            <div><label>Trạng thái</label><select><option>Tất cả</option><option>Chờ ký</option><option>Hiệu lực</option><option>Sắp hết hạn</option><option>Hết hạn</option><option>Đã thanh lý</option></select></div>
+  <div class="box-header">Tìm kiếm &amp; Bộ lọc</div>
+  <div class="box-body">
+    <div class="grid-4">
+      <div><label>Số phòng</label><input placeholder="Nhập số phòng"></div>
+      <div><label>Họ tên / CCCD</label><input placeholder="Tìm khách thuê đã lưu"></div>
+      <div><label>Số hợp đồng</label><input placeholder="HD001"></div>
+      <div><label>Trạng thái</label><select><option>Tất cả</option><option>Chờ ký</option><option>Hiệu lực</option><option>Sắp hết hạn</option><option>Hết hạn</option><option>Đã thanh lý</option></select></div>
+    </div>
+    <div class="action"><button>Đặt lại</button><button>Tìm kiếm</button></div>
+  </div>
+</div>
+
+<div class="box">
+  <div class="box-header">Danh sách hợp đồng</div>
+  <div class="box-body">
+    <table>
+      <tr><th>Phòng</th><th>Khách thuê</th><th>Số HĐ</th><th>Bắt đầu</th><th>Hết hạn</th><th>Tiền cọc</th><th>Trạng thái</th><th>Thao tác</th></tr>
+      <tr><td>A101</td><td>Nguyễn Văn A</td><td>HD001</td><td>01/01/2026</td><td>31/12/2026</td><td>5.000.000đ</td><td>Hiệu lực</td><td><div class="detail-actions"><button>Chi tiết</button><button>Gia hạn</button><button>Thanh lý</button></div></td></tr>
+      <tr><td>A205</td><td>Trần Văn B</td><td>HD002</td><td>01/03/2026</td><td>01/11/2026</td><td>3.000.000đ</td><td>Sắp hết hạn</td><td><div class="detail-actions"><button>Chi tiết</button><button>Gia hạn</button><button>Thanh lý</button></div></td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- TAO HOP DONG -->
+<div class="box">
+  <div class="box-header">Tạo hợp đồng mới — 4 bước</div>
+  <div class="box-body">
+
+    <div class="status-list" style="margin-bottom:15px">
+      <div class="status"><b>1.</b> Chọn khách thuê</div>
+      <div class="status"><b>2.</b> Chọn phòng</div>
+      <div class="status"><b>3.</b> OCR điện nước đầu kỳ</div>
+      <div class="status"><b>4.</b> Đọc &amp; ký</div>
+    </div>
+
+    <!-- BUOC 1 -->
+    <div class="step">
+      <div class="step-title">Bước 1 — Chọn / thêm người thuê</div>
+      <p><b>Không bắt buộc phải tạo người thuê trước ở P1.</b> Khi tạo hợp đồng, Admin có thể chọn hồ sơ đã có hoặc thêm người thuê mới ngay tại đây. Nếu thêm mới, hồ sơ sẽ được <b>lưu tự động vào Danh sách người thuê (P1)</b> và dùng luôn cho hợp đồng này.</p>
+
+      <div class="grid-2">
+        <div class="box">
+          <div class="box-header">① Chọn người thuê đã có</div>
+          <div class="box-body">
+            <label>Tìm người thuê</label>
+            <div class="search-row">
+              <input placeholder="Tên / CCCD / Số điện thoại">
+              <button>Tìm kiếm</button>
+            </div>
+            <table style="margin-top:12px">
+              <tr><th>Họ tên</th><th>CCCD</th><th>SĐT</th><th>Chọn</th></tr>
+              <tr><td>Nguyễn Văn A</td><td>079123456789</td><td>0901 234 567</td><td><button>Chọn</button></td></tr>
+              <tr><td>Trần Văn B</td><td>079987654321</td><td>0908 765 432</td><td><button>Chọn</button></td></tr>
+            </table>
+          </div>
         </div>
-        <div class="action"><button>Đặt lại</button><button>Tìm kiếm</button></div>
+
+        <div class="box">
+          <div class="box-header">② Thêm người thuê mới bằng VNeID</div>
+          <div class="box-body">
+            <p class="small">Dành cho khách chưa có trong Danh sách người thuê.</p>
+            <button class="primary" style="width:100%;padding:12px">📷 Quét VNeID / QR để lấy thông tin</button>
+            <div class="note small" style="margin-top:12px">
+              Sau khi quét, hệ thống tự lấy thông tin định danh và điền vào hồ sơ. Admin chỉ bổ sung các thông tin còn thiếu nếu cần.
+            </div>
+            <div class="status" style="margin-top:12px">✓ Sau khi xác nhận: <b>Lưu vào Danh sách người thuê (P1)</b></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="selected" style="margin-top:15px">
+        <b>Hồ sơ người thuê được sử dụng cho hợp đồng</b>
+        <div class="grid-4" style="margin-top:10px">
+          <div><label>Họ và tên</label><input value="Nguyễn Văn A" readonly></div>
+          <div><label>Ngày sinh</label><input value="15/05/1998" readonly></div>
+          <div><label>CCCD</label><input value="079123456789" readonly></div>
+          <div><label>Số điện thoại</label><input value="0901 234 567" readonly></div>
+          <div><label>Email</label><input value="nguyenvana@email.com" readonly></div>
+          <div><label>Nghề nghiệp</label><input value="Nhân viên văn phòng" readonly></div>
+          <div><label>Liên hệ khẩn cấp</label><input value="Nguyễn Văn B - 0909 111 222" readonly></div>
+          <div><label>Địa chỉ hiện tại</label><input value="TP. Hồ Chí Minh" readonly></div>
+        </div>
+        <div class="note small">Nếu là người thuê mới: dữ liệu sau khi xác nhận sẽ được lưu về <b>Danh sách người thuê</b>, không cần tạo lại ở P1.</div>
+      </div>
+      <div class="action"><button>Tiếp tục → Chọn phòng</button></div>
     </div>
+
+    <!-- BUOC 2 -->
+    <div class="step">
+      <div class="step-title">Bước 2 — Chọn phòng đang trống</div>
+      <p><b>Chọn phòng từ Danh mục phòng (P1).</b> Hệ thống chỉ hiển thị phòng đang trống và tự lấy diện tích, giá thuê, tiền cọc mặc định. Không nhập lại thông tin phòng.</p>
+
+      <div class="grid-4" style="margin-bottom:15px">
+        <div><label>Tỉnh/Thành</label><select><option>Tất cả</option><option>TP. Hồ Chí Minh</option><option>Bình Dương</option></select></div>
+        <div><label>Tòa nhà</label><select><option>Tất cả</option><option>Tòa A</option><option>Tòa B</option></select></div>
+        <div><label>Loại phòng</label><select><option>Tất cả</option><option>Phòng đơn</option><option>Phòng đôi</option></select></div>
+        <div><label>Giá thuê</label><select><option>Tất cả</option><option>Dưới 4 triệu</option><option>4–6 triệu</option><option>Trên 6 triệu</option></select></div>
+      </div>
+
+      <table>
+        <tr><th>Tòa nhà</th><th>Số phòng</th><th>Loại</th><th>Diện tích</th><th>Giá thuê</th><th>Tiền cọc mặc định</th><th>Tình trạng</th><th>Chọn</th></tr>
+        <tr><td>Tòa A</td><td>A101</td><td>Phòng đơn</td><td>25m²</td><td>4.000.000đ</td><td>4.000.000đ</td><td>Đang trống</td><td><button>Chọn</button></td></tr>
+        <tr><td>Tòa A</td><td>A102</td><td>Phòng đôi</td><td>30m²</td><td>5.000.000đ</td><td>5.000.000đ</td><td>Đang trống</td><td><button>Chọn</button></td></tr>
+        <tr><td>Tòa B</td><td>B205</td><td>Phòng đơn</td><td>22m²</td><td>3.500.000đ</td><td>3.500.000đ</td><td>Đang trống</td><td><button>Chọn</button></td></tr>
+      </table>
+
+      <div class="selected">
+        <b>Phòng đã chọn</b>
+        <div class="grid-4" style="margin-top:10px">
+          <div><label>Tòa nhà</label><input value="Tòa A" readonly></div>
+          <div><label>Số phòng</label><input value="A101" readonly></div>
+          <div><label>Diện tích</label><input value="25m²" readonly></div>
+          <div><label>Giá thuê</label><input value="4.000.000đ/tháng" readonly></div>
+        </div>
+        <div class="small" style="margin-top:10px">Thông tin phòng được lấy từ Danh mục phòng. Sau khi hoàn tất hợp đồng, trạng thái phòng tự chuyển sang <b>Đang thuê</b>.</div>
+      </div>
+
+      <div class="grid-4" style="margin-top:15px">
+        <div><label>Ngày bắt đầu thuê</label><input type="date"></div>
+        <div><label>Ngày kết thúc thuê</label><input type="date"></div>
+        <div><label>Tiền cọc</label><input value="4.000.000" placeholder="VNĐ"></div>
+        <div><label>Số người ở thực tế</label><input type="number" min="1" value="1"></div>
+      </div>
+      <div class="action"><button>← Quay lại</button><button>Tiếp tục → OCR điện nước</button></div>
+    </div>
+
+    <!-- BUOC 3 OCR -->
+    <div class="step">
+      <div class="step-title">Bước 3 — Chụp OCR điện nước đầu kỳ <span class="tag">Bắt buộc khi tạo HĐ lần đầu</span></div>
+      <p><b>Ghi nhận chỉ số tại thời điểm bàn giao phòng.</b> Ảnh gốc và kết quả OCR được lưu cùng hợp đồng để P3 sử dụng khi lập hóa đơn.</p>
+
+      <div class="grid-2">
+        <div>
+          <label>Đồng hồ điện — chỉ số đầu kỳ</label>
+          <div class="photo-box">
+            <div>📷</div>
+            <b>Chụp ảnh đồng hồ điện</b>
+            <button>Chụp / Tải ảnh</button>
+          </div>
+          <div class="ocr-result" style="margin-top:10px">
+            <label>Kết quả OCR</label>
+            <input value="1.250 kWh">
+            <div class="small" style="margin-top:8px">Admin kiểm tra và có thể chỉnh nếu OCR đọc sai.</div>
+          </div>
+        </div>
+
+        <div>
+          <label>Đồng hồ nước — chỉ số đầu kỳ</label>
+          <div class="photo-box">
+            <div>📷</div>
+            <b>Chụp ảnh đồng hồ nước</b>
+            <button>Chụp / Tải ảnh</button>
+          </div>
+          <div class="ocr-result" style="margin-top:10px">
+            <label>Kết quả OCR</label>
+            <input value="125 m³">
+            <div class="small" style="margin-top:8px">Admin kiểm tra và có thể chỉnh nếu OCR đọc sai.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-4" style="margin-top:15px">
+        <div><label>Thời điểm ghi nhận</label><input type="datetime-local" value="2026-01-01T09:00"></div>
+        <div><label>Người ghi nhận</label><input value="Admin" readonly></div>
+        <div><label>Mã phòng</label><input value="A101" readonly></div>
+        <div><label>Mã hợp đồng</label><input value="Hệ thống tự tạo" readonly></div>
+      </div>
+
+      <div class="ok"><b>Dữ liệu sẽ được lưu:</b> chỉ số điện đầu kỳ + chỉ số nước đầu kỳ + ảnh gốc + thời điểm ghi nhận + mã phòng + mã hợp đồng.</div>
+      <div class="note small">P3 Hóa đơn sẽ lấy chỉ số đầu kỳ đã lưu. Admin không cần nhập lại chỉ số đầu kỳ ở các chức năng sau.</div>
+
+      <div class="action"><button>← Quay lại</button><button>Xác nhận chỉ số → Đọc &amp; ký</button></div>
+    </div>
+
+    <!-- BUOC 4 -->
+    <div class="step">
+      <div class="step-title">Bước 4 — Tạo nội dung, đọc và ký hợp đồng</div>
+      <div class="grid-2">
+        <div><label>Số hợp đồng</label><input value="HD-2026-0001" readonly></div>
+        <div><label>Template hợp đồng</label><select><option>Hợp đồng thuê phòng tiêu chuẩn</option><option>Template khác</option></select></div>
+      </div>
+
+      <div class="note" style="margin-top:15px">
+        <b>Thông tin được tự động ghép:</b> Nguyễn Văn A — Phòng A101 — Tòa A — 4.000.000đ/tháng — Cọc 4.000.000đ — Điện đầu kỳ 1.250 kWh — Nước đầu kỳ 125 m³.
+      </div>
+
+      <label>Nội dung hợp đồng</label>
+      <textarea style="height:230px">HỢP ĐỒNG THUÊ PHÒNG
+
+Bên A: Chủ trọ
+Bên B: Nguyễn Văn A
+Phòng: A101 - Tòa A
+Giá thuê: 4.000.000đ/tháng
+Tiền cọc: 4.000.000đ
+Chỉ số điện đầu kỳ: 1.250 kWh
+Chỉ số nước đầu kỳ: 125 m³
+
+[Hệ thống sinh nội dung theo dữ liệu đã lưu]</textarea>
+
+      <div class="action" style="justify-content:flex-start">
+        <button>Xem trước PDF</button>
+        <button>Chỉnh sửa nội dung</button>
+      </div>
+
+      <div class="box" style="margin-top:15px">
+        <div class="box-header">Xác nhận ký của hai bên</div>
+        <div class="box-body">
+          <div class="grid-2">
+            <div><label>Bên A — Chủ trọ</label><input placeholder="Tên chủ trọ"><select style="margin-top:8px"><option>Chưa ký</option><option>Đã ký</option></select></div>
+            <div><label>Bên B — Khách thuê</label><input value="Nguyễn Văn A" readonly><select style="margin-top:8px"><option>Chưa ký</option><option>Đã ký</option></select></div>
+          </div>
+          <div class="grid-2" style="margin-top:15px">
+            <div><label>Phương thức ký</label><select><option>SMS OTP</option><option>Zalo OTP</option></select></div>
+            <div><label>Số điện thoại nhận OTP</label><input value="0901 234 567" readonly></div>
+          </div>
+          <div class="note small">Thông tin khách thuê và số điện thoại được lấy từ hồ sơ đã lưu.</div>
+        </div>
+      </div>
+
+      <div class="action"><button>← Quay lại</button><button>Lưu nháp</button><button class="primary">Hoàn tất hợp đồng</button></div>
+      <div class="note small">Sau khi hoàn tất: hợp đồng chuyển <b>Hiệu lực</b>, phòng A101 chuyển <b>Đang thuê</b>, và dữ liệu hợp đồng + điện nước đầu kỳ sẵn sàng cho P3 Hóa đơn.</div>
+    </div>
+  </div>
+</div>
+
+<!-- QUAN LY SAU KHI TAO -->
+<div class="box">
+  <div class="box-header">Chi tiết &amp; quản lý hợp đồng đang hiệu lực — Admin</div>
+  <div class="box-body">
+    <div class="grid-4">
+      <div><label>Số hợp đồng</label><input value="HD-2026-0001" readonly></div>
+      <div><label>Khách thuê</label><input value="Nguyễn Văn A" readonly></div>
+      <div><label>Phòng</label><input value="A101" readonly></div>
+      <div><label>Trạng thái</label><input value="Hiệu lực" readonly></div>
+      <div><label>Ngày bắt đầu</label><input value="01/01/2026" readonly></div>
+      <div><label>Ngày hết hạn</label><input value="31/12/2026" readonly></div>
+      <div><label>Tiền thuê</label><input value="4.000.000đ/tháng" readonly></div>
+      <div><label>Tiền cọc</label><input value="4.000.000đ" readonly></div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="grid-3">
+      <div><label>Điện đầu kỳ</label><input value="1.250 kWh" readonly></div>
+      <div><label>Nước đầu kỳ</label><input value="125 m³" readonly></div>
+      <div><label>Ảnh bàn giao</label><button style="width:100%">Xem ảnh OCR đã lưu</button></div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="detail-actions">
+      <button>Chỉnh sửa thông tin HĐ</button>
+      <button>Gia hạn hợp đồng</button>
+      <button>Nhắc khách sắp hết hạn</button>
+      <button>In / Xuất PDF</button>
+      <button>Thanh lý hợp đồng</button>
+    </div>
+  </div>
+</div>
+
+<!-- GIA HAN -->
+<div class="box">
+  <div class="box-header">Flow Gia hạn hợp đồng</div>
+  <div class="box-body">
+    <p>Gia hạn dùng lại toàn bộ dữ liệu hợp đồng hiện tại, <b>không tạo lại hồ sơ khách thuê và không nhập lại thông tin phòng</b>.</p>
+    <div class="grid-4">
+      <div><label>Số HĐ</label><input value="HD-2026-0001" readonly></div>
+      <div><label>Phòng</label><input value="A101" readonly></div>
+      <div><label>Khách thuê</label><input value="Nguyễn Văn A" readonly></div>
+      <div><label>Hết hạn hiện tại</label><input value="31/12/2026" readonly></div>
+      <div><label>Ngày hết hạn mới</label><input type="date"></div>
+      <div><label>Giá thuê mới</label><input placeholder="Giữ nguyên hoặc cập nhật"></div>
+      <div><label>Tiền cọc</label><input value="4.000.000đ" readonly></div>
+      <div><label>Chỉ số điện đầu kỳ mới</label><input value="Lấy từ chỉ số cuối kỳ gần nhất" readonly></div>
+    </div>
+    <div class="note small">Khi gia hạn, hệ thống tạo phiên bản/giai đoạn hợp đồng mới nhưng giữ lịch sử hợp đồng cũ và tái sử dụng dữ liệu đã lưu.</div>
+    <div class="action"><button>Hủy</button><button>Gia hạn &amp; tạo phụ lục</button></div>
+  </div>
+</div>
+
+<!-- THANH LY -->
+<div class="box">
+  <div class="box-header">Flow Thanh lý hợp đồng</div>
+  <div class="box-body">
+    <p><b>Thanh lý phải ghi nhận chỉ số cuối kỳ</b> để đối soát hóa đơn và tính tiền cọc hoàn trả.</p>
+    <div class="grid-4">
+      <div><label>Số HĐ</label><input value="HD-2026-0001" readonly></div>
+      <div><label>Phòng</label><input value="A101" readonly></div>
+      <div><label>Ngày thanh lý</label><input type="date"></div>
+      <div><label>Lý do</label><select><option>Hết hạn</option><option>Khách trả phòng sớm</option><option>Khác</option></select></div>
+      <div><label>Điện cuối kỳ</label><input placeholder="Nhập/chụp OCR"></div>
+      <div><label>Nước cuối kỳ</label><input placeholder="Nhập/chụp OCR"></div>
+      <div><label>Tiền cọc ban đầu</label><input value="4.000.000đ" readonly></div>
+      <div><label>Khấu trừ</label><input placeholder="VNĐ"></div>
+    </div>
+    <div class="grid-2" style="margin-top:15px">
+      <div><label>Tiền cọc hoàn lại</label><input value="Tự tính = cọc - khấu trừ" readonly></div>
+      <div><label>Trạng thái phòng sau thanh lý</label><input value="Đang trống — hệ thống cập nhật tự động" readonly></div>
+    </div>
+    <div class="danger-note"><b>Xác nhận thanh lý:</b> Sau khi xác nhận, hợp đồng chuyển <b>Đã thanh lý</b>, phòng chuyển <b>Đang trống</b>, dữ liệu cọc/điện/nước được lưu vào lịch sử.</div>
+    <div class="action"><button>Hủy</button><button>Xuất biên bản thanh lý</button><button class="primary">Xác nhận thanh lý</button></div>
+  </div>
 </div>
 
 <div class="box">
-    <div class="box-header">Danh sách hợp đồng</div>
-    <div class="box-body">
-        <table>
-            <tr><th>Phòng</th><th>Khách thuê</th><th>Số HĐ</th><th>Bắt đầu</th><th>Hết hạn</th><th>Tiền cọc</th><th>Trạng thái</th><th>Thao tác</th></tr>
-            <tr><td>A101</td><td>Nguyễn Văn A</td><td>HD001</td><td>01/01/2026</td><td>31/12/2026</td><td>5.000.000</td><td>Hiệu lực</td><td><button>Chi tiết</button></td></tr>
-            <tr><td>A205</td><td>Trần Văn B</td><td>HD002</td><td>01/03/2026</td><td>01/11/2026</td><td>3.000.000</td><td>Sắp hết hạn</td><td><button>Chi tiết</button></td></tr>
-        </table>
+  <div class="box-header">Luồng dữ liệu sang các module khác</div>
+  <div class="box-body">
+    <div class="timeline">
+      <div><b>P1 — Quản lý khách thuê:</b> lưu hồ sơ khách thuê → P2 tìm/chọn lại, không nhập lại.</div>
+      <div><b>P1 — Danh mục phòng:</b> lưu phòng, diện tích, giá thuê, trạng thái → P2 chọn phòng trống, không nhập lại.</div>
+      <div><b>P2 — Hợp đồng:</b> lưu mã HĐ, khách thuê, phòng, giá, cọc, thời hạn, <b>điện/nước đầu kỳ + ảnh OCR</b>.</div>
+      <div><b>P3 — Hóa đơn:</b> lấy khách thuê + phòng + giá thuê + mã HĐ + chỉ số đầu kỳ từ P2; Admin chỉ bổ sung chỉ số cuối kỳ và phí phát sinh.</div>
+      <div><b>Thanh toán/Đối soát:</b> lấy mã hóa đơn + số tiền từ P3, không nhập lại thủ công.</div>
     </div>
-</div>
-
-<!-- TẠO HỢP ĐỒNG 3 BƯỚC -->
-<div class="box">
-<div class="box-header">Tạo hợp đồng mới — 3 bước</div>
-<div class="box-body">
-
-<div class="status-list" style="margin-bottom:15px">
-    <div class="status"><b>1.</b> Thông tin khách thuê</div>
-    <div class="status"><b>2.</b> Chọn phòng</div>
-    <div class="status"><b>3.</b> Đọc &amp; ký</div>
-</div>
-
-<!-- BƯỚC 1 -->
-<div class="step">
-<div class="step-title">Bước 1 — Thông tin khách thuê</div>
-<p>Quét VNeID để lấy thông tin hoặc tự nhập thông tin khách thuê.</p>
-<div class="action" style="justify-content:flex-start;margin-top:0">
-    <button>▣ Quét QR VNeID</button>
-    <button>Tự điền thông tin</button>
-</div>
-<div class="note small">Thông tin từ VNeID sẽ được điền tự động. Chủ trọ kiểm tra lại trước khi tiếp tục.</div>
-
-<div class="grid-4">
-    <div><label>Họ và tên</label><input placeholder="Họ tên đầy đủ"></div>
-    <div><label>Ngày sinh</label><input type="date"></div>
-    <div><label>Giới tính</label><select><option>Chọn</option><option>Nam</option><option>Nữ</option><option>Khác</option></select></div>
-    <div><label>Số CCCD</label><input placeholder="Số CCCD"></div>
-    <div><label>Ngày cấp CCCD</label><input type="date"></div>
-    <div><label>Nơi cấp</label><input placeholder="Nơi cấp"></div>
-    <div><label>Số điện thoại</label><input placeholder="Số điện thoại"></div>
-    <div><label>Email</label><input placeholder="Email"></div>
-    <div><label>Nghề nghiệp</label><input placeholder="Nghề nghiệp"></div>
-    <div><label>Nơi làm việc</label><input placeholder="Nơi làm việc"></div>
-    <div><label>Người liên hệ khẩn cấp</label><input placeholder="Họ tên"></div>
-    <div><label>SĐT người liên hệ</label><input placeholder="Số điện thoại"></div>
-</div>
-<div class="grid-2" style="margin-top:15px">
-    <div><label>Địa chỉ thường trú</label><textarea placeholder="Địa chỉ thường trú" style="height:75px"></textarea></div>
-    <div><label>Địa chỉ hiện tại</label><textarea placeholder="Địa chỉ hiện tại" style="height:75px"></textarea></div>
-</div>
-<div class="action"><button>Tiếp tục → Chọn phòng</button></div>
-</div>
-
-<!-- BƯỚC 2 -->
-<div class="step">
-<div class="step-title">Bước 2 — Chọn phòng</div>
-<p><b>Chọn phòng từ Danh mục phòng.</b> Hệ thống chỉ hiển thị các phòng đang trống. Không cần nhập lại thông tin phòng.</p>
-
-<div class="box" style="margin-top:15px">
-<div class="box-header">Danh sách phòng đang trống</div>
-<div class="box-body">
-
-<div class="grid-4" style="margin-bottom:15px">
-    <div><label>Tỉnh/Thành</label><select><option>Tất cả</option><option>TP. Hồ Chí Minh</option><option>Bình Dương</option></select></div>
-    <div><label>Tòa nhà</label><select><option>Tất cả</option><option>Tòa A</option><option>Tòa B</option></select></div>
-    <div><label>Loại phòng</label><select><option>Tất cả</option><option>Phòng đơn</option><option>Phòng đôi</option></select></div>
-    <div><label>Giá thuê</label><select><option>Tất cả</option><option>Dưới 4 triệu</option><option>4–6 triệu</option><option>Trên 6 triệu</option></select></div>
-</div>
-
-<table>
-<tr>
-    <th>Tỉnh/Thành</th>
-    <th>Tòa nhà</th>
-    <th>Số phòng</th>
-    <th>Loại phòng</th>
-    <th>Diện tích</th>
-    <th>Giá thuê</th>
-    <th>Tình trạng</th>
-    <th>Chọn</th>
-</tr>
-<tr>
-    <td>TP. Hồ Chí Minh</td><td>Tòa A</td><td>A101</td><td>Phòng đơn</td><td>25m²</td><td>4.000.000đ</td><td>Đang trống</td><td><button>Chọn</button></td>
-</tr>
-<tr>
-    <td>TP. Hồ Chí Minh</td><td>Tòa A</td><td>A102</td><td>Phòng đôi</td><td>30m²</td><td>5.000.000đ</td><td>Đang trống</td><td><button>Chọn</button></td>
-</tr>
-<tr>
-    <td>Bình Dương</td><td>Tòa B</td><td>B205</td><td>Phòng đơn</td><td>22m²</td><td>3.500.000đ</td><td>Đang trống</td><td><button>Chọn</button></td>
-</tr>
-</table>
-
-<div class="selected">
-    <b>Phòng đã chọn</b>
-    <div class="grid-4" style="margin-top:10px">
-        <div><label>Tỉnh/Thành</label><input value="TP. Hồ Chí Minh" readonly></div>
-        <div><label>Tòa nhà</label><input value="Tòa A" readonly></div>
-        <div><label>Số phòng</label><input value="A101" readonly></div>
-        <div><label>Giá thuê</label><input value="4.000.000đ/tháng" readonly></div>
-    </div>
-    <div class="small" style="margin-top:10px">Thông tin này được lấy từ Danh mục phòng, chủ trọ không cần nhập lại.</div>
-</div>
-
-<div class="grid-4" style="margin-top:15px">
-    <div><label>Ngày bắt đầu thuê</label><input type="date"></div>
-    <div><label>Ngày kết thúc thuê</label><input type="date"></div>
-    <div><label>Tiền cọc</label><input placeholder="VNĐ"></div>
-    <div><label>Số người ở thực tế</label><input type="number" min="1"></div>
-</div>
-
-</div>
-</div>
-
-<div class="action"><button>← Quay lại</button><button>Tiếp tục → Đọc &amp; ký</button></div>
-</div>
-
-<!-- BƯỚC 3 -->
-<div class="step">
-<div class="step-title">Bước 3 — Hai bên đọc và ký hợp đồng</div>
-
-<div class="grid-2">
-    <div><label>Số hợp đồng</label><input placeholder="Hệ thống tự tạo"></div>
-    <div><label>Template hợp đồng</label><select><option>Hợp đồng thuê phòng tiêu chuẩn</option><option>Template khác</option></select></div>
-</div>
-
-<div class="note" style="margin-top:15px">
-    <b>Thông tin hợp đồng:</b> Nguyễn Văn A — Phòng A101 — Tòa A — 4.000.000đ/tháng
-</div>
-
-<label>Nội dung hợp đồng</label>
-<textarea style="height:230px" placeholder="Hợp đồng được hệ thống tạo từ thông tin khách thuê và phòng đã chọn..."></textarea>
-
-<div class="action" style="justify-content:flex-start">
-    <button>Xem trước PDF</button>
-    <button>Chỉnh sửa nội dung</button>
-</div>
-
-<div class="box" style="margin-top:15px">
-<div class="box-header">Xác nhận ký của hai bên</div>
-<div class="box-body">
-<div class="grid-2">
-    <div>
-        <label>Bên A — Chủ trọ</label>
-        <input placeholder="Tên chủ trọ">
-        <select style="margin-top:8px"><option>Chưa ký</option><option>Đã ký</option></select>
-    </div>
-    <div>
-        <label>Bên B — Khách thuê</label>
-        <input placeholder="Tên khách thuê">
-        <select style="margin-top:8px"><option>Chưa ký</option><option>Đã ký</option></select>
-    </div>
-</div>
-<div class="grid-2" style="margin-top:15px">
-    <div><label>Phương thức ký</label><select><option>SMS OTP</option><option>Zalo OTP</option></select></div>
-    <div><label>Số điện thoại nhận OTP</label><input placeholder="Số điện thoại"></div>
-</div>
-<div class="note small">Cả hai bên đọc nội dung, xác nhận đồng ý và thực hiện ký hợp đồng.</div>
-</div>
-</div>
-
-<div class="action">
-    <button>← Quay lại</button>
-    <button>Lưu nháp</button>
-    <button>Hoàn tất hợp đồng</button>
-</div>
-</div>
-
-</div>
+  </div>
 </div>
 
 </div>
