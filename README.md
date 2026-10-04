@@ -7,7 +7,8 @@ Hệ thống quản lý cho thuê nhà/phòng phát triển theo mô hình monor
 ```text
 .
 ├── apps/
-│   ├── web/       # Frontend ReactJS
+│   ├── web/       # Frontend web ReactJS
+│   ├── mobile/    # Ứng dụng mobile (React Native/Expo hoặc Flutter)
 │   └── api/       # Backend Node.js
 ├── packages/
 │   └── shared/    # Types, validation và tiện ích dùng chung
@@ -29,10 +30,11 @@ Hệ thống quản lý cho thuê nhà/phòng phát triển theo mô hình monor
 
 ## Công nghệ dự kiến
 
-- Frontend: ReactJS
+- Frontend web: ReactJS
+- Mobile: React Native/Expo hoặc Flutter (chưa chốt)
 - Backend: Node.js
 - Database: sẽ chọn và ghi lại tại `database/` khi chốt công nghệ
 
 ## Khởi chạy
 
-Mã nguồn hiện chưa được khởi tạo. Sau khi tạo ứng dụng tại `apps/web` và `apps/api`, bổ sung lệnh cài đặt, chạy dev, build và test tương ứng tại đây.
+Mã nguồn ứng dụng chưa được khởi tạo. Sau khi tạo ứng dụng tại `apps/web`, `apps/mobile` và `apps/api`, bổ sung lệnh cài đặt, chạy dev, build và test tương ứng tại đây.
