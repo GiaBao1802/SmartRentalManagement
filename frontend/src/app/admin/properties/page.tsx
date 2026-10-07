@@ -8,5 +8,12 @@ export default function PropertiesPage() {
     { key: "province", label: "Tỉnh / Thành phố" }, { key: "address", label: "Địa chỉ" },
     { key: "managerName", label: "Người phụ trách" }, { key: "roomCount", label: "Số phòng" },
     { key: "defaultRentVnd", label: "Giá thuê mặc định", format: "money" }, { key: "status", label: "Trạng thái", format: "status" },
+  ]} fields={[
+    { key: "code", label: "Mã khu vực", required: true }, { key: "name", label: "Tên khu vực / tòa nhà", required: true },
+    { key: "province", label: "Tỉnh / Thành phố", required: true }, { key: "roomPrefix", label: "Tiền tố mã phòng", required: true },
+    { key: "address", label: "Địa chỉ", required: true }, { key: "managerName", label: "Người phụ trách" },
+    { key: "defaultRentVnd", label: "Giá thuê mặc định (đ/tháng)", type: "number", required: true }, { key: "defaultAreaM2", label: "Diện tích mặc định (m²)", type: "number" },
+    { key: "status", label: "Trạng thái", type: "select", options: [{ value: "ACTIVE", label: "Đang hoạt động" }, { value: "PAUSED", label: "Tạm dừng" }, { value: "UNDER_CONSTRUCTION", label: "Đang xây dựng" }] },
+    { key: "note", label: "Ghi chú", type: "textarea" },
   ]} />;
 }

@@ -12,6 +12,8 @@ const tabs = [
   { href: "/admin/contracts", label: "Quản lý hợp đồng" },
   { href: "/admin/invoices", label: "Quản lý hóa đơn" },
   { href: "/admin/amenities", label: "Tiện ích" },
+  { href: "/admin/bookings", label: "Lịch tiện ích" },
+  { href: "/admin/viewings", label: "Lịch xem phòng" },
   { href: "/admin/complaints", label: "Khiếu nại" },
 ];
 

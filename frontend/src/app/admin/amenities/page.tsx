@@ -9,5 +9,12 @@ export default function AmenitiesPage() {
     { key: "opensAt", label: "Mở cửa" }, { key: "closesAt", label: "Đóng cửa" },
     { key: "priceVnd", label: "Giá", format: "money" }, { key: "priceUnit", label: "Đơn vị" },
     { key: "bookings", label: "Lượt đăng ký" }, { key: "isActive", label: "Tình trạng", format: "boolean" },
+  ]} fields={[
+    { key: "code", label: "Mã tiện ích", required: true }, { key: "name", label: "Tên tiện ích", required: true },
+    { key: "propertyId", label: "Khu vực", type: "select", optionsEndpoint: "/api/options/properties" }, { key: "location", label: "Vị trí", required: true },
+    { key: "priceVnd", label: "Giá (đ)", type: "number" }, { key: "priceUnit", label: "Đơn vị tính", required: true },
+    { key: "opensAt", label: "Giờ mở cửa" }, { key: "closesAt", label: "Giờ đóng cửa" },
+    { key: "isActive", label: "Trạng thái", type: "select", options: [{ value: "true", label: "Đang hoạt động" }, { value: "false", label: "Tạm đóng" }] },
+    { key: "capacity", label: "Sức chứa", type: "number" }, { key: "instructions", label: "Nội quy / hướng dẫn", type: "textarea" },
   ]} />;
 }
