@@ -1,28 +1,12 @@
-# Dependencies
 node_modules/
-.pnp/
-.pnp.js
-
-# Build output
-dist/
-build/
 .next/
-out/
+dist/
 coverage/
-
-# Environment files and secrets
+*.log
 .env
 .env.*
 !.env.example
+frontend/next-env.d.ts
+backend/src/generated/
+database/generated/
 
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-pnpm-debug.log*
-
-# OS and editor files
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/

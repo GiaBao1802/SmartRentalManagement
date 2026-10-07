@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Góc Trọ - Xử lý khiếu nại (Admin)</title>
+<style>
+  /* WIREFRAME: chỉ border + khoảng cách. Không màu thương hiệu, shadow, gradient, animation, hover. */
+  * { box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; font-size: 14px; color: #000; background: #fff; margin: 0; }
+  .page { max-width: 1280px; margin: 0 auto; padding: 24px; }
+
+  header.site-header { border: 1px solid #000; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .logo { font-weight: bold; font-size: 18px; border: 1px dashed #000; padding: 6px 12px; }
+  .nav span { display: inline-block; border: 1px solid #000; padding: 4px 12px; margin-left: 8px; }
+  .nav span.active { font-weight: bold; border-width: 2px; }
+  .user { border: 1px solid #000; padding: 6px 12px; }
+
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  p.desc { margin: 0 0 16px; }
+  .note { border: 1px dashed #000; padding: 8px 12px; margin-bottom: 12px; font-size: 12px; }
+
+  button { border: 1px solid #000; background: #fff; padding: 6px 14px; font-size: 14px; cursor: pointer; }
+  button.small { padding: 2px 8px; font-size: 12px; }
+
+  .box { border: 1px solid #000; margin-bottom: 16px; }
+  .box > .box-title { padding: 8px 16px; border-bottom: 1px solid #000; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+  .box > .box-body { padding: 16px; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: 1px solid #000; padding: 8px; text-align: left; vertical-align: top; }
+  td.nowrap, th.nowrap { white-space: nowrap; }
+  td.actions { white-space: nowrap; }
+  td.actions button { margin-right: 4px; }
+
+  .pagination { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+  .pagination .pages button { margin-left: 4px; }
+
+  /* Modal tĩnh */
+  .overlay-frame { border: 2px dashed #000; padding: 16px; margin-bottom: 24px; }
+  .modal { border: 1px solid #000; width: 560px; background: #fff; }
+  .modal-head { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border-bottom: 1px solid #000; font-weight: bold; }
+  .modal-body { padding: 16px; }
+  .modal-foot { padding: 10px 16px; border-top: 1px solid #000; display: flex; justify-content: flex-end; gap: 8px; }
+  .detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); border: 1px solid #000; margin-bottom: 12px; }
+  .detail-grid .item { padding: 8px 12px; border-right: 1px solid #000; border-bottom: 1px solid #000; }
+  .detail-grid .item:nth-child(2n) { border-right: 0; }
+  .detail-grid .item:nth-last-child(-n+2) { border-bottom: 0; }
+  .detail-grid .k { display: block; font-weight: bold; margin-bottom: 2px; }
+  .reason { border: 1px solid #000; padding: 10px 12px; min-height: 90px; }
+  .reason-label { font-weight: bold; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="logo">Góc Trọ</div>
+    <div class="nav">
+      <span class="active">Xử lý khiếu nại</span>
+    </div>
+    <div class="user">Admin</div>
+  </header>
+
+  <h1>Xử lý khiếu nại</h1>
+  <p class="desc">Danh sách khiếu nại của cư dân đang chờ xử lý.</p>
+
+  <!-- DANH SÁCH KHIẾU NẠI ĐANG CHỜ XỬ LÝ -->
+  <div class="box" id="ds-khieu-nai">
+    <div class="box-title">
+      <span>Khiếu nại đang chờ xử lý</span>
+      <span>Tổng: 5</span>
+    </div>
+    <div class="box-body">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="nowrap">Mã khiếu nại</th>
+              <th>Người gửi</th>
+              <th class="nowrap">Phòng</th>
+              <th>Nội dung</th>
+              <th class="nowrap">Ngày gửi</th>
+              <th class="nowrap">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="nowrap">[KN-0001]</td>
+              <td>[Nguyễn Văn A]</td>
+              <td class="nowrap">[A101]</td>
+              <td>[Lý do khiếu nại tóm tắt 1–2 dòng]</td>
+              <td class="nowrap">[05/10/2026]</td>
+              <td class="actions"><button type="button" class="small">Liên hệ</button><button type="button" class="small">Từ chối</button><button type="button" class="small">Xem khiếu nại</button></td>
+            </tr>
+            <tr>
+              <td class="nowrap">[KN-0002]</td>
+              <td>[Trần Thị B]</td>
+              <td class="nowrap">[B205]</td>
+              <td>[Lý do khiếu nại tóm tắt 1–2 dòng]</td>
+              <td class="nowrap">[04/10/2026]</td>
+              <td class="actions"><button type="button" class="small">Liên hệ</button><button type="button" class="small">Từ chối</button><button type="button" class="small">Xem khiếu nại</button></td>
+            </tr>
+            <tr>
+              <td class="nowrap">[KN-0003]</td>
+              <td>[Lê Văn C]</td>
+              <td class="nowrap">[C310]</td>
+              <td>[Lý do khiếu nại tóm tắt 1–2 dòng]</td>
+              <td class="nowrap">[03/10/2026]</td>
+              <td class="actions"><button type="button" class="small">Liên hệ</button><button type="button" class="small">Từ chối</button><button type="button" class="small">Xem khiếu nại</button></td>
+            </tr>
+            <tr>
+              <td class="nowrap">[KN-0004]</td>
+              <td>[Phạm Thị D]</td>
+              <td class="nowrap">[A205]</td>
+              <td>[Lý do khiếu nại tóm tắt 1–2 dòng]</td>
+              <td class="nowrap">[02/10/2026]</td>
+              <td class="actions"><button type="button" class="small">Liên hệ</button><button type="button" class="small">Từ chối</button><button type="button" class="small">Xem khiếu nại</button></td>
+            </tr>
+            <tr>
+              <td class="nowrap">[KN-0005]</td>
+              <td>[Hoàng Văn E]</td>
+              <td class="nowrap">[B102]</td>
+              <td>[Lý do khiếu nại tóm tắt 1–2 dòng]</td>
+              <td class="nowrap">[01/10/2026]</td>
+              <td class="actions"><button type="button" class="small">Liên hệ</button><button type="button" class="small">Từ chối</button><button type="button" class="small">Xem khiếu nại</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination">
+        <span>Hiển thị 1–5 / 5</span>
+        <div class="pages">
+          <button type="button">‹ Trước</button>
+          <button type="button">1</button>
+          <button type="button">Sau ›</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL XEM KHIẾU NẠI -->
+  <div class="note">Modal — hiện khi bấm "Xem khiếu nại"</div>
+  <div class="overlay-frame">
+    <div class="modal">
+      <div class="modal-head"><span>Chi tiết khiếu nại</span><button type="button" class="small">Đóng ✕</button></div>
+      <div class="modal-body">
+        <div class="detail-grid">
+          <div class="item"><span class="k">Mã khiếu nại</span>[KN-0001]</div>
+          <div class="item"><span class="k">Ngày gửi</span>[05/10/2026]</div>
+          <div class="item"><span class="k">Người gửi</span>[Nguyễn Văn A]</div>
+          <div class="item"><span class="k">Phòng</span>[A101]</div>
+        </div>
+        <div class="reason-label">Lý do khiếu nại</div>
+        <div class="reason">[Nội dung đầy đủ của khiếu nại]</div>
+      </div>
+      <div class="modal-foot"><button type="button">Liên hệ</button><button type="button">Từ chối</button><button type="button">Đóng</button></div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

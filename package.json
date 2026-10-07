@@ -1,0 +1,35 @@
+{
+  "name": "goctro",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "engines": {
+    "node": ">=24.11.0"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n frontend,backend -c blue,green \"npm:dev --workspace=@goctro/frontend\" \"npm:dev --workspace=@goctro/backend\"",
+    "legacy:dev": "node legacy/server.js",
+    "build": "npm run build --workspace=@goctro/frontend && npm run build --workspace=@goctro/backend",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:generate": "npm run db:generate --workspace=@goctro/backend",
+    "db:migrate": "npm run db:migrate --workspace=@goctro/backend",
+    "db:seed": "npm run db:seed --workspace=@goctro/backend"
+  },
+  "devDependencies": {
+    "concurrently": "9.2.4"
+  },
+  "overrides": {
+    "shell-quote": "1.11.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "unrs-resolver@1.12.2": true,
+    "prisma@6.12.0": true,
+    "@prisma/client@6.12.0": true,
+    "@prisma/engines@6.12.0": true
+  }
+}

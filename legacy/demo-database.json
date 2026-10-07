@@ -1,0 +1,59 @@
+{
+  "profile": {
+    "username": "nguyenvana",
+    "name": "Nguyễn Văn An",
+    "email": "an.nguyen@gmail.com",
+    "phone": "0901 234 567",
+    "address": "12 Nguyễn Trãi, Xuân Lộc"
+  },
+  "plan": "Cơ bản",
+  "passwordHash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+  "notifications": {
+    "invoice": true,
+    "overdue": true,
+    "contract": false,
+    "issue": true
+  },
+  "services": [
+    {
+      "id": 1,
+      "name": "Hồ bơi",
+      "area": "Khu A",
+      "price": 50000,
+      "unit": "lượt",
+      "open": "06:00",
+      "close": "21:00",
+      "active": true
+    },
+    {
+      "id": 2,
+      "name": "Phòng gym",
+      "area": "Khu A",
+      "price": 30000,
+      "unit": "lượt",
+      "open": "05:00",
+      "close": "22:00",
+      "active": true
+    },
+    {
+      "id": 3,
+      "name": "Sân tennis",
+      "area": "Khu B",
+      "price": 120000,
+      "unit": "giờ",
+      "open": "06:00",
+      "close": "20:00",
+      "active": false
+    },
+    {
+      "id": 4,
+      "name": "Phòng BBQ",
+      "area": "Khu B",
+      "price": 200000,
+      "unit": "giờ",
+      "open": "10:00",
+      "close": "22:00",
+      "active": true
+    }
+  ]
+}
