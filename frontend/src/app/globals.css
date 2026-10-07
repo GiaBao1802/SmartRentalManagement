@@ -152,6 +152,7 @@ tbody tr:hover td { background: #fffcf8; }
 .room-listing-bottom strong { color: var(--sec); }
 .room-listing-bottom small { margin-left: 3px; color: var(--mu); font-weight: 400; }
 .room-listing-bottom a { color: var(--sec); font-size: 12px; font-weight: 700; text-decoration: none; }
+.marketplace-more { display: flex; justify-content: center; padding-top: 24px; }
 .home-empty { display: grid; min-height: 130px; place-content: center; gap: 6px; color: var(--mu); text-align: center; }
 .service-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .contact-band { display: flex; align-items: center; justify-content: space-between; gap: 28px; padding: 48px max(24px, calc((100vw - var(--home-width)) / 2)); background: #eaf3eb; }
@@ -168,6 +169,8 @@ tbody tr:hover td { background: #fffcf8; }
 .account-create-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 14px; }
 .account-create-form label { display: grid; gap: 6px; color: var(--mu); font-size: 12px; font-weight: 700; }
 .account-create-form input, .account-create-form select { width: 100%; min-width: 0; padding: 10px; border: 1px solid var(--line); border-radius: 9px; background: #fff; }
+.room-listing-toggle { display: flex !important; align-items: center; gap: 9px !important; }
+.room-listing-toggle input { width: auto; min-width: auto; }
 .tenant-page { min-height: 100vh; background: #f7f7f1; color: #22372d; }
 .tenant-header { display: flex; align-items: center; justify-content: space-between; padding: 14px max(24px, calc((100vw - 1100px) / 2)); border-bottom: 1px solid var(--line); background: #fffaf2; }
 .tenant-header img { width: 160px; height: 58px; object-fit: contain; }

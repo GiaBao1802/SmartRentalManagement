@@ -231,17 +231,25 @@ app.post("/api/auth/logout", (_request, response) => {
 app.get("/api/public/rooms", async (request, response, next) => {
   try {
     const search = String(request.query.search ?? "").trim();
-    const data = await prisma.room.findMany({
-      where: {
+    const page = Math.max(1, Number(request.query.page) || 1);
+    const pageSize = Math.min(48, Math.max(1, Number(request.query.pageSize) || 24));
+    const where: Prisma.RoomWhereInput = {
+        isListed: true,
         condition: "READY",
         contracts: { none: { status: { in: ["PENDING_SIGNATURE", "ACTIVE"] } } },
         property: { status: "ACTIVE", ...(search ? { OR: [{ province: { contains: search, mode: "insensitive" as const } }, { name: { contains: search, mode: "insensitive" as const } }, { address: { contains: search, mode: "insensitive" as const } }] } : {}) },
-      },
+      };
+    const [data, total] = await prisma.$transaction([
+      prisma.room.findMany({
+      where,
       orderBy: [{ property: { name: "asc" } }, { floor: "asc" }, { roomNumber: "asc" }],
-      take: 12,
-      include: { property: { select: { name: true, province: true, address: true, defaultRentVnd: true } } },
-    });
-    response.json({ data: data.map((room) => ({ id: room.id, roomNumber: room.roomNumber, floor: room.floor, areaM2: room.areaM2, rentVnd: room.rentOverrideVnd ?? room.property.defaultRentVnd, property: room.property })) });
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: { property: { select: { name: true, province: true, address: true, defaultRentVnd: true, managerName: true, owner: { select: { displayName: true } } } } },
+      }),
+      prisma.room.count({ where }),
+    ]);
+    response.json({ data: data.map((room) => ({ id: room.id, roomNumber: room.roomNumber, floor: room.floor, areaM2: room.areaM2, rentVnd: room.rentOverrideVnd ?? room.property.defaultRentVnd, property: { name: room.property.name, province: room.property.province, address: room.property.address, landlordName: room.property.owner?.displayName ?? room.property.managerName } })), pagination: { page, pageSize, total, hasMore: page * pageSize < total } });
   } catch (error) { next(error); }
 });
 
@@ -255,8 +263,8 @@ app.post("/api/public/viewing-requests", async (request, response, next) => {
       response.status(400).json({ error: "Vui lòng nhập họ tên, số điện thoại hợp lệ và ngày xem phòng đúng." }); return;
     }
     if (body.roomId) {
-      const room = await prisma.room.findUnique({ where: { id: String(body.roomId) }, select: { condition: true, property: { select: { status: true } } } });
-      if (!room || room.condition !== "READY" || room.property.status !== "ACTIVE") { response.status(400).json({ error: "Phòng này hiện không nhận lịch xem." }); return; }
+      const room = await prisma.room.findUnique({ where: { id: String(body.roomId) }, select: { condition: true, isListed: true, property: { select: { status: true } } } });
+      if (!room || !room.isListed || room.condition !== "READY" || room.property.status !== "ACTIVE") { response.status(400).json({ error: "Phòng này hiện không nhận lịch xem." }); return; }
     }
     const data = await prisma.roomViewingRequest.create({ data: {
       roomId: body.roomId ? String(body.roomId) : null, visitorName, phone,
@@ -382,7 +390,7 @@ app.get("/api/properties/:id/rooms", async (request, response, next) => {
       orderBy: [{ floor: "asc" }, { roomNumber: "asc" }],
       include: { contracts: { where: { status: { in: ["PENDING_SIGNATURE", "ACTIVE"] } }, take: 1, include: { tenant: { select: { fullName: true } } } } },
     });
-    response.json({ data: data.map((room) => ({ id: room.id, roomNumber: room.roomNumber, floor: room.floor, areaM2: room.areaM2, rentOverrideVnd: room.rentOverrideVnd, condition: room.condition, tenant: room.contracts[0]?.tenant.fullName ?? null })) });
+    response.json({ data: data.map((room) => ({ id: room.id, roomNumber: room.roomNumber, floor: room.floor, areaM2: room.areaM2, rentOverrideVnd: room.rentOverrideVnd, condition: room.condition, isListed: room.isListed, tenant: room.contracts[0]?.tenant.fullName ?? null })) });
   } catch (error) { next(error); }
 });
 
@@ -444,6 +452,7 @@ app.post("/api/properties/:id/rooms", async (request, response, next) => {
       propertyId: request.params.id, roomNumber: String(body.roomNumber).trim(), floor: Number(body.floor),
       areaM2: body.areaM2 ? Number(body.areaM2) : null, rentOverrideVnd: body.rentOverrideVnd ? Number(body.rentOverrideVnd) : null,
       condition: ["READY", "MAINTENANCE", "UNAVAILABLE"].includes(body.condition) ? body.condition : "READY",
+      isListed: body.isListed === true || body.isListed === "true",
     } });
     response.status(201).json({ data });
   } catch (error) { next(error); }
@@ -459,6 +468,7 @@ app.patch("/api/rooms/:id", async (request, response, next) => {
     if ("areaM2" in body) data.areaM2 = body.areaM2 === null ? null : Number(body.areaM2);
     if ("rentOverrideVnd" in body) data.rentOverrideVnd = body.rentOverrideVnd === null ? null : Number(body.rentOverrideVnd);
     if (["READY", "MAINTENANCE", "UNAVAILABLE"].includes(body.condition)) data.condition = body.condition;
+    if ("isListed" in body) data.isListed = body.isListed === true || body.isListed === "true";
     response.json({ data: await prisma.room.update({ where: { id: request.params.id }, data }) });
   } catch (error) { next(error); }
 });

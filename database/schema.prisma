@@ -9,8 +9,8 @@ datasource db {
 
 enum UserRole {
   ADMIN
-  LANDLORD
   TENANT
+  LANDLORD
 }
 
 enum PropertyStatus {
@@ -157,6 +157,7 @@ model Room {
   areaM2              Decimal?             @map("area_m2") @db.Decimal(8, 2)
   rentOverrideVnd     Int?                 @map("rent_override_vnd")
   condition           RoomCondition        @default(READY)
+  isListed            Boolean              @default(false) @map("is_listed")
   contracts           LeaseContract[]
   viewingRequests     RoomViewingRequest[]
   amenityBookings     AmenityBooking[]
@@ -166,6 +167,7 @@ model Room {
 
   @@unique([propertyId, roomNumber])
   @@index([propertyId, condition])
+  @@index([isListed, condition])
   @@map("rooms")
 }
 
