@@ -89,11 +89,13 @@ async function main() {
             floor,
             areaM2: sample.area,
             condition: sample.status === "ACTIVE" ? "READY" : "UNAVAILABLE",
+            isListed: sample.status === "ACTIVE",
           },
           update: {
             floor,
             areaM2: sample.area,
             condition: sample.status === "ACTIVE" ? "READY" : "UNAVAILABLE",
+            isListed: sample.status === "ACTIVE",
           },
         });
         roomByKey.set(`${sample.code}:${roomNumber}`, room);
