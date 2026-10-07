@@ -374,20 +374,37 @@ async function main() {
       });
     }
 
-    // Room viewing requests and login accounts are intentionally left empty:
-    // the current HTML demo has no initial viewing requests and uses unsafe sample passwords.
+    // Demo login accounts are linked after sample records are seeded.
   }, { maxWait: 10_000, timeout: 120_000 });
 
+  const seedPasswordHash = (password: string) => {
+    const salt = randomBytes(16).toString("hex");
+    return `scrypt$${salt}$${scryptSync(password, salt, 64).toString("hex")}`;
+  };
   const adminPassword = process.env.DEV_ADMIN_PASSWORD ?? "123456";
-  const adminSalt = randomBytes(16).toString("hex");
-  const adminHash = scryptSync(adminPassword, adminSalt, 64).toString("hex");
   await prisma.userAccount.upsert({
     where: { username: "admin" },
-    update: { passwordHash: `scrypt$${adminSalt}$${adminHash}`, role: "ADMIN", isActive: true, displayName: "Nguyễn Văn An" },
-    create: { username: "admin", passwordHash: `scrypt$${adminSalt}$${adminHash}`, role: "ADMIN", isActive: true, displayName: "Nguyễn Văn An", email: "admin@goctro.local" },
+    update: { passwordHash: seedPasswordHash(adminPassword), role: "ADMIN", isActive: true, displayName: "Nguyễn Văn An" },
+    create: { username: "admin", passwordHash: seedPasswordHash(adminPassword), role: "ADMIN", isActive: true, displayName: "Nguyễn Văn An", email: "admin@goctro.local" },
   });
 
-  console.log("Development sample data seeded. Admin login: admin / configured DEV_ADMIN_PASSWORD (default: 123456)");
+  const landlordPassword = process.env.DEV_LANDLORD_PASSWORD ?? "123456";
+  const landlord = await prisma.userAccount.upsert({
+    where: { username: "landlord" },
+    update: { passwordHash: seedPasswordHash(landlordPassword), role: "LANDLORD", isActive: true, displayName: "Chủ trọ mẫu" },
+    create: { username: "landlord", passwordHash: seedPasswordHash(landlordPassword), role: "LANDLORD", isActive: true, displayName: "Chủ trọ mẫu", email: "landlord@goctro.local" },
+  });
+  await prisma.property.updateMany({ where: { code: "KV01" }, data: { ownerId: landlord.id } });
+
+  const sampleTenant = await prisma.tenant.findUniqueOrThrow({ where: { nationalId: tenants[0].nationalId } });
+  const tenantPassword = process.env.DEV_TENANT_PASSWORD ?? "123456";
+  await prisma.userAccount.upsert({
+    where: { username: "tenant" },
+    update: { passwordHash: seedPasswordHash(tenantPassword), role: "TENANT", isActive: true, displayName: sampleTenant.fullName, tenantId: sampleTenant.id },
+    create: { username: "tenant", passwordHash: seedPasswordHash(tenantPassword), role: "TENANT", isActive: true, displayName: sampleTenant.fullName, email: "vana@gmail.com", tenantId: sampleTenant.id },
+  });
+
+  console.log("Development demo accounts: admin, landlord, tenant / configured DEV_*_PASSWORD (default: 123456)");
 }
 
 main()

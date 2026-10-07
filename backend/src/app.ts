@@ -1,7 +1,7 @@
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";
-import { createHmac, scryptSync, timingSafeEqual } from "node:crypto";
+import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { prisma } from "./lib/prisma.js";
 
@@ -63,17 +63,105 @@ function verifyPassword(password: string, stored: string) {
   return expected.length === actual.length && timingSafeEqual(expected, actual);
 }
 
-function requireAdmin(request: express.Request, response: express.Response, next: express.NextFunction) {
+async function activeSession(request: express.Request) {
   const session = readSession(request);
-  if (!session) {
-    response.status(401).json({ error: "Vui lòng đăng nhập để tiếp tục.", code: "UNAUTHENTICATED" });
-    return;
-  }
-  if (session.role !== "ADMIN") {
-    response.status(403).json({ error: "Tài khoản không có quyền quản trị.", code: "FORBIDDEN" });
-    return;
-  }
-  next();
+  if (!session) return null;
+  const account = await prisma.userAccount.findUnique({ where: { id: session.sub }, select: { role: true, isActive: true } });
+  return account?.isActive && account.role === session.role ? session : null;
+}
+
+function requireAdmin(request: express.Request, response: express.Response, next: express.NextFunction) {
+  void activeSession(request).then((session) => {
+    if (!session) { response.status(401).json({ error: "Vui lòng đăng nhập để tiếp tục.", code: "UNAUTHENTICATED" }); return; }
+    if (session.role !== "ADMIN" && session.role !== "LANDLORD") { response.status(403).json({ error: "Tài khoản không có quyền quản lý.", code: "FORBIDDEN" }); return; }
+    next();
+  }).catch(next);
+}
+
+function currentSession(request: express.Request) { return readSession(request); }
+
+async function canManageProperty(request: express.Request, propertyId: string) {
+  const session = currentSession(request);
+  if (session?.role === "ADMIN") return true;
+  if (session?.role !== "LANDLORD") return false;
+  return Boolean(await prisma.property.findFirst({ where: { id: propertyId, ownerId: session.sub }, select: { id: true } }));
+}
+
+async function canManageTenant(request: express.Request, tenantId: string) {
+  const session = currentSession(request);
+  if (session?.role === "ADMIN") return true;
+  if (session?.role !== "LANDLORD") return false;
+  return Boolean(await prisma.tenant.findFirst({ where: { id: tenantId, OR: [{ createdById: session.sub }, { contracts: { some: { room: { property: { ownerId: session.sub } } } } }] }, select: { id: true } }));
+}
+
+async function canManageRoom(request: express.Request, roomId: string) {
+  const session = currentSession(request);
+  if (session?.role === "ADMIN") return true;
+  if (session?.role !== "LANDLORD") return false;
+  return Boolean(await prisma.room.findFirst({ where: { id: roomId, property: { ownerId: session.sub } }, select: { id: true } }));
+}
+
+async function canManageContract(request: express.Request, contractId: string) {
+  const session = currentSession(request);
+  if (session?.role === "ADMIN") return true;
+  if (session?.role !== "LANDLORD") return false;
+  return Boolean(await prisma.leaseContract.findFirst({ where: { id: contractId, room: { property: { ownerId: session.sub } } }, select: { id: true } }));
+}
+
+async function canManageInvoice(request: express.Request, invoiceId: string) {
+  const session = currentSession(request);
+  if (session?.role === "ADMIN") return true;
+  if (session?.role !== "LANDLORD") return false;
+  return Boolean(await prisma.invoice.findFirst({ where: { id: invoiceId, contract: { room: { property: { ownerId: session.sub } } } }, select: { id: true } }));
+}
+
+async function canManageAmenity(request: express.Request, amenityId: string) {
+  const session = currentSession(request);
+  if (session?.role === "ADMIN") return true;
+  if (session?.role !== "LANDLORD") return false;
+  return Boolean(await prisma.amenity.findFirst({ where: { id: amenityId, property: { ownerId: session.sub } }, select: { id: true } }));
+}
+
+async function canManageAmenityBooking(request: express.Request, bookingId: string) {
+  const session = currentSession(request);
+  if (session?.role === "ADMIN") return true;
+  if (session?.role !== "LANDLORD") return false;
+  return Boolean(await prisma.amenityBooking.findFirst({ where: { id: bookingId, amenity: { property: { ownerId: session.sub } } }, select: { id: true } }));
+}
+
+async function canManageViewing(request: express.Request, viewingId: string) {
+  const session = currentSession(request);
+  if (session?.role === "ADMIN") return true;
+  if (session?.role !== "LANDLORD") return false;
+  return Boolean(await prisma.roomViewingRequest.findFirst({ where: { id: viewingId, room: { property: { ownerId: session.sub } } }, select: { id: true } }));
+}
+
+async function canManageMaintenance(request: express.Request, itemId: string) {
+  const session = currentSession(request);
+  if (session?.role === "ADMIN") return true;
+  if (session?.role !== "LANDLORD") return false;
+  return Boolean(await prisma.maintenanceRequest.findFirst({ where: { id: itemId, room: { property: { ownerId: session.sub } } }, select: { id: true } }));
+}
+
+function tenantOnly(request: express.Request, response: express.Response, next: express.NextFunction) {
+  void activeSession(request).then((session) => {
+    if (!session) { response.status(401).json({ error: "Vui lòng đăng nhập để tiếp tục." }); return; }
+    if (session.role !== "TENANT") { response.status(403).json({ error: "Chức năng này dành cho tài khoản khách thuê." }); return; }
+    next();
+  }).catch(next);
+}
+
+function platformAdminOnly(request: express.Request, response: express.Response, next: express.NextFunction) {
+  void activeSession(request).then((session) => {
+    if (!session) { response.status(401).json({ error: "Vui lòng đăng nhập để tiếp tục." }); return; }
+    if (session.role !== "ADMIN") { response.status(403).json({ error: "Chỉ admin hệ thống mới được quản lý tài khoản." }); return; }
+    next();
+  }).catch(next);
+}
+
+function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  return `scrypt$${salt}$${scryptSync(password, salt, 64).toString("hex")}`;
 }
 
 app.post("/api/auth/login", async (request, response, next) => {
@@ -98,13 +186,41 @@ app.post("/api/auth/login", async (request, response, next) => {
   } catch (error) { next(error); }
 });
 
-app.get("/api/auth/me", (request, response) => {
-  const session = readSession(request);
-  if (!session) {
-    response.status(401).json({ error: "Chưa đăng nhập." });
-    return;
-  }
-  response.json({ user: { id: session.sub, displayName: session.name, role: session.role } });
+app.get("/api/auth/me", async (request, response, next) => {
+  try {
+    const session = await activeSession(request);
+    if (!session) { response.status(401).json({ error: "Chưa đăng nhập." }); return; }
+    response.json({ user: { id: session.sub, displayName: session.name, role: session.role } });
+  } catch (error) { next(error); }
+});
+
+app.get("/api/tenant-portal/summary", tenantOnly, async (request, response, next) => {
+  try {
+    const session = currentSession(request)!;
+    const account = await prisma.userAccount.findUnique({ where: { id: session.sub }, include: { tenant: true } });
+    if (!account?.tenantId || !account.tenant) { response.status(403).json({ error: "Tài khoản chưa được liên kết với hồ sơ khách thuê." }); return; }
+    const tenant = account.tenant;
+    const [contracts, invoices, requests, bookings] = await Promise.all([
+      prisma.leaseContract.findMany({ where: { tenantId: tenant.id }, orderBy: { startDate: "desc" }, include: { room: { include: { property: { select: { name: true, address: true } } } } } }),
+      prisma.invoice.findMany({ where: { contract: { tenantId: tenant.id } }, orderBy: [{ billingYear: "desc" }, { billingMonth: "desc" }], take: 12, select: { id: true, invoiceNumber: true, billingMonth: true, billingYear: true, dueDate: true, totalVnd: true, status: true } }),
+      prisma.maintenanceRequest.findMany({ where: { tenantId: tenant.id }, orderBy: { createdAt: "desc" }, take: 10, select: { id: true, category: true, content: true, status: true, createdAt: true } }),
+      prisma.amenityBooking.findMany({ where: { tenantId: tenant.id }, orderBy: { useDate: "desc" }, take: 10, include: { amenity: { select: { name: true } } } }),
+    ]);
+    response.json({ data: { tenant: { fullName: tenant.fullName, phone: tenant.phone, email: tenant.email, registrationStatus: tenant.registrationStatus }, contracts, invoices, requests, bookings } });
+  } catch (error) { next(error); }
+});
+
+app.post("/api/tenant-portal/requests", tenantOnly, async (request, response, next) => {
+  try {
+    const session = currentSession(request)!;
+    const account = await prisma.userAccount.findUnique({ where: { id: session.sub }, select: { tenantId: true } });
+    if (!account?.tenantId) { response.status(403).json({ error: "Tài khoản chưa được liên kết với hồ sơ khách thuê." }); return; }
+    const body = request.body ?? {};
+    if (!String(body.category ?? "").trim() || !String(body.content ?? "").trim()) { response.status(400).json({ error: "Nhập loại yêu cầu và nội dung." }); return; }
+    const contract = await prisma.leaseContract.findFirst({ where: { tenantId: account.tenantId, status: "ACTIVE" }, select: { roomId: true } });
+    const data = await prisma.maintenanceRequest.create({ data: { tenantId: account.tenantId, roomId: contract?.roomId ?? null, source: "TENANT_PORTAL", category: String(body.category).trim(), content: String(body.content).trim(), priority: "MEDIUM" } });
+    response.status(201).json({ data });
+  } catch (error) { next(error); }
 });
 
 app.post("/api/auth/logout", (_request, response) => {
@@ -152,26 +268,78 @@ app.post("/api/public/viewing-requests", async (request, response, next) => {
   } catch (error) { next(error); }
 });
 
+app.get("/api/admin/accounts", platformAdminOnly, async (_request, response, next) => {
+  try {
+    const data = await prisma.userAccount.findMany({ orderBy: [{ role: "asc" }, { username: "asc" }], include: { tenant: { select: { fullName: true, nationalId: true } }, _count: { select: { ownedProperties: true } } } });
+    response.json({ data: data.map((account) => ({ id: account.id, username: account.username, displayName: account.displayName, email: account.email, phone: account.phone, role: account.role, isActive: account.isActive, tenantName: account.tenant?.fullName ?? null, tenantNationalId: account.tenant?.nationalId ?? null, propertyCount: account._count.ownedProperties })) });
+  } catch (error) { next(error); }
+});
+
+app.post("/api/admin/accounts", platformAdminOnly, async (request, response, next) => {
+  try {
+    const body = request.body ?? {};
+    const role = body.role;
+    const username = String(body.username ?? "").trim();
+    const password = String(body.password ?? "");
+    if (!username || password.length < 8 || !["LANDLORD", "TENANT"].includes(role)) { response.status(400).json({ error: "Nhập tên đăng nhập, mật khẩu ít nhất 8 ký tự và chọn vai trò chủ trọ hoặc khách thuê." }); return; }
+    const tenantId = role === "TENANT" ? String(body.tenantId ?? "") : "";
+    if (role === "TENANT") {
+      if (!tenantId) { response.status(400).json({ error: "Chọn hồ sơ khách thuê cần liên kết." }); return; }
+      if (await prisma.userAccount.findUnique({ where: { tenantId }, select: { id: true } })) { response.status(409).json({ error: "Khách thuê này đã có tài khoản." }); return; }
+    }
+    const account = await prisma.userAccount.create({ data: {
+      username, passwordHash: hashPassword(password), role,
+      displayName: String(body.displayName ?? "").trim() || null,
+      email: String(body.email ?? "").trim() || null, phone: String(body.phone ?? "").trim() || null,
+      ...(role === "TENANT" ? { tenantId } : {}),
+    }, select: { id: true, username: true, displayName: true, role: true, isActive: true, tenantId: true } });
+    response.status(201).json({ data: account });
+  } catch (error) { next(error); }
+});
+
+app.patch("/api/admin/accounts/:id", platformAdminOnly, async (request, response, next) => {
+  try {
+    const body = request.body ?? {};
+    const data: Prisma.UserAccountUpdateInput = {};
+    if (typeof body.isActive === "boolean") data.isActive = body.isActive;
+    if (typeof body.password === "string" && body.password.length >= 8) data.passwordHash = hashPassword(body.password);
+    else if (body.password) { response.status(400).json({ error: "Mật khẩu mới cần ít nhất 8 ký tự." }); return; }
+    if ("displayName" in body) data.displayName = String(body.displayName ?? "").trim() || null;
+    response.json({ data: await prisma.userAccount.update({ where: { id: String(request.params.id) }, data, select: { id: true, username: true, displayName: true, role: true, isActive: true } }) });
+  } catch (error) { next(error); }
+});
+
 app.use(["/api/tenants", "/api/properties", "/api/rooms", "/api/contracts", "/api/invoices", "/api/amenities", "/api/amenity-bookings", "/api/maintenance-requests", "/api/viewing-requests", "/api/options"], requireAdmin);
+
+app.get("/api/options/landlords", async (request, response, next) => {
+  try {
+    const session = currentSession(request)!;
+    const data = await prisma.userAccount.findMany({ where: { role: "LANDLORD", isActive: true, ...(session.role === "LANDLORD" ? { id: session.sub } : {}) }, orderBy: { displayName: "asc" }, select: { id: true, displayName: true, username: true } });
+    response.json({ data: data.map((account) => ({ value: account.id, label: account.displayName ?? account.username })) });
+  } catch (error) { next(error); }
+});
 
 app.get("/api/options/tenants", async (_request, response, next) => {
   try {
-    const data = await prisma.tenant.findMany({ orderBy: { fullName: "asc" }, select: { id: true, fullName: true, nationalId: true } });
+    const session = currentSession(_request)!;
+    const data = await prisma.tenant.findMany({ where: session.role === "LANDLORD" ? { OR: [{ createdById: session.sub }, { contracts: { some: { room: { property: { ownerId: session.sub } } } } }] } : {}, orderBy: { fullName: "asc" }, select: { id: true, fullName: true, nationalId: true } });
     response.json({ data: data.map((tenant) => ({ value: tenant.id, label: `${tenant.fullName} · ${tenant.nationalId}` })) });
   } catch (error) { next(error); }
 });
 
 app.get("/api/options/rooms", async (_request, response, next) => {
   try {
-    const data = await prisma.room.findMany({ where: { condition: { not: "UNAVAILABLE" } }, orderBy: [{ property: { name: "asc" } }, { roomNumber: "asc" }], include: { property: { select: { name: true } } } });
+    const session = currentSession(_request)!;
+    const data = await prisma.room.findMany({ where: { condition: { not: "UNAVAILABLE" }, ...(session.role === "LANDLORD" ? { property: { ownerId: session.sub } } : {}) }, orderBy: [{ property: { name: "asc" } }, { roomNumber: "asc" }], include: { property: { select: { name: true } } } });
     response.json({ data: data.map((room) => ({ value: room.id, label: `${room.property.name} · ${room.roomNumber}` })) });
   } catch (error) { next(error); }
 });
 
 app.get("/api/options/available-rooms", async (_request, response, next) => {
   try {
+    const session = currentSession(_request)!;
     const data = await prisma.room.findMany({
-      where: { condition: "READY", contracts: { none: { status: { in: ["PENDING_SIGNATURE", "ACTIVE"] } } } },
+      where: { condition: "READY", contracts: { none: { status: { in: ["PENDING_SIGNATURE", "ACTIVE"] } } }, ...(session.role === "LANDLORD" ? { property: { ownerId: session.sub } } : {}) },
       orderBy: [{ property: { name: "asc" } }, { roomNumber: "asc" }],
       include: { property: { select: { name: true } } },
     });
@@ -181,15 +349,17 @@ app.get("/api/options/available-rooms", async (_request, response, next) => {
 
 app.get("/api/options/properties", async (_request, response, next) => {
   try {
-    const data = await prisma.property.findMany({ where: { status: "ACTIVE" }, orderBy: { name: "asc" }, select: { id: true, name: true, code: true } });
+    const session = currentSession(_request)!;
+    const data = await prisma.property.findMany({ where: { status: "ACTIVE", ...(session.role === "LANDLORD" ? { ownerId: session.sub } : {}) }, orderBy: { name: "asc" }, select: { id: true, name: true, code: true } });
     response.json({ data: data.map((property) => ({ value: property.id, label: `${property.name} · ${property.code}` })) });
   } catch (error) { next(error); }
 });
 
 app.get("/api/options/contracts", async (_request, response, next) => {
   try {
+    const session = currentSession(_request)!;
     const data = await prisma.leaseContract.findMany({
-      where: { status: "ACTIVE" }, orderBy: { contractNumber: "asc" },
+      where: { status: "ACTIVE", ...(session.role === "LANDLORD" ? { room: { property: { ownerId: session.sub } } } : {}) }, orderBy: { contractNumber: "asc" },
       include: { tenant: { select: { fullName: true } }, room: { include: { property: { select: { name: true } } } } },
     });
     response.json({ data: data.map((contract) => ({ value: contract.id, label: `${contract.contractNumber} · ${contract.tenant.fullName} · ${contract.room.property.name}/${contract.room.roomNumber}` })) });
@@ -198,13 +368,15 @@ app.get("/api/options/contracts", async (_request, response, next) => {
 
 app.get("/api/options/amenities", async (_request, response, next) => {
   try {
-    const data = await prisma.amenity.findMany({ where: { isActive: true }, orderBy: { name: "asc" }, select: { id: true, name: true, location: true } });
+    const session = currentSession(_request)!;
+    const data = await prisma.amenity.findMany({ where: { isActive: true, ...(session.role === "LANDLORD" ? { property: { ownerId: session.sub } } : {}) }, orderBy: { name: "asc" }, select: { id: true, name: true, location: true } });
     response.json({ data: data.map((amenity) => ({ value: amenity.id, label: `${amenity.name} · ${amenity.location}` })) });
   } catch (error) { next(error); }
 });
 
 app.get("/api/properties/:id/rooms", async (request, response, next) => {
   try {
+    if (!(await canManageProperty(request, request.params.id))) { response.status(404).json({ error: "Không tìm thấy khu trọ." }); return; }
     const data = await prisma.room.findMany({
       where: { propertyId: request.params.id },
       orderBy: [{ floor: "asc" }, { roomNumber: "asc" }],
@@ -221,11 +393,17 @@ app.post("/api/properties", async (request, response, next) => {
       response.status(400).json({ error: "Nhập mã, tên, tỉnh/thành, tiền tố phòng, địa chỉ và giá thuê hợp lệ." }); return;
     }
     const status = ["ACTIVE", "PAUSED", "UNDER_CONSTRUCTION"].includes(body.status) ? body.status : "ACTIVE";
+    const session = currentSession(request)!;
+    if (session.role === "ADMIN" && body.ownerId) {
+      const owner = await prisma.userAccount.findFirst({ where: { id: String(body.ownerId), role: "LANDLORD", isActive: true }, select: { id: true } });
+      if (!owner) { response.status(400).json({ error: "Chọn tài khoản chủ trọ đang hoạt động." }); return; }
+    }
     const data = await prisma.property.create({ data: {
       code: String(body.code).trim(), name: String(body.name).trim(), province: String(body.province).trim(), roomPrefix: String(body.roomPrefix).trim(), address: String(body.address).trim(),
       managerName: body.managerName ? String(body.managerName).trim() : null, defaultRentVnd: Number(body.defaultRentVnd),
       defaultAreaM2: body.defaultAreaM2 === null || body.defaultAreaM2 === "" ? null : Number(body.defaultAreaM2), status,
       note: body.note ? String(body.note) : null,
+      ownerId: session.role === "LANDLORD" ? session.sub : (body.ownerId ? String(body.ownerId) : null),
     } });
     response.status(201).json({ data });
   } catch (error) { next(error); }
@@ -234,24 +412,33 @@ app.post("/api/properties", async (request, response, next) => {
 app.patch("/api/properties/:id", async (request, response, next) => {
   try {
     const body = request.body ?? {};
+    if (!(await canManageProperty(request, request.params.id))) { response.status(404).json({ error: "Không tìm thấy khu trọ." }); return; }
     const data: Prisma.PropertyUpdateInput = {};
     for (const key of ["code", "name", "province", "roomPrefix", "address"] as const) if (key in body) data[key] = String(body[key]).trim();
     for (const key of ["managerName", "note"] as const) if (key in body) data[key] = body[key] ? String(body[key]).trim() : null;
     if ("defaultRentVnd" in body) data.defaultRentVnd = Number(body.defaultRentVnd);
     if ("defaultAreaM2" in body) data.defaultAreaM2 = body.defaultAreaM2 === null ? null : Number(body.defaultAreaM2);
     if (["ACTIVE", "PAUSED", "UNDER_CONSTRUCTION"].includes(body.status)) data.status = body.status;
+    if ("ownerId" in body && currentSession(request)?.role === "ADMIN") {
+      if (body.ownerId) {
+        const owner = await prisma.userAccount.findFirst({ where: { id: String(body.ownerId), role: "LANDLORD", isActive: true }, select: { id: true } });
+        if (!owner) { response.status(400).json({ error: "Chọn tài khoản chủ trọ đang hoạt động." }); return; }
+        data.owner = { connect: { id: owner.id } };
+      } else data.owner = { disconnect: true };
+    }
     response.json({ data: await prisma.property.update({ where: { id: request.params.id }, data }) });
   } catch (error) { next(error); }
 });
 
 app.delete("/api/properties/:id", async (request, response, next) => {
-  try { await prisma.property.delete({ where: { id: request.params.id } }); response.status(204).end(); }
+  try { if (!(await canManageProperty(request, request.params.id))) { response.status(404).json({ error: "Không tìm thấy khu trọ." }); return; } await prisma.property.delete({ where: { id: request.params.id } }); response.status(204).end(); }
   catch (error) { next(error); }
 });
 
 app.post("/api/properties/:id/rooms", async (request, response, next) => {
   try {
     const body = request.body ?? {};
+    if (!(await canManageProperty(request, request.params.id))) { response.status(404).json({ error: "Không tìm thấy khu trọ." }); return; }
     if (!body.roomNumber || !Number.isInteger(Number(body.floor)) || Number(body.floor) < 1) { response.status(400).json({ error: "Nhập số phòng và tầng hợp lệ." }); return; }
     const data = await prisma.room.create({ data: {
       propertyId: request.params.id, roomNumber: String(body.roomNumber).trim(), floor: Number(body.floor),
@@ -265,6 +452,7 @@ app.post("/api/properties/:id/rooms", async (request, response, next) => {
 app.patch("/api/rooms/:id", async (request, response, next) => {
   try {
     const body = request.body ?? {};
+    if (!(await canManageRoom(request, request.params.id))) { response.status(404).json({ error: "Không tìm thấy phòng." }); return; }
     const data: Prisma.RoomUpdateInput = {};
     if ("roomNumber" in body) data.roomNumber = String(body.roomNumber).trim();
     if ("floor" in body) data.floor = Number(body.floor);
@@ -276,7 +464,7 @@ app.patch("/api/rooms/:id", async (request, response, next) => {
 });
 
 app.delete("/api/rooms/:id", async (request, response, next) => {
-  try { await prisma.room.delete({ where: { id: request.params.id } }); response.status(204).end(); }
+  try { if (!(await canManageRoom(request, request.params.id))) { response.status(404).json({ error: "Không tìm thấy phòng." }); return; } await prisma.room.delete({ where: { id: request.params.id } }); response.status(204).end(); }
   catch (error) { next(error); }
 });
 
@@ -284,10 +472,12 @@ app.post("/api/tenants", async (request, response, next) => {
   try {
     const body = request.body ?? {};
     if (!/^\d{12}$/.test(String(body.nationalId ?? "")) || !String(body.fullName ?? "").trim()) { response.status(400).json({ error: "CCCD phải có 12 chữ số và cần nhập họ tên." }); return; }
+    const session = currentSession(request)!;
     const data = await prisma.tenant.create({ data: {
       nationalId: String(body.nationalId), fullName: String(body.fullName).trim(), phone: body.phone ? String(body.phone).trim() : null,
       email: body.email ? String(body.email).trim() : null,
       status: body.status === "FORMER" ? "FORMER" : "RESIDENT", registrationStatus: body.registrationStatus === "REGISTERED" ? "REGISTERED" : "UNREGISTERED",
+      createdById: session.role === "LANDLORD" ? session.sub : null,
     } });
     response.status(201).json({ data });
   } catch (error) { next(error); }
@@ -296,6 +486,7 @@ app.post("/api/tenants", async (request, response, next) => {
 app.patch("/api/tenants/:id", async (request, response, next) => {
   try {
     const body = request.body ?? {};
+    if (!(await canManageTenant(request, request.params.id))) { response.status(404).json({ error: "Không tìm thấy khách thuê." }); return; }
     if (body.nationalId !== undefined && !/^\d{12}$/.test(String(body.nationalId))) { response.status(400).json({ error: "CCCD phải có 12 chữ số." }); return; }
     const data: Prisma.TenantUpdateInput = {};
     if ("nationalId" in body) data.nationalId = String(body.nationalId);
@@ -309,7 +500,7 @@ app.patch("/api/tenants/:id", async (request, response, next) => {
 });
 
 app.delete("/api/tenants/:id", async (request, response, next) => {
-  try { await prisma.tenant.delete({ where: { id: request.params.id } }); response.status(204).end(); }
+  try { if (!(await canManageTenant(request, request.params.id))) { response.status(404).json({ error: "Không tìm thấy khách thuê." }); return; } await prisma.tenant.delete({ where: { id: request.params.id } }); response.status(204).end(); }
   catch (error) { next(error); }
 });
 
@@ -323,6 +514,8 @@ app.post("/api/contracts", async (request, response, next) => {
     }
     const room = await prisma.room.findUnique({ where: { id: String(body.roomId) }, include: { property: { select: { status: true } } } });
     if (!room || room.condition !== "READY" || room.property.status !== "ACTIVE") { response.status(409).json({ error: "Chỉ có thể lập hợp đồng cho phòng sẵn sàng trong khu vực đang hoạt động." }); return; }
+    if (!(await canManageProperty(request, room.propertyId))) { response.status(404).json({ error: "Không tìm thấy phòng trong khu trọ của tài khoản." }); return; }
+    if (!(await canManageTenant(request, String(body.tenantId)))) { response.status(404).json({ error: "Không tìm thấy khách thuê trong phạm vi quản lý." }); return; }
     const occupied = await prisma.leaseContract.findFirst({ where: { roomId: room.id, status: { in: ["ACTIVE", "PENDING_SIGNATURE"] } }, select: { id: true } });
     if (occupied) { response.status(409).json({ error: "Phòng này đã có hợp đồng đang hiệu lực hoặc chờ ký." }); return; }
     const data = await prisma.leaseContract.create({ data: {
@@ -338,9 +531,13 @@ app.post("/api/contracts", async (request, response, next) => {
 app.patch("/api/contracts/:id", async (request, response, next) => {
   try {
     const body = request.body ?? {};
+    if (!(await canManageContract(request, request.params.id))) { response.status(404).json({ error: "Không tìm thấy hợp đồng." }); return; }
     const data: Prisma.LeaseContractUpdateInput = {};
     if ("status" in body && ["ACTIVE", "PENDING_SIGNATURE", "CANCELLED", "TERMINATED"].includes(body.status)) data.status = body.status;
-    if ("tenantId" in body && body.tenantId) data.tenant = { connect: { id: String(body.tenantId) } };
+    if ("tenantId" in body && body.tenantId) {
+      if (!(await canManageTenant(request, String(body.tenantId)))) { response.status(404).json({ error: "Không tìm thấy khách thuê trong phạm vi quản lý." }); return; }
+      data.tenant = { connect: { id: String(body.tenantId) } };
+    }
     if ("roomId" in body && body.roomId) {
       const current = await prisma.leaseContract.findUnique({ where: { id: request.params.id }, select: { roomId: true } });
       if (!current) { response.status(404).json({ error: "Không tìm thấy hợp đồng." }); return; }
@@ -348,6 +545,7 @@ app.patch("/api/contracts/:id", async (request, response, next) => {
         data.room = { connect: { id: String(body.roomId) } };
       } else {
       const room = await prisma.room.findUnique({ where: { id: String(body.roomId) }, include: { property: { select: { status: true } } } });
+      if (!room || !(await canManageProperty(request, room.propertyId))) { response.status(404).json({ error: "Không tìm thấy phòng trong phạm vi quản lý." }); return; }
       if (!room || room.condition !== "READY" || room.property.status !== "ACTIVE") { response.status(409).json({ error: "Chỉ có thể chuyển hợp đồng sang phòng sẵn sàng trong khu vực đang hoạt động." }); return; }
       const occupied = await prisma.leaseContract.findFirst({ where: { roomId: room.id, id: { not: request.params.id }, status: { in: ["ACTIVE", "PENDING_SIGNATURE"] } }, select: { id: true } });
       if (occupied) { response.status(409).json({ error: "Phòng này đã có hợp đồng đang hiệu lực hoặc chờ ký." }); return; }
@@ -373,6 +571,7 @@ app.patch("/api/contracts/:id", async (request, response, next) => {
 
 app.delete("/api/contracts/:id", async (request, response, next) => {
   try {
+    if (!(await canManageContract(request, request.params.id))) { response.status(404).json({ error: "Không tìm thấy hợp đồng." }); return; }
     const contract = await prisma.leaseContract.findUnique({ where: { id: request.params.id }, include: { invoices: true } });
     if (!contract) { response.status(404).json({ error: "Không tìm thấy hợp đồng." }); return; }
     if (contract.status === "ACTIVE" || contract.invoices.length) { response.status(409).json({ error: "Không thể xóa hợp đồng đang hiệu lực hoặc đã có hóa đơn." }); return; }
@@ -385,6 +584,7 @@ app.post("/api/invoices", async (request, response, next) => {
     const body = request.body ?? {};
     const month = Number(body.billingMonth), year = Number(body.billingYear), total = Number(body.totalVnd), dueDate = new Date(body.dueDate);
     if (!body.invoiceNumber || !body.contractId || month < 1 || month > 12 || !Number.isInteger(year) || total < 0 || !Number.isFinite(dueDate.valueOf())) { response.status(400).json({ error: "Thông tin hóa đơn chưa hợp lệ." }); return; }
+    if (!(await canManageContract(request, String(body.contractId)))) { response.status(404).json({ error: "Không tìm thấy hợp đồng trong phạm vi quản lý." }); return; }
     const status = body.status === "VOID" ? "VOID" : body.status === "PAID" ? "PAID" : "UNPAID";
     const data = await prisma.invoice.create({ data: {
       invoiceNumber: String(body.invoiceNumber).trim(), contractId: String(body.contractId), billingYear: year, billingMonth: month, dueDate, totalVnd: total, status,
@@ -397,6 +597,7 @@ app.post("/api/invoices", async (request, response, next) => {
 app.patch("/api/invoices/:id", async (request, response, next) => {
   try {
     const body = request.body ?? {};
+    if (!(await canManageInvoice(request, request.params.id))) { response.status(404).json({ error: "Không tìm thấy hóa đơn." }); return; }
     const invoice = await prisma.invoice.findUnique({ where: { id: request.params.id }, include: { payments: true } });
     if (!invoice) { response.status(404).json({ error: "Không tìm thấy hóa đơn." }); return; }
     if (body.status === "PAID" && invoice.status !== "PAID") {
@@ -417,6 +618,7 @@ app.patch("/api/invoices/:id", async (request, response, next) => {
 
 app.delete("/api/invoices/:id", async (request, response, next) => {
   try {
+    if (!(await canManageInvoice(request, request.params.id))) { response.status(404).json({ error: "Không tìm thấy hóa đơn." }); return; }
     const invoice = await prisma.invoice.findUnique({ where: { id: request.params.id }, include: { payments: true } });
     if (!invoice) { response.status(404).json({ error: "Không tìm thấy hóa đơn." }); return; }
     if (invoice.status === "PAID" || invoice.payments.length) { response.status(409).json({ error: "Không thể xóa hóa đơn đã ghi nhận thanh toán." }); return; }
@@ -427,6 +629,8 @@ app.delete("/api/invoices/:id", async (request, response, next) => {
 app.post("/api/amenities", async (request, response, next) => {
   try {
     const body = request.body ?? {};
+    const session = currentSession(request)!;
+    if (session.role === "LANDLORD" && (!body.propertyId || !(await canManageProperty(request, String(body.propertyId))))) { response.status(404).json({ error: "Chủ trọ cần chọn khu trọ thuộc tài khoản của mình." }); return; }
     if (!body.code || !body.name || !body.location || !body.priceUnit) { response.status(400).json({ error: "Nhập mã, tên, vị trí và đơn vị tính tiện ích." }); return; }
     const data = await prisma.amenity.create({ data: {
       code: String(body.code).trim(), name: String(body.name).trim(), location: String(body.location).trim(), priceUnit: String(body.priceUnit).trim(),
@@ -440,6 +644,8 @@ app.post("/api/amenities", async (request, response, next) => {
 app.patch("/api/amenities/:id", async (request, response, next) => {
   try {
     const body = request.body ?? {};
+    if (!(await canManageAmenity(request, request.params.id))) { response.status(404).json({ error: "Không tìm thấy tiện ích." }); return; }
+    if (body.propertyId && !(await canManageProperty(request, String(body.propertyId)))) { response.status(404).json({ error: "Không tìm thấy khu trọ thuộc phạm vi quản lý." }); return; }
     const data: Prisma.AmenityUpdateInput = {};
     for (const key of ["code", "name", "location", "priceUnit", "opensAt", "closesAt", "instructions"] as const) if (key in body) data[key] = body[key] || null;
     if ("propertyId" in body) data.property = body.propertyId ? { connect: { id: String(body.propertyId) } } : { disconnect: true };
@@ -451,13 +657,15 @@ app.patch("/api/amenities/:id", async (request, response, next) => {
 });
 
 app.delete("/api/amenities/:id", async (request, response, next) => {
-  try { await prisma.amenity.delete({ where: { id: request.params.id } }); response.status(204).end(); }
+  try { if (!(await canManageAmenity(request, request.params.id))) { response.status(404).json({ error: "Không tìm thấy tiện ích." }); return; } await prisma.amenity.delete({ where: { id: request.params.id } }); response.status(204).end(); }
   catch (error) { next(error); }
 });
 
 app.get("/api/amenity-bookings", async (_request, response, next) => {
   try {
+    const session = currentSession(_request)!;
     const data = await prisma.amenityBooking.findMany({
+      where: session.role === "LANDLORD" ? { amenity: { property: { ownerId: session.sub } } } : {},
       orderBy: [{ useDate: "desc" }, { createdAt: "desc" }],
       include: { amenity: { select: { name: true } }, tenant: { select: { fullName: true } }, room: { include: { property: { select: { name: true } } } } },
     });
@@ -472,6 +680,8 @@ app.get("/api/amenity-bookings", async (_request, response, next) => {
 app.post("/api/amenity-bookings", async (request, response, next) => {
   try {
     const body = request.body ?? {};
+    if (!(await canManageAmenity(request, String(body.amenityId ?? ""))) || !(await canManageTenant(request, String(body.tenantId ?? "")))) { response.status(404).json({ error: "Tiện ích hoặc khách thuê không thuộc phạm vi quản lý." }); return; }
+    if (body.roomId && !(await canManageRoom(request, String(body.roomId)))) { response.status(404).json({ error: "Không tìm thấy phòng trong phạm vi quản lý." }); return; }
     const useDate = new Date(body.useDate);
     if (!body.amenityId || !body.tenantId || !body.timeSlot || !Number.isFinite(useDate.valueOf())) { response.status(400).json({ error: "Chọn tiện ích, khách thuê, ngày và khung giờ." }); return; }
     const data = await prisma.amenityBooking.create({ data: {
@@ -486,6 +696,10 @@ app.post("/api/amenity-bookings", async (request, response, next) => {
 app.patch("/api/amenity-bookings/:id", async (request, response, next) => {
   try {
     const body = request.body ?? {};
+    if (!(await canManageAmenityBooking(request, request.params.id))) { response.status(404).json({ error: "Không tìm thấy lượt đăng ký." }); return; }
+    if (body.amenityId && !(await canManageAmenity(request, String(body.amenityId)))) { response.status(404).json({ error: "Không tìm thấy tiện ích trong phạm vi quản lý." }); return; }
+    if (body.tenantId && !(await canManageTenant(request, String(body.tenantId)))) { response.status(404).json({ error: "Không tìm thấy khách thuê trong phạm vi quản lý." }); return; }
+    if (body.roomId && !(await canManageRoom(request, String(body.roomId)))) { response.status(404).json({ error: "Không tìm thấy phòng trong phạm vi quản lý." }); return; }
     const data: Prisma.AmenityBookingUpdateInput = {};
     if (["PENDING", "APPROVED", "USED", "CANCELLED", "REJECTED"].includes(body.status)) data.status = body.status;
     if ("useDate" in body) data.useDate = new Date(body.useDate);
@@ -499,13 +713,15 @@ app.patch("/api/amenity-bookings/:id", async (request, response, next) => {
 });
 
 app.delete("/api/amenity-bookings/:id", async (request, response, next) => {
-  try { await prisma.amenityBooking.delete({ where: { id: request.params.id } }); response.status(204).end(); }
+  try { if (!(await canManageAmenityBooking(request, request.params.id))) { response.status(404).json({ error: "Không tìm thấy lượt đăng ký." }); return; } await prisma.amenityBooking.delete({ where: { id: request.params.id } }); response.status(204).end(); }
   catch (error) { next(error); }
 });
 
 app.get("/api/viewing-requests", async (_request, response, next) => {
   try {
+    const session = currentSession(_request)!;
     const data = await prisma.roomViewingRequest.findMany({
+      where: session.role === "LANDLORD" ? { room: { property: { ownerId: session.sub } } } : {},
       orderBy: [{ createdAt: "desc" }],
       include: { room: { include: { property: { select: { name: true } } } } },
     });
@@ -521,19 +737,22 @@ app.get("/api/viewing-requests", async (_request, response, next) => {
 app.patch("/api/viewing-requests/:id", async (request, response, next) => {
   try {
     const body = request.body ?? {};
+    if (!(await canManageViewing(request, request.params.id))) { response.status(404).json({ error: "Không tìm thấy lịch xem phòng." }); return; }
     if (!["PENDING", "CONTACTED", "CONFIRMED", "COMPLETED", "CANCELLED"].includes(body.status)) { response.status(400).json({ error: "Trạng thái lịch xem không hợp lệ." }); return; }
     response.json({ data: await prisma.roomViewingRequest.update({ where: { id: request.params.id }, data: { status: body.status } }) });
   } catch (error) { next(error); }
 });
 
 app.delete("/api/viewing-requests/:id", async (request, response, next) => {
-  try { await prisma.roomViewingRequest.delete({ where: { id: request.params.id } }); response.status(204).end(); }
+  try { if (!(await canManageViewing(request, request.params.id))) { response.status(404).json({ error: "Không tìm thấy lịch xem phòng." }); return; } await prisma.roomViewingRequest.delete({ where: { id: request.params.id } }); response.status(204).end(); }
   catch (error) { next(error); }
 });
 
 app.post("/api/maintenance-requests", async (request, response, next) => {
   try {
     const body = request.body ?? {};
+    if (body.roomId && !(await canManageRoom(request, String(body.roomId)))) { response.status(404).json({ error: "Không tìm thấy phòng trong phạm vi quản lý." }); return; }
+    if (body.tenantId && !(await canManageTenant(request, String(body.tenantId)))) { response.status(404).json({ error: "Không tìm thấy khách thuê trong phạm vi quản lý." }); return; }
     if (!body.category || !body.content) { response.status(400).json({ error: "Nhập loại phản ánh và nội dung." }); return; }
     const data = await prisma.maintenanceRequest.create({ data: {
       category: String(body.category).trim(), content: String(body.content).trim(),
@@ -548,6 +767,9 @@ app.post("/api/maintenance-requests", async (request, response, next) => {
 app.patch("/api/maintenance-requests/:id", async (request, response, next) => {
   try {
     const body = request.body ?? {};
+    if (!(await canManageMaintenance(request, request.params.id))) { response.status(404).json({ error: "Không tìm thấy yêu cầu hỗ trợ." }); return; }
+    if (body.tenantId && !(await canManageTenant(request, String(body.tenantId)))) { response.status(404).json({ error: "Không tìm thấy khách thuê trong phạm vi quản lý." }); return; }
+    if (body.roomId && !(await canManageRoom(request, String(body.roomId)))) { response.status(404).json({ error: "Không tìm thấy phòng trong phạm vi quản lý." }); return; }
     const data: Prisma.MaintenanceRequestUpdateInput = {};
     if ("category" in body) data.category = String(body.category).trim();
     if ("content" in body) data.content = String(body.content).trim();
@@ -560,22 +782,24 @@ app.patch("/api/maintenance-requests/:id", async (request, response, next) => {
 });
 
 app.delete("/api/maintenance-requests/:id", async (request, response, next) => {
-  try { await prisma.maintenanceRequest.delete({ where: { id: request.params.id } }); response.status(204).end(); }
+  try { if (!(await canManageMaintenance(request, request.params.id))) { response.status(404).json({ error: "Không tìm thấy yêu cầu hỗ trợ." }); return; } await prisma.maintenanceRequest.delete({ where: { id: request.params.id } }); response.status(204).end(); }
   catch (error) { next(error); }
 });
 
 app.get("/api/tenants", async (request, response, next) => {
   try {
+    const session = currentSession(request)!;
+    const conditions: Prisma.TenantWhereInput[] = [];
+    if (session.role === "LANDLORD") conditions.push({ OR: [{ createdById: session.sub }, { contracts: { some: { room: { property: { ownerId: session.sub } } } } }] });
     const page = Math.max(1, Number(request.query.page) || 1);
     const pageSize = Math.min(100, Math.max(1, Number(request.query.pageSize) || 20));
     const search = String(request.query.search ?? "").trim();
-    const where = search ? {
-      OR: [
+    if (search) conditions.push({ OR: [
         { fullName: { contains: search, mode: "insensitive" as const } },
         { nationalId: { contains: search } },
         { phone: { contains: search } },
-      ],
-    } : {};
+      ] });
+    const where: Prisma.TenantWhereInput = conditions.length ? { AND: conditions } : {};
     const [data, total] = await prisma.$transaction([
       prisma.tenant.findMany({
         where,
@@ -584,7 +808,7 @@ app.get("/api/tenants", async (request, response, next) => {
         take: pageSize,
         include: {
           contracts: {
-            where: { status: { in: ["PENDING_SIGNATURE", "ACTIVE"] } },
+            where: { status: { in: ["PENDING_SIGNATURE", "ACTIVE"] }, ...(session.role === "LANDLORD" ? { room: { property: { ownerId: session.sub } } } : {}) },
             take: 1,
             include: {
               room: { include: { property: { select: { id: true, name: true, province: true } } } },
@@ -613,16 +837,19 @@ app.get("/api/tenants", async (request, response, next) => {
 
 app.get("/api/tenants/:id", async (request, response, next) => {
   try {
+    if (!(await canManageTenant(request, request.params.id))) { response.status(404).json({ error: "Không tìm thấy khách thuê." }); return; }
+    const session = currentSession(request)!;
     const data = await prisma.tenant.findUnique({
       where: { id: request.params.id },
       include: {
         vehicles: true,
         contracts: {
+          where: session.role === "LANDLORD" ? { room: { property: { ownerId: session.sub } } } : {},
           orderBy: { startDate: "desc" },
           include: { room: { include: { property: { select: { name: true, address: true, province: true } } } }, invoices: { orderBy: [{ billingYear: "desc" }, { billingMonth: "desc" }], take: 6 } },
         },
-        amenityBookings: { orderBy: { useDate: "desc" }, take: 10, include: { amenity: { select: { name: true } } } },
-        maintenanceRequests: { orderBy: { createdAt: "desc" }, take: 10, select: { id: true, category: true, content: true, status: true, createdAt: true } },
+        amenityBookings: { where: session.role === "LANDLORD" ? { amenity: { property: { ownerId: session.sub } } } : {}, orderBy: { useDate: "desc" }, take: 10, include: { amenity: { select: { name: true } } } },
+        maintenanceRequests: { where: session.role === "LANDLORD" ? { room: { property: { ownerId: session.sub } } } : {}, orderBy: { createdAt: "desc" }, take: 10, select: { id: true, category: true, content: true, status: true, createdAt: true } },
         account: { select: { id: true, username: true, isActive: true, displayName: true } },
       },
     });
@@ -633,11 +860,13 @@ app.get("/api/tenants/:id", async (request, response, next) => {
 
 app.get("/api/properties", async (_request, response, next) => {
   try {
+    const session = currentSession(_request)!;
     const data = await prisma.property.findMany({
+      where: session.role === "LANDLORD" ? { ownerId: session.sub } : {},
       orderBy: { name: "asc" },
-      include: { _count: { select: { rooms: true } } },
+      include: { _count: { select: { rooms: true } }, owner: { select: { id: true, displayName: true, username: true } } },
     });
-    response.json({ data: data.map(({ _count, ...property }) => ({ ...property, roomCount: _count.rooms })) });
+    response.json({ data: data.map(({ _count, owner, ...property }) => ({ ...property, ownerId: owner?.id ?? null, ownerName: owner?.displayName ?? owner?.username ?? null, roomCount: _count.rooms })) });
   } catch (error) {
     next(error);
   }
@@ -645,7 +874,9 @@ app.get("/api/properties", async (_request, response, next) => {
 
 app.get("/api/contracts", async (_request, response, next) => {
   try {
+    const session = currentSession(_request)!;
     const data = await prisma.leaseContract.findMany({
+      where: session.role === "LANDLORD" ? { room: { property: { ownerId: session.sub } } } : {},
       orderBy: { startDate: "desc" },
       include: {
         tenant: { select: { fullName: true, nationalId: true } },
@@ -673,7 +904,9 @@ app.get("/api/contracts", async (_request, response, next) => {
 
 app.get("/api/invoices", async (_request, response, next) => {
   try {
+    const session = currentSession(_request)!;
     const data = await prisma.invoice.findMany({
+      where: session.role === "LANDLORD" ? { contract: { room: { property: { ownerId: session.sub } } } } : {},
       orderBy: [{ billingYear: "desc" }, { billingMonth: "desc" }],
       include: {
         contract: {
@@ -702,7 +935,9 @@ app.get("/api/invoices", async (_request, response, next) => {
 
 app.get("/api/amenities", async (_request, response, next) => {
   try {
+    const session = currentSession(_request)!;
     const data = await prisma.amenity.findMany({
+      where: session.role === "LANDLORD" ? { property: { ownerId: session.sub } } : {},
       orderBy: { name: "asc" },
       include: { _count: { select: { bookings: true } }, property: { select: { name: true } } },
     });
@@ -727,7 +962,9 @@ app.get("/api/amenities", async (_request, response, next) => {
 
 app.get("/api/maintenance-requests", async (_request, response, next) => {
   try {
+    const session = currentSession(_request)!;
     const data = await prisma.maintenanceRequest.findMany({
+      where: session.role === "LANDLORD" ? { room: { property: { ownerId: session.sub } } } : {},
       orderBy: { createdAt: "desc" },
       include: {
         tenant: { select: { fullName: true } },

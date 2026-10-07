@@ -1,6 +1,6 @@
 # Phân tích dữ liệu nghiệp vụ Góc trọ
 
-Tài liệu đầu vào cho thiết kế PostgreSQL. Đây là bước khảo sát; chưa tạo bảng, migration hay thay đổi dữ liệu ứng dụng.
+Tài liệu nghiệp vụ và mô hình PostgreSQL của ứng dụng Góc trọ. Schema hiện hành nằm trong `../database/schema.prisma`; migrations được lưu trong `../database/migrations`.
 
 ## Nguồn đã rà soát
 
@@ -20,7 +20,8 @@ Tài liệu đầu vào cho thiết kế PostgreSQL. Đây là bước khảo s�
 ## Vai trò và nhóm chức năng
 
 - **Khách xem phòng:** tìm phòng trống theo từ khóa/tỉnh, xem thông tin phòng, gửi yêu cầu đặt lịch xem.
-- **Chủ trọ/quản trị viên:** quản lý khu vực, khách thuê, tài khoản, hợp đồng, hóa đơn, tiện ích và khiếu nại.
+- **Chủ trọ:** quản lý khu trọ được gán cho tài khoản, khách thuê và nghiệp vụ phát sinh tại các khu đó.
+- **Admin hệ thống:** quản lý tất cả khu trọ, tài khoản và dữ liệu toàn hệ thống.
 - **Người thuê:** xem thông tin lưu trú, hóa đơn, tiện ích; đăng ký tiện ích và gửi phản ánh.
 
 ## Thực thể đề xuất
@@ -29,8 +30,8 @@ Các tên dưới đây là tên nghiệp vụ dễ hiểu, chưa phải schema 
 
 | Thực thể | Dữ liệu quan sát được / đề xuất | Quan hệ chính |
 |---|---|---|
-| **UserAccount** | Mã tài khoản, vai trò (admin/tenant), tên đăng nhập hoặc thông tin đăng nhập, trạng thái hoạt động; dữ liệu mẫu còn có tên, điện thoại, email, phòng và mật khẩu | Tài khoản người thuê gắn với một Tenant; hồ sơ admin gắn với tài khoản admin |
-| **Property / Building** (hiện gọi là khu vực) | Mã (`c`), tên (`n`), tỉnh/thành (`p`), tiền tố phòng (`pf`), địa chỉ (`ad`), số phòng (`r`), giá mặc định (`gia`), diện tích (`dt`), người quản lý (`mg`), trạng thái (`s`), ghi chú (`note`) | Một property có nhiều Room; có thể có nhiều Contract theo thời gian |
+| **UserAccount** | Mã tài khoản, vai trò (admin/landlord/tenant), tên đăng nhập, thông tin liên hệ và trạng thái hoạt động | Tài khoản người thuê gắn với một Tenant; tài khoản chủ trọ sở hữu nhiều Property; admin quản lý toàn hệ thống |
+| **Property / Building** (hiện gọi là khu vực) | Mã (`c`), tên (`n`), tỉnh/thành (`p`), tiền tố phòng (`pf`), địa chỉ (`ad`), số phòng (`r`), giá mặc định (`gia`), diện tích (`dt`), người quản lý (`mg`), trạng thái (`s`), ghi chú (`note`) | Thuộc một UserAccount chủ trọ (có thể chưa gán); có nhiều Room và Contract theo thời gian |
 | **Room** | Hiện được sinh từ tiền tố và số phòng; số tầng suy ra theo quy tắc 10 phòng/tầng. Nên có số phòng, tầng, diện tích/giá ghi đè nếu cần, trạng thái vận hành | Thuộc một Property; có hợp đồng theo thời gian; tại một thời điểm chỉ có tối đa một hợp đồng thuê hiệu lực |
 | **Tenant** | Họ tên, CCCD, điện thoại, email, trạng thái cư trú, trạng thái đăng ký; dữ liệu xe hiện là danh sách lồng gồm loại xe, biển số và slot | Có thể là người đứng tên nhiều Contract theo thời gian; gắn với tài khoản tùy chọn; có Vehicles và Complaints |
 | **Vehicle** | Loại xe, biển số, slot/ghi chú gửi xe | Thuộc Tenant; hiện đang lồng trong `Tenant.xe` |
@@ -57,9 +58,10 @@ Các tên dưới đây là tên nghiệp vụ dễ hiểu, chưa phải schema 
 9. Hóa đơn được tạo từ hợp đồng đã ký còn hiệu lực; mỗi hợp đồng/phòng chỉ có tối đa một hóa đơn mỗi kỳ.
 10. Chỉ số đầu kỳ hóa đơn lấy từ chỉ số gần nhất của hợp đồng; khi tạo hóa đơn, chỉ số mới cập nhật lại hợp đồng.
 11. Giá thuê, cọc và đơn giá cần được chụp lại tại thời điểm ký/lập hóa đơn để lịch sử không đổi khi cấu hình mặc định thay đổi.
-12. Tài khoản người thuê chọn từ Tenant đang ở; tên, điện thoại và email đồng bộ hai chiều trong giao diện hiện tại. Khi người thuê rời đi, tài khoản bị khóa.
+12. Tài khoản TENANT gắn tối đa một hồ sơ Tenant; tài khoản LANDLORD sở hữu các Property được phân công; ADMIN có quyền toàn hệ thống.
+13. API kiểm tra vai trò và giới hạn truy vấn theo tài khoản chủ trọ ở backend. Tenant portal chỉ trả dữ liệu gắn với tài khoản đăng nhập.
 
-## Điểm cần chốt trước khi viết schema
+## Các quyết định còn có thể mở rộng
 
 1. **Nhiều người trong một phòng:** hợp đồng có `ppl` lớn hơn 1 nhưng dữ liệu chỉ lưu một Tenant đứng tên. Có cần lưu từng người cùng ở và CCCD của họ không?
 2. **Tên “khu vực”:** mỗi bản ghi hiện giống một tòa/khu trọ có tỉnh, địa chỉ và danh sách phòng. Tên chuẩn trong hệ thống nên là Property, Building hay giữ Area?
@@ -72,7 +74,7 @@ Các tên dưới đây là tên nghiệp vụ dễ hiểu, chưa phải schema 
 9. **Lưu ảnh:** hợp đồng/CCCD hiện có thể nằm trong dữ liệu trình duyệt dạng ảnh. Cần chọn kho lưu file riêng và chỉ lưu đường dẫn/metadata trong PostgreSQL.
 10. **Thông tin địa chỉ:** tỉnh/thành hiện là text; quyết định có cần chuẩn hóa danh mục địa lý hay giữ chuỗi địa chỉ.
 
-## Giả định dùng trong bản schema đầu tiên
+## Quyết định hiện được dùng trong schema
 
 Đây là các lựa chọn để có thể chuẩn bị schema; chúng chưa thay thế xác nhận nghiệp vụ của chủ dự án.
 
@@ -88,13 +90,13 @@ Các tên dưới đây là tên nghiệp vụ dễ hiểu, chưa phải schema 
 
 Prisma DSL không mô tả được unique index có điều kiện cho hợp đồng đang mở. Migration SQL đầu tiên đã thêm partial unique index PostgreSQL cho `room_id` và `tenant_id` với trạng thái `PENDING_SIGNATURE` hoặc `ACTIVE`, cùng các check dữ liệu cơ bản. API vẫn cần kiểm tra rồi ghi hợp đồng trong transaction.
 
-Migration ban đầu đã bổ sung partial unique index cho cả phòng và người thuê đang có hợp đồng `PENDING_SIGNATURE`/`ACTIVE`, CCCD 12 chữ số, ngày hợp đồng hợp lệ, số tiền/chỉ số không âm và tháng hóa đơn từ 1 đến 12. Seed demo upsert các bản ghi mẫu nghiệp vụ và không xóa dữ liệu khác. Seed không tạo tài khoản đăng nhập vì mật khẩu mẫu ở HTML không phù hợp để đưa vào PostgreSQL.
+Migration ban đầu đã bổ sung partial unique index cho cả phòng và người thuê đang có hợp đồng `PENDING_SIGNATURE`/`ACTIVE`, CCCD 12 chữ số, ngày hợp đồng hợp lệ, số tiền/chỉ số không âm và tháng hóa đơn từ 1 đến 12. Migration tiếp theo bổ sung vai trò LANDLORD và liên kết chủ trọ với Property. Seed demo upsert dữ liệu mẫu cùng ba tài khoản demo; mật khẩu cấu hình qua các biến `DEV_*_PASSWORD`.
 
-Migration SQL và seed script chỉ mới được tạo tại local. Chưa áp dụng migration hoặc chạy seed do máy chưa có Docker/PostgreSQL.
+Migration SQL và seed được áp dụng trên môi trường phát triển local; trước production cần đặt mật khẩu riêng và phân công Property cho tài khoản chủ trọ thực tế.
 
 ## Quy mô dữ liệu mẫu quan sát được
 
-- 5 Property/Building, 5 Tenant, 4 Contract, 3 Invoice, 5 tài khoản, 6 tiện ích hiển thị, 3 đăng ký tiện ích và 5 khiếu nại mẫu.
+- 5 Property/Building, 5 Tenant, 4 Contract, 3 Invoice, 3 tài khoản đăng nhập mẫu, 6 tiện ích hiển thị, 3 đăng ký tiện ích và 5 khiếu nại mẫu.
 - `demo-database.json` có 4 dịch vụ cấu hình, một hồ sơ admin, gói dịch vụ và 4 tùy chọn thông báo.
 
 Đây là số bản ghi trong dữ liệu khởi tạo HTML/JSON, không phải dữ liệu production. Một số ngày được tạo tương đối theo ngày chạy demo.
