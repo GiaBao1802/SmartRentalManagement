@@ -11,6 +11,9 @@ export default function HomePage() {
   const [searchText, setSearchText] = useState("");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [viewing, setViewing] = useState({ visitorName: "", phone: "", email: "", roomId: "", preferredDate: "", preferredTime: "", note: "" });
+  const [viewingMessage, setViewingMessage] = useState("");
+  const [submittingViewing, setSubmittingViewing] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -26,6 +29,18 @@ export default function HomePage() {
     event.preventDefault();
     setQuery(searchText.trim());
     document.getElementById("phong")?.scrollIntoView({ behavior: "smooth" });
+  }
+
+  async function requestViewing(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setSubmittingViewing(true); setViewingMessage("");
+    try {
+      const response = await fetch(`${apiUrl}/api/public/viewing-requests`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(viewing) });
+      const result = await response.json() as { data?: { message: string }; error?: string };
+      if (!response.ok) throw new Error(result.error ?? "Chưa gửi được yêu cầu. Vui lòng thử lại.");
+      setViewingMessage(result.data?.message ?? "Đã nhận yêu cầu xem phòng.");
+      setViewing({ visitorName: "", phone: "", email: "", roomId: "", preferredDate: "", preferredTime: "", note: "" });
+    } catch (reason) { setViewingMessage(reason instanceof Error ? reason.message : "Chưa gửi được yêu cầu."); }
+    finally { setSubmittingViewing(false); }
   }
 
   return <main className="home-page">
@@ -45,7 +60,7 @@ export default function HomePage() {
 
     <section className="home-section services-section" id="dich-vu"><div className="section-heading"><span className="eyebrow">Đồng hành trong thời gian thuê</span><h2>Dịch vụ thiết thực</h2><p>Thông tin dịch vụ và chi phí được quản lý rõ ràng trong suốt thời gian bạn ở.</p></div><div className="service-grid"><article><span>🧾</span><h3>Theo dõi chi phí</h3><p>Tiền phòng, điện, nước và dịch vụ được ghi rõ theo từng kỳ.</p></article><article><span>🛠️</span><h3>Hỗ trợ sự cố</h3><p>Gửi yêu cầu hỗ trợ khi cần sửa chữa hoặc kiểm tra thiết bị.</p></article><article><span>🏡</span><h3>Tiện ích khu trọ</h3><p>Tra cứu tiện ích, khung giờ hoạt động và thông tin đăng ký.</p></article></div></section>
 
-    <section className="contact-band" id="lien-he"><div><span className="eyebrow">Bạn đang tìm chỗ ở?</span><h2>Bắt đầu tìm một góc nhỏ cho riêng mình.</h2><p>Gửi thông tin khu vực bạn muốn ở, Góc trọ sẽ giúp bạn tìm lựa chọn phù hợp.</p></div><a className="button primary" href="mailto:hello@goctro.vn?subject=Tu%20van%20tim%20phong">Liên hệ Góc trọ</a></section>
+    <section className="contact-band" id="lien-he"><div><span className="eyebrow">Bạn đang tìm chỗ ở?</span><h2>Bắt đầu tìm một góc nhỏ cho riêng mình.</h2><p>Để lại thông tin và thời gian thuận tiện. Góc trọ sẽ liên hệ xác nhận lịch xem phòng.</p></div><form className="viewing-form" onSubmit={requestViewing}><div className="viewing-form-grid"><label>Họ và tên<input required minLength={2} value={viewing.visitorName} onChange={(event) => setViewing({ ...viewing, visitorName: event.target.value })} /></label><label>Số điện thoại<input required type="tel" value={viewing.phone} onChange={(event) => setViewing({ ...viewing, phone: event.target.value })} /></label><label>Email (không bắt buộc)<input type="email" value={viewing.email} onChange={(event) => setViewing({ ...viewing, email: event.target.value })} /></label><label>Phòng quan tâm<select value={viewing.roomId} onChange={(event) => setViewing({ ...viewing, roomId: event.target.value })}><option value="">Chưa chọn phòng cụ thể</option>{rooms.map((room) => <option key={room.id} value={room.id}>{room.property.name} · Phòng {room.roomNumber}</option>)}</select></label><label>Ngày muốn xem<input type="date" value={viewing.preferredDate} onChange={(event) => setViewing({ ...viewing, preferredDate: event.target.value })} /></label><label>Khung giờ phù hợp<input value={viewing.preferredTime} onChange={(event) => setViewing({ ...viewing, preferredTime: event.target.value })} placeholder="Ví dụ: sau 17:00" /></label><label className="viewing-note">Ghi chú<textarea value={viewing.note} onChange={(event) => setViewing({ ...viewing, note: event.target.value })} /></label></div>{viewingMessage && <p className="viewing-message" role="status">{viewingMessage}</p>}<button className="button primary" type="submit" disabled={submittingViewing}>{submittingViewing ? "Đang gửi…" : "Gửi yêu cầu xem phòng"}</button></form></section>
     <footer className="home-footer"><a className="home-logo" href="/"><img src="/logo-goc-tro.png" alt="Góc trọ" /></a><span>Tìm dễ, ở yên · Xuân Lộc, Đồng Nai, Việt Nam</span><a href="/login">Đăng nhập quản lý</a></footer>
   </main>;
 }

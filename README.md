@@ -33,9 +33,10 @@ After `npm run db:seed`, sign in with `admin` / `123456` (or the value of `DEV_A
 - `GET /api/health` — API process health.
 - `GET /api/health/db` — PostgreSQL connection health.
 - `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/logout` — local session login/logout.
-- `GET /api/public/rooms` — available rooms for the public homepage.
+- `GET /api/public/rooms`, `POST /api/public/viewing-requests` — available rooms and public viewing requests.
 - `GET /api/tenants?page=1&pageSize=20&search=` — searchable, paginated tenant list with current room and vehicle details.
-- Admin data endpoints (`/api/properties`, `/api/contracts`, `/api/invoices`, `/api/amenities`, `/api/maintenance-requests`) require an admin session.
+- Admin endpoints for properties/rooms, tenants, contracts, invoices, amenities/bookings, viewing requests, and maintenance requests support list and CRUD/status operations and require an admin session.
+- The admin UI is available at `/admin/properties`, `/admin/tenants`, `/admin/contracts`, `/admin/invoices`, `/admin/amenities`, `/admin/bookings`, `/admin/viewings`, and `/admin/complaints`.
 
 Start the preserved reference app with `node legacy/server.js` if needed. The Next.js app is the active frontend.
 
