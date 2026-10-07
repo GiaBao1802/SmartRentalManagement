@@ -1,0 +1,3264 @@
+:root {
+        --pr: #e67e22;
+        --sec: #0f684a;
+        --ac: #ffd38a;
+        --bg: #fff9f2;
+        --card: #fff;
+        --tx: #1f2937;
+        --mu: #64748b;
+        --bd: #ecdcc6;
+        --ink: #0f684a;
+        --er: #c0392b;
+        box-sizing: border-box;
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      html {
+        scroll-padding-top: env(safe-area-inset-top, 0px);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--tx);
+        font:
+          15px/1.5 "Be Vietnam Pro",
+          system-ui,
+          sans-serif;
+      }
+      .lg {
+        --nt: url("logo-goc-tro.png");
+      }
+      .view {
+        display: none;
+        min-height: 100vh;
+      }
+      .view.on {
+        display: block;
+      }
+      .stabs {
+        max-width: 1080px;
+        margin: 14px auto 0;
+        padding: 0 20px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .stabs a {
+        padding: 6px 16px;
+        border: 1.5px solid var(--bd);
+        border-radius: 99px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--tx);
+        text-decoration: none;
+        background: var(--card);
+      }
+      .stabs a.on {
+        background: var(--ac);
+        border-color: var(--pr);
+        color: #5a3a00;
+        font-weight: 700;
+      }
+      #v-home {
+        margin: 0;
+        background: var(--bg);
+        color: var(--tx);
+        font:
+          16px/1.6 "Be Vietnam Pro",
+          system-ui,
+          sans-serif;
+      }
+      #v-home a {
+        color: inherit;
+        text-decoration: none;
+      }
+      #v-home .w {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+      #v-home header {
+        position: sticky;
+        top: env(safe-area-inset-top, 0px);
+        background: var(--bg);
+        border-bottom: 1px solid var(--bd);
+        z-index: 5;
+      }
+      #v-home header .w {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        flex-wrap: wrap;
+      }
+      #v-home .logo {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      #v-home .logo {
+        background: #fff9f2;
+        border-radius: 12px;
+        padding: 4px 10px;
+      }
+      #v-home .logo {
+        width: 210px;
+      }
+      #v-home .chip {
+        background: #fff9f2;
+        border-radius: 20px;
+        padding: 20px;
+        width: 100%;
+      }
+      #v-home .fi {
+        height: 56px;
+        width: auto;
+      }
+      #v-home nav {
+        display: flex;
+        gap: 18px;
+        align-items: center;
+        font-size: 14px;
+        font-weight: 500;
+        flex-wrap: wrap;
+      }
+      #v-home nav a:hover {
+        color: var(--pr);
+      }
+      #v-home .btn {
+        display: inline-block;
+        padding: 10px 20px;
+        border-radius: 99px;
+        font-weight: 600;
+        font-size: 15px;
+        border: 2px solid var(--pr);
+        background: var(--pr);
+        color: #fff;
+      }
+      #v-home .btn.o {
+        background: transparent;
+        color: var(--pr);
+      }
+      #v-home .btn.g {
+        background: var(--sec);
+        border-color: var(--sec);
+      }
+      #v-home .hero {
+        padding: 62px 0 54px;
+        background: linear-gradient(180deg, #fff0a8 0%, #fff8df 74%, var(--bg) 100%);
+      }
+      #v-home .hero .w {
+        display: block;
+        max-width: 1080px;
+        text-align: center;
+      }
+      #v-home .tag {
+        display: inline-block;
+        background: var(--ac);
+        color: #5a3a00;
+        padding: 3px 12px;
+        border-radius: 99px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      #v-home h1 {
+        font-size: clamp(32px, 5vw, 52px);
+        line-height: 1.15;
+        margin: 14px 0;
+      }
+      #v-home h1 span {
+        color: var(--pr);
+      }
+      #v-home .hero p {
+        color: var(--mu);
+        font-size: 17px;
+        max-width: 60ch;
+        margin: 0 auto 24px;
+      }
+      #v-home .hero h1{font-size:clamp(34px,5vw,48px);margin:10px 0 8px;color:#19241e}
+      #v-home .hero h1 span{color:var(--sec)}
+      #v-home .hero .tag{background:#fff;color:var(--sec);border:1px solid #ecdcae}
+      #v-home .room-search{display:grid;grid-template-columns:minmax(0,1fr) 230px auto;gap:8px;align-items:center;max-width:930px;margin:0 auto;padding:9px;background:#fff;border:1px solid #eee2c6;border-radius:18px;box-shadow:0 12px 34px #59461a1a;text-align:left}
+      #v-home .room-search .search-field{display:flex;align-items:center;gap:10px;min-width:0;padding:0 12px}
+      #v-home .room-search .search-icon{font-size:20px;color:var(--mu)}
+      #v-home .room-search input,#v-home .room-search select{width:100%;min-width:0;height:48px;border:0;background:#fff;color:var(--tx);font:500 15px "Be Vietnam Pro",system-ui,sans-serif;outline:0}
+      #v-home .room-search select{border-left:1px solid var(--bd);padding:0 12px}
+      #v-home .room-search .btn{height:48px;padding:0 26px;white-space:nowrap;border-radius:12px;background:var(--ac);border-color:var(--ac);color:#503400}
+      #v-home .search-suggestions{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:8px;margin:15px auto 0;color:var(--mu);font-size:13px}
+      #v-home .search-suggestions button{border:1px solid #e7ddc4;background:#fff9e9;border-radius:99px;padding:5px 12px;color:var(--tx);font:500 12px "Be Vietnam Pro",system-ui,sans-serif;cursor:pointer}
+      #v-home .search-suggestions button:hover{border-color:var(--pr);color:var(--pr)}
+      #v-home .cta {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 22px;
+      }
+      #v-home .art {
+        background: var(--sec);
+        border-radius: 28px;
+        padding: 36px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        color: #fff;
+        text-align: center;
+      }
+      #v-home section {
+        padding: 44px 0;
+      }
+      #v-home h2 {
+        font-size: 28px;
+        margin: 0 0 6px;
+      }
+      #v-home .sub {
+        color: var(--mu);
+        margin: 0 0 24px;
+      }
+      #v-home .g4 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 14px;
+      }
+      #v-home .c {
+        background: var(--card);
+        border: 1px solid var(--bd);
+        border-radius: 18px;
+        padding: 20px;
+      }
+      #v-home #hmRooms {
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 18px;
+      }
+      #v-home .listing-card {
+        padding: 0;
+        overflow: hidden;
+        border-radius: 18px;
+        transition:
+          transform 0.18s,
+          box-shadow 0.18s;
+      }
+      #v-home .listing-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 14px 30px #5738161c;
+      }
+      #v-home .listing-photo {
+        height: 190px;
+        position: relative;
+        background: linear-gradient(135deg, #e9c9a6, #9a7458);
+        overflow: hidden;
+      }
+      #v-home .listing-photo img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      #v-home .listing-photo:after {
+        content: "";
+        position: absolute;
+        inset: 55% 0 0;
+        background: linear-gradient(transparent, #17251d66);
+        pointer-events: none;
+      }
+      #v-home .listing-photo .st {
+        position: absolute;
+        z-index: 1;
+        top: 12px;
+        left: 12px;
+        background: #fff;
+        color: var(--sec);
+        padding: 5px 11px;
+        box-shadow: 0 2px 8px #0002;
+      }
+      #v-home .listing-body {
+        padding: 16px;
+      }
+      #v-home .listing-body h3 {
+        font-size: 17px;
+        margin: 0 0 5px;
+      }
+      #v-home .listing-location {
+        font-size: 13px !important;
+        min-height: 40px;
+        display: flex;
+        gap: 5px;
+        align-items: flex-start;
+      }
+      #v-home .listing-meta {
+        display: flex;
+        gap: 14px;
+        margin: 10px 0 13px;
+        color: var(--mu);
+        font-size: 13px;
+      }
+      #v-home .listing-meta span {
+        white-space: nowrap;
+      }
+      #v-home .listing-price {
+        font-size: 21px !important;
+        line-height: 1.3;
+        color: var(--pr) !important;
+        font-weight: 700 !important;
+        margin: 0 !important;
+      }
+      #v-home .listing-price small {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--mu);
+      }
+      #v-home .listing-body .btn {
+        width: 100%;
+        text-align: center;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      #v-home .c .i {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: var(--ac);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        margin-bottom: 10px;
+      }
+      #v-home .c h3 {
+        margin: 0 0 4px;
+        font-size: 17px;
+      }
+      #v-home .c p {
+        margin: 0;
+        color: var(--mu);
+        font-size: 14px;
+      }
+      #v-home .price {
+        color: var(--pr);
+        font-weight: 700;
+        font-size: 20px;
+      }
+      #v-home .st {
+        font-size: 12px;
+        font-weight: 600;
+        padding: 2px 10px;
+        border-radius: 99px;
+        background: #0f684a22;
+        color: var(--sec);
+      }
+      #v-home .st.p {
+        background: #e67e2222;
+        color: var(--pr);
+      }
+      #v-home .band {
+        background: var(--sec);
+        color: #fff;
+        border-radius: 24px;
+        padding: 36px;
+        text-align: center;
+      }
+      #v-home .band h2 {
+        color: var(--ac);
+      }
+      #v-home .band p {
+        opacity: 0.9;
+        margin: 0 0 18px;
+      }
+      #v-home table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      #v-home td {
+        padding: 10px 4px;
+        border-bottom: 1px solid var(--bd);
+      }
+      #v-home td:last-child {
+        text-align: right;
+        font-weight: 600;
+        color: var(--pr);
+      }
+      #v-home .tw {
+        overflow-x: auto;
+        max-width: 560px;
+      }
+      #v-home footer {
+        border-top: 4px solid var(--ac);
+        padding: 0;
+        color: var(--mu);
+        font-size: 13px;
+        text-align: left;
+        background:#fff;
+      }
+      #v-home .footer-main{padding:40px 0 30px;display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr;gap:34px}
+      #v-home .footer-col h3{font-size:15px;margin:0 0 14px;color:var(--tx)}
+      #v-home .footer-col p{font-size:13px;color:var(--mu);margin:10px 0 0;line-height:1.65}
+      #v-home .footer-col ul{list-style:none;padding:0;margin:0;display:grid;gap:10px}
+      #v-home .footer-col a{font-size:13px;color:var(--mu)}
+      #v-home .footer-col a:hover{color:var(--sec)}
+      #v-home .footer-brand{width:180px;max-width:100%;padding:5px 9px;background:#fff9f2;border-radius:12px}
+      #v-home .footer-social{display:flex;gap:8px;margin-top:12px}
+      #v-home .footer-social a{display:grid;place-items:center;width:34px;height:34px;border-radius:8px;background:#f1f4f1;color:var(--sec);font-weight:700}
+      #v-home .footer-legal{border-top:1px solid var(--bd);padding:15px 0 18px;font-size:12px}
+      @media (max-width: 760px) {
+        #v-home .room-search{grid-template-columns:1fr;padding:10px;border-radius:16px}
+        #v-home .room-search select{border-left:0;border-top:1px solid var(--bd);padding:0 12px}
+        #v-home .room-search .btn{width:100%}
+        #v-home .footer-main{grid-template-columns:repeat(2,minmax(0,1fr));gap:26px 18px}
+        #v-home nav a.h {
+          display: none;
+        }
+      }
+      #v-home .lg {
+        background: var(--nt) center/100% auto no-repeat;
+        aspect-ratio: 810/342;
+        container-type: inline-size;
+        position: relative;
+        width: 100%;
+      }
+      #v-home .lg span {
+        position: absolute;
+        left: 37%;
+        top: 57.6%;
+        font:
+          400 5.8cqw/1 "Be Vietnam Pro",
+          system-ui,
+          sans-serif;
+        color: #0f684a;
+        white-space: nowrap;
+      }
+      #v-home dialog {
+        border: 0;
+        border-radius: 24px;
+        padding: 0;
+        width: min(420px, calc(100% - 24px));
+        background: var(--card);
+        color: var(--tx);
+        box-shadow: 0 20px 60px #0006;
+      }
+      #v-home dialog::backdrop {
+        background: #0f684a99;
+      }
+      #v-home .lf {
+        padding: 24px 26px 26px;
+        position: relative;
+      }
+      #v-home .lf .lg {
+        width: 220px;
+        margin: 0 auto 4px;
+        background-color: #fff9f2;
+        border-radius: 12px;
+      }
+      #v-home .lf h2 {
+        font-size: 22px;
+        text-align: center;
+        margin: 8px 0 2px;
+      }
+      #v-home .lf .sub {
+        text-align: center;
+        margin: 0 0 16px;
+        font-size: 14px;
+      }
+      #v-home .x {
+        position: absolute;
+        top: 10px;
+        right: 12px;
+        border: 0;
+        background: none;
+        color: var(--mu);
+        font-size: 26px;
+        cursor: pointer;
+        line-height: 1;
+      }
+      #v-home .seg {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+        background: var(--bg);
+        border: 1px solid var(--bd);
+        border-radius: 99px;
+        padding: 4px;
+        margin-bottom: 14px;
+      }
+      #v-home .seg label {
+        text-align: center;
+        padding: 7px;
+        border-radius: 99px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--mu);
+      }
+      #v-home .seg input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+      #v-home .seg label:has(input:checked) {
+        background: var(--sec);
+        color: #fff;
+      }
+      #v-home .quick-fill{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 14px}
+      #v-home .quick-fill button{border:1px solid var(--bd);border-radius:10px;background:#fff;color:var(--sec);padding:9px 8px;font:600 12px/1.35 "Be Vietnam Pro",sans-serif;cursor:pointer}
+      #v-home .quick-fill button:hover{background:#fff4e4;border-color:var(--pr)}
+      #v-home .fld {
+        display: block;
+        margin-bottom: 12px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      #v-home .fld .in {
+        display: flex;
+        margin-top: 4px;
+        border: 1.5px solid var(--bd);
+        border-radius: 12px;
+        background: var(--bg);
+        overflow: hidden;
+      }
+      #v-home .fld .in:focus-within {
+        border-color: var(--pr);
+      }
+      #v-home .fld input {
+        flex: 1;
+        min-width: 0;
+        border: 0;
+        background: transparent;
+        color: var(--tx);
+        font: inherit;
+        font-weight: 400;
+        font-size: 15px;
+        padding: 11px 12px;
+        outline: 0;
+      }
+      #v-home .fld .in button {
+        border: 0;
+        background: none;
+        color: var(--sec);
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        padding: 0 12px;
+        cursor: pointer;
+      }
+      #v-home .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 13px;
+        margin: 4px 0 16px;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      #v-home .row a {
+        color: var(--pr);
+        font-weight: 600;
+      }
+      #v-home .row label {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        cursor: pointer;
+      }
+      #v-home .lf .btn {
+        width: 100%;
+        text-align: center;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      #v-home .msg {
+        font-size: 13px;
+        margin: 10px 0 0;
+        min-height: 20px;
+        text-align: center;
+      }
+      #v-home .msg.e {
+        color: #d64545;
+      }
+      #v-home .msg.o {
+        color: var(--sec);
+      }
+      #v-home .foot {
+        text-align: center;
+        font-size: 13px;
+        color: var(--mu);
+        margin: 12px 0 0;
+      }
+      #v-home .foot a {
+        color: var(--pr);
+        font-weight: 600;
+      }
+      #v-hd {
+        margin: 0;
+        background: var(--bg);
+        color: var(--tx);
+        font:
+          15px/1.5 "Be Vietnam Pro",
+          system-ui,
+          sans-serif;
+      }
+      #v-hd .w {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+      #v-hd header {
+        background: var(--bg);
+        border-bottom: 1px solid var(--bd);
+      }
+      #v-hd header .w {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        flex-wrap: wrap;
+      }
+      #v-hd .logo {
+        background: #fff9f2;
+        border-radius: 12px;
+        padding: 4px 10px;
+        width: 210px;
+      }
+      #v-hd .lg {
+        background: var(--nt) center/100% auto no-repeat;
+        aspect-ratio: 810/342;
+        container-type: inline-size;
+        position: relative;
+        width: 100%;
+      }
+      #v-hd .lg span {
+        position: absolute;
+        left: 37%;
+        top: 57.6%;
+        font:
+          400 5.8cqw/1 "Be Vietnam Pro",
+          system-ui,
+          sans-serif;
+        color: #0f684a;
+        white-space: nowrap;
+      }
+      #v-hd nav {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      #v-hd nav a {
+        padding: 7px 14px;
+        border-radius: 99px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--tx);
+        text-decoration: none;
+        border: 1.5px solid transparent;
+      }
+      #v-hd nav a:hover {
+        border-color: var(--bd);
+      }
+      #v-hd nav a.on {
+        background: var(--sec);
+        color: #fff;
+        font-weight: 600;
+      }
+      #v-hd main {
+        padding: 24px 20px 48px;
+      }
+      #v-hd .bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+      #v-hd h1 {
+        font-size: 24px;
+        margin: 0;
+      }
+      #v-hd .btn {
+        border: 2px solid var(--pr);
+        background: var(--pr);
+        color: #fff;
+        border-radius: 99px;
+        padding: 9px 20px;
+        font:
+          600 15px "Be Vietnam Pro",
+          system-ui,
+          sans-serif;
+        cursor: pointer;
+      }
+      #v-hd .btn.o {
+        background: transparent;
+        color: var(--pr);
+      }
+      #v-hd .btn.s {
+        padding: 3px 12px;
+        font-size: 13px;
+        border-width: 1.5px;
+      }
+      #v-hd .tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+      #v-hd .tabs button {
+        border: 1.5px solid var(--bd);
+        background: var(--card);
+        color: var(--tx);
+        border-radius: 99px;
+        padding: 6px 16px;
+        font:
+          500 14px "Be Vietnam Pro",
+          system-ui,
+          sans-serif;
+        cursor: pointer;
+      }
+      #v-hd .tabs button.on {
+        background: var(--ac);
+        border-color: var(--pr);
+        color: #5a3a00;
+        font-weight: 700;
+      }
+      #v-hd .tw {
+        overflow-x: auto;
+        background: var(--card);
+        border: 1px solid var(--bd);
+        border-radius: 18px;
+      }
+      #v-hd table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 720px;
+      }
+      #v-hd th,
+      #v-hd td {
+        padding: 12px 14px;
+        text-align: left;
+        border-bottom: 1px solid var(--bd);
+        white-space: nowrap;
+      }
+      #v-hd th {
+        font-size: 12px;
+        text-transform: uppercase;
+        color: var(--mu);
+        letter-spacing: 0.03em;
+      }
+      #v-hd tr:last-child td {
+        border-bottom: 0;
+      }
+      #v-hd .n {
+        text-align: right;
+      }
+      #v-hd .tag {
+        font-size: 12px;
+        font-weight: 600;
+        padding: 3px 11px;
+        border-radius: 99px;
+      }
+      #v-hd .tag.u {
+        background: #e67e2222;
+        color: var(--pr);
+      }
+      #v-hd .tag.p {
+        background: #0f684a22;
+        color: var(--sec);
+      }
+      #v-hd .tag.o {
+        background: var(--er);
+        color: #fff;
+      }
+      #v-hd dark {
+      }
+      #v-hd dialog {
+        border: 0;
+        border-radius: 24px;
+        padding: 0;
+        width: min(560px, calc(100% - 24px));
+        max-height: 92vh;
+        background: var(--card);
+        color: var(--tx);
+        box-shadow: 0 20px 60px #0006;
+      }
+      #v-hd dialog::backdrop {
+        background: #0f684a99;
+      }
+      #v-hd .mh {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 22px;
+        border-bottom: 1px solid var(--bd);
+        font-weight: 700;
+        font-size: 18px;
+      }
+      #v-hd .x {
+        border: 0;
+        background: none;
+        color: var(--mu);
+        font-size: 26px;
+        cursor: pointer;
+        line-height: 1;
+      }
+      #v-hd .mb {
+        padding: 16px 22px;
+        overflow-y: auto;
+        max-height: 62vh;
+      }
+      #v-hd .st {
+        border: 1px solid var(--bd);
+        background: var(--bg);
+        border-radius: 14px;
+        padding: 12px 14px;
+        margin-bottom: 12px;
+        font-size: 14px;
+      }
+      #v-hd .stt {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 700;
+        margin-bottom: 8px;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      #v-hd .stt small {
+        font-weight: 400;
+        color: var(--mu);
+      }
+      #v-hd select,
+      #v-hd input.t {
+        width: 100%;
+        border: 1.5px solid var(--bd);
+        background: var(--card);
+        color: var(--tx);
+        border-radius: 10px;
+        padding: 8px 10px;
+        font: inherit;
+      }
+      #v-hd .ocr {
+        width: 100%;
+        border: 2px dashed var(--pr);
+        background: transparent;
+        color: var(--pr);
+        border-radius: 12px;
+        padding: 10px;
+        font:
+          600 14px "Be Vietnam Pro",
+          system-ui,
+          sans-serif;
+        cursor: pointer;
+        margin-bottom: 10px;
+      }
+      #v-hd .g {
+        display: grid;
+        grid-template-columns: 1fr 1fr auto;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+      #v-hd .g label {
+        font-size: 12px;
+        color: var(--mu);
+      }
+      #v-hd .g b {
+        color: var(--pr);
+        text-align: right;
+        min-width: 90px;
+      }
+      #v-hd .sv {
+        display: flex;
+        justify-content: space-between;
+      }
+      #v-hd .tot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid var(--bd);
+        padding-top: 12px;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      #v-hd .tot b.big {
+        font-size: 20px;
+        color: var(--pr);
+      }
+      #v-hd .mf {
+        padding: 14px 22px;
+        border-top: 1px solid var(--bd);
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      #v-hd #toast {
+        position: fixed;
+        left: 50%;
+        bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+        transform: translateX(-50%);
+        background: var(--sec);
+        color: #fff;
+        padding: 10px 18px;
+        border-radius: 99px;
+        font-size: 14px;
+        font-weight: 600;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+        max-width: 90%;
+        text-align: center;
+      }
+      #v-hd #toast.on {
+        opacity: 1;
+      }
+      #v-tk {
+        margin: 0;
+        background: var(--bg);
+        color: var(--tx);
+        font:
+          15px/1.5 "Be Vietnam Pro",
+          system-ui,
+          sans-serif;
+      }
+      #v-tk .w {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+      #v-tk header {
+        border-bottom: 1px solid var(--bd);
+      }
+      #v-tk header .w {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        flex-wrap: wrap;
+      }
+      #v-tk .logo {
+        background: #fff9f2;
+        border-radius: 12px;
+        padding: 4px 10px;
+        width: 210px;
+      }
+      #v-tk .lg {
+        background: var(--nt) center/100% auto no-repeat;
+        aspect-ratio: 810/342;
+        container-type: inline-size;
+        position: relative;
+        width: 100%;
+      }
+      #v-tk .lg span {
+        position: absolute;
+        left: 37%;
+        top: 57.6%;
+        font:
+          400 5.8cqw/1 "Be Vietnam Pro",
+          system-ui,
+          sans-serif;
+        color: #0f684a;
+        white-space: nowrap;
+      }
+      #v-tk nav {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      #v-tk nav a {
+        padding: 7px 14px;
+        border-radius: 99px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--tx);
+        text-decoration: none;
+        border: 1.5px solid transparent;
+      }
+      #v-tk nav a:hover {
+        border-color: var(--bd);
+      }
+      #v-tk nav a.on {
+        background: var(--sec);
+        color: #fff;
+        font-weight: 600;
+      }
+      #v-tk main {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 24px 20px 56px;
+      }
+      #v-tk h1 {
+        font-size: 24px;
+        margin: 0 0 16px;
+      }
+      #v-tk .c {
+        background: var(--card);
+        border: 1px solid var(--bd);
+        border-radius: 20px;
+        padding: 22px;
+        margin-bottom: 16px;
+      }
+      #v-tk .c h2 {
+        font-size: 18px;
+        margin: 0 0 2px;
+      }
+      #v-tk .sub {
+        color: var(--mu);
+        font-size: 13px;
+        margin: 0 0 16px;
+      }
+      #v-tk .pf {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+      }
+      #v-tk .av {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background: var(--pr);
+        color: #fff;
+        font-size: 26px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-size: cover;
+        background-position: center;
+        flex: none;
+      }
+      #v-tk .pf b {
+        display: block;
+        font-size: 17px;
+      }
+      #v-tk .role {
+        display: inline-block;
+        background: var(--ac);
+        color: #5a3a00;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 2px 12px;
+        border-radius: 99px;
+      }
+      #v-tk .account-dropdown,
+      #v-ad .account-dropdown {
+        position: relative;
+      }
+      #v-tk .account-menu,
+      #v-ad .account-menu {
+        position: absolute;
+        top: calc(100% + 4px);
+        right: 0;
+        display: none;
+        min-width: 210px;
+        padding: 6px;
+        background: #fff;
+        border: 1px solid var(--bd);
+        border-radius: 12px;
+        box-shadow: 0 12px 30px #1f293720;
+        z-index: 20;
+      }
+      #v-tk .account-dropdown:hover .account-menu,
+      #v-tk .account-dropdown:focus-within .account-menu,
+      #v-ad .account-dropdown:hover .account-menu,
+      #v-ad .account-dropdown:focus-within .account-menu {
+        display: grid;
+      }
+      #v-tk .account-menu a,
+      #v-ad .account-menu a {
+        display: block;
+        border: 0 !important;
+        border-radius: 8px !important;
+        padding: 10px 12px !important;
+        white-space: nowrap;
+      }
+      #v-tk .account-menu a:hover,
+      #v-ad .account-menu a:hover {
+        background: #fff5e9;
+        color: var(--sec);
+      }
+      #v-tk .settings-head .role {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+        width: auto;
+        max-width: none;
+        white-space: nowrap;
+        overflow: visible;
+        border-radius: 99px;
+        background: var(--sec);
+        color: #fff;
+        font:
+          600 12px "Be Vietnam Pro",
+          system-ui,
+          sans-serif;
+        padding: 7px 13px;
+      }
+      #v-tk .gr {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 14px;
+      }
+      #v-tk .fld {
+        display: block;
+        margin-bottom: 14px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      #v-tk .in {
+        display: flex;
+        margin-top: 4px;
+        border: 1.5px solid var(--bd);
+        border-radius: 12px;
+        background: var(--bg);
+        overflow: hidden;
+      }
+      #v-tk .in:focus-within {
+        border-color: var(--pr);
+      }
+      #v-tk .in.er {
+        border-color: var(--er);
+      }
+      #v-tk .in input {
+        flex: 1;
+        min-width: 0;
+        border: 0;
+        background: transparent;
+        color: var(--tx);
+        font:
+          400 15px "Be Vietnam Pro",
+          system-ui,
+          sans-serif;
+        padding: 11px 12px;
+        outline: 0;
+      }
+      #v-tk .in input:disabled {
+        color: var(--mu);
+      }
+      #v-tk .in button {
+        border: 0;
+        background: none;
+        color: var(--sec);
+        font:
+          600 13px "Be Vietnam Pro",
+          system-ui,
+          sans-serif;
+        padding: 0 12px;
+        cursor: pointer;
+      }
+      #v-tk .err {
+        display: block;
+        color: var(--er);
+        font-weight: 400;
+        font-size: 12px;
+        min-height: 16px;
+        margin-top: 2px;
+      }
+      #v-tk .btn {
+        border: 2px solid var(--pr);
+        background: var(--pr);
+        color: #fff;
+        border-radius: 99px;
+        padding: 9px 22px;
+        font:
+          600 15px "Be Vietnam Pro",
+          system-ui,
+          sans-serif;
+        cursor: pointer;
+      }
+      #v-tk .btn.o {
+        background: transparent;
+        color: var(--pr);
+      }
+      #v-tk .btn.g {
+        background: var(--sec);
+        border-color: var(--sec);
+      }
+      #v-tk .acts {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+      }
+      #v-tk .sw {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 11px 0;
+        border-bottom: 1px solid var(--bd);
+      }
+      #v-tk .sw:last-of-type {
+        border-bottom: 0;
+        margin-bottom: 10px;
+      }
+      #v-tk .sw small {
+        display: block;
+        color: var(--mu);
+        font-size: 13px;
+      }
+      #v-tk .sw input {
+        appearance: none;
+        width: 44px;
+        height: 26px;
+        border-radius: 99px;
+        background: var(--bd);
+        position: relative;
+        cursor: pointer;
+        flex: none;
+        transition: 0.15s;
+      }
+      #v-tk .sw input::after {
+        content: "";
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #fff;
+        transition: 0.15s;
+      }
+      #v-tk .sw input:checked {
+        background: var(--sec);
+      }
+      #v-tk .sw input:checked::after {
+        left: 21px;
+      }
+      #v-tk .out {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      #v-tk #toast {
+        position: fixed;
+        left: 50%;
+        bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+        transform: translateX(-50%);
+        background: var(--sec);
+        color: #fff;
+        padding: 10px 18px;
+        border-radius: 99px;
+        font-size: 14px;
+        font-weight: 600;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+        max-width: 90%;
+        text-align: center;
+      }
+      #v-tk #toast.on {
+        opacity: 1;
+      }
+      @media (max-width: 560px) {
+        #v-tk .gr {
+          grid-template-columns: 1fr;
+        }
+      }
+      #v-ad {
+        margin: 0;
+        background: var(--bg);
+        color: var(--tx);
+        font:
+          15px/1.5 "Be Vietnam Pro",
+          system-ui,
+          sans-serif;
+      }
+      #v-ad .w {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+      #v-ad header {
+        background: var(--bg);
+        border-bottom: 1px solid var(--bd);
+      }
+      #v-ad header .w {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        flex-wrap: wrap;
+      }
+      #v-ad .logo {
+        background: #fff9f2;
+        border-radius: 12px;
+        padding: 4px 10px;
+        width: 210px;
+      }
+      #v-ad .lg {
+        background: var(--nt) center/100% auto no-repeat;
+        aspect-ratio: 810/342;
+        container-type: inline-size;
+        position: relative;
+        width: 100%;
+      }
+      #v-ad .lg span {
+        position: absolute;
+        left: 37%;
+        top: 57.6%;
+        font:
+          400 5.8cqw/1 "Be Vietnam Pro",
+          system-ui,
+          sans-serif;
+        color: #0f684a;
+        white-space: nowrap;
+      }
+      #v-ad nav {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      #v-ad nav a {
+        padding: 7px 14px;
+        border-radius: 99px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--tx);
+        text-decoration: none;
+        border: 1.5px solid transparent;
+      }
+      #v-ad nav a:hover {
+        border-color: var(--bd);
+      }
+      #v-ad nav a.on {
+        background: var(--sec);
+        color: #fff;
+        font-weight: 600;
+      }
+      #v-ad main {
+        padding: 24px 20px 48px;
+      }
+      #v-ad .bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+      #v-ad h1 {
+        font-size: 24px;
+        margin: 0;
+      }
+      #v-ad .btn {
+        border: 2px solid var(--pr);
+        background: var(--pr);
+        color: #fff;
+        border-radius: 99px;
+        padding: 9px 20px;
+        font:
+          600 15px "Be Vietnam Pro",
+          system-ui,
+          sans-serif;
+        cursor: pointer;
+      }
+      #v-ad .btn.o {
+        background: transparent;
+        color: var(--pr);
+      }
+      #v-ad .btn.s {
+        padding: 3px 12px;
+        font-size: 13px;
+        border-width: 1.5px;
+      }
+      #v-ad .tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+      #v-ad .tabs button {
+        border: 1.5px solid var(--bd);
+        background: var(--card);
+        color: var(--tx);
+        border-radius: 99px;
+        padding: 6px 16px;
+        font:
+          500 14px "Be Vietnam Pro",
+          system-ui,
+          sans-serif;
+        cursor: pointer;
+      }
+      #v-ad .tabs button.on {
+        background: var(--ac);
+        border-color: var(--pr);
+        color: #5a3a00;
+        font-weight: 700;
+      }
+      #v-ad .tw {
+        overflow-x: auto;
+        background: var(--card);
+        border: 1px solid var(--bd);
+        border-radius: 18px;
+      }
+      #v-ad table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 720px;
+      }
+      #v-ad th,
+      #v-ad td {
+        padding: 12px 14px;
+        text-align: left;
+        border-bottom: 1px solid var(--bd);
+        white-space: nowrap;
+      }
+      #v-ad th {
+        font-size: 12px;
+        text-transform: uppercase;
+        color: var(--mu);
+        letter-spacing: 0.03em;
+      }
+      #v-ad tr:last-child td {
+        border-bottom: 0;
+      }
+      #v-ad .n {
+        text-align: right;
+      }
+      #v-ad .tag {
+        font-size: 12px;
+        font-weight: 600;
+        padding: 3px 11px;
+        border-radius: 99px;
+      }
+      #v-ad .tag.u {
+        background: #e67e2222;
+        color: var(--pr);
+      }
+      #v-ad .tag.p {
+        background: #0f684a22;
+        color: var(--sec);
+      }
+      #v-ad .tag.o {
+        background: var(--er);
+        color: #fff;
+      }
+      #v-ad dark {
+      }
+      #v-ad dialog {
+        border: 0;
+        border-radius: 24px;
+        padding: 0;
+        width: min(560px, calc(100% - 24px));
+        max-height: 92vh;
+        background: var(--card);
+        color: var(--tx);
+        box-shadow: 0 20px 60px #0006;
+      }
+      #v-ad dialog::backdrop {
+        background: #0f684a99;
+      }
+      #v-ad .mh {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 22px;
+        border-bottom: 1px solid var(--bd);
+        font-weight: 700;
+        font-size: 18px;
+      }
+      #v-ad .x {
+        border: 0;
+        background: none;
+        color: var(--mu);
+        font-size: 26px;
+        cursor: pointer;
+        line-height: 1;
+      }
+      #v-ad .mb {
+        padding: 16px 22px;
+        overflow-y: auto;
+        max-height: 62vh;
+      }
+      #v-ad .st {
+        border: 1px solid var(--bd);
+        background: var(--bg);
+        border-radius: 14px;
+        padding: 12px 14px;
+        margin-bottom: 12px;
+        font-size: 14px;
+      }
+      #v-ad .stt {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 700;
+        margin-bottom: 8px;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      #v-ad .stt small {
+        font-weight: 400;
+        color: var(--mu);
+      }
+      #v-ad select,
+      #v-ad input.t {
+        width: 100%;
+        border: 1.5px solid var(--bd);
+        background: var(--card);
+        color: var(--tx);
+        border-radius: 10px;
+        padding: 8px 10px;
+        font: inherit;
+      }
+      #v-ad .ocr {
+        width: 100%;
+        border: 2px dashed var(--pr);
+        background: transparent;
+        color: var(--pr);
+        border-radius: 12px;
+        padding: 10px;
+        font:
+          600 14px "Be Vietnam Pro",
+          system-ui,
+          sans-serif;
+        cursor: pointer;
+        margin-bottom: 10px;
+      }
+      #v-ad .g {
+        display: grid;
+        grid-template-columns: 1fr 1fr auto;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+      #v-ad .g label {
+        font-size: 12px;
+        color: var(--mu);
+      }
+      #v-ad .g b {
+        color: var(--pr);
+        text-align: right;
+        min-width: 90px;
+      }
+      #v-ad .sv {
+        display: flex;
+        justify-content: space-between;
+      }
+      #v-ad .tot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid var(--bd);
+        padding-top: 12px;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      #v-ad .tot b.big {
+        font-size: 20px;
+        color: var(--pr);
+      }
+      #v-ad .mf {
+        padding: 14px 22px;
+        border-top: 1px solid var(--bd);
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      #v-ad #toast {
+        position: fixed;
+        left: 50%;
+        bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+        transform: translateX(-50%);
+        background: var(--sec);
+        color: #fff;
+        padding: 10px 18px;
+        border-radius: 99px;
+        font-size: 14px;
+        font-weight: 600;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+        max-width: 90%;
+        text-align: center;
+      }
+      #v-ad #toast.on {
+        opacity: 1;
+      }
+      #v-ad .tools {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+        align-items: center;
+      }
+      #v-ad .tools input,
+      #v-ad .tools select {
+        border: 1.5px solid var(--bd);
+        background: var(--card);
+        color: var(--tx);
+        border-radius: 99px;
+        padding: 8px 14px;
+        font: inherit;
+      }
+      #v-ad .tools input {
+        flex: 1;
+        min-width: 180px;
+      }
+      #v-ad .tag.l {
+        background: var(--bd);
+        color: var(--mu);
+      }
+      #v-ad .tag.a {
+        background: var(--sec);
+        color: #fff;
+      }
+      #v-ad .tag.t {
+        background: var(--ac);
+        color: #5a3a00;
+      }
+      #v-ad .fld {
+        display: block;
+        margin-bottom: 12px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      #v-ad .in {
+        display: flex;
+        margin-top: 4px;
+        border: 1.5px solid var(--bd);
+        border-radius: 12px;
+        background: var(--bg);
+        overflow: hidden;
+      }
+      #v-ad .in:focus-within {
+        border-color: var(--pr);
+      }
+      #v-ad .in.er {
+        border-color: var(--er);
+      }
+      #v-ad .in input,
+      #v-ad .in select {
+        flex: 1;
+        min-width: 0;
+        border: 0;
+        background: transparent;
+        color: var(--tx);
+        font:
+          400 15px "Be Vietnam Pro",
+          system-ui,
+          sans-serif;
+        padding: 10px 12px;
+        outline: 0;
+        width: auto;
+        border-radius: 0;
+      }
+      #v-ad .in button {
+        border: 0;
+        background: none;
+        color: var(--sec);
+        font:
+          600 13px "Be Vietnam Pro",
+          system-ui,
+          sans-serif;
+        padding: 0 12px;
+        cursor: pointer;
+      }
+      #v-ad .err {
+        display: block;
+        color: var(--er);
+        font-weight: 400;
+        font-size: 12px;
+        min-height: 16px;
+      }
+      #v-ad .gr {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 12px;
+      }
+      @media (max-width: 520px) {
+        #v-ad .gr {
+          grid-template-columns: 1fr;
+        }
+      }
+      #v-ad .mb form {
+        margin: 0;
+      }
+      #v-ad th,
+      #v-ad td {
+        padding: 12px 8px !important;
+      }
+      #v-ad .tools select {
+        width: auto;
+      }
+      #v-ad .tools input {
+        width: auto;
+      }
+      #v-qt .w {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+      #v-qt header {
+        background: var(--bg);
+        border-bottom: 1px solid var(--bd);
+      }
+      #v-qt header .w {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        flex-wrap: wrap;
+      }
+      #v-qt .logo {
+        background: #fff9f2;
+        border-radius: 12px;
+        padding: 4px 10px;
+        width: 210px;
+      }
+      #v-qt .lg {
+        background: var(--nt) center/100% auto no-repeat;
+        aspect-ratio: 810/342;
+        container-type: inline-size;
+        position: relative;
+        width: 100%;
+      }
+      #v-qt .lg span {
+        position: absolute;
+        left: 37%;
+        top: 57.6%;
+        font:
+          400 5.8cqw/1 "Be Vietnam Pro",
+          system-ui,
+          sans-serif;
+        color: #0f684a;
+        white-space: nowrap;
+      }
+      #v-qt nav {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      #v-qt nav a {
+        padding: 7px 14px;
+        border-radius: 99px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--tx);
+        text-decoration: none;
+        border: 1.5px solid transparent;
+      }
+      #v-qt nav a:hover {
+        border-color: var(--bd);
+      }
+      #v-qt nav a.on {
+        background: var(--sec);
+        color: #fff;
+        font-weight: 600;
+      }
+      #v-qt html,
+      #v-qt body {
+        margin: 0;
+      }
+      #v-qt {
+        font-family: "Be Vietnam Pro", Inter, Arial, sans-serif;
+        background: var(--bg);
+        color: var(--tx);
+        font-size: 14px;
+        background: var(--bg);
+      }
+      #v-qt .app {
+        min-height: 100vh;
+      }
+      #v-qt .brand {
+        background: rgb(27, 79, 67);
+        border-radius: 14px;
+        padding: 10px;
+        margin-bottom: 14px;
+      }
+      #v-qt .brand img {
+        width: 100%;
+        display: block;
+      }
+      #v-qt aside a {
+        color: #fff;
+        opacity: 0.85;
+        text-decoration: none;
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-weight: 500;
+        cursor: pointer;
+        display: block;
+      }
+      #v-qt aside a:hover {
+        opacity: 1;
+        background: rgba(255, 255, 255, 0.1);
+      }
+      #v-qt aside a.on {
+        background: var(--bg);
+        color: var(--sec);
+        opacity: 1;
+        font-weight: 700;
+        box-shadow: inset 4px 0 0 var(--pri);
+      }
+      #v-qt main {
+        padding: 24px 32px;
+        min-width: 0;
+      }
+      #v-qt .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      #v-qt .crumb {
+        color: var(--bd);
+        font-size: 12px;
+      }
+      #v-qt .user {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 99px;
+        padding: 5px 14px 5px 5px;
+      }
+      #v-qt .av {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: var(--acc);
+        color: var(--sec);
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+      }
+      #v-qt h1 {
+        font-size: 24px;
+        margin: 0 0 4px;
+        color: var(--sec);
+      }
+      #v-qt p.d {
+        margin: 0;
+        color: #4b5563;
+      }
+      #v-qt .head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 16px;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+      }
+      #v-qt .btn {
+        font: inherit;
+        font-weight: 600;
+        border: 1.5px solid var(--sec);
+        color: var(--sec);
+        background: #fff;
+        padding: 9px 16px;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+      #v-qt .btn:hover {
+        background: #eef6f2;
+      }
+      #v-qt .btn.p {
+        background: var(--pri);
+        border-color: var(--pri);
+        color: #fff;
+      }
+      #v-qt .btn.p:hover {
+        filter: brightness(0.95);
+      }
+      #v-qt .btn.s {
+        background: var(--sec);
+        color: #fff;
+      }
+      #v-qt .btn.sm {
+        padding: 4px 10px;
+        font-size: 12px;
+        border-radius: 8px;
+      }
+      #v-qt .btn.r {
+        color: #b45309;
+        border-color: var(--pri);
+      }
+      #v-qt .stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-bottom: 18px;
+      }
+      #v-qt .st {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 14px 16px;
+        border-top: 4px solid var(--sec);
+      }
+      #v-qt .st:nth-child(2) {
+        border-top-color: var(--acc);
+      }
+      #v-qt .st:nth-child(3) {
+        border-top-color: var(--sec);
+      }
+      #v-qt .st:nth-child(4) {
+        border-top-color: var(--bd);
+      }
+      #v-qt .st b {
+        display: block;
+        font-size: 26px;
+        margin-top: 4px;
+      }
+      #v-qt .st span {
+        color: #6b7280;
+        font-size: 12px;
+      }
+      #v-qt .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        margin-bottom: 18px;
+        overflow: hidden;
+      }
+      #v-qt .card > h2 {
+        font-size: 15px;
+        margin: 0;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--line);
+      }
+      #v-qt .cb {
+        padding: 18px;
+      }
+      #v-qt .g {
+        display: grid;
+        gap: 14px;
+      }
+      #v-qt .g3 {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      #v-qt .g4 {
+        grid-template-columns: repeat(4, 1fr);
+      }
+      #v-qt .g2 {
+        grid-template-columns: 1fr 1fr;
+      }
+      #v-qt label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #374151;
+      }
+      #v-qt input,
+      #v-qt select,
+      #v-qt textarea {
+        font: inherit;
+        width: 100%;
+        padding: 9px 11px;
+        border: 1px solid var(--bd);
+        border-radius: 10px;
+        background: #fff;
+        color: var(--tx);
+      }
+      #v-qt input:focus,
+      #v-qt select:focus,
+      #v-qt textarea:focus {
+        outline: 2px solid var(--acc);
+        border-color: var(--pri);
+      }
+      #v-qt .act {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 14px;
+      }
+      #v-qt .tw {
+        overflow-x: auto;
+      }
+      #v-qt table {
+        width: 100%;
+        border-collapse: collapse;
+        white-space: nowrap;
+      }
+      #v-qt th {
+        background: #fbf3e8;
+        text-align: left;
+        font-size: 12px;
+        color: #4b5563;
+        padding: 11px 12px;
+        font-weight: 600;
+      }
+      #v-qt td {
+        padding: 12px;
+        border-top: 1px solid var(--line);
+      }
+      #v-qt tr:hover td {
+        background: #fffcf8;
+      }
+      #v-qt .sub {
+        display: block;
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 2px;
+      }
+      #v-qt a.lk {
+        color: var(--sec);
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 12px;
+      }
+      #v-qt .chip {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 99px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      #v-qt .ok {
+        background: #ddefe6;
+        color: var(--sec);
+      }
+      #v-qt .warn {
+        background: var(--acc);
+        color: #7a4a05;
+      }
+      #v-qt .bad {
+        background: #fce3cc;
+        color: #b45309;
+      }
+      #v-qt .mut {
+        background: #e8ebf0;
+        color: #4b5563;
+      }
+      #v-qt .rowa {
+        display: flex;
+        gap: 6px;
+      }
+      #v-qt .pg {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 18px;
+        border-top: 1px solid var(--line);
+        color: #6b7280;
+        font-size: 13px;
+      }
+      #v-qt .pg button {
+        border: 1px solid var(--line);
+        background: #fff;
+        border-radius: 8px;
+        padding: 5px 10px;
+        margin-left: 4px;
+        cursor: pointer;
+        font: inherit;
+      }
+      #v-qt .pg .cur {
+        background: var(--sec);
+        color: #fff;
+        border-color: var(--sec);
+      }
+      #v-qt .ov {
+        position: fixed;
+        inset: 0;
+        background: rgba(31, 41, 55, 0.45);
+        display: none;
+        z-index: 9;
+        justify-content: center;
+        align-items: center;
+        padding: 16px;
+      }
+      #v-qt .ov.open {
+        display: flex;
+      }
+      #v-qt .ov.dr {
+        justify-content: flex-end;
+        align-items: stretch;
+        padding: 0;
+      }
+      #v-qt .md {
+        background: #fff;
+        border-radius: 18px;
+        width: min(640px, 100%);
+        max-height: 92vh;
+        overflow: auto;
+      }
+      #v-qt .dr .md {
+        border-radius: 18px 0 0 18px;
+        max-height: none;
+        width: min(520px, 100%);
+      }
+      #v-qt .md.w {
+        width: min(860px, 100%);
+      }
+      #v-qt .mh {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--line);
+        font-weight: 700;
+        color: var(--sec);
+        position: sticky;
+        top: 0;
+        background: #fff;
+      }
+      #v-qt .mb {
+        padding: 20px;
+      }
+      #v-qt .mf {
+        padding: 14px 20px;
+        border-top: 1px solid var(--line);
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+      #v-qt .x {
+        border: 0;
+        background: none;
+        font-size: 18px;
+        cursor: pointer;
+        color: var(--bd);
+      }
+      #v-qt .kv {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      #v-qt .kv small {
+        display: block;
+        color: #6b7280;
+        font-size: 12px;
+      }
+      #v-qt .kv b {
+        font-weight: 600;
+      }
+      #v-qt h3 {
+        font-size: 13px;
+        margin: 16px 0 8px;
+        color: var(--sec);
+      }
+      #v-qt .steps {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 18px;
+      }
+      #v-qt .stp {
+        flex: 1;
+        text-align: center;
+        font-size: 12px;
+        color: #6b7280;
+        border-top: 4px solid var(--line);
+        padding-top: 8px;
+      }
+      #v-qt .stp.on {
+        border-color: var(--pri);
+        color: var(--tx);
+        font-weight: 700;
+      }
+      #v-qt .stp.done {
+        border-color: var(--sec);
+        color: var(--sec);
+      }
+      #v-qt .box {
+        background: #fbf3e8;
+        border: 1px dashed var(--pri);
+        border-radius: 12px;
+        padding: 14px;
+        margin-bottom: 14px;
+        font-size: 13px;
+      }
+      #v-qt .ocr {
+        border: 2px dashed var(--bd);
+        border-radius: 12px;
+        padding: 22px;
+        text-align: center;
+        color: #6b7280;
+        margin-bottom: 10px;
+      }
+      #v-qt .sig {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin-bottom: 8px;
+      }
+      #v-qt .pane {
+        display: none;
+      }
+      #v-qt .pane.on {
+        display: block;
+      }
+      #v-qt .qv {
+        display: none;
+      }
+      #v-qt .qv.on {
+        display: block;
+      }
+      #v-qt .rgrid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        gap: 12px;
+      }
+      #v-qt .rc {
+        border: 1.5px solid var(--line);
+        border-radius: 14px;
+        padding: 14px;
+        background: var(--card);
+        cursor: pointer;
+        text-align: left;
+        font: inherit;
+        color: var(--tx);
+      }
+      #v-qt .rc:hover {
+        border-color: var(--pri);
+      }
+      #v-qt .rc b {
+        display: block;
+        font-size: 16px;
+        margin-bottom: 2px;
+      }
+      #v-qt .rc small {
+        display: block;
+        color: #6b7280;
+        font-size: 12px;
+      }
+      #v-qt .rc .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+      #v-qt .bar {
+        height: 8px;
+        border-radius: 99px;
+        background: #e8ebf0;
+        overflow: hidden;
+        margin: 10px 0 4px;
+      }
+      #v-qt .bar i {
+        display: block;
+        height: 100%;
+        background: var(--sec);
+        border-radius: 99px;
+      }
+      #v-qt .bar.hi i {
+        background: var(--pri);
+      }
+      #v-qt .tw.sc {
+        max-height: 230px;
+        overflow-y: auto;
+      }
+      #v-qt .ferr {
+        color: #b45309;
+        font-size: 12px;
+        min-height: 16px;
+        margin: 10px 0 0;
+      }
+      #v-qt th[data-k] {
+        cursor: pointer;
+        user-select: none;
+      }
+      #v-qt select:disabled {
+        background: #f3f4f6;
+        color: #9ca3af;
+        cursor: not-allowed;
+      }
+
+      @media (max-width: 900px) {
+        #v-qt .app {
+          grid-template-columns: 1fr;
+        }
+        #v-qt aside {
+          flex-direction: row;
+          flex-wrap: wrap;
+          align-items: center;
+        }
+        #v-qt .brand {
+          width: 150px;
+          margin: 0;
+        }
+        #v-qt .g3,
+        #v-qt .g4,
+        #v-qt .stats,
+        #v-qt .g2 {
+          grid-template-columns: 1fr 1fr;
+        }
+        #v-qt main {
+          padding: 16px;
+        }
+      }
+      @media (max-width: 560px) {
+        #v-qt .g3,
+        #v-qt .g4,
+        #v-qt .stats,
+        #v-qt .g2,
+        #v-qt .kv {
+          grid-template-columns: 1fr;
+        }
+      }
+      #v-qt .hdr {
+        background: rgb(251, 252, 247);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        gap: 28px;
+        padding: 8px 32px;
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        padding-top: calc(8px + env(safe-area-inset-top, 0px));
+      }
+      #v-qt .hdr img {
+        height: 68px;
+        display: block;
+      }
+      #foxi-widget #foxi-launcher {
+        position: fixed;
+        right: 22px;
+        bottom: 22px;
+        z-index: 30;
+        width: 76px;
+        height: 76px;
+        border: 2px solid #e67e22;
+        border-radius: 50%;
+        padding: 0;
+        overflow: hidden;
+        background: linear-gradient(145deg, #fff9f2, #f9dfaf);
+        box-shadow: 0 8px 28px #14251f30;
+        cursor: pointer;
+        transition:
+          transform 0.18s,
+          box-shadow 0.18s;
+      }
+      #foxi-widget #foxi-launcher:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px #14251f40;
+      }
+      #foxi-widget #foxi-launcher img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center 48%;
+        border-radius: 50%;
+        background: transparent;
+      }
+      #foxi-widget #foxi-panel {
+        position: fixed;
+        right: 22px;
+        bottom: 110px;
+        z-index: 30;
+        width: min(390px, calc(100vw - 28px));
+        height: min(590px, calc(100vh - 140px));
+        min-height: 390px;
+        background: #fff;
+        border: 1px solid #e7dfd3;
+        border-radius: 20px;
+        box-shadow: 0 18px 58px #14251f35;
+        display: none;
+        overflow: hidden;
+        flex-direction: column;
+      }
+      #foxi-widget #foxi-panel.open {
+        display: flex;
+      }
+      #foxi-widget #foxi-panel.notice {
+        width: min(330px, calc(100vw - 32px));
+        height: auto;
+        min-height: 0;
+        right: 24px;
+        bottom: 108px;
+        border-radius: 18px;
+        box-shadow: 0 10px 32px #14251f26;
+      }
+      #foxi-widget #foxi-panel.notice::after {
+        content: "";
+        position: absolute;
+        right: 25px;
+        bottom: -8px;
+        width: 15px;
+        height: 15px;
+        background: #fff;
+        border-right: 1px solid #e7dfd3;
+        border-bottom: 1px solid #e7dfd3;
+        transform: rotate(45deg);
+      }
+      #foxi-widget #foxi-panel.notice .foxi-head { padding: 9px 12px; }
+      #foxi-widget #foxi-panel.notice .foxi-head img { width: 34px; height: 34px; }
+      #foxi-widget #foxi-panel.notice #foxi-messages { flex: none; padding: 10px 12px 12px; }
+      #foxi-widget #foxi-panel.notice .foxi-msg { max-width: 100%; margin: 0; padding: 10px 12px; }
+      #foxi-widget #foxi-panel.notice .foxi-suggestions,
+      #foxi-widget #foxi-panel.notice .foxi-compose { display: none; }
+      #foxi-widget .foxi-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
+        background: #fff9f2;
+        border-bottom: 1px solid #e7dfd3;
+      }
+      #foxi-widget .foxi-head img {
+        width: 42px;
+        height: 42px;
+        object-fit: cover;
+        object-position: center 48%;
+        background: linear-gradient(145deg, #fff9f2, #f9dfaf);
+        border-radius: 50%;
+        border: 1px solid #e7dfd3;
+      }
+      #foxi-widget .foxi-head strong {
+        font-size: 14px;
+        color: #0f684a;
+        display: block;
+      }
+      #foxi-widget .foxi-head small {
+        font-size: 11px;
+        color: #64748b;
+      }
+      #foxi-widget .foxi-close {
+        margin-left: auto;
+        border: 0;
+        background: transparent;
+        color: #64748b;
+        font-size: 24px;
+        cursor: pointer;
+      }
+      #foxi-widget #foxi-messages {
+        flex: 1;
+        overflow: auto;
+        padding: 14px;
+        background: #fff;
+      }
+      #foxi-widget .foxi-msg {
+        max-width: 91%;
+        padding: 10px 12px;
+        margin: 0 0 10px;
+        border-radius: 14px;
+        font-size: 13px;
+        line-height: 1.55;
+        white-space: pre-line;
+        overflow-wrap: anywhere;
+      }
+      #foxi-widget .foxi-msg.bot {
+        background: #fff5e9;
+        color: #27352f;
+        border: 1px solid #f2e1cc;
+        border-top-left-radius: 4px;
+      }
+      #foxi-widget .foxi-msg.user {
+        margin-left: auto;
+        background: #0f684a;
+        color: #fff;
+        border-top-right-radius: 4px;
+      }
+      #foxi-widget .foxi-suggestions {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        padding: 0 12px 10px;
+      }
+      #foxi-widget .foxi-suggestions button {
+        border: 1px solid #e7dfd3;
+        background: #fff;
+        color: #0f684a;
+        border-radius: 99px;
+        padding: 6px 9px;
+        font:
+          500 11px "Be Vietnam Pro",
+          sans-serif;
+        cursor: pointer;
+      }
+      #foxi-widget .foxi-compose {
+        display: flex;
+        gap: 8px;
+        padding: 10px 12px;
+        border-top: 1px solid #e7dfd3;
+        background: #fff;
+      }
+      #foxi-widget #foxi-input {
+        flex: 1;
+        min-width: 0;
+        border: 1px solid #e7dfd3;
+        border-radius: 12px;
+        padding: 10px 11px;
+        font:
+          13px "Be Vietnam Pro",
+          sans-serif;
+        outline-color: #e67e22;
+      }
+      #foxi-widget #foxi-send {
+        border: 0;
+        border-radius: 12px;
+        background: #e67e22;
+        color: #fff;
+        padding: 0 13px;
+        font:
+          600 13px "Be Vietnam Pro",
+          sans-serif;
+        cursor: pointer;
+      }
+      @media (max-width: 560px) {
+        #foxi-widget #foxi-launcher {
+          width: 66px;
+          height: 66px;
+          right: 14px;
+          bottom: 14px;
+        }
+        #foxi-widget #foxi-panel {
+          right: 10px;
+          bottom: 90px;
+          height: min(600px, calc(100vh - 110px));
+        }
+        #foxi-widget #foxi-panel.notice { right: 16px; bottom: 94px; }
+      }
+      #v-qt .hdr nav {
+        display: flex;
+        gap: 6px;
+        flex: 1;
+      }
+      #v-qt .hdr nav a {
+        padding: 10px 16px;
+        border-radius: 10px;
+        font-weight: 600;
+        color: var(--tx);
+        cursor: pointer;
+      }
+      #v-qt .hdr nav a:hover {
+        background: #fbf3e8;
+      }
+      #v-qt .hdr nav a.on {
+        color: var(--pri);
+        box-shadow: inset 0 -3px 0 var(--pri);
+        border-radius: 10px 10px 0 0;
+      }
+      #v-qt main {
+        max-width: 1280px;
+        margin: 0 auto;
+      }
+      #v-qt .cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+      }
+      #v-qt .uc {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 14px;
+        background: #fff;
+      }
+      #v-qt .th {
+        height: 70px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, var(--acc), #fbf3e8);
+        display: grid;
+        place-items: center;
+        font-size: 30px;
+        margin-bottom: 10px;
+      }
+      #v-qt .uc b {
+        display: block;
+      }
+      #v-qt .uc small {
+        display: block;
+        color: #6b7280;
+        margin: 3px 0 10px;
+      }
+      #v-qt .uc.sel {
+        border: 2px solid var(--pri);
+      }
+      #v-qt .tabs {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 14px;
+      }
+      #v-qt .tabs span {
+        padding: 7px 14px;
+        border-radius: 99px;
+        background: #fff;
+        border: 1px solid var(--line);
+        font-weight: 600;
+        cursor: pointer;
+      }
+      #v-qt .tabs span.on {
+        background: var(--sec);
+        color: #fff;
+        border-color: var(--sec);
+      }
+      #v-qt .flow {
+        display: flex;
+        align-items: stretch;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      #v-qt .fs {
+        flex: 1;
+        min-width: 120px;
+        background: #fbf3e8;
+        border-radius: 12px;
+        padding: 12px;
+        text-align: center;
+        font-size: 13px;
+      }
+      #v-qt .fs i {
+        display: grid;
+        place-items: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: var(--pri);
+        color: #fff;
+        font-style: normal;
+        font-size: 12px;
+        margin: 0 auto 6px;
+        font-weight: 700;
+      }
+      #v-qt .ar {
+        align-self: center;
+        color: var(--bd);
+      }
+      @media (max-width: 900px) {
+        #v-qt .hdr {
+          flex-wrap: wrap;
+          padding: 8px 16px;
+        }
+        #v-qt .cards {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      @media (max-width: 560px) {
+        #v-qt .cards {
+          grid-template-columns: 1fr;
+        }
+      }
+      #v-qt /* ===== Trang trí thêm (thuần CSS,#v-qt chỉ dùng lại màu gốc) ===== */
+.hdr {
+        box-shadow:
+          0 1px 0 var(--line),
+          0 6px 18px -12px rgba(31, 41, 55, 0.25);
+      }
+      #v-qt .hdr::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -1px;
+        height: 3px;
+        background: linear-gradient(
+          90deg,
+          var(--pri),
+          var(--acc) 55%,
+          var(--sec)
+        );
+      }
+      #v-qt .hdr nav {
+        overflow-x: auto;
+      }
+      #v-qt .hdr nav a,
+      #v-qt .btn {
+        transition:
+          background 0.15s,
+          color 0.15s,
+          filter 0.15s,
+          transform 0.1s;
+      }
+      #v-qt .btn:active {
+        transform: translateY(1px);
+      }
+      #v-qt .card,
+      #v-qt .st,
+      #v-qt .uc {
+        transition:
+          box-shadow 0.2s,
+          transform 0.2s;
+      }
+      #v-qt .card:hover {
+        box-shadow: 0 10px 24px -16px rgba(15, 107, 74, 0.35);
+      }
+      #v-qt .st:hover,
+      #v-qt .uc:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px -14px rgba(31, 41, 55, 0.35);
+      }
+      #v-qt h1 {
+        position: relative;
+        padding-left: 14px;
+      }
+      #v-qt h1::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0.2em;
+        bottom: 0.2em;
+        width: 5px;
+        border-radius: 4px;
+        background: var(--pri);
+      }
+      #v-qt .ov.open {
+        animation: fade 0.15s ease;
+      }
+      #v-qt .ov.open .md {
+        animation: pop 0.18s ease;
+      }
+      #v-qt .ov.dr.open .md {
+        animation: slide 0.2s ease;
+      }
+      #v-qt @keyframes fade {
+        from {
+          opacity: 0;
+        }
+      }
+      #v-qt @keyframes pop {
+        from {
+          opacity: 0;
+          transform: translateY(10px) scale(0.98);
+        }
+      }
+      #v-qt @keyframes slide {
+        from {
+          transform: translateX(40px);
+          opacity: 0;
+        }
+      }
+      #v-qt .hdr nav a:focus-visible,
+      #v-qt .btn:focus-visible {
+        outline: 2px solid var(--acc);
+        outline-offset: 2px;
+      }
+      #v-qt {
+        --pri: #e67e22;
+        --acc: #ffd38a;
+        --sec: #0f684a;
+        --line: #e7dfd3;
+        --bd: #94a3b8;
+        --bg: #fff9f2;
+        --tx: #1f2937;
+        --card: #fff;
+        background: #fff9f2;
+        color: #1f2937;
+        font-size: 14px;
+        font-family: "Be Vietnam Pro", Inter, Arial, sans-serif;
+      }
+      #v-qt #tiDetail {
+        display: none;
+      }
+      #v-qt #tiDetail.on {
+        display: grid;
+      }
+      #v-qt #tiLock {
+        display: none;
+      }
+      #v-qt #tiDetail.lk #tiLock {
+        display: block;
+      }
+      #v-qt #tiDetail.lk #tiInfo {
+        grid-column: 1/-1;
+      }
+      #v-qt #tiDetail.lk #tiReg {
+        display: none;
+      }
+      #v-qt #tiHint.off {
+        display: none;
+      }
+      #v-qt .uc .btn {
+        width: 100%;
+      }
+      #v-qt #qtoast {
+        position: fixed;
+        left: 50%;
+        bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+        transform: translateX(-50%);
+        background: #0f684a;
+        color: #fff;
+        padding: 10px 18px;
+        border-radius: 99px;
+        font-weight: 600;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+        z-index: 20;
+      }
+      #v-qt #qtoast.on {
+        opacity: 1;
+      }
+
+      /* --- Deep link & enhancements --- */
+      a.lk,
+      .lk {
+        color: var(--sec, #0f684a);
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: underline;
+      }
+      a.lk:hover,
+      .lk:hover {
+        opacity: 0.8;
+      }
+      .reset-btn {
+        font-size: 11px;
+        color: var(--mu);
+        background: none;
+        border: 1px dashed var(--bd);
+        padding: 2px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-left: 8px;
+      }
+      .reset-btn:hover {
+        color: var(--er);
+        border-color: var(--er);
+      }
+
+      /* Góc trọ identity: keep every management screen on the same warm, orange and green palette. */
+      :root {
+        --pr: #e67e22;
+        --sec: #0f684a;
+        --ac: #ffd38a;
+        --bg: #fff9f2;
+        --card: #fff;
+        --tx: #1f2937;
+        --mu: #64748b;
+        --bd: #94a3b8;
+        --ink: #0f684a;
+        --er: #c0392b;
+      }
+      #v-qt {
+        --pri: var(--pr);
+        --acc: var(--ac);
+        --sec: #0f684a;
+        --line: var(--bd);
+        background: var(--bg);
+        color: var(--tx);
+      }
+      #v-qt .hdr {
+        background: var(--bg);
+        border-color: var(--bd);
+      }
+      #v-qt .brand {
+        background: var(--sec);
+      }
+      #v-qt .logo,
+      #v-home .logo,
+      #v-hd .logo,
+      #v-tk .logo,
+      #v-ad .logo {
+        background: transparent;
+        padding: 0;
+        border-radius: 0;
+      }
+      #v-qt .btn.p,
+      #v-qt .btn.s {
+        color: #fff;
+      }
+      #v-qt .btn:not(.p):not(.s) {
+        background: var(--card);
+        border-color: var(--sec);
+        color: var(--sec);
+      }
+      #v-qt .btn:not(.p):not(.s):hover {
+        background: color-mix(in srgb, var(--sec) 8%, var(--card));
+      }
+      #v-qt th {
+        background: color-mix(in srgb, var(--ac) 28%, var(--card));
+        color: var(--tx);
+      }
+      #v-qt .box,
+      #v-qt .fs {
+        background: color-mix(in srgb, var(--ac) 18%, var(--card));
+      }
+      #v-qt .chip.ok {
+        background: color-mix(in srgb, var(--sec) 14%, var(--card));
+        color: var(--sec);
+      }
+      #v-qt .chip.warn {
+        background: color-mix(in srgb, var(--ac) 60%, var(--card));
+        color: #70420a;
+      }
+      #v-qt .chip.bad {
+        background: color-mix(in srgb, var(--pr) 16%, var(--card));
+        color: #9a4810;
+      }
+      #v-qt .hdr nav a.on {
+        color: var(--sec);
+        box-shadow: inset 0 -3px 0 var(--pr);
+      }
+      #v-qt .hdr::after {
+        background: linear-gradient(
+          90deg,
+          var(--pr),
+          var(--ac) 55%,
+          var(--sec)
+        );
+      }
+      .stabs a.on,
+      #v-home .tag,
+      #v-hd .tabs button.on,
+      #v-ad .tabs button.on,
+      #v-tk .setting-tabs button.on {
+        background: var(--ac);
+        border-color: var(--pr);
+        color: #5a3a00;
+      }
+      button:focus-visible,
+      a:focus-visible,
+      input:focus-visible,
+      select:focus-visible {
+        outline: 2px solid var(--pr);
+        outline-offset: 2px;
+      }
+      .account-dropdown {
+        position: relative;
+        display: flex;
+        align-items: center;
+        margin-left: auto;
+      }
+      .account-trigger {
+        width: 42px;
+        height: 42px;
+        padding: 2px;
+        border: 2px solid var(--bd);
+        border-radius: 50%;
+        background: #fff;
+        cursor: pointer;
+        display: grid;
+        place-items: center;
+      }
+      .account-trigger:hover,
+      .account-trigger:focus-visible {
+        border-color: var(--sec);
+      }
+      .nav-avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: var(--sec);
+        color: #fff;
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+        font-size: 14px;
+        overflow: hidden;
+        background-size: cover;
+        background-position: center;
+      }
+      .account-menu {
+        position: absolute;
+        top: calc(100% + 6px);
+        right: 0;
+        display: none;
+        min-width: 230px;
+        padding: 7px;
+        background: #fff;
+        border: 1px solid var(--bd);
+        border-radius: 14px;
+        box-shadow: 0 12px 30px #1f293720;
+        z-index: 40;
+      }
+      .account-dropdown:hover .account-menu,
+      .account-dropdown:focus-within .account-menu {
+        display: grid;
+      }
+      .account-summary {
+        padding: 9px 11px 11px;
+        border-bottom: 1px solid var(--bd);
+        margin-bottom: 5px;
+      }
+      .account-summary b,
+      .account-summary small {
+        display: block;
+      }
+      .account-summary small {
+        color: var(--mu);
+        font-size: 12px;
+      }
+      .account-menu a {
+        display: block;
+        padding: 10px 12px;
+        border-radius: 8px;
+        color: var(--tx);
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      .account-menu a:hover {
+        background: #fff5e9;
+        color: var(--sec);
+      }
+      #v-ad main{max-width:1160px;margin:0 auto;padding:30px 24px 56px}
+      #v-ad .bar{margin-bottom:20px;align-items:center}
+      #v-ad .bar>div{min-width:0}
+      #v-ad .ad-eyebrow{display:block;color:var(--sec);font-size:11px;font-weight:700;letter-spacing:.08em;margin-bottom:5px}
+      #v-ad .bar h1{font-size:26px;line-height:1.25}
+      #v-ad .ad-subtitle{margin:5px 0 0;color:var(--mu);font-size:14px}
+      #v-ad #new{border-radius:12px;min-height:44px;box-shadow:0 5px 12px #e67e2228}
+      #v-ad .account-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:20px}
+      #v-ad .account-stat{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:15px 18px;background:#fff;border:1px solid var(--bd);border-radius:14px;box-shadow:0 3px 12px #2b211408}
+      #v-ad .account-stat span{font-size:13px;color:var(--mu)}#v-ad .account-stat b{font-size:22px;color:var(--sec)}
+      #v-ad .tools{display:grid;grid-template-columns:minmax(0,1fr) 190px 190px;gap:10px;margin:0 0 14px;padding:14px;background:#fff;border:1px solid var(--bd);border-radius:16px}
+      #v-ad .tools input,#v-ad .tools select{box-sizing:border-box;width:100%;height:44px;margin:0;padding:0 13px;border:1px solid var(--bd);border-radius:10px;background:#fff;color:var(--tx);font:400 14px "Be Vietnam Pro",system-ui,sans-serif}
+      #v-ad .tools input:focus,#v-ad .tools select:focus{outline:2px solid #0f684a30;border-color:var(--sec)}
+      #v-ad .tw{overflow-x:auto;background:#fff;border:1px solid var(--bd);border-radius:16px;box-shadow:0 3px 14px #2b211408}
+      #v-ad table{width:100%;min-width:840px}
+      #v-ad th{font-size:11px;letter-spacing:.04em;background:#f8f7f2;padding:13px 14px}
+      #v-ad td{padding:14px;vertical-align:middle}
+      #v-ad tbody tr:hover{background:#fffaf0}
+      #v-ad td[data-label="Thao tác"]{white-space:normal;min-width:190px}
+      #v-ad td[data-label="Thao tác"] .btn{margin:2px}
+      #v-ad .lk{color:var(--sec);font-weight:600;text-decoration:none}
+      #v-hd main{max-width:1160px;padding:30px 24px 56px}
+      #v-hd .bar{margin-bottom:20px;align-items:center}
+      #v-hd .bar>div{min-width:0}
+      #v-hd .hd-eyebrow{display:block;color:var(--sec);font-size:11px;font-weight:700;letter-spacing:.08em;margin-bottom:5px}
+      #v-hd .bar h1{font-size:26px;line-height:1.25}
+      #v-hd .hd-subtitle{margin:5px 0 0;color:var(--mu);font-size:14px}
+      #v-hd #new{border-radius:12px;min-height:44px;box-shadow:0 5px 12px #e67e2228}
+      #v-hd .invoice-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:20px}
+      #v-hd .invoice-stat{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:15px 18px;background:#fff;border:1px solid var(--bd);border-radius:14px;box-shadow:0 3px 12px #2b211408}
+      #v-hd .invoice-stat span{font-size:13px;color:var(--mu)}#v-hd .invoice-stat b{font-size:22px;color:var(--sec)}
+      #v-hd .tabs{gap:8px;padding:4px 0}
+      #v-hd .tabs button{padding:8px 15px}
+      #v-hd .tw{box-shadow:0 3px 14px #2b211408}
+      #v-hd th{background:#f8f7f2}
+      #v-hd td[data-label="Thao tác"]{white-space:normal;min-width:150px}
+      #v-hd td[data-label="Thao tác"] .btn{margin:2px}
+      #v-hd td[data-label="Mã HĐ"] b{color:var(--sec)}
+      #v-qt #kvRoomCard>.kv-room-note{margin:12px 18px 14px;padding:0;color:var(--mu);font-size:13px;line-height:1.6;max-width:78ch}
+      #v-qt #kn .kn-filters{display:flex;gap:8px;flex-wrap:wrap}
+      #v-qt #kn{max-width:1280px;margin:0 auto;padding-bottom:32px;font-family:"Be Vietnam Pro",system-ui,sans-serif}
+      #v-qt #kn .head{align-items:flex-start;margin-bottom:18px}
+      #v-qt #kn .head h1{font-size:26px;line-height:1.3;letter-spacing:-.02em;margin:0 0 5px}
+      #v-qt #kn .head .d{font-size:14px;line-height:1.6;max-width:72ch;margin:0}
+      #v-qt #kn .stats{gap:14px;margin-bottom:18px}
+      #v-qt #kn .st{min-height:92px;padding:16px 18px}
+      #v-qt #kn .st span{font-size:13px;line-height:1.45}
+      #v-qt #kn .st b{font-size:24px;line-height:1.2}
+      #v-qt #knCard>h2{font-size:17px;line-height:1.4;margin:0;padding:17px 20px;border-bottom:1px solid var(--bd)}
+      #v-qt #kn .kn-filters .btn{border-radius:99px;min-height:36px;padding:7px 13px;font:600 13px/1.35 "Be Vietnam Pro",system-ui,sans-serif}
+      #v-qt #kn .kn-filters .btn span{display:inline-flex;min-width:20px;justify-content:center;margin-left:4px;font-size:12px}
+      #v-qt #kn .tw{overflow:auto;border-radius:0 0 14px 14px}
+      #v-qt #kn table{width:100%;min-width:1080px;border-collapse:collapse;font:13px/1.5 "Be Vietnam Pro",system-ui,sans-serif}
+      #v-qt #kn th{font-size:11px;line-height:1.4;letter-spacing:.025em;white-space:nowrap;padding:12px 11px;vertical-align:bottom}
+      #v-qt #kn td{font-size:13px;line-height:1.5;padding:12px 11px;vertical-align:top}
+      #v-qt #kn th:nth-child(1){width:110px}#v-qt #kn th:nth-child(2){width:140px}#v-qt #kn th:nth-child(3){width:72px}
+      #v-qt #kn th:nth-child(5){width:132px}#v-qt #kn th:nth-child(6){width:105px}#v-qt #kn th:nth-child(7){width:130px}#v-qt #kn th:nth-child(8){width:220px}
+      #v-qt #kn .kn-filters .btn.p{color:#fff}
+      #v-qt #knRows td:nth-child(1){font-weight:700;color:var(--sec)}
+      #v-qt #knRows td:nth-child(4){white-space:normal;min-width:250px;max-width:420px;line-height:1.55}
+      #v-qt #knRows td:nth-child(8){min-width:210px}
+      #v-qt .kn-priority{display:inline-flex;align-items:center;padding:4px 9px;border-radius:99px;font-size:12px;font-weight:700;white-space:nowrap}
+      #v-qt .kn-priority.urgent{background:#fee2e2;color:#b42318}
+      #v-qt .kn-priority.high{background:#ffedd5;color:#c2410c}
+      #v-qt .kn-priority.medium{background:#fef3c7;color:#92400e}
+      #v-qt .kn-priority.low{background:#dcfce7;color:#166534}
+      #v-qt #knRows .kn-actions{display:flex;gap:6px;flex-wrap:wrap}
+      #v-qt #knRows .kn-actions .btn{white-space:nowrap}
+      #v-qt .kn-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid var(--bd);border-radius:12px;overflow:hidden;margin-bottom:16px}
+      #v-qt .kn-detail-item{padding:11px 13px;border-bottom:1px solid var(--bd)}
+      #v-qt .kn-detail-item:nth-child(odd){border-right:1px solid var(--bd)}
+      #v-qt .kn-detail-item:nth-last-child(-n+2){border-bottom:0}
+      #v-qt .kn-detail-item small{display:block;color:var(--mu);font-weight:600;margin-bottom:3px}
+      #v-qt .kn-reason-label{font-weight:700;color:var(--sec);margin-bottom:7px}
+      #v-qt .kn-reason{padding:13px 14px;min-height:90px;border:1px solid var(--bd);border-radius:12px;background:var(--bg);white-space:pre-wrap;line-height:1.6}
+      #v-qt #knToast{position:fixed;left:50%;bottom:24px;z-index:50;transform:translate(-50%,20px);padding:10px 18px;border-radius:99px;background:var(--sec);color:#fff;box-shadow:0 8px 24px #1f293329;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s}
+      #v-qt #knToast.on{opacity:1;transform:translate(-50%,0)}
+      #v-tenant,#v-room-search{background:var(--bg);color:var(--tx);font:15px/1.55 "Be Vietnam Pro",system-ui,sans-serif}
+      #v-tenant a,#v-room-search a{color:inherit;text-decoration:none}
+      #v-tenant .tenant-header,#v-room-search .tenant-header{position:sticky;top:0;z-index:20;background:#fffdf9;border-bottom:1px solid var(--bd);box-shadow:0 3px 14px #2b211408}
+      #v-tenant .tenant-nav,#v-room-search .tenant-nav{max-width:1180px;margin:auto;padding:12px 22px;display:flex;align-items:center;gap:24px}
+      #v-tenant .tenant-logo,#v-room-search .tenant-logo{display:flex;align-items:center;margin-right:auto}
+      #v-tenant .tenant-logo img,#v-room-search .tenant-logo img{display:block;width:150px;height:40px;object-fit:contain;object-position:left center}
+      #v-tenant .tenant-nav a:not(.tenant-logo),#v-room-search .tenant-nav a:not(.tenant-logo){padding:8px 12px;border-radius:10px;color:var(--tx);font-weight:600}
+      #v-tenant .tenant-nav a.active,#v-room-search .tenant-nav a.active{background:#fff1dc;color:#84500b}
+      #v-tenant .tenant-user,#v-room-search .tenant-user{font-size:13px;color:var(--mu);white-space:nowrap}
+      #v-tenant .tenant-main,#v-room-search .tenant-main{max-width:1180px;margin:0 auto;padding:28px 22px 56px}
+      #v-tenant .tenant-heading,#v-room-search .tenant-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:20px}
+      #v-tenant h1,#v-room-search h1{font-size:26px;line-height:1.3;margin:0 0 5px;color:#173b30}
+      #v-tenant .tenant-desc,#v-room-search .tenant-desc{margin:0;color:var(--mu)}
+      #v-tenant .tenant-card,#v-room-search .tenant-card{background:var(--card);border:1px solid var(--bd);border-radius:16px;box-shadow:0 4px 16px #2b211408;margin-bottom:18px;overflow:hidden}
+      #v-tenant .tenant-card-title,#v-room-search .tenant-card-title{padding:14px 18px;border-bottom:1px solid #f0e8dc;font-weight:700;color:var(--sec);display:flex;align-items:center;justify-content:space-between;gap:12px}
+      #v-tenant .tenant-card-body,#v-room-search .tenant-card-body{padding:18px}
+      #v-tenant .tenant-info{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border:1px solid var(--bd);border-radius:12px;overflow:hidden}
+      #v-tenant .tenant-info-item{padding:13px 15px;border-right:1px solid #f0e8dc;border-bottom:1px solid #f0e8dc;min-width:0}
+      #v-tenant .tenant-info-item:nth-child(3n){border-right:0}#v-tenant .tenant-info-item:nth-last-child(-n+3){border-bottom:0}
+      #v-tenant .tenant-info-item small{display:block;font-size:11px;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+      #v-tenant .tenant-layout{display:grid;grid-template-columns:minmax(300px,390px) minmax(0,1fr);gap:18px;align-items:start}
+      #v-tenant .resident-foxi-mascot{padding:18px;text-align:center;background:linear-gradient(150deg,#fffaf2,#f8eee0)}
+      #v-tenant .resident-foxi-mascot img{display:block;width:128px;height:142px;object-fit:contain;margin:0 auto 8px}
+      #v-tenant .resident-foxi-mascot strong{display:block;color:var(--sec)}
+      #v-tenant .resident-foxi-bubble{display:inline-block;max-width:95%;padding:9px 12px;border:1px solid var(--bd);border-radius:14px;background:#fff;color:#31443a;font-size:13px;margin-bottom:10px}
+      #v-tenant .resident-foxi-log{height:260px;overflow:auto;padding:12px;border:1px solid var(--bd);border-radius:12px;background:#fff;margin-bottom:10px}
+      #v-tenant .resident-foxi-msg{display:flex;margin-bottom:9px}.resident-foxi-msg:last-child{margin-bottom:0}
+      #v-tenant .resident-foxi-msg .bubble{max-width:88%;padding:8px 10px;border-radius:12px;background:#fff5e9;border:1px solid #f2e1cc;font-size:12px;line-height:1.45;white-space:pre-line;overflow-wrap:anywhere}
+      #v-tenant .resident-foxi-msg .who{display:block;font-size:10px;font-weight:700;color:var(--sec);margin-bottom:2px}
+      #v-tenant .resident-foxi-msg.me{justify-content:flex-end}#v-tenant .resident-foxi-msg.me .bubble{background:var(--sec);border-color:var(--sec);color:#fff}#v-tenant .resident-foxi-msg.me .who{color:#d9f2e4}
+      #v-tenant .resident-foxi-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+      #v-tenant .resident-foxi-chips button{border:1px solid var(--bd);border-radius:99px;background:#fff;color:var(--sec);padding:6px 9px;font:500 11px "Be Vietnam Pro",sans-serif;cursor:pointer}
+      #v-tenant .resident-foxi-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px}
+      #v-tenant .tenant-notice{padding:13px 0;border-bottom:1px solid #f0e8dc}.tenant-notice:last-child{border-bottom:0;padding-bottom:0}#v-tenant .tenant-notice:first-child{padding-top:0}
+      #v-tenant .tenant-notice-top{display:flex;justify-content:space-between;gap:8px;color:var(--mu);font-size:11px;margin-bottom:4px}
+      #v-tenant .tenant-tag{background:#fff1dc;color:#84500b;padding:2px 8px;border-radius:99px;font-weight:700}#v-tenant .tenant-tag.important{background:#fee9df;color:#b5472a}
+      #v-tenant .tenant-notice-title{font-weight:700;margin-bottom:3px;color:#263e34}#v-tenant .tenant-notice p{font-size:13px;color:#52635b;margin:0}
+      #v-tenant .tenant-toolbar{display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+      #v-tenant select,#v-tenant input,#v-tenant textarea,#v-room-search select{font:inherit;color:var(--tx);background:#fff;border:1px solid var(--bd);border-radius:10px;padding:9px 11px;max-width:100%}
+      #v-tenant label,#v-room-search label{display:grid;gap:5px;font-size:12px;font-weight:700;color:#40544a}
+      #v-tenant .tenant-button,#v-room-search .tenant-button{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--bd);border-radius:10px;background:#fff;color:var(--sec);font:600 13px "Be Vietnam Pro",sans-serif;padding:9px 13px;cursor:pointer}
+      #v-tenant .tenant-button.primary,#v-room-search .tenant-button.primary{border-color:var(--sec);background:var(--sec);color:#fff}#v-tenant .tenant-button:hover,#v-room-search .tenant-button:hover{filter:brightness(.97)}
+      #v-tenant .tenant-calendar-wrap{overflow:auto}#v-tenant .tenant-calendar{width:100%;min-width:700px;border-collapse:separate;border-spacing:0;border:1px solid var(--bd);border-radius:12px;overflow:hidden}
+      #v-tenant .tenant-calendar th,#v-tenant .tenant-calendar td{border:0;border-right:1px solid #f0e8dc;border-bottom:1px solid #f0e8dc;padding:8px 6px;text-align:center;height:54px;font-size:11px}
+      #v-tenant .tenant-calendar th{background:#fff8ed;color:#56665d;font-weight:700}#v-tenant .tenant-calendar td.time{font-weight:700;white-space:nowrap;color:#47584f}
+      #v-tenant .tenant-calendar td.booked{background:#f7efe3;color:#6c4c22;font-weight:600}#v-tenant .tenant-calendar td.mine{background:#e8f5ed;color:#0f684a;font-weight:700;box-shadow:inset 0 0 0 2px #0f684a}
+      #v-tenant .tenant-legend{display:flex;gap:16px;flex-wrap:wrap;color:var(--mu);font-size:11px;margin-top:10px}#v-tenant .tenant-legend i{display:inline-block;width:13px;height:13px;border-radius:4px;vertical-align:middle;margin-right:5px;background:#f7efe3}#v-tenant .tenant-legend i.mine{background:#e8f5ed;border:1px solid var(--sec)}
+      #v-tenant .tenant-services{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}#v-tenant .tenant-service{padding:15px;border:1px solid var(--bd);border-radius:13px;background:linear-gradient(145deg,#fff,#fffbf5)}
+      #v-tenant .tenant-service strong{display:block;color:var(--sec);margin-bottom:7px}#v-tenant .tenant-service p{font-size:12px;color:var(--mu);margin:3px 0}#v-tenant .tenant-service-actions{display:flex;gap:8px;margin-top:12px}#v-tenant .tenant-service-actions a{flex:1}
+      #v-tenant .tenant-modal{position:fixed;inset:0;z-index:80;background:#17231db0;display:none;align-items:center;justify-content:center;padding:18px}#v-tenant .tenant-modal.open{display:flex}
+      #v-tenant .tenant-dialog{width:min(520px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:18px;box-shadow:0 22px 70px #14251f40}
+      #v-tenant .tenant-dialog-head,#v-tenant .tenant-dialog-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid #f0e8dc;font-weight:700;color:var(--sec)}#v-tenant .tenant-dialog-foot{justify-content:flex-end;border-top:1px solid #f0e8dc;border-bottom:0}
+      #v-tenant .tenant-dialog-body{padding:18px;display:grid;grid-template-columns:1fr 1fr;gap:14px}#v-tenant .tenant-dialog-body .full{grid-column:1/-1}#v-tenant textarea{resize:vertical;min-height:100px}
+      #v-tenant .tenant-toast{position:fixed;z-index:90;left:50%;bottom:24px;transform:translate(-50%,14px);opacity:0;pointer-events:none;background:var(--sec);color:#fff;padding:10px 18px;border-radius:99px;box-shadow:0 8px 24px #1f293329;transition:.2s}.tenant-toast.on{opacity:1;transform:translate(-50%,0)}
+      #v-room-search .room-filter{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(220px,.9fr) auto;align-items:end;gap:14px}
+      #v-room-search .room-filter label{min-width:0}
+      #v-room-search .room-filter input,#v-room-search .room-filter select{width:100%;min-width:0;height:44px;font:400 14px/1.4 "Be Vietnam Pro",system-ui,sans-serif;border:1px solid var(--bd);border-radius:10px;padding:10px 12px;color:var(--tx);background:#fff;outline:none;transition:border-color .15s,box-shadow .15s}
+      #v-room-search .room-filter input:focus,#v-room-search .room-filter select:focus{border-color:var(--pr);box-shadow:0 0 0 3px #e67e2220}
+      #v-room-search .room-filter .actions{display:flex;gap:8px;align-items:center}
+      #v-room-search .room-filter .actions .tenant-button{height:44px;white-space:nowrap;padding-inline:15px}
+      #v-room-search .room-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+      #v-room-search .room-result-count{font-size:14px;font-weight:600;color:#52635b;margin:4px 0 12px}
+      #v-room-search .room-card{border:1px solid var(--bd);background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 16px #2b211408;transition:transform .16s,box-shadow .16s}#v-room-search .room-card:hover{transform:translateY(-2px);box-shadow:0 10px 24px #2b211414}
+      #v-room-search .room-photo{height:175px;display:grid;place-items:center;background:linear-gradient(140deg,#f9e8ce,#e6f0e8);color:#728076;font-size:36px}
+      #v-room-search .room-content{padding:15px}#v-room-search .room-title{font-size:15px;line-height:1.45;font-weight:700;color:#263e34;margin-bottom:4px}#v-room-search .room-province{font-size:12px;line-height:1.5;color:var(--mu);margin-bottom:8px;min-height:36px}#v-room-search .room-price{font-size:18px;font-weight:800;color:var(--sec);margin-bottom:8px}#v-room-search .room-price small{font-size:12px;font-weight:500;color:var(--mu)}#v-room-search .room-meta{font-size:12px;line-height:1.5;margin:4px 0;color:#52635b}#v-room-search .room-map{display:inline-block;margin:8px 0;color:var(--sec);font-size:12px;font-weight:600}
+      #v-room-search .room-actions{display:flex;gap:8px;padding:11px 13px;border-top:1px solid #f0e8dc}#v-room-search .room-actions .tenant-button{flex:1;padding:8px 5px;font-size:12px}
+      #v-room-search .room-pagination{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px}#v-room-search .room-pagination-buttons{display:flex;gap:5px;flex-wrap:wrap}#v-room-search .room-pagination button.current{background:var(--ac);border-color:var(--pr);color:#5a3a00}
+      @media(max-width:900px){#v-tenant .tenant-layout{grid-template-columns:1fr}#v-room-search .room-filter{grid-template-columns:minmax(0,1fr) minmax(200px,.8fr)}#v-room-search .room-filter .actions{grid-column:1/-1;justify-content:flex-end}#v-room-search .room-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+      @media(max-width:600px){#v-tenant .tenant-nav,#v-room-search .tenant-nav{padding:10px 14px;gap:6px;flex-wrap:wrap}#v-tenant .tenant-nav a:not(.tenant-logo),#v-room-search .tenant-nav a:not(.tenant-logo){padding:7px 8px;font-size:12px}#v-tenant .tenant-user,#v-room-search .tenant-user{display:none}#v-tenant .tenant-main,#v-room-search .tenant-main{padding:22px 14px 40px}#v-tenant h1,#v-room-search h1{font-size:22px}#v-tenant .tenant-heading,#v-room-search .tenant-heading{align-items:flex-start;flex-direction:column}#v-tenant .tenant-info{grid-template-columns:repeat(2,minmax(0,1fr))}#v-tenant .tenant-info-item:nth-child(3n){border-right:1px solid #f0e8dc}#v-tenant .tenant-info-item:nth-child(2n){border-right:0}#v-tenant .tenant-info-item:nth-last-child(-n+3){border-bottom:1px solid #f0e8dc}#v-tenant .tenant-info-item:nth-last-child(-n+2){border-bottom:0}#v-tenant .tenant-services,#v-room-search .room-cards{grid-template-columns:1fr}#v-room-search .room-filter{grid-template-columns:1fr}#v-room-search .room-filter .actions{grid-column:auto;display:flex}#v-room-search .room-filter .actions .tenant-button{flex:1}#v-tenant .tenant-card-body,#v-room-search .tenant-card-body{padding:14px}#v-tenant .tenant-dialog-body{grid-template-columns:1fr}#v-tenant .tenant-dialog-body .full{grid-column:auto}}
+      .view>header{position:sticky;top:env(safe-area-inset-top,0px);z-index:25;background:var(--bg)}
+      @media(max-width:760px){
+        #v-home .footer-main{grid-template-columns:1fr 1fr}
+        #v-qt #kn{padding-bottom:22px}
+        #v-qt #kn .head h1{font-size:22px}
+        #v-qt #kn .head .d{font-size:13px}
+        #v-qt #kn .stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+        #v-qt #kn .st{min-height:76px;padding:10px}
+        #v-qt #kn .st span{font-size:11px;line-height:1.35}
+        #v-qt #kn .st b{font-size:20px}
+        #v-qt #knCard>h2{font-size:16px;padding:14px}
+        #v-qt #kn .kn-filters{gap:6px}
+        #v-qt #kn .kn-filters .btn{flex:1 1 auto;padding:7px 9px;font-size:12px}
+        #v-qt #kn table{min-width:1080px}
+        #v-qt .kn-detail-grid{grid-template-columns:1fr}
+        #v-qt .kn-detail-item:nth-child(odd){border-right:0}
+        #v-qt .kn-detail-item:nth-last-child(2){border-bottom:1px solid var(--bd)}
+        #v-qt #knDetail .mf{gap:6px;flex-wrap:wrap}
+        #v-qt #knDetail .mf .btn{flex:1 1 auto;padding:8px 10px}
+        #v-hd main{padding:23px 16px 44px}
+        #v-hd .bar{align-items:flex-start}
+        #v-hd .bar>div{width:100%}
+        #v-hd #new{width:100%}
+        #v-hd .invoice-stats{gap:8px}
+        #v-hd .invoice-stat{display:grid;align-content:space-between;min-height:74px;padding:10px}
+        #v-hd .invoice-stat span{font-size:11px;line-height:1.3}
+        #v-hd .invoice-stat b{font-size:20px}
+        #v-hd .tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+        #v-hd .tabs button{border-radius:11px;padding:9px 8px;font-size:12px}
+        #v-hd .tabs .reset-btn{grid-column:1/-1}
+        #v-hd .tw{overflow:visible;border:0;background:transparent;box-shadow:none}
+        #v-hd table,#v-hd tbody{display:block;width:100%;min-width:0}
+        #v-hd thead{display:none}
+        #v-hd tbody{display:grid;gap:12px}
+        #v-hd tbody tr{display:grid;grid-template-columns:1fr 1fr;gap:0;background:#fff;border:1px solid var(--bd);border-radius:15px;overflow:hidden;box-shadow:0 3px 12px #2b211408}
+        #v-hd tbody td{display:grid;align-content:start;gap:3px;min-width:0;padding:10px 12px;border-bottom:1px solid #f1eee6;white-space:normal;overflow-wrap:anywhere;font-size:13px}
+        #v-hd tbody td:before{content:attr(data-label);color:var(--mu);font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+        #v-hd tbody td[data-label="Khách thuê"],#v-hd tbody td[data-label="Thao tác"]{grid-column:1/-1}
+        #v-hd tbody td[data-label="Tổng tiền"]{text-align:left}
+        #v-hd tbody td[data-label="Trạng thái"]{border-bottom:0}
+        #v-hd tbody td[data-label="Thao tác"]{display:flex;align-items:center;flex-wrap:wrap;gap:6px;border-bottom:0;padding-top:12px}
+        #v-hd tbody td[data-label="Thao tác"]:before{width:100%;margin-bottom:3px}
+        #v-hd tbody td[data-label="Thao tác"] .btn{flex:1 1 auto;margin:0;padding:7px 8px;font-size:12px}
+        #v-ad main{padding:23px 16px 44px}
+        #v-ad .bar{align-items:flex-start}
+        #v-ad .bar>div{width:100%}
+        #v-ad #new{width:100%}
+        #v-ad .account-stats{gap:8px}
+        #v-ad .account-stat{display:grid;align-content:space-between;min-height:74px;padding:10px}
+        #v-ad .account-stat span{font-size:11px;line-height:1.3}
+        #v-ad .account-stat b{font-size:20px}
+        #v-ad .tools{grid-template-columns:1fr 1fr;gap:8px;padding:11px}
+        #v-ad .tools input{grid-column:1/-1}
+        #v-ad .tw{overflow:visible;border:0;background:transparent;box-shadow:none}
+        #v-ad table,#v-ad tbody{display:block;width:100%;min-width:0}
+        #v-ad thead{display:none}
+        #v-ad tbody{display:grid;gap:12px}
+        #v-ad tbody tr{display:grid;grid-template-columns:1fr 1fr;gap:0;background:#fff;border:1px solid var(--bd);border-radius:15px;overflow:hidden;box-shadow:0 3px 12px #2b211408}
+        #v-ad tbody td{display:grid;align-content:start;gap:3px;min-width:0;padding:10px 12px;border-bottom:1px solid #f1eee6;white-space:normal;overflow-wrap:anywhere;font-size:13px}
+        #v-ad tbody td:before{content:attr(data-label);color:var(--mu);font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+        #v-ad tbody td[data-label="Họ tên"],#v-ad tbody td[data-label="SĐT / Email"],#v-ad tbody td[data-label="Thao tác"]{grid-column:1/-1}
+        #v-ad tbody td[data-label="Thao tác"]{display:flex;align-items:center;flex-wrap:wrap;gap:6px;border-bottom:0;padding-top:12px}
+        #v-ad tbody td[data-label="Thao tác"]:before{width:100%;margin-bottom:3px}
+        #v-ad tbody td[data-label="Thao tác"] .btn{flex:1 1 auto;margin:0;padding:7px 8px;font-size:12px}
+      }
+      @media(max-width:420px){#v-home .footer-main{grid-template-columns:1fr 1fr;gap:23px 14px}#v-home .footer-brand{width:150px}#v-ad .account-stat{min-height:78px}}
+
+/* Styles moved from HTML style attributes. */
+.inline-78798f6c4e { border: 0; }
+.inline-52facd4890 { background: var(--ac);
+                border-color: var(--ac);
+                color: #5a3a00;; }
+.inline-4671eab8b9 { margin: 4px 0 10px; font-weight: 600; color: var(--sec); }
+.inline-0fe0e95ca8 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.inline-74fa97c2b5 { cursor: pointer; }
+.inline-65f9d5a3d9 { text-align: center; }
+.inline-faa51a4f19 { font-size: 12px; color: var(--mu); }
+.inline-7fd7ef737b { margin-left: auto; }
+.inline-c9d5f6b896 { grid-column: 1/-1; }
+.inline-2a0ca8350a { margin: 0; }
+.inline-a0d4a03777 { margin-bottom: 14px; }
+.inline-7dfdd2bb10 { display: flex; gap: 14px; align-items: center; }
+.inline-f0eb61383a { display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                padding: 14px 18px;
+                border-bottom: 1px solid var(--line);
+                flex-wrap: wrap;; }
+.inline-c23737087d { padding: 0; border: 0; }
+.inline-f8e8e1d72c { margin: 12px 18px; }
+.inline-46ce1b52ae { align-items: start; }
+.inline-0cedf1bcfe { display: flex;
+                  justify-content: space-between;
+                  align-items: center;; }
+.inline-91aba0e113 { color: #b45309;
+                    font-size: 12px;
+                    margin: 10px 0 0;
+                    min-height: 16px;; }
+.inline-a32fcc7257 { padding-bottom: 0; }
+.inline-d1ff92ebb8 { width: min(440px, 100%); }
+.inline-183bd14022 { font-weight: 400; color: #6b7280; }
+.inline-dffc4db2f6 { margin-top: 14px; }
+.inline-39ae4db632 { margin-bottom: 10px; }
+.inline-5beb8fbe41 { margin-bottom: 12px; }
+.inline-ec0f7ffa7a { margin-top: 0; }
+.inline-4bb90035c3 { margin-top: 12px; }
+.inline-46936abbd4 { display: none; margin-top: 12px; }
+.inline-18d141f35c { display: block;
+                  max-width: 100%;
+                  max-height: 320px;
+                  margin: auto;
+                  border-radius: 12px;
+                  border: 1px solid var(--bd);; }
+.inline-d462248a40 { margin-top:0; }
+.inline-068a8ddc17 { grid-column:1/-1; }
+.inline-56f4356299 { margin-top:12px; }
+.inline-4fce59851b { max-width:100%;max-height:130px;border-radius:9px;border:1px solid var(--bd); }
+.inline-1b0f4999d2 { margin-top:16px; }
+.inline-be3284d35e { padding:12px;background:#fff8ed;border-color:var(--bd); }
+.inline-5869f06695 { color:var(--sec); }
+.inline-5790ffba29 { display: none; }

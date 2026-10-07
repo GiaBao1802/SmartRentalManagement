@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Góc Trọ - Tìm phòng</title>
+<style>
+  /* WIREFRAME: chỉ border + khoảng cách. Không màu thương hiệu, shadow, gradient, animation, hover. */
+  * { box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; font-size: 14px; color: #000; background: #fff; margin: 0; }
+  .page { max-width: 1280px; margin: 0 auto; padding: 24px; }
+
+  header.site-header { border: 1px solid #000; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .logo { font-weight: bold; font-size: 18px; border: 1px dashed #000; padding: 6px 12px; }
+  .nav span { display: inline-block; border: 1px solid #000; padding: 4px 12px; margin-left: 8px; }
+  .nav span.active { font-weight: bold; border-width: 2px; }
+  .user { border: 1px solid #000; padding: 6px 12px; }
+
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  p.desc { margin: 0 0 16px; }
+
+  button { border: 1px solid #000; background: #fff; padding: 6px 14px; font-size: 14px; cursor: pointer; }
+  select { padding: 7px 8px; border: 1px solid #000; background: #fff; font-size: 14px; width: 100%; }
+  label { display: block; font-weight: bold; margin-bottom: 4px; }
+
+  .box { border: 1px solid #000; margin-bottom: 16px; }
+  .box > .box-title { padding: 8px 16px; border-bottom: 1px solid #000; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+  .box > .box-body { padding: 16px; }
+
+  /* Bộ lọc */
+  .filter-row { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: end; }
+  .actions { display: flex; gap: 8px; }
+
+  /* Danh sách bài đăng */
+  .posts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .post { border: 1px solid #000; }
+  .post .photo { border-bottom: 1px solid #000; height: 160px; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+  .post .info { padding: 12px; }
+  .post .title { font-weight: bold; margin-bottom: 4px; }
+  .post .province { font-size: 12px; margin-bottom: 8px; }
+  .post .price { font-weight: bold; margin-bottom: 8px; }
+  .post .row { font-size: 12px; margin-bottom: 4px; }
+  .post .map-link { display: inline-block; margin: 6px 0 10px; font-size: 12px; text-decoration: underline; }
+  .post .contact { border-top: 1px solid #000; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+
+  .post .report { border-top: 1px solid #000; padding: 10px 12px; text-align: center; }
+
+  .pagination { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
+  .pagination .pages button { margin-left: 4px; }
+  .result-count { margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="logo">Góc Trọ</div>
+    <div class="nav">
+      <span>Trang chủ</span>
+      <span class="active">Tìm phòng</span>
+    </div>
+    <div class="user">Cư dân · Phòng A101</div>
+  </header>
+
+  <h1>Tìm phòng</h1>
+  <p class="desc">Tìm phòng cho thuê theo tỉnh / thành phố.</p>
+
+  <!-- BỘ LỌC -->
+  <div class="box" id="bo-loc">
+    <div class="box-title">Bộ lọc tìm kiếm</div>
+    <div class="box-body">
+      <div class="filter-row">
+        <div>
+          <label for="f-tinh">Tỉnh / Thành phố</label>
+          <select id="f-tinh">
+            <option>Tất cả</option>
+            <option>TP. Hồ Chí Minh</option>
+            <option>Hà Nội</option>
+            <option>Đà Nẵng</option>
+            <option>Tây Ninh</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button type="button">Đặt lại</button>
+          <button type="button">Tìm kiếm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DANH SÁCH BÀI ĐĂNG -->
+  <div class="result-count">Tìm thấy 36 phòng</div>
+
+  <div class="posts" id="danh-sach-bai-dang">
+
+    <div class="post">
+      <div class="photo">[Ảnh phòng]</div>
+      <div class="info">
+        <div class="title">[Tiêu đề bài đăng]</div>
+        <div class="province">TP. Hồ Chí Minh</div>
+        <div class="price">[3.500.000 VNĐ / tháng]</div>
+        <div class="row">Chủ trọ: [Nguyễn Văn A]</div>
+        <div class="row">SĐT: [09xx xxx xxx]</div>
+        <a class="map-link" href="#">Xem Google Maps ↗</a>
+      </div>
+      <div class="contact"><span>Liên hệ chủ trọ</span><button type="button">Liên hệ</button></div>
+      <div class="report"><button type="button">Report nhà trọ</button></div>
+    </div>
+
+    <div class="post">
+      <div class="photo">[Ảnh phòng]</div>
+      <div class="info">
+        <div class="title">[Tiêu đề bài đăng]</div>
+        <div class="province">Hà Nội</div>
+        <div class="price">[4.200.000 VNĐ / tháng]</div>
+        <div class="row">Chủ trọ: [Trần Thị B]</div>
+        <div class="row">SĐT: [09xx xxx xxx]</div>
+        <a class="map-link" href="#">Xem Google Maps ↗</a>
+      </div>
+      <div class="contact"><span>Liên hệ chủ trọ</span><button type="button">Liên hệ</button></div>
+      <div class="report"><button type="button">Report nhà trọ</button></div>
+    </div>
+
+    <div class="post">
+      <div class="photo">[Ảnh phòng]</div>
+      <div class="info">
+        <div class="title">[Tiêu đề bài đăng]</div>
+        <div class="province">Đà Nẵng</div>
+        <div class="price">[2.800.000 VNĐ / tháng]</div>
+        <div class="row">Chủ trọ: [Lê Văn C]</div>
+        <div class="row">SĐT: [09xx xxx xxx]</div>
+        <a class="map-link" href="#">Xem Google Maps ↗</a>
+      </div>
+      <div class="contact"><span>Liên hệ chủ trọ</span><button type="button">Liên hệ</button></div>
+      <div class="report"><button type="button">Report nhà trọ</button></div>
+    </div>
+
+    <div class="post">
+      <div class="photo">[Ảnh phòng]</div>
+      <div class="info">
+        <div class="title">[Tiêu đề bài đăng]</div>
+        <div class="province">TP. Hồ Chí Minh</div>
+        <div class="price">[3.000.000 VNĐ / tháng]</div>
+        <div class="row">Chủ trọ: [Phạm Thị D]</div>
+        <div class="row">SĐT: [09xx xxx xxx]</div>
+        <a class="map-link" href="#">Xem Google Maps ↗</a>
+      </div>
+      <div class="contact"><span>Liên hệ chủ trọ</span><button type="button">Liên hệ</button></div>
+      <div class="report"><button type="button">Report nhà trọ</button></div>
+    </div>
+
+    <div class="post">
+      <div class="photo">[Ảnh phòng]</div>
+      <div class="info">
+        <div class="title">[Tiêu đề bài đăng]</div>
+        <div class="province">Tây Ninh</div>
+        <div class="price">[2.200.000 VNĐ / tháng]</div>
+        <div class="row">Chủ trọ: [Hoàng Văn E]</div>
+        <div class="row">SĐT: [09xx xxx xxx]</div>
+        <a class="map-link" href="#">Xem Google Maps ↗</a>
+      </div>
+      <div class="contact"><span>Liên hệ chủ trọ</span><button type="button">Liên hệ</button></div>
+      <div class="report"><button type="button">Report nhà trọ</button></div>
+    </div>
+
+    <div class="post">
+      <div class="photo">[Ảnh phòng]</div>
+      <div class="info">
+        <div class="title">[Tiêu đề bài đăng]</div>
+        <div class="province">Hà Nội</div>
+        <div class="price">[5.000.000 VNĐ / tháng]</div>
+        <div class="row">Chủ trọ: [Vũ Thị F]</div>
+        <div class="row">SĐT: [09xx xxx xxx]</div>
+        <a class="map-link" href="#">Xem Google Maps ↗</a>
+      </div>
+      <div class="contact"><span>Liên hệ chủ trọ</span><button type="button">Liên hệ</button></div>
+      <div class="report"><button type="button">Report nhà trọ</button></div>
+    </div>
+
+  </div>
+
+  <!-- PHÂN TRANG -->
+  <div class="pagination">
+    <span>Hiển thị 1–6 / 36</span>
+    <div class="pages">
+      <button type="button">‹ Trước</button>
+      <button type="button">1</button>
+      <button type="button">2</button>
+      <button type="button">3</button>
+      <button type="button">…</button>
+      <button type="button">6</button>
+      <button type="button">Sau ›</button>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
