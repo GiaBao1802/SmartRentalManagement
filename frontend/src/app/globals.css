@@ -165,6 +165,32 @@ tbody tr:hover td { background: #fffcf8; }
 .viewing-form textarea { min-height: 70px; resize: vertical; }
 .viewing-note { grid-column: 1 / -1; }
 .viewing-message { margin: 0 0 12px; color: var(--sec); font-size: 13px; }
+.account-create-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 14px; }
+.account-create-form label { display: grid; gap: 6px; color: var(--mu); font-size: 12px; font-weight: 700; }
+.account-create-form input, .account-create-form select { width: 100%; min-width: 0; padding: 10px; border: 1px solid var(--line); border-radius: 9px; background: #fff; }
+.tenant-page { min-height: 100vh; background: #f7f7f1; color: #22372d; }
+.tenant-header { display: flex; align-items: center; justify-content: space-between; padding: 14px max(24px, calc((100vw - 1100px) / 2)); border-bottom: 1px solid var(--line); background: #fffaf2; }
+.tenant-header img { width: 160px; height: 58px; object-fit: contain; }
+.tenant-header > div { display: flex; align-items: center; gap: 18px; }
+.tenant-content { width: min(100% - 36px, 1100px); margin: 0 auto; padding: 38px 0 70px; }
+.tenant-welcome h1 { margin: 9px 0; color: var(--sec); font-size: 32px; }
+.tenant-welcome p { margin: 0; color: var(--mu); }
+.tenant-profile { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 24px 0; }
+.tenant-profile > div, .tenant-card { padding: 20px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+.tenant-profile span, .tenant-contract span { display: block; color: var(--mu); font-size: 12px; }
+.tenant-profile strong { display: block; margin-top: 7px; }
+.tenant-card { margin-bottom: 16px; }
+.tenant-card h2 { margin: 0 0 14px; color: var(--sec); font-size: 19px; }
+.tenant-card h3 { margin-top: 22px; }
+.tenant-contract { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 18px; padding: 14px 0; border-top: 1px solid var(--line); }
+.tenant-table { overflow-x: auto; }
+.tenant-table table { width: 100%; border-collapse: collapse; }
+.tenant-table th, .tenant-table td { padding: 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+.tenant-request-form { display: grid; gap: 12px; max-width: 660px; }
+.tenant-request-form label { display: grid; gap: 6px; font-weight: 600; }
+.tenant-request-form select, .tenant-request-form textarea { padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font: inherit; }
+.tenant-request-form textarea { min-height: 100px; }
+.tenant-loading { padding: 15vh 20px; text-align: center; }
 .home-footer { display: flex; align-items: center; justify-content: space-between; gap: 18px; width: min(100% - 48px, var(--home-width)); min-height: 90px; margin: auto; color: var(--mu); font-size: 12px; }
 .home-footer .home-logo { width: 135px; }
 
@@ -234,6 +260,11 @@ tbody tr:hover td { background: #fffcf8; }
   .viewing-form { padding: 16px; }
   .viewing-form-grid { grid-template-columns: 1fr; }
   .viewing-note { grid-column: auto; }
+  .account-create-form { grid-template-columns: 1fr; }
+  .tenant-profile { grid-template-columns: 1fr; }
+  .tenant-header { padding: 10px 16px; }
+  .tenant-header img { width: 120px; }
+  .tenant-header > div { gap: 8px; }
   .home-footer { align-items: flex-start; flex-direction: column; justify-content: center; width: min(100% - 28px, var(--home-width)); padding: 20px 0; }
   .login-card { padding: 26px 20px; }
 }
