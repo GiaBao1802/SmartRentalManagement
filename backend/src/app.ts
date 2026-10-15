@@ -1,4 +1,5 @@
 import cors from "cors";
+import { createExplorerRouter } from "./public-marketplace/explorer.routes.js";
 import express from "express";
 import helmet from "helmet";
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
@@ -39,6 +40,7 @@ app.use(
   }),
 );
 app.use(express.json({ limit: "1mb" }));
+app.use("/api/v1/public/explorer", createExplorerRouter(prisma));
 
 const sessions = createSessionStore(runtimeConfig.nodeEnv);
 const objectStorage = new UnconfiguredObjectStorage();

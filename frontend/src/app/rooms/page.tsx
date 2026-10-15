@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import RoomListing from "./room-listing";
+import Explorer from "../public-sales/explorer";
+import "../public-sales/explorer.css";
 import type { PublicRoomFilters } from "../../lib/api/publicRoomApi";
 
-export const metadata: Metadata = { title: "Phòng trống", description: "Tìm phòng trọ đang công khai theo tỉnh thành, địa chỉ, giá thuê, diện tích và sức chứa." };
+export const metadata: Metadata = { title: "Tìm phòng · Bản đồ Việt Nam", description: "Khám phá phòng đang cho thuê trên bản đồ 34 tỉnh thành, lọc giá, diện tích và xem chi tiết phòng công khai." };
 
 function first(value: string | string[] | undefined) { return Array.isArray(value) ? value[0] : value; }
 function positivePage(value: string | undefined, fallback: number) {
@@ -29,5 +30,5 @@ export default async function PublicRoomsPage({ searchParams }: { searchParams: 
     page: positivePage(first(query.page), 1),
     page_size: pageSize,
   };
-  return <RoomListing initialFilters={initialFilters} />;
+  return <Explorer initialFilters={Object.keys(query).length ? initialFilters : undefined} />;
 }

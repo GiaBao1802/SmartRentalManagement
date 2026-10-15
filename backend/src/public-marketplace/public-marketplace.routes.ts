@@ -35,7 +35,7 @@ function imageUrl(imageId: bigint) { return `/api/v1/public/room-images/${imageI
 function serializePublicImage(image: { roomImageId: bigint; isCover: boolean; sortOrder: number }) {
   return { image_id: image.roomImageId.toString(), url: imageUrl(image.roomImageId), is_cover: image.isCover, sort_order: image.sortOrder };
 }
-function serializePublicRoom(row: any, detail: boolean) {
+export function serializePublicRoom(row: any, detail: boolean) {
   const images = Array.isArray(row.images) ? row.images.map(serializePublicImage) : [];
   const cover = images.find((image: { is_cover: boolean }) => image.is_cover) ?? null;
   return {

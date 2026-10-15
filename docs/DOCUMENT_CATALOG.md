@@ -83,6 +83,7 @@
 | `07_modules/property-room/PROPERTY_ROOM_ROOM_IMAGES_FINAL_HOST_BROWSER_CLOSURE_REPORT.md` | Property / Room + Room Images | CURRENT | Latest local V1.4 closure pass: health, 27-table baseline, automated regressions, and 0-image browser flow pass; native file picker and image/gallery host-browser scenarios remain unverified, so E2E stays PARTIAL. |
 | `07_modules/property-room/LOCAL_GOCTRO_TEST3_V1_3_TO_V1_4_MIGRATION_REPORT.md` | Property / Room + Room Images / Local database operations | CURRENT | Local Goctro_test3 was migrated additively to V1.4 after backup; 26-table fingerprints preserved and runtime validator passed 87/87. See the latest closure report for the subsequent Admin browser session and remaining image-picker limits. |
 | `07_modules/property-room/DATABASE_V1_4_RUNTIME_VALIDATOR_POPULATED_DB_COMPATIBILITY_REPORT.md` | Property / Room + Database V1.4 runtime validator | CURRENT | Separates 18 clean-seed fixture assertions from the 69-check clean/populated runtime validator; PostgreSQL 18 validation passed on clean, populated, and local Goctro_test3 targets. Local 27-table/9-image baseline remained unchanged. |
+| `07_modules/public-marketplace/PUBLIC_SALES_3D_PROTOTYPE_REPORT.md` | Public marketplace / 3D explorer | CURRENT | Active /rooms map listing with preserved incoming search links, retained /public-sales preview, full-viewport scene, floating panels/result drawer, pinned 34-feature GeoJSON, Z-up camera safe-area/drag tests, preserved Express/PostgreSQL flow, API outage/recovery and desktop/mobile evidence; forced GPU failure remains unverified. |
 | `07_modules/public-marketplace/PUBLIC_SALES_FUNNEL_V1_AUDIT.md` | Public marketplace / sales funnel | HISTORICAL | Audit snapshot recorded the pre-implementation gap; backend implementation and local/dev V1.4 runtime evidence are in the current implementation report. |
 | `07_modules/public-marketplace/PUBLIC_SALES_FUNNEL_V1_BACKEND_IMPLEMENTATION_REPORT.md` | Public marketplace / sales funnel | CURRENT | Public list/detail/contact and Owner-scoped Admin inbox implementation, PostgreSQL 18 V1.4 HTTP smoke, regressions, and known toolchain/production limits. |
 | `07_modules/public-marketplace/PUBLIC_SALES_FUNNEL_V1_FRONTEND_IMPLEMENTATION_REPORT.md` | Public marketplace / sales funnel | REFERENCE | Frontend implementation and local browser evidence; Admin inbox, availability transitions, and full responsive viewport checks remain open, so E2E is partial. |
@@ -118,7 +119,3 @@
 - Current Prisma mapping for this application: `../database/schema.prisma`
 
 These paths are references to the adjacent workspace project; they are not duplicated under this repository's `docs/`.
-
-
-
-
