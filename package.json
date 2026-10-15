@@ -11,6 +11,8 @@
   },
   "scripts": {
     "dev": "concurrently -k -n frontend,backend -c blue,green \"npm:dev --workspace=@goctro/frontend\" \"npm:dev --workspace=@goctro/backend\"",
+    "dev:all": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/dev-all.ps1",
+    "dev:stop": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/dev-stop.ps1",
     "legacy:dev": "node legacy/server.js",
     "build": "npm run build --workspace=@goctro/frontend && npm run build --workspace=@goctro/backend",
     "db:up": "docker compose up -d postgres",

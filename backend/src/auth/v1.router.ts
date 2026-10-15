@@ -1,0 +1,49 @@
+import express from "express";
+import type { AuthDependencies } from "../middleware/auth.js";
+import { rejectClientAuthority } from "../middleware/auth.js";
+import { csrfProtection } from "../middleware/csrf.js";
+import { notFound } from "../middleware/api-error.js";
+import { createAuthRouter } from "./auth.routes.js";
+import { createPropertyRoomRouter, type PropertyRoomRepository } from "../properties/property-room.routes.js";
+import { createResidentOccupancyRouter } from "../residents/resident.routes.js";
+import type { PrismaResidentOccupancyRepository } from "../residents/resident.repository.js";
+import { createContractRouter } from "../contracts/contract.routes.js";
+import type { PrismaContractRepository } from "../contracts/contract.repository.js";
+import type { ObjectStorage } from "../contract-documents/object-storage.js";
+import type { ContractDocumentService } from "../contract-documents/contract-document.service.js";
+import type { ContractIdempotencyService } from "../contracts/contract-idempotency.js";
+import { createInvoiceRouter } from "../invoices/invoice.routes.js";
+import type { PrismaInvoiceRepository, InvoicePricing } from "../invoices/invoice.repository.js";
+import type { InvoiceZaloService } from "../zalo/invoice-zalo.service.js";
+import type { PrismaBillingWorkspaceRepository } from "../invoices/billing-workspace.repository.js";
+import { createRoomImageRouter } from "../room-images/room-image.routes.js";
+import { PrismaRoomImageRepository } from "../room-images/room-image.repository.js";
+import { UnconfiguredRoomImageStorage, type RoomImageStorage } from "../room-images/storage.js";
+import { createPublicMarketplaceRouter } from "../public-marketplace/public-marketplace.routes.js";
+import type { ContactRequestRepositoryPort } from "../public-marketplace/public-marketplace.repository.js";
+import { createUtilityTariffRouter } from "../services/utility-tariff.routes.js";
+import type { PrismaUtilityTariffManagementRepository } from "../services/utility-tariff-management.repository.js";
+import { createPropertyServiceRouter } from "../services/property-service.routes.js";
+import type { PrismaPropertyServiceRepository } from "../services/property-service.repository.js";
+import { createParkingManagementRouter } from "../services/parking-management.routes.js";
+import type { PrismaParkingManagementRepository } from "../services/parking-management.repository.js";
+
+export function createV1Router(deps: AuthDependencies & { propertyRoomRepository?: PropertyRoomRepository; roomImageRepository?: PrismaRoomImageRepository; roomImageStorage?: RoomImageStorage; publicMarketplaceRepository?: ContactRequestRepositoryPort; residentOccupancyRepository?: PrismaResidentOccupancyRepository; contractRepository?: PrismaContractRepository; contractIdempotency?: ContractIdempotencyService; objectStorage?: ObjectStorage; contractDocumentService?: ContractDocumentService; invoiceRepository?: PrismaInvoiceRepository; billingWorkspaceRepository?: PrismaBillingWorkspaceRepository; invoicePricing?: InvoicePricing; invoiceZalo?: InvoiceZaloService; utilityTariffRepository?: PrismaUtilityTariffManagementRepository; propertyServiceRepository?: PrismaPropertyServiceRepository; parkingManagementRepository?: PrismaParkingManagementRepository }): express.Router {
+  const router = express.Router();
+  router.use(rejectClientAuthority);
+  router.use(csrfProtection(deps.config));
+  router.use("/auth", createAuthRouter(deps));
+  if (deps.propertyRoomRepository) router.use(createPropertyRoomRouter(deps, deps.propertyRoomRepository));
+  if (deps.roomImageRepository) router.use(createRoomImageRouter(deps, deps.roomImageRepository, deps.roomImageStorage ?? new UnconfiguredRoomImageStorage()));
+  if (deps.publicMarketplaceRepository) router.use(createPublicMarketplaceRouter(deps, deps.publicMarketplaceRepository));
+  if (deps.residentOccupancyRepository) router.use(createResidentOccupancyRouter(deps, deps.residentOccupancyRepository));
+  if (deps.contractRepository && deps.contractIdempotency && deps.objectStorage && deps.contractDocumentService) router.use(createContractRouter({ ...deps, contractRepository: deps.contractRepository, contractIdempotency: deps.contractIdempotency, objectStorage: deps.objectStorage, contractDocumentService: deps.contractDocumentService }));
+  // Invoice router has a catch-all for unsupported invoice paths, so feature routers
+  // that share the root mount must be registered before it.
+  if (deps.utilityTariffRepository) router.use(createUtilityTariffRouter(deps, deps.utilityTariffRepository));
+  if (deps.propertyServiceRepository) router.use(createPropertyServiceRouter(deps, deps.propertyServiceRepository));
+  if (deps.parkingManagementRepository) router.use(createParkingManagementRouter(deps, deps.parkingManagementRepository));
+  if (deps.invoiceRepository && deps.billingWorkspaceRepository && deps.invoicePricing && deps.invoiceZalo) router.use(createInvoiceRouter({ ...deps, invoiceRepository: deps.invoiceRepository, billingWorkspaceRepository: deps.billingWorkspaceRepository, invoicePricing: deps.invoicePricing, invoiceZalo: deps.invoiceZalo }));
+  router.use((_request, _response, next) => next(notFound()));
+  return router;
+}

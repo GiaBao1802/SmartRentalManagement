@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import AdminShell from "./admin-shell";
+import { formatAdminDate, formatAdminMoney, formatAdminStatus } from "../../lib/ui/admin-presentation";
 
 type Row = Record<string, unknown>;
 type Column = { key: string; label: string; format?: "money" | "date" | "status" | "boolean" };
@@ -20,11 +21,27 @@ const statusLabels: Record<string, string> = {
 
 function formatValue(value: unknown, format?: Column["format"]) {
   if (value === null || value === undefined || value === "") return "—";
-  if (format === "money" && typeof value === "number") return `${new Intl.NumberFormat("vi-VN").format(value)} đ`;
-  if (format === "date" && typeof value === "string") return new Date(value).toLocaleDateString("vi-VN");
+  if (format === "money" && (typeof value === "number" || typeof value === "string")) return formatAdminMoney(value);
+  if (format === "date" && typeof value === "string") return formatAdminDate(value);
   if (format === "boolean") return value ? "Đang mở" : "Đã đóng";
-  if (typeof value === "string") return statusLabels[value] ?? value;
+  if (format === "status" && typeof value === "string") return statusLabels[value] ?? formatAdminStatus(value);
+  if (typeof value === "string") return value;
   return String(value);
+}
+
+function safeResponseError(status: number, fallback: string) {
+  if (status === 401) return "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+  if (status === 403) return "Tài khoản không có quyền thực hiện thao tác này.";
+  if (status === 404) return "Không tìm thấy dữ liệu trong phạm vi tài khoản.";
+  if (status === 409) return "Dữ liệu vừa thay đổi. Hãy tải lại danh sách rồi thử lại.";
+  if (status === 410) return "Chức năng này đang chờ kết nối với dịch vụ hiện tại.";
+  if (status >= 500) return "Máy chủ chưa thể xử lý yêu cầu. Vui lòng thử lại sau.";
+  return fallback;
+}
+
+function safeCaughtError(reason: unknown, fallback: string) {
+  if (reason instanceof Error && ["Phiên đăng nhập", "Tài khoản", "Không tìm thấy dữ liệu", "Dữ liệu vừa thay đổi", "Chức năng này", "Máy chủ"].some((prefix) => reason.message.startsWith(prefix))) return reason.message;
+  return fallback;
 }
 
 function fieldValue(row: Row | null, field: FormField) {
@@ -63,12 +80,12 @@ export default function DataManagement({
     setLoading(true);
     try {
       const response = await fetch(`${apiUrl}${endpoint}`, { credentials: "include" });
-      if (!response.ok) throw new Error("Không tải được dữ liệu.");
+      if (!response.ok) throw new Error(safeResponseError(response.status, "Không tải được dữ liệu."));
       const result = await response.json() as { data: Row[] };
       setRows(result.data);
       setError("");
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Không tải được dữ liệu.");
+      setError(safeCaughtError(reason, "Không tải được dữ liệu. Vui lòng thử lại."));
     } finally { setLoading(false); }
   }
 
@@ -108,32 +125,32 @@ export default function DataManagement({
         body: JSON.stringify(payload),
       });
       const result = await response.json() as { error?: string };
-      if (!response.ok) throw new Error(result.error ?? "Không lưu được dữ liệu.");
+      if (!response.ok) throw new Error(safeResponseError(response.status, "Không lưu được dữ liệu."));
       setFormOpen(false);
       setEditing(null);
       await loadRows();
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Không lưu được dữ liệu.");
+      setError(safeCaughtError(reason, "Không lưu được dữ liệu. Vui lòng kiểm tra thông tin và thử lại."));
     } finally { setSaving(false); }
   }
 
   async function remove(row: Row) {
-    if (!window.confirm(`Xóa mục “${String(row.name ?? row.fullName ?? row.invoiceNumber ?? row.contractNumber ?? row.id)}”?`)) return;
+    if (!window.confirm(`Xóa mục “${String(row.name ?? row.fullName ?? row.invoiceNumber ?? row.contractNumber ?? "này") }”?`)) return;
     try {
       const response = await fetch(`${apiUrl}${endpoint}/${row.id}`, { method: "DELETE", credentials: "include" });
       const result = response.status === 204 ? {} : await response.json() as { error?: string };
-      if (!response.ok) throw new Error(result.error ?? "Không xóa được dữ liệu.");
+      if (!response.ok) throw new Error(safeResponseError(response.status, "Không xóa được dữ liệu."));
       await loadRows();
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "Không xóa được dữ liệu."); }
+    } catch (reason) { setError(safeCaughtError(reason, "Không xóa được dữ liệu. Vui lòng thử lại.")); }
   }
 
   async function viewDetails(row: Row) {
     try {
       const response = await fetch(`${apiUrl}${endpoint}/${row.id}`, { credentials: "include" });
       const result = await response.json() as { data?: Row; error?: string };
-      if (!response.ok || !result.data) throw new Error(result.error ?? "Không tải được chi tiết.");
+      if (!response.ok || !result.data) throw new Error(safeResponseError(response.status, "Không tải được chi tiết."));
       setViewing(result.data);
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "Không tải được chi tiết."); }
+    } catch { setError("Không tải được hồ sơ chi tiết. Vui lòng thử lại."); }
   }
 
   async function quickStatus(row: Row) {
@@ -145,9 +162,9 @@ export default function DataManagement({
         body: JSON.stringify({ [defaultStatus.key]: value }),
       });
       const result = await response.json() as { error?: string };
-      if (!response.ok) throw new Error(result.error ?? "Không cập nhật được trạng thái.");
+      if (!response.ok) throw new Error(safeResponseError(response.status, "Không cập nhật được trạng thái."));
       await loadRows();
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "Không cập nhật được trạng thái."); }
+    } catch (reason) { setError(safeCaughtError(reason, "Không cập nhật được trạng thái. Vui lòng thử lại.")); }
   }
 
   const filtered = useMemo(() => {
@@ -160,8 +177,6 @@ export default function DataManagement({
     });
   }, [rows, query, searchKeys, statusFilter, columns]);
 
-  const activeCount = rows.filter((row) => row.status === "ACTIVE" || row.status === "PAID" || row.isActive === true).length;
-  const pendingCount = rows.filter((row) => row.status === "PENDING" || row.status === "UNPAID" || row.status === "PENDING_SIGNATURE").length;
   const statusKey = columns.find((column) => column.key === "status")?.key ?? columns.find((column) => column.format === "status" || column.format === "boolean")?.key;
 
   return <AdminShell active={active}>
@@ -171,8 +186,8 @@ export default function DataManagement({
         <div><h1>{title}</h1><p>{description}</p></div>
         {allowCreate && <button className="button primary" type="button" onClick={() => void openForm(null)}>+ Thêm mới</button>}
       </div>
-      <div className="summary-grid">{[{ label: summary, value: rows.length }, { label: "Đang hiệu lực / hoạt động", value: activeCount }, { label: "Chờ xử lý / thanh toán", value: pendingCount }].map((stat) => <section className="summary-card" key={stat.label}><span>{stat.label}</span><strong>{stat.value}</strong></section>)}</div>
-      <section className="admin-card"><h2>Tìm kiếm &amp; Bộ lọc</h2><div className="filter-form simple-filter"><label>Tìm theo thông tin<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={`Tìm trong ${title.toLocaleLowerCase("vi")}`} /></label>{statusKey && <label>Trạng thái<select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="">Tất cả trạng thái</option>{[...new Set(rows.map((row) => String(row[statusKey] ?? "")).filter(Boolean))].map((value) => <option key={value} value={value}>{statusLabels[value] ?? value}</option>)}</select></label>}<div className="filter-actions"><button type="button" className="button" onClick={() => { setQuery(""); setStatusFilter(""); }}>Đặt lại</button></div></div></section>
+      <div className="summary-grid"><section className="summary-card"><span>{summary} trong danh sách hiện tại</span><strong>{rows.length}</strong><small>Số mục đang tải theo nguồn dữ liệu hiện có</small></section></div>
+      <section className="admin-card"><h2>Tìm kiếm &amp; Bộ lọc</h2><div className="filter-form simple-filter"><label>Tìm theo thông tin<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={`Tìm trong ${title.toLocaleLowerCase("vi")}`} /></label>{statusKey && <label>Trạng thái<select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="">Tất cả trạng thái</option>{[...new Set(rows.map((row) => String(row[statusKey] ?? "")).filter(Boolean))].map((value) => <option key={value} value={value}>{statusLabels[value] ?? formatAdminStatus(value)}</option>)}</select></label>}<div className="filter-actions"><button type="button" className="button" onClick={() => { setQuery(""); setStatusFilter(""); }}>Đặt lại</button></div></div></section>
       <section className="admin-card">
         <h2>Danh sách {title.toLocaleLowerCase("vi")}</h2>
         {error && <p className="notice" role="status">{error}</p>}
@@ -193,6 +208,6 @@ export default function DataManagement({
       </section>
     </main>
     {formOpen && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setFormOpen(false); }}><section className="edit-modal" role="dialog" aria-modal="true" aria-labelledby="edit-title"><div className="modal-heading"><h2 id="edit-title">{editing ? `Cập nhật ${title.toLocaleLowerCase("vi")}` : `Thêm ${title.toLocaleLowerCase("vi")}`}</h2><button className="modal-close" type="button" onClick={() => setFormOpen(false)} aria-label="Đóng">×</button></div><form onSubmit={save}><div className="edit-form-grid">{fields.map((field) => <label key={field.key}>{field.label}{field.type === "textarea" ? <textarea required={field.required} value={form[field.key] ?? ""} onChange={(event) => setForm({ ...form, [field.key]: event.target.value })} /> : field.type === "select" ? <select required={field.required} value={form[field.key] ?? ""} onChange={(event) => setForm({ ...form, [field.key]: event.target.value })}><option value="">Chọn…</option>{(field.options ?? options[field.optionsEndpoint ?? ""] ?? []).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select> : <input type={field.type ?? "text"} required={field.required} value={form[field.key] ?? ""} onChange={(event) => setForm({ ...form, [field.key]: event.target.value })} />}</label>)}</div>{error && <p className="notice">{error}</p>}<div className="modal-actions"><button className="button" type="button" onClick={() => setFormOpen(false)}>Hủy</button><button className="button primary" type="submit" disabled={saving}>{saving ? "Đang lưu…" : "Lưu thông tin"}</button></div></form></section></div>}
-    {viewing && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setViewing(null); }}><section className="edit-modal detail-modal" role="dialog" aria-modal="true"><div className="modal-heading"><h2>Hồ sơ khách thuê · {String(viewing.fullName ?? "")}</h2><button className="modal-close" type="button" onClick={() => setViewing(null)}>×</button></div><div className="detail-grid">{[["CCCD", viewing.nationalId], ["Điện thoại", viewing.phone], ["Email", viewing.email], ["Lưu trú", statusLabels[String(viewing.status)] ?? String(viewing.status ?? "—")], ["Đăng ký tạm trú", statusLabels[String(viewing.registrationStatus)] ?? String(viewing.registrationStatus ?? "—")], ["Tài khoản", viewing.account ? `${String((viewing.account as Row).username)}${(viewing.account as Row).isActive ? " · Hoạt động" : " · Đã khóa"}` : "Chưa có"]].map(([label, value]) => <div key={String(label)}><span>{String(label)}</span><strong>{String(value ?? "—")}</strong></div>)}</div><h3>Phương tiện</h3><ul>{((viewing.vehicles as Row[] | undefined) ?? []).map((vehicle, index) => <li key={String(vehicle.id ?? index)}>{String(vehicle.vehicleType)}{vehicle.plateNumber ? ` · ${String(vehicle.plateNumber)}` : ""}{vehicle.parkingSlot ? ` · Vị trí ${String(vehicle.parkingSlot)}` : ""}</li>)}</ul><h3>Hợp đồng và phòng</h3><ul>{((viewing.contracts as Row[] | undefined) ?? []).map((contract, index) => { const room = contract.room as Row | undefined; const property = room?.property as Row | undefined; return <li key={String(contract.id ?? index)}>{String(contract.contractNumber)} · {String(property?.name ?? "")} / {String(room?.roomNumber ?? "")} · {statusLabels[String(contract.status)] ?? String(contract.status)} · {formatValue(contract.monthlyRentVnd, "money")}<ul>{((contract.invoices as Row[] | undefined) ?? []).map((invoice, invoiceIndex) => <li key={String(invoice.id ?? invoiceIndex)}>Hóa đơn {String(invoice.billingMonth)}/{String(invoice.billingYear)} · {formatValue(invoice.totalVnd, "money")} · {statusLabels[String(invoice.status)] ?? String(invoice.status)}</li>)}</ul></li>; })}</ul><h3>Đăng ký tiện ích gần đây</h3><ul>{((viewing.amenityBookings as Row[] | undefined) ?? []).map((booking, index) => { const amenity = booking.amenity as Row | undefined; return <li key={String(booking.id ?? index)}>{String(amenity?.name ?? "Tiện ích")} · {formatValue(booking.useDate, "date")} · {statusLabels[String(booking.status)] ?? String(booking.status)}</li>; })}</ul><h3>Yêu cầu hỗ trợ gần đây</h3><ul>{((viewing.maintenanceRequests as Row[] | undefined) ?? []).map((item, index) => <li key={String(item.id ?? index)}>{String(item.category)} · {String(item.content)} · {statusLabels[String(item.status)] ?? String(item.status)}</li>)}</ul><div className="modal-actions"><button className="button" type="button" onClick={() => setViewing(null)}>Đóng</button></div></section></div>}
+    {viewing && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setViewing(null); }}><section className="edit-modal detail-modal" role="dialog" aria-modal="true" aria-labelledby="tenant-detail-title"><div className="modal-heading"><h2 id="tenant-detail-title">Hồ sơ khách thuê · {String(viewing.fullName ?? "Chưa có tên")}</h2><button className="modal-close" type="button" onClick={() => setViewing(null)} aria-label="Đóng">×</button></div><div className="detail-grid">{[["CCCD", viewing.nationalId], ["Điện thoại", viewing.phone], ["Email", viewing.email], ["Lưu trú", formatAdminStatus(viewing.status)], ["Đăng ký tạm trú", formatAdminStatus(viewing.registrationStatus)], ["Tài khoản", viewing.account ? `${String((viewing.account as Row).username ?? "Chưa có tên đăng nhập")}${(viewing.account as Row).isActive ? " · Hoạt động" : " · Đã khóa"}` : "Chưa có"]].map(([label, value]) => <div key={String(label)}><span>{String(label)}</span><strong>{String(value ?? "—")}</strong></div>)}</div><h3>Phương tiện</h3><ul>{((viewing.vehicles as Row[] | undefined) ?? []).map((vehicle, index) => <li key={String(vehicle.id ?? index)}>{String(vehicle.vehicleType ?? "Phương tiện chưa xác định")}{vehicle.plateNumber ? ` · ${String(vehicle.plateNumber)}` : ""}{vehicle.parkingSlot ? ` · Vị trí ${String(vehicle.parkingSlot)}` : ""}</li>)}</ul><h3>Hợp đồng và phòng</h3><ul>{((viewing.contracts as Row[] | undefined) ?? []).map((contract, index) => { const room = contract.room as Row | undefined; const property = room?.property as Row | undefined; return <li key={String(contract.id ?? index)}>{String(contract.contractNumber ?? "Hợp đồng chưa có mã")} · {String(property?.name ?? "Khu vực chưa xác định")} / {String(room?.roomNumber ?? "Phòng chưa xác định")} · {formatAdminStatus(contract.status)} · {formatValue(contract.monthlyRentVnd, "money")}<ul>{((contract.invoices as Row[] | undefined) ?? []).map((invoice, invoiceIndex) => <li key={String(invoice.id ?? invoiceIndex)}>Hóa đơn {String(invoice.billingMonth ?? "—")}/{String(invoice.billingYear ?? "—")} · {formatValue(invoice.totalVnd, "money")} · {formatAdminStatus(invoice.status)}</li>)}</ul></li>; })}</ul><h3>Đăng ký tiện ích gần đây</h3><ul>{((viewing.amenityBookings as Row[] | undefined) ?? []).map((booking, index) => { const amenity = booking.amenity as Row | undefined; return <li key={String(booking.id ?? index)}>{String(amenity?.name ?? "Tiện ích")} · {formatValue(booking.useDate, "date")} · {formatAdminStatus(booking.status)}</li>; })}</ul><h3>Yêu cầu hỗ trợ gần đây</h3><ul>{((viewing.maintenanceRequests as Row[] | undefined) ?? []).map((item, index) => <li key={String(item.id ?? index)}>{String(item.category ?? "Yêu cầu hỗ trợ")} · {String(item.content ?? "Chưa có mô tả")} · {formatAdminStatus(item.status)}</li>)}</ul><div className="modal-actions"><button className="button" type="button" onClick={() => setViewing(null)}>Đóng</button></div></section></div>}
   </AdminShell>;
 }

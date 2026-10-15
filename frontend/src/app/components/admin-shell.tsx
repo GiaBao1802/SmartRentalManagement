@@ -3,59 +3,64 @@
 import type { ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
-
-const tabs: Array<{ href: string; label: string; adminOnly?: boolean }> = [
-  { href: "/admin/properties", label: "Quản lý khu vực" },
-  { href: "/admin/tenants", label: "Quản lý khách thuê" },
-  { href: "/admin/contracts", label: "Quản lý hợp đồng" },
-  { href: "/admin/invoices", label: "Quản lý hóa đơn" },
-  { href: "/admin/amenities", label: "Tiện ích" },
-  { href: "/admin/bookings", label: "Lịch tiện ích" },
-  { href: "/admin/viewings", label: "Lịch xem phòng" },
-  { href: "/admin/complaints", label: "Khiếu nại" },
-  { href: "/admin/accounts", label: "Tài khoản", adminOnly: true },
-];
+import { useAuth } from "./auth-provider";
+import { displayName } from "../../lib/api/authApi";
+import { ADMIN_NAV_GROUPS } from "./admin-navigation";
 
 export default function AdminShell({ children, active }: { children: ReactNode; active: string }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [user, setUser] = useState<{ name: string; role: string } | null>(null);
-  const [ready, setReady] = useState(false);
+  const { status, user, logout } = useAuth();
+  const [logoutError, setLogoutError] = useState("");
+  const [logoutPending, setLogoutPending] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
-    fetch(`${apiUrl}/api/auth/me`, { credentials: "include" })
-      .then((response) => {
-        if (!response.ok) throw new Error("unauthenticated");
-        return response.json() as Promise<{ user: { displayName?: string; role: string } }>;
-      })
-      .then(({ user: account }) => {
-        if (account.role === "TENANT") { router.replace("/tenant"); return; }
-        if (pathname === "/admin/accounts" && account.role !== "ADMIN") { router.replace("/admin/properties"); return; }
-        setUser({ name: account.displayName ?? "Người quản lý", role: account.role });
-      })
-      .catch(() => router.replace(`/login?next=${encodeURIComponent(pathname)}`))
-      .finally(() => setReady(true));
-  }, [pathname, router]);
+    if (status === "unauthenticated") router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+    else if (status === "authenticated" && user?.account.role === "resident") router.replace("/tenant");
+  }, [pathname, router, status, user]);
 
-  async function logout() {
-    await fetch(`${apiUrl}/api/auth/logout`, { method: "POST", credentials: "include" });
-    router.replace("/login");
-  }
+  useEffect(() => { setMobileNavOpen(false); }, [pathname]);
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setMobileNavOpen(false); };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [mobileNavOpen]);
 
-  if (!ready || !user) return <main className="auth-loading">Đang kiểm tra phiên đăng nhập…</main>;
+  if (status !== "authenticated" || !user || user.account.role !== "admin") return <main className="auth-loading">Đang kiểm tra phiên đăng nhập…</main>;
+  const name = displayName(user) || "Chủ trọ";
+  const initials = name.split(/\s+/).map((part) => part[0]).slice(-2).join("").toUpperCase();
+  const nav = <nav className="admin-nav" aria-label="Điều hướng quản trị">
+    {ADMIN_NAV_GROUPS.map((group) => {
+      const items = group.items.filter((item) => !item.adminOnly || user.account.role === "admin");
+      return <div className="admin-nav-group" key={group.label}><span className="admin-nav-label">{group.label}</span>{items.map((item) => {
+        const selected = active === item.href || (item.href === "/admin/properties" && pathname.startsWith("/admin/properties/"));
+        return <a key={item.href} className={`admin-nav-link${selected ? " active" : ""}`} href={item.href} aria-current={selected ? "page" : undefined}>
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d={item.icon} /></svg><span>{item.label}</span>
+        </a>;
+      })}</div>;
+    })}
+  </nav>;
 
-  return <div className="admin-page">
-    <header className="admin-header">
-      <div className="admin-header-inner">
-        <a className="admin-brand" href="/" aria-label="Góc trọ - trang quản trị"><img src="/logo-goc-tro.png" alt="Góc trọ" /></a>
-        <nav className="admin-nav" aria-label="Điều hướng quản trị">
-          {tabs.filter((tab) => !tab.adminOnly || user.role === "ADMIN").map((tab) => <a key={tab.href} className={active === tab.href ? "active" : ""} href={tab.href}>{tab.label}</a>)}
-        </nav>
-        <div className="admin-user"><span className="avatar">{user.name.split(/\s+/).map((part) => part[0]).slice(-2).join("").toUpperCase()}</span><span>{user.name}<small>{user.role === "ADMIN" ? "Admin hệ thống" : "Chủ trọ"}</small></span><button className="logout-button" type="button" onClick={logout}>Đăng xuất</button></div>
-      </div>
-    </header>
-    {children}
+  return <div className={`admin-page${mobileNavOpen ? " nav-open" : ""}`}>
+    {mobileNavOpen && <button className="admin-nav-scrim" type="button" aria-label="Đóng điều hướng" onClick={() => setMobileNavOpen(false)} />}
+    <aside className="admin-sidebar" aria-label="Thanh điều hướng chính">
+      <a className="admin-brand" href="/" aria-label="Góc trọ - trang chủ"><img src="/assets/goc-tro-logo-newstyle.svg" alt="Góc trọ · Chốn về bình yên" /></a>
+      <div className="admin-sidebar-caption"><span className="admin-sidebar-dot" /> KHÔNG GIAN QUẢN LÝ</div>
+      {nav}
+      <div className="admin-sidebar-footer"><span className="admin-sidebar-footer-status" aria-hidden="true" /><span>Không gian quản lý<small>Vận hành khu trọ</small></span></div>
+    </aside>
+    <div className="admin-workspace">
+      <header className="admin-header">
+        <div className="admin-header-inner">
+          <button className="admin-menu-toggle" type="button" aria-label={mobileNavOpen ? "Đóng menu" : "Mở menu"} aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen((open) => !open)}><span /><span /><span /></button>
+          <div className="admin-header-context"><span className="admin-context-label">GÓC TRỌ <span aria-hidden="true">/</span> QUẢN TRỊ</span><strong>{[...ADMIN_NAV_GROUPS.flatMap((group) => group.items)].find((item) => item.href === active)?.label ?? "Không gian quản lý"}</strong></div>
+          <div className="admin-user"><span className="avatar" aria-hidden="true">{initials}</span><span className="admin-user-name">{name}<small>Chủ trọ</small></span><button className="logout-button" type="button" disabled={logoutPending} onClick={() => { if (logoutPending) return; setLogoutPending(true); setLogoutError(""); void logout().catch(() => setLogoutError("Không thể kết thúc phiên với máy chủ. Hãy thử lại.")).finally(() => setLogoutPending(false)); }}>{logoutPending ? "Đang đăng xuất…" : "Đăng xuất"}</button></div>
+        </div>
+      </header>
+      {logoutError && <p className="notice admin-global-notice" role="alert">{logoutError}</p>}
+      {children}
+    </div>
   </div>;
 }

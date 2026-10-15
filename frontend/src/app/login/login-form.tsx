@@ -1,34 +1,38 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../components/auth-provider";
+import { loginErrorMessage } from "../../lib/api/errors";
 
 export default function LoginForm() {
+  const router = useRouter();
+  const { status, user, login } = useAuth();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const redirectTarget = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (status !== "authenticated" || !user) return;
+    router.replace(redirectTarget.current ?? (user.account.role === "resident" ? "/tenant" : "/admin/properties"));
+  }, [router, status, user]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (busy) return;
     setBusy(true);
     setError("");
     try {
-      const response = await fetch(`${apiUrl}/api/auth/login`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier, password }),
-      });
-      const result = await response.json() as { error?: string; user?: { role: "ADMIN" | "LANDLORD" | "TENANT" } };
-      if (!response.ok) throw new Error(result.error ?? "Đăng nhập chưa thành công.");
-      const defaultPath = result.user?.role === "TENANT" ? "/tenant" : "/admin/properties";
+      const account = await login(identifier, password);
+      const defaultPath = account.account.role === "resident" ? "/tenant" : "/admin/properties";
       const requested = new URLSearchParams(window.location.search).get("next") ?? defaultPath;
-      const next = requested.startsWith("/") && !requested.startsWith("//") && result.user?.role !== "TENANT" ? requested : defaultPath;
-      window.location.assign(next);
+      const next = requested.startsWith("/") && !requested.startsWith("//") && (account.account.role === "admin" || requested === "/tenant") ? requested : defaultPath;
+      redirectTarget.current = next;
+      router.replace(next);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Không thể kết nối máy chủ.");
+      setError(loginErrorMessage(reason));
     } finally {
       setBusy(false);
     }
@@ -36,19 +40,21 @@ export default function LoginForm() {
 
   return <main className="login-page">
     <a className="login-back" href="/">← Về trang chủ</a>
-    <section className="login-card">
-      <a className="login-logo" href="/"><img src="/logo-goc-tro.png" alt="Góc trọ" /></a>
-      <span className="eyebrow">GÓC TRỌ · CỔNG QUẢN LÝ</span>
-      <h1>Chào mừng trở lại</h1>
-      <p>Đăng nhập để quản lý khu vực, khách thuê, hợp đồng và hóa đơn.</p>
-      <form onSubmit={submit}>
-        <label>Tài khoản<input autoComplete="username" required value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="Tên đăng nhập, email hoặc số điện thoại" /></label>
-        <label>Mật khẩu<input autoComplete="current-password" type="password" required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Nhập mật khẩu" /></label>
-        {error && <p className="login-error" role="alert">{error}</p>}
-        <button className="button primary login-submit" type="submit" disabled={busy}>{busy ? "Đang đăng nhập…" : "Đăng nhập"}</button>
-      </form>
-      <div className="login-demo"><strong>Tài khoản demo theo vai trò</strong><span>Admin: admin / 123456</span><span>Chủ trọ (Tòa A): landlord / 123456</span><span>Khách thuê mẫu: tenant / 123456</span><small>Chỉ dùng local; mật khẩu có thể đặt bằng biến DEV_*_PASSWORD trước khi seed.</small></div>
-      <p className="login-help">Quên mật khẩu? Vui lòng liên hệ quản trị viên để được hỗ trợ.</p>
-    </section>
+    <div className="login-layout">
+      <aside className="login-brand-panel"><a className="login-logo" href="/"><img src="/assets/goc-tro-logo-newstyle.svg" alt="Góc trọ · Chốn về bình yên" /></a><span className="login-brand-kicker">KHÔNG GIAN QUẢN LÝ</span><h2>Vận hành khu trọ<br />gọn gàng, an tâm.</h2><p>Một nơi để theo dõi khu vực, phòng và thông tin cư dân của bạn.</p><div className="login-brand-rule"><span /><span /><span /></div></aside>
+      <section className="login-card">
+        <span className="eyebrow">CỔNG QUẢN LÝ GÓC TRỌ</span>
+        <h1>Chào mừng trở lại</h1>
+        <p>Đăng nhập bằng email hoặc số điện thoại để tiếp tục.</p>
+        <form onSubmit={submit}>
+          <label>Email hoặc số điện thoại<input autoComplete="username" required value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="Nhập email hoặc số điện thoại" /></label>
+          <label>Mật khẩu<input autoComplete="current-password" type="password" required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Nhập mật khẩu" /></label>
+          {error && <p className="login-error" role="alert">{error}</p>}
+          <button className="button primary login-submit" type="submit" disabled={busy}>{busy ? "Đang đăng nhập…" : "Đăng nhập"}</button>
+        </form>
+        <div className="login-demo"><strong>Đăng nhập an toàn</strong><span>Phiên làm việc được lưu bằng cookie bảo mật do máy chủ quản lý.</span></div>
+        <p className="login-help">Quên mật khẩu? Vui lòng liên hệ quản trị viên để được hỗ trợ.</p>
+      </section>
+    </div>
   </main>;
 }

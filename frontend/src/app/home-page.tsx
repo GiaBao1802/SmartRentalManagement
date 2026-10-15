@@ -1,85 +1,61 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-
-type Room = { id: string; roomNumber: string; floor: number; areaM2: string | null; rentVnd: number | null; property: { name: string; province: string; address: string; landlordName: string | null } };
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
-const pageSize = 24;
-const money = (value: number) => `${new Intl.NumberFormat("vi-VN").format(value)} đ`;
+import { listPublicRooms, serializePublicRoomFilters, type PublicRoomListItem } from "../lib/api/publicRoomApi";
+import { PublicRoomCard } from "./public-room-card";
 
 export default function HomePage() {
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [searchText, setSearchText] = useState("");
-  const [query, setQuery] = useState("");
+  const [province, setProvince] = useState("");
+  const [address, setAddress] = useState("");
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
+  const [preview, setPreview] = useState<PublicRoomListItem[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [totalRooms, setTotalRooms] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
-  const [marketError, setMarketError] = useState("");
-  const [viewing, setViewing] = useState({ visitorName: "", phone: "", email: "", roomId: "", preferredDate: "", preferredTime: "", note: "" });
-  const [viewingMessage, setViewingMessage] = useState("");
-  const [submittingViewing, setSubmittingViewing] = useState(false);
+  const [error, setError] = useState(false);
+  const [searchError, setSearchError] = useState("");
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => {
-    const controller = new AbortController();
+    let active = true;
     setLoading(true);
-    fetch(`${apiUrl}/api/public/rooms?search=${encodeURIComponent(query)}&page=1&pageSize=${pageSize}`, { signal: controller.signal })
-      .then((response) => response.json() as Promise<{ data: Room[]; pagination: { total: number; hasMore: boolean } }>)
-      .then((result) => { setRooms(result.data); setTotalRooms(result.pagination.total); setHasMore(result.pagination.hasMore); })
-      .catch(() => { setRooms([]); setTotalRooms(0); setHasMore(false); })
-      .finally(() => setLoading(false));
-    return () => controller.abort();
-  }, [query]);
-
-  async function loadMore() {
-    setLoadingMore(true); setMarketError("");
-    try {
-      const page = Math.floor(rooms.length / pageSize) + 1;
-      const response = await fetch(`${apiUrl}/api/public/rooms?search=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}`);
-      const result = await response.json() as { data: Room[]; pagination: { total: number; hasMore: boolean } };
-      if (!response.ok) throw new Error("Không tải thêm được danh sách phòng.");
-      setRooms((current) => [...current, ...result.data]); setTotalRooms(result.pagination.total); setHasMore(result.pagination.hasMore);
-    } catch (reason) { setMarketError(reason instanceof Error ? reason.message : "Không tải thêm được phòng."); }
-    finally { setLoadingMore(false); }
-  }
+    setError(false);
+    void listPublicRooms({ page: 1, page_size: 6, sort: "newest" })
+      .then((response) => { if (active) { setPreview(response.data); setTotal(response.meta.total_items); } })
+      .catch(() => { if (active) { setPreview([]); setTotal(0); setError(true); } })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [retry]);
 
   function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setQuery(searchText.trim());
-    document.getElementById("phong")?.scrollIntoView({ behavior: "smooth" });
+    setSearchError("");
+    if ([priceMin, priceMax].some((value) => value.trim() && !/^\d{1,19}$/.test(value.trim()))) { setSearchError("Giá thuê cần nhập bằng số VND nguyên không âm."); return; }
+    if (priceMin && priceMax && BigInt(priceMin) > BigInt(priceMax)) { setSearchError("Giá từ không được lớn hơn giá đến."); return; }
+    const query = serializePublicRoomFilters({ province, address, price_min: priceMin, price_max: priceMax, sort: "newest", page: 1, page_size: 12 });
+    window.location.assign(`/rooms?${query.toString()}`);
   }
 
-  async function requestViewing(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setSubmittingViewing(true); setViewingMessage("");
-    try {
-      const response = await fetch(`${apiUrl}/api/public/viewing-requests`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(viewing) });
-      const result = await response.json() as { data?: { message: string }; error?: string };
-      if (!response.ok) throw new Error(result.error ?? "Chưa gửi được yêu cầu. Vui lòng thử lại.");
-      setViewingMessage(result.data?.message ?? "Đã nhận yêu cầu xem phòng.");
-      setViewing({ visitorName: "", phone: "", email: "", roomId: "", preferredDate: "", preferredTime: "", note: "" });
-    } catch (reason) { setViewingMessage(reason instanceof Error ? reason.message : "Chưa gửi được yêu cầu."); }
-    finally { setSubmittingViewing(false); }
-  }
+  return <main className="public-site">
+    <header className="public-header"><a className="home-logo" href="/" aria-label="Góc Trọ"><img src="/logo-goc-tro.png" alt="Góc trọ" /></a>
+      <nav aria-label="Điều hướng chính"><a href="#phong-noi-bat">Phòng đang trống</a><a href="#gia-tri">Cách tìm phòng</a></nav>
+      <div className="public-header-actions"><a className="public-login-link" href="/login">Đăng nhập quản lý</a><a className="button primary" href="/rooms">Khám phá phòng</a></div>
+    </header>
 
-  return <main className="home-page">
-    <header className="home-header"><a className="home-logo" href="/" aria-label="Góc trọ"><img src="/logo-goc-tro.png" alt="Góc trọ — Tìm dễ, ở yên" /></a><nav><a href="#vi-sao">Vì sao chọn</a><a href="#phong">Phòng trống</a><a href="#dich-vu">Dịch vụ</a><a href="#lien-he">Liên hệ</a></nav><a className="button primary login-link" href="/login">Đăng nhập</a></header>
-    <section className="home-hero"><div className="home-hero-inner"><div className="home-hero-copy"><span className="home-tag">Góc trọ · Chốn về bình yên</span><h1>Tìm phòng gần bạn,<br /><span>chọn nơi an tâm</span></h1><p>Khám phá phòng trống theo khu vực, xem giá rõ ràng và kết nối với chủ trọ chỉ trong vài bước.</p>
-      <form className="home-search" onSubmit={search}><label htmlFor="home-search-input">Địa chỉ hoặc tỉnh thành</label><div><input id="home-search-input" value={searchText} onChange={(event) => setSearchText(event.target.value)} placeholder="Nhập địa chỉ, quận hoặc tỉnh/thành..."/><button className="button primary" type="submit">Tìm phòng</button></div></form>
-      <div className="popular-searches"><span>Khu vực phổ biến:</span>{["TP. Hồ Chí Minh", "Hà Nội", "Đà Nẵng"].map((place) => <button type="button" key={place} onClick={() => { setSearchText(place); setQuery(place); }}>{place}</button>)}</div>
-    </div><div className="hero-note"><div className="hero-note-icon">⌂</div><strong>Một nơi ở vừa ý</strong><span>Chi phí minh bạch · Kết nối trực tiếp</span><div className="hero-note-bottom"><span>Phòng đang đăng trên marketplace</span><b>{totalRooms} lựa chọn</b></div></div></div></section>
+    <section className="public-hero"><div className="public-hero-inner"><div className="public-hero-copy"><span className="eyebrow">Góc Trọ · Tìm dễ, ở yên</span><h1>Tìm một căn phòng<br /><span>hợp với nhịp sống của bạn.</span></h1><p>Khám phá tin phòng đang công khai, xem giá và thông tin cơ bản trước khi gửi yêu cầu liên hệ.</p>
+      <form className="public-search-form" onSubmit={search} aria-label="Tìm phòng"><label>Tỉnh/thành<input value={province} onChange={(event) => setProvince(event.target.value)} maxLength={120} placeholder="Ví dụ: Đồng Nai" /></label><label>Địa chỉ hoặc khu vực<input value={address} onChange={(event) => setAddress(event.target.value)} maxLength={200} placeholder="Đường, phường hoặc khu vực" /></label><label>Giá từ<input inputMode="numeric" type="number" min="0" value={priceMin} onChange={(event) => setPriceMin(event.target.value)} placeholder="VND" /></label><label>Đến<input inputMode="numeric" type="number" min="0" value={priceMax} onChange={(event) => setPriceMax(event.target.value)} placeholder="VND" /></label><button className="button primary" type="submit">Tìm phòng</button></form>{searchError && <p className="public-form-error" role="alert">{searchError}</p>}
+      <a className="public-hero-secondary" href="/rooms">Xem tất cả phòng đang đăng <span aria-hidden="true">→</span></a>
+    </div><div className="public-hero-aside"><div className="public-aside-mark" aria-hidden="true">⌂</div><span>Thông tin rõ ràng</span><strong>Chọn nơi ở<br />theo điều bạn cần.</strong><p>Địa chỉ, giá thuê, diện tích và sức chứa được lấy từ tin phòng công khai.</p><a href="/rooms">Bắt đầu khám phá <span aria-hidden="true">↗</span></a></div></div></section>
 
-    <section className="home-section why-section" id="vi-sao"><div className="section-heading"><span className="eyebrow">Ở tốt bắt đầu từ lựa chọn đúng</span><h2>Vì sao chọn Góc trọ</h2><p>Một nơi ở không chỉ có bốn bức tường.</p></div><div className="benefit-grid">
-      {[{ icon: "🛡️", title: "An ninh 24/7", text: "Khu trọ có người trông coi, lối đi thông thoáng và thông tin khu vực rõ ràng." }, { icon: "💡", title: "Chi phí minh bạch", text: "Giá thuê và các khoản dịch vụ được hiển thị rõ trước khi bạn liên hệ." }, { icon: "📄", title: "Hợp đồng rõ ràng", text: "Thông tin thuê, thời hạn và tiền cọc được thống nhất minh bạch." }, { icon: "🤝", title: "Kết nối dễ dàng", text: "Tìm theo khu vực, gửi yêu cầu xem phòng và trao đổi trực tiếp." }].map((benefit) => <article className="benefit-card" key={benefit.title}><span>{benefit.icon}</span><h3>{benefit.title}</h3><p>{benefit.text}</p></article>)}
-    </div></section>
-
-    <section className="home-section rooms-section" id="phong"><div className="section-heading room-heading"><div><span className="eyebrow">Tin đăng từ các chủ trọ</span><h2>Phòng đang trống</h2><p>Khám phá các phòng chủ trọ đang đăng trên marketplace.</p></div><span className="room-count">{totalRooms} phòng đang đăng</span></div>
-      {loading ? <div className="home-empty">Đang tải danh sách phòng…</div> : rooms.length ? <div className="room-list">{rooms.map((room) => <article className="room-listing" key={room.id}><div className="room-art"><span>GÓC TRỌ</span><b>{room.roomNumber}</b></div><div className="room-info"><span className="room-location">{room.property.province}</span><h3>{room.property.name} · Phòng {room.roomNumber}</h3><p>{room.property.address}</p><div className="room-tags"><span>{room.areaM2 ? `${room.areaM2} m²` : "Diện tích liên hệ"}</span><span>Tầng {room.floor}</span><span>{room.property.landlordName ? `Chủ trọ: ${room.property.landlordName}` : "Đã xác minh tin đăng"}</span></div><div className="room-listing-bottom"><strong>{money(room.rentVnd ?? 0)}<small>/ tháng</small></strong><a href="#lien-he" onClick={() => setViewing({ ...viewing, roomId: room.id })}>Hẹn xem phòng →</a></div></div></article>)}</div> : <div className="home-empty"><strong>Chưa tìm thấy phòng trống phù hợp.</strong><span>Thử khu vực khác hoặc liên hệ để được hỗ trợ tìm phòng.</span></div>}
-      {marketError && <p className="viewing-message" role="alert">{marketError}</p>}{hasMore && <div className="marketplace-more"><button className="button" type="button" disabled={loadingMore} onClick={() => void loadMore()}>{loadingMore ? "Đang tải…" : "Xem thêm phòng"}</button></div>}
+    <section className="public-section public-listings" id="phong-noi-bat"><div className="public-section-heading"><div><span className="eyebrow">Tin phòng công khai</span><h2>Phòng đang trống</h2><p>Danh sách được cập nhật từ các tin phòng còn khả dụng.</p></div><a href="/rooms">Tất cả phòng <span aria-hidden="true">→</span></a></div>
+      <div className="public-results-summary">{loading ? "Đang tải tin phòng…" : error ? "Tạm thời chưa tải được dữ liệu phòng." : `${total} phòng đang được đăng`}</div>
+      {loading ? <div className="public-room-grid" aria-label="Đang tải phòng" aria-busy="true">{[0, 1, 2].map((item) => <div className="public-room-skeleton" key={item}><div /><span /><span /><span /></div>)}</div> : error ? <div className="public-state public-state-error" role="alert"><strong>Danh sách phòng chưa tải được.</strong><span>Vui lòng thử tải lại sau.</span><button className="button" type="button" onClick={() => setRetry((value) => value + 1)}>Thử lại</button></div> : preview.length ? <div className="public-room-grid">{preview.map((room) => <PublicRoomCard key={room.room_id} room={room} />)}</div> : <div className="public-state"><strong>Chưa có phòng phù hợp để hiển thị.</strong><span>Thử tìm theo tỉnh/thành hoặc địa chỉ khác.</span><a className="button" href="/rooms">Mở bộ lọc phòng</a></div>}
+      {!loading && !error && total > preview.length && <div className="public-section-action"><a className="button" href="/rooms">Xem thêm phòng</a></div>}
     </section>
 
-    <section className="home-section services-section" id="dich-vu"><div className="section-heading"><span className="eyebrow">Đồng hành trong thời gian thuê</span><h2>Dịch vụ thiết thực</h2><p>Thông tin dịch vụ và chi phí được quản lý rõ ràng trong suốt thời gian bạn ở.</p></div><div className="service-grid"><article><span>🧾</span><h3>Theo dõi chi phí</h3><p>Tiền phòng, điện, nước và dịch vụ được ghi rõ theo từng kỳ.</p></article><article><span>🛠️</span><h3>Hỗ trợ sự cố</h3><p>Gửi yêu cầu hỗ trợ khi cần sửa chữa hoặc kiểm tra thiết bị.</p></article><article><span>🏡</span><h3>Tiện ích khu trọ</h3><p>Tra cứu tiện ích, khung giờ hoạt động và thông tin đăng ký.</p></article></div></section>
+    <section className="public-section public-value" id="gia-tri"><div className="public-section-heading"><div><span className="eyebrow">Tìm phòng theo thông tin thực tế</span><h2>Chủ động chọn nơi phù hợp</h2></div></div><div className="public-value-grid"><article><span>01</span><h3>So sánh thông tin</h3><p>Xem giá thuê, diện tích và sức chứa được công khai cho từng phòng.</p></article><article><span>02</span><h3>Xem hình ảnh tin đăng</h3><p>Ảnh bìa và gallery chỉ xuất hiện khi tin phòng có ảnh thực tế được tải lên.</p></article><article><span>03</span><h3>Gửi yêu cầu liên hệ</h3><p>Để lại thông tin cho chủ trọ. Bạn không cần tạo tài khoản để gửi yêu cầu.</p></article></div></section>
 
-    <section className="contact-band" id="lien-he"><div><span className="eyebrow">Bạn đang tìm chỗ ở?</span><h2>Bắt đầu tìm một góc nhỏ cho riêng mình.</h2><p>Để lại thông tin và thời gian thuận tiện. Góc trọ sẽ liên hệ xác nhận lịch xem phòng.</p></div><form className="viewing-form" onSubmit={requestViewing}><div className="viewing-form-grid"><label>Họ và tên<input required minLength={2} value={viewing.visitorName} onChange={(event) => setViewing({ ...viewing, visitorName: event.target.value })} /></label><label>Số điện thoại<input required type="tel" value={viewing.phone} onChange={(event) => setViewing({ ...viewing, phone: event.target.value })} /></label><label>Email (không bắt buộc)<input type="email" value={viewing.email} onChange={(event) => setViewing({ ...viewing, email: event.target.value })} /></label><label>Phòng quan tâm<select value={viewing.roomId} onChange={(event) => setViewing({ ...viewing, roomId: event.target.value })}><option value="">Chưa chọn phòng cụ thể</option>{rooms.map((room) => <option key={room.id} value={room.id}>{room.property.name} · Phòng {room.roomNumber}</option>)}</select></label><label>Ngày muốn xem<input type="date" value={viewing.preferredDate} onChange={(event) => setViewing({ ...viewing, preferredDate: event.target.value })} /></label><label>Khung giờ phù hợp<input value={viewing.preferredTime} onChange={(event) => setViewing({ ...viewing, preferredTime: event.target.value })} placeholder="Ví dụ: sau 17:00" /></label><label className="viewing-note">Ghi chú<textarea value={viewing.note} onChange={(event) => setViewing({ ...viewing, note: event.target.value })} /></label></div>{viewingMessage && <p className="viewing-message" role="status">{viewingMessage}</p>}<button className="button primary" type="submit" disabled={submittingViewing}>{submittingViewing ? "Đang gửi…" : "Gửi yêu cầu xem phòng"}</button></form></section>
-    <footer className="home-footer"><a className="home-logo" href="/"><img src="/logo-goc-tro.png" alt="Góc trọ" /></a><span>Tìm dễ, ở yên · Xuân Lộc, Đồng Nai, Việt Nam</span><a href="/login">Đăng nhập quản lý</a></footer>
+    <section className="public-final-cta"><div><span className="eyebrow">Đang tìm phòng?</span><h2>Xem các tin phòng đang khả dụng.</h2></div><a className="button primary" href="/rooms">Khám phá danh sách phòng <span aria-hidden="true">→</span></a></section>
+    <footer className="public-footer"><a className="home-logo" href="/" aria-label="Góc Trọ"><img src="/logo-goc-tro.png" alt="Góc trọ" /></a><span>Tìm dễ, ở yên.</span><a href="/login">Dành cho chủ trọ</a></footer>
   </main>;
 }
