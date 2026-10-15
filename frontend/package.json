@@ -10,14 +10,18 @@
     "test:api": "tsx --test src/lib/api/apiClient.test.ts src/lib/api/contractApi.test.ts src/lib/api/contractView.test.ts src/lib/api/invoiceApi.test.ts src/lib/api/utilityTariffApi.test.ts src/lib/api/propertyServiceApi.test.ts src/lib/api/roomImagePicker.test.tsx src/lib/api/roomImageWorkflow.test.ts src/app/admin/invoices/invoice-list-content.test.tsx src/app/admin/invoices/invoice-detail.test.tsx src/app/admin/invoices/invoice-list.logic.test.tsx src/app/admin/billing/workspace.test.tsx src/app/admin/services/service-workspace.test.ts src/app/components/admin-navigation.test.ts"
   },
   "dependencies": {
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.2",
     "next": "^16.4.0",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "three": "^0.186.1"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "@types/three": "^0.186.0",
     "typescript": "^5.9.3"
   }
 }

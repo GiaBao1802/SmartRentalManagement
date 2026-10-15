@@ -24,9 +24,10 @@ const adminContactSelect = {
 export class PrismaPublicMarketplaceRepository implements ContactRequestRepositoryPort {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async listPublicRooms(query: PublicRoomListQuery) {
+  async listPublicRooms(query: PublicRoomListQuery & { provinceNames?: string[] }) {
     const propertyWhere: Prisma.PropertyWhereInput = {
       status: "active",
+      ...(query.provinceNames ? { province: { in: query.provinceNames } } : {}),
       ...(query.province ? { province: { contains: query.province, mode: "insensitive" } } : {}),
       ...(query.address ? { address: { contains: query.address, mode: "insensitive" } } : {}),
     };
