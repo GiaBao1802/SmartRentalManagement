@@ -1,13 +1,13 @@
 # Phân tích dữ liệu nghiệp vụ Góc trọ
 
-Tài liệu nghiệp vụ và mô hình PostgreSQL của ứng dụng Góc trọ. Schema hiện hành nằm trong `../database/schema.prisma`; migrations được lưu trong `../database/migrations`.
+Tài liệu nghiệp vụ và mô hình PostgreSQL của ứng dụng Góc trọ. Schema hiện hành nằm trong `../../database/schema.prisma`; migrations được lưu trong `../../database/migrations`.
 
 ## Nguồn đã rà soát
 
-- `../legacy/index.html` và các script giao diện: state mẫu `GT`, luồng quản lý khu vực/phòng, khách thuê, hợp đồng, hóa đơn, tài khoản, tiện ích và khiếu nại.
+- `../../legacy/index.html` và các script giao diện: state mẫu `GT`, luồng quản lý khu vực/phòng, khách thuê, hợp đồng, hóa đơn, tài khoản, tiện ích và khiếu nại.
 - `app-fixes.js`, `role-user.js`, `settings-demo.js`: các luồng bổ sung, đặt tiện ích, báo sự cố và cài đặt.
-- `../legacy/demo-database.json` và `../legacy/server.js`: API demo cho hồ sơ, gói, thông báo và dịch vụ.
-- `Tom_tat_chinh_sua_Goc_tro.md`: mô tả quy tắc nghiệp vụ đã được thêm vào giao diện.
+- `../../legacy/demo-database.json` và `../../legacy/server.js`: API demo cho hồ sơ, gói, thông báo và dịch vụ.
+- `../11_project-reports/Tom_tat_chinh_sua_Goc_tro.md`: mô tả quy tắc nghiệp vụ đã được thêm vào giao diện.
 
 ## Hiện trạng lưu trữ
 

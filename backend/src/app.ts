@@ -4,17 +4,68 @@ import helmet from "helmet";
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { prisma } from "./lib/prisma.js";
+import { runtimeConfig } from "./config/env.js";
+import { PrismaAuthRepository } from "./auth/account-repository.js";
+import { PrismaPropertyRoomRepository } from "./properties/property-room.repository.js";
+import { PrismaResidentOccupancyRepository } from "./residents/resident.repository.js";
+import { PrismaContractRepository } from "./contracts/contract.repository.js";
+import { ContractIdempotencyService, EnvironmentContractResponseKeyProvider } from "./contracts/contract-idempotency.js";
+import { UnconfiguredObjectStorage } from "./contract-documents/object-storage.js";
+import { ContractDocumentService } from "./contract-documents/contract-document.service.js";
+import { createV1Router } from "./auth/v1.router.js";
+import { createSessionStore } from "./auth/session-store.js";
+import { requestIdMiddleware } from "./middleware/request-id.js";
+import { errorHandler } from "./middleware/error-handler.js";
+import { PrismaInvoiceRepository } from "./invoices/invoice.repository.js";
+import { PrismaItemizedInvoicePricing } from "./invoices/invoice-itemized.pricing.js";
+import { PrismaBillingWorkspaceRepository } from "./invoices/billing-workspace.repository.js";
+import { InvoiceZaloService } from "./zalo/invoice-zalo.service.js";
+import { UnconfiguredZaloProvider } from "./zalo/zalo-provider.js";
+import { PrismaRoomImageRepository } from "./room-images/room-image.repository.js";
+import { LocalRoomImageStorage } from "./room-images/storage.js";
+import { PrismaPublicMarketplaceRepository } from "./public-marketplace/public-marketplace.repository.js";
+import { PrismaUtilityTariffManagementRepository } from "./services/utility-tariff-management.repository.js";
+import { PrismaPropertyServiceRepository } from "./services/property-service.repository.js";
+import { PrismaParkingManagementRepository } from "./services/parking-management.repository.js";
 
 const app = express();
 
+app.use(requestIdMiddleware);
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.FRONTEND_ORIGIN ?? "http://localhost:3000",
+    origin: (origin, callback) => callback(null, !origin || origin === runtimeConfig.frontendOrigin),
     credentials: true,
   }),
 );
 app.use(express.json({ limit: "1mb" }));
+
+const sessions = createSessionStore(runtimeConfig.nodeEnv);
+const objectStorage = new UnconfiguredObjectStorage();
+const invoiceRepository = new PrismaInvoiceRepository(prisma);
+const invoicePricing = new PrismaItemizedInvoicePricing();
+const billingWorkspaceRepository = new PrismaBillingWorkspaceRepository(prisma, invoicePricing);
+app.use("/api/v1", createV1Router({
+  config: runtimeConfig,
+  repository: new PrismaAuthRepository(prisma),
+  sessions,
+  propertyRoomRepository: new PrismaPropertyRoomRepository(prisma),
+  roomImageRepository: new PrismaRoomImageRepository(prisma),
+  roomImageStorage: runtimeConfig.nodeEnv === "production" ? undefined : new LocalRoomImageStorage(),
+  publicMarketplaceRepository: new PrismaPublicMarketplaceRepository(prisma),
+  residentOccupancyRepository: new PrismaResidentOccupancyRepository(prisma),
+  contractRepository: new PrismaContractRepository(prisma),
+  contractIdempotency: new ContractIdempotencyService(prisma, new EnvironmentContractResponseKeyProvider()),
+  objectStorage,
+  contractDocumentService: new ContractDocumentService(prisma, objectStorage),
+  invoiceRepository,
+  billingWorkspaceRepository,
+  invoicePricing,
+  invoiceZalo: new InvoiceZaloService(invoiceRepository, new UnconfiguredZaloProvider()),
+  utilityTariffRepository: new PrismaUtilityTariffManagementRepository(prisma),
+  propertyServiceRepository: new PrismaPropertyServiceRepository(prisma),
+  parkingManagementRepository: new PrismaParkingManagementRepository(prisma),
+}));
 
 app.get("/api/health", (_request, response) => {
   response.json({ status: "ok", service: "backend" });
@@ -29,8 +80,22 @@ app.get("/api/health/db", async (_request, response) => {
   }
 });
 
+// Property, Room, and Contract management moved to scoped V1 routes. Keep old demo
+// paths explicitly retired while other legacy domains remain isolated below.
+app.use(["/api/properties", "/api/rooms", "/api/contracts"], (_request, response) => {
+  response.status(410).json({ error: "Endpoint đã được thay thế bằng API V1.2.", code: "ENDPOINT_RETIRED", endpoint: "/api/v1" });
+});
+
+// Legacy/demo invoice routes accepted client-supplied totals and payment state. Retire them;
+// the scoped V1 Invoice API is mounted above and Payment remains unmigrated.
+app.use("/api/invoices", (_request, response) => {
+  response.status(410).json({ error: "Endpoint đã được thay thế bằng API V1.2.", code: "ENDPOINT_RETIRED", endpoint: "/api/v1/invoices" });
+});
+
+// Unversioned demo routes below are retained only until their domain migrations.
+// All V1.2 clients must use the opaque server-managed /api/v1/auth session.
 type SessionPayload = { sub: string; role: string; name: string; exp: number };
-const sessionSecret = process.env.AUTH_SECRET ?? "local-only-change-this-session-secret";
+const sessionSecret = runtimeConfig.sessionSecret;
 const sessionCookie = "goctro_session";
 
 function sign(payload: SessionPayload) {
@@ -317,7 +382,7 @@ app.patch("/api/admin/accounts/:id", platformAdminOnly, async (request, response
   } catch (error) { next(error); }
 });
 
-app.use(["/api/tenants", "/api/properties", "/api/rooms", "/api/contracts", "/api/invoices", "/api/amenities", "/api/amenity-bookings", "/api/maintenance-requests", "/api/viewing-requests", "/api/options"], requireAdmin);
+app.use(["/api/tenants", "/api/properties", "/api/rooms", "/api/invoices", "/api/amenities", "/api/amenity-bookings", "/api/maintenance-requests", "/api/viewing-requests", "/api/options"], requireAdmin);
 
 app.get("/api/options/landlords", async (request, response, next) => {
   try {
@@ -380,102 +445,6 @@ app.get("/api/options/amenities", async (_request, response, next) => {
     const data = await prisma.amenity.findMany({ where: { isActive: true, ...(session.role === "LANDLORD" ? { property: { ownerId: session.sub } } : {}) }, orderBy: { name: "asc" }, select: { id: true, name: true, location: true } });
     response.json({ data: data.map((amenity) => ({ value: amenity.id, label: `${amenity.name} · ${amenity.location}` })) });
   } catch (error) { next(error); }
-});
-
-app.get("/api/properties/:id/rooms", async (request, response, next) => {
-  try {
-    if (!(await canManageProperty(request, request.params.id))) { response.status(404).json({ error: "Không tìm thấy khu trọ." }); return; }
-    const data = await prisma.room.findMany({
-      where: { propertyId: request.params.id },
-      orderBy: [{ floor: "asc" }, { roomNumber: "asc" }],
-      include: { contracts: { where: { status: { in: ["PENDING_SIGNATURE", "ACTIVE"] } }, take: 1, include: { tenant: { select: { fullName: true } } } } },
-    });
-    response.json({ data: data.map((room) => ({ id: room.id, roomNumber: room.roomNumber, floor: room.floor, areaM2: room.areaM2, rentOverrideVnd: room.rentOverrideVnd, condition: room.condition, isListed: room.isListed, tenant: room.contracts[0]?.tenant.fullName ?? null })) });
-  } catch (error) { next(error); }
-});
-
-app.post("/api/properties", async (request, response, next) => {
-  try {
-    const body = request.body ?? {};
-    if (!body.code || !body.name || !body.province || !body.roomPrefix || !body.address || !Number.isFinite(Number(body.defaultRentVnd)) || Number(body.defaultRentVnd) < 0) {
-      response.status(400).json({ error: "Nhập mã, tên, tỉnh/thành, tiền tố phòng, địa chỉ và giá thuê hợp lệ." }); return;
-    }
-    const status = ["ACTIVE", "PAUSED", "UNDER_CONSTRUCTION"].includes(body.status) ? body.status : "ACTIVE";
-    const session = currentSession(request)!;
-    if (session.role === "ADMIN" && body.ownerId) {
-      const owner = await prisma.userAccount.findFirst({ where: { id: String(body.ownerId), role: "LANDLORD", isActive: true }, select: { id: true } });
-      if (!owner) { response.status(400).json({ error: "Chọn tài khoản chủ trọ đang hoạt động." }); return; }
-    }
-    const data = await prisma.property.create({ data: {
-      code: String(body.code).trim(), name: String(body.name).trim(), province: String(body.province).trim(), roomPrefix: String(body.roomPrefix).trim(), address: String(body.address).trim(),
-      managerName: body.managerName ? String(body.managerName).trim() : null, defaultRentVnd: Number(body.defaultRentVnd),
-      defaultAreaM2: body.defaultAreaM2 === null || body.defaultAreaM2 === "" ? null : Number(body.defaultAreaM2), status,
-      note: body.note ? String(body.note) : null,
-      ownerId: session.role === "LANDLORD" ? session.sub : (body.ownerId ? String(body.ownerId) : null),
-    } });
-    response.status(201).json({ data });
-  } catch (error) { next(error); }
-});
-
-app.patch("/api/properties/:id", async (request, response, next) => {
-  try {
-    const body = request.body ?? {};
-    if (!(await canManageProperty(request, request.params.id))) { response.status(404).json({ error: "Không tìm thấy khu trọ." }); return; }
-    const data: Prisma.PropertyUpdateInput = {};
-    for (const key of ["code", "name", "province", "roomPrefix", "address"] as const) if (key in body) data[key] = String(body[key]).trim();
-    for (const key of ["managerName", "note"] as const) if (key in body) data[key] = body[key] ? String(body[key]).trim() : null;
-    if ("defaultRentVnd" in body) data.defaultRentVnd = Number(body.defaultRentVnd);
-    if ("defaultAreaM2" in body) data.defaultAreaM2 = body.defaultAreaM2 === null ? null : Number(body.defaultAreaM2);
-    if (["ACTIVE", "PAUSED", "UNDER_CONSTRUCTION"].includes(body.status)) data.status = body.status;
-    if ("ownerId" in body && currentSession(request)?.role === "ADMIN") {
-      if (body.ownerId) {
-        const owner = await prisma.userAccount.findFirst({ where: { id: String(body.ownerId), role: "LANDLORD", isActive: true }, select: { id: true } });
-        if (!owner) { response.status(400).json({ error: "Chọn tài khoản chủ trọ đang hoạt động." }); return; }
-        data.owner = { connect: { id: owner.id } };
-      } else data.owner = { disconnect: true };
-    }
-    response.json({ data: await prisma.property.update({ where: { id: request.params.id }, data }) });
-  } catch (error) { next(error); }
-});
-
-app.delete("/api/properties/:id", async (request, response, next) => {
-  try { if (!(await canManageProperty(request, request.params.id))) { response.status(404).json({ error: "Không tìm thấy khu trọ." }); return; } await prisma.property.delete({ where: { id: request.params.id } }); response.status(204).end(); }
-  catch (error) { next(error); }
-});
-
-app.post("/api/properties/:id/rooms", async (request, response, next) => {
-  try {
-    const body = request.body ?? {};
-    if (!(await canManageProperty(request, request.params.id))) { response.status(404).json({ error: "Không tìm thấy khu trọ." }); return; }
-    if (!body.roomNumber || !Number.isInteger(Number(body.floor)) || Number(body.floor) < 1) { response.status(400).json({ error: "Nhập số phòng và tầng hợp lệ." }); return; }
-    const data = await prisma.room.create({ data: {
-      propertyId: request.params.id, roomNumber: String(body.roomNumber).trim(), floor: Number(body.floor),
-      areaM2: body.areaM2 ? Number(body.areaM2) : null, rentOverrideVnd: body.rentOverrideVnd ? Number(body.rentOverrideVnd) : null,
-      condition: ["READY", "MAINTENANCE", "UNAVAILABLE"].includes(body.condition) ? body.condition : "READY",
-      isListed: body.isListed === true || body.isListed === "true",
-    } });
-    response.status(201).json({ data });
-  } catch (error) { next(error); }
-});
-
-app.patch("/api/rooms/:id", async (request, response, next) => {
-  try {
-    const body = request.body ?? {};
-    if (!(await canManageRoom(request, request.params.id))) { response.status(404).json({ error: "Không tìm thấy phòng." }); return; }
-    const data: Prisma.RoomUpdateInput = {};
-    if ("roomNumber" in body) data.roomNumber = String(body.roomNumber).trim();
-    if ("floor" in body) data.floor = Number(body.floor);
-    if ("areaM2" in body) data.areaM2 = body.areaM2 === null ? null : Number(body.areaM2);
-    if ("rentOverrideVnd" in body) data.rentOverrideVnd = body.rentOverrideVnd === null ? null : Number(body.rentOverrideVnd);
-    if (["READY", "MAINTENANCE", "UNAVAILABLE"].includes(body.condition)) data.condition = body.condition;
-    if ("isListed" in body) data.isListed = body.isListed === true || body.isListed === "true";
-    response.json({ data: await prisma.room.update({ where: { id: request.params.id }, data }) });
-  } catch (error) { next(error); }
-});
-
-app.delete("/api/rooms/:id", async (request, response, next) => {
-  try { if (!(await canManageRoom(request, request.params.id))) { response.status(404).json({ error: "Không tìm thấy phòng." }); return; } await prisma.room.delete({ where: { id: request.params.id } }); response.status(204).end(); }
-  catch (error) { next(error); }
 });
 
 app.post("/api/tenants", async (request, response, next) => {
@@ -868,20 +837,6 @@ app.get("/api/tenants/:id", async (request, response, next) => {
   } catch (error) { next(error); }
 });
 
-app.get("/api/properties", async (_request, response, next) => {
-  try {
-    const session = currentSession(_request)!;
-    const data = await prisma.property.findMany({
-      where: session.role === "LANDLORD" ? { ownerId: session.sub } : {},
-      orderBy: { name: "asc" },
-      include: { _count: { select: { rooms: true } }, owner: { select: { id: true, displayName: true, username: true } } },
-    });
-    response.json({ data: data.map(({ _count, owner, ...property }) => ({ ...property, ownerId: owner?.id ?? null, ownerName: owner?.displayName ?? owner?.username ?? null, roomCount: _count.rooms })) });
-  } catch (error) {
-    next(error);
-  }
-});
-
 app.get("/api/contracts", async (_request, response, next) => {
   try {
     const session = currentSession(_request)!;
@@ -998,14 +953,6 @@ app.get("/api/maintenance-requests", async (_request, response, next) => {
   } catch (error) { next(error); }
 });
 
-app.use((error: unknown, _request: express.Request, response: express.Response, _next: express.NextFunction) => {
-  if (error instanceof Prisma.PrismaClientKnownRequestError) {
-    if (error.code === "P2002") { response.status(409).json({ error: "Giá trị này đã tồn tại. Hãy kiểm tra mã hoặc CCCD." }); return; }
-    if (error.code === "P2003" || error.code === "P2014") { response.status(409).json({ error: "Không thể xóa hoặc thay đổi vì dữ liệu đang được tham chiếu." }); return; }
-    if (error.code === "P2025") { response.status(404).json({ error: "Không tìm thấy dữ liệu cần cập nhật." }); return; }
-  }
-  console.error(error);
-  response.status(500).json({ error: "Không thể tải dữ liệu lúc này." });
-});
+app.use(errorHandler);
 
 export default app;

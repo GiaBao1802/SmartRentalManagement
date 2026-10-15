@@ -8,6 +8,15 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
+    "test:auth": "tsx --test src/auth/auth.test.ts",
+    "test:property-room": "tsx --test src/properties/property-room.test.ts",
+    "test:resident-occupancy": "tsx --test src/residents/resident.test.ts",
+    "test:room-images": "tsx --test src/room-images/room-image.test.ts src/room-images/room-image.repository.test.ts src/room-images/room-image.routes.test.ts",
+    "test:public-marketplace": "tsx --test src/public-marketplace/public-marketplace.routes.test.ts",
+    "test:contracts": "tsx --test src/contracts/contract.validation.test.ts src/contracts/contract.repository.test.ts src/contracts/contract.routes.test.ts src/contracts/contract-idempotency.test.ts src/contract-documents/contract-document.service.test.ts",
+    "test:contracts:runtime": "tsx --test src/contracts/contract-idempotency.integration.test.ts",
+    "test:invoices": "tsx --test src/invoices/invoice.billing.test.ts src/invoices/billing-workspace.repository.test.ts src/invoices/billing-workspace.postgres.integration.test.ts src/invoices/billing-scheduler.test.ts src/invoices/invoice.validation.test.ts src/invoices/invoice.repository.test.ts src/invoices/invoice.routes.test.ts src/invoices/utility-tariff.resolver.test.ts src/invoices/utility-tariff.repository.test.ts src/invoices/meter-continuity.resolver.test.ts src/invoices/meter-continuity.repository.test.ts src/invoices/fixed-service-price.resolver.test.ts src/invoices/fixed-service-price.repository.test.ts src/invoices/flexible-service-charge.resolver.test.ts src/invoices/flexible-service-charge.repository.test.ts src/invoices/parking-billing.resolver.test.ts src/invoices/parking-billing.repository.test.ts src/invoices/invoice-itemized.calculator.test.ts src/invoices/invoice-itemized.postgres.integration.test.ts src/invoices/billing-scheduler.postgres.integration.test.ts src/zalo/invoice-zalo.service.test.ts",
+    "test:service-utilities": "tsx --test src/services/utility-tariff.routes.test.ts src/services/utility-tariff-management.repository.test.ts src/services/property-service.routes.test.ts src/services/property-service.postgres.integration.test.ts",
     "db:generate": "prisma generate --schema ../database/schema.prisma",
     "db:migrate": "prisma migrate dev --schema ../database/schema.prisma",
     "db:seed": "tsx ../database/seeds/seed.ts"
@@ -18,7 +27,8 @@
     "dotenv": "^16.6.1",
     "express": "^5.2.1",
     "helmet": "^8.1.0",
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "sharp": "^0.35.5"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

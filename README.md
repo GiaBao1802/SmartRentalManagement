@@ -8,7 +8,7 @@ Monorepo scaffold for migrating the existing UI to Next.js, adding a Node.js API
 - `backend/` — Node.js, Express, and TypeScript API.
 - `database/` — PostgreSQL schema, Prisma migrations, and local demo seed data.
 - `legacy/` — preserved HTML/CSS/JS reference app, assets, and wireframes used during migration.
-- `docs/` — domain model and project notes.
+- `docs/` — [documentation index, catalog, and project records](docs/README.md).
 
 ## Requirements
 
@@ -42,4 +42,4 @@ The development seed creates three role-based demo accounts: `admin`, `landlord`
 
 Start the preserved reference app with `node legacy/server.js` if needed. The Next.js app is the active frontend.
 
-The Prisma schema is in `database/schema.prisma`; migrations are kept in `database/migrations`. Domain documentation is in `docs/DOMAIN_MODEL.md`. The initial migration and seed data are for local development and should be reviewed before applying to a shared database.
+The Prisma schema is in `database/schema.prisma`; migrations are kept in `database/migrations`. Domain reference is in `docs/02_architecture/DOMAIN_MODEL.md`; see [`docs/README.md`](docs/README.md) for the documentation map. The initial migration and seed data are for local development and should be reviewed before applying to a shared database.
