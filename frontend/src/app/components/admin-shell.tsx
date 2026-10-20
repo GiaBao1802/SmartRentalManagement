@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "./auth-provider";
 import { displayName } from "../../lib/api/authApi";
 import { ADMIN_NAV_GROUPS } from "./admin-navigation";
+import BrandLogo from "./brand-logo";
 
 export default function AdminShell({ children, active }: { children: ReactNode; active: string }) {
   const router = useRouter();
@@ -46,7 +47,7 @@ export default function AdminShell({ children, active }: { children: ReactNode; 
   return <div className={`admin-page${mobileNavOpen ? " nav-open" : ""}`}>
     {mobileNavOpen && <button className="admin-nav-scrim" type="button" aria-label="Đóng điều hướng" onClick={() => setMobileNavOpen(false)} />}
     <aside className="admin-sidebar" aria-label="Thanh điều hướng chính">
-      <a className="admin-brand" href="/" aria-label="Góc trọ - trang chủ"><img src="/assets/goc-tro-logo-newstyle.svg" alt="Góc trọ · Chốn về bình yên" /></a>
+      <a className="admin-brand" href="/" aria-label="Góc Trọ - trang chủ"><BrandLogo light /></a>
       <div className="admin-sidebar-caption"><span className="admin-sidebar-dot" /> KHÔNG GIAN QUẢN LÝ</div>
       {nav}
       <div className="admin-sidebar-footer"><span className="admin-sidebar-footer-status" aria-hidden="true" /><span>Không gian quản lý<small>Vận hành khu trọ</small></span></div>

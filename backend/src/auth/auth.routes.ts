@@ -1,3 +1,4 @@
+import { credentialGate, normalizeLogin } from "../accounts/credential-infrastructure.js";
 import express, { type RequestHandler } from "express";
 import type { RuntimeConfig } from "../config/env.js";
 import type { CurrentAccountRecord, LoginAccountRecord } from "./auth.types.js";
@@ -76,7 +77,7 @@ export function createAuthRouter(deps: AuthDependencies): express.Router {
 
   router.post("/login", async (request, response, next) => {
     try {
-      const login = typeof request.body?.login === "string" ? request.body.login.trim() : "";
+      const login = typeof request.body?.login === "string" ? normalizeLogin(request.body.login) : "";
       const password = typeof request.body?.password === "string" ? request.body.password : "";
       if (!login || !password) throw validationError("Nhập email hoặc số điện thoại và mật khẩu.");
       if (login.length > 254) throw unauthenticated();
@@ -91,7 +92,10 @@ export function createAuthRouter(deps: AuthDependencies): express.Router {
       }
 
       const candidates = await deps.repository.findCandidates(login);
-      const account = candidates.length === 1 ? candidates[0] : null;
+      const candidate = candidates.length === 1 ? candidates[0] : null;
+      await credentialGate.run(candidate?.accountId.toString() ?? `unknown:${login}`, async () => {
+      const fresh = await deps.repository.findCandidates(login);
+      const account = fresh.length === 1 ? fresh[0] : null;
       const passwordMatches = await verifyPassword(password, account?.passwordHash);
       const profile = account && safeProfile(account);
       if (!account || !passwordMatches || account.status !== "active" || !profile) throw unauthenticated();
@@ -112,6 +116,7 @@ export function createAuthRouter(deps: AuthDependencies): express.Router {
           profile,
           expires_at: new Date(session.expiresAt).toISOString(),
         },
+      });
       });
     } catch (error) { next(error); }
   });

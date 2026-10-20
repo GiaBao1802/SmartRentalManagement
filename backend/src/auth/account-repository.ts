@@ -6,7 +6,7 @@ export class PrismaAuthRepository implements AuthRepository {
 
   async findCandidates(login: string): Promise<LoginAccountRecord[]> {
     return this.prisma.account.findMany({
-      where: { OR: [{ email: { equals: login, mode: "insensitive" } }, { phone: login }] },
+      where: { OR: [{ email: { equals: login, mode: "insensitive" } }, { phone: { in: login.startsWith("+84") ? [login, "0" + login.slice(3)] : [login] } }] },
       take: 3,
       select: {
         accountId: true, ownerId: true, residentId: true, role: true, email: true, phone: true,

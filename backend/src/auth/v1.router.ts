@@ -1,4 +1,8 @@
+import { createEnrollmentRouter } from "../accounts/enrollment.routes.js";
+import type { EnrollmentService } from "../accounts/enrollment.service.js";
 import express from "express";
+import { createAccountManagementRouter } from "../accounts/account.routes.js";
+import type { AccountManagementRepository } from "../accounts/account.types.js";
 import type { AuthDependencies } from "../middleware/auth.js";
 import { rejectClientAuthority } from "../middleware/auth.js";
 import { csrfProtection } from "../middleware/csrf.js";
@@ -28,11 +32,13 @@ import type { PrismaPropertyServiceRepository } from "../services/property-servi
 import { createParkingManagementRouter } from "../services/parking-management.routes.js";
 import type { PrismaParkingManagementRepository } from "../services/parking-management.repository.js";
 
-export function createV1Router(deps: AuthDependencies & { propertyRoomRepository?: PropertyRoomRepository; roomImageRepository?: PrismaRoomImageRepository; roomImageStorage?: RoomImageStorage; publicMarketplaceRepository?: ContactRequestRepositoryPort; residentOccupancyRepository?: PrismaResidentOccupancyRepository; contractRepository?: PrismaContractRepository; contractIdempotency?: ContractIdempotencyService; objectStorage?: ObjectStorage; contractDocumentService?: ContractDocumentService; invoiceRepository?: PrismaInvoiceRepository; billingWorkspaceRepository?: PrismaBillingWorkspaceRepository; invoicePricing?: InvoicePricing; invoiceZalo?: InvoiceZaloService; utilityTariffRepository?: PrismaUtilityTariffManagementRepository; propertyServiceRepository?: PrismaPropertyServiceRepository; parkingManagementRepository?: PrismaParkingManagementRepository }): express.Router {
+export function createV1Router(deps: AuthDependencies & { enrollment?: EnrollmentService; accountManagementRepository?: AccountManagementRepository; propertyRoomRepository?: PropertyRoomRepository; roomImageRepository?: PrismaRoomImageRepository; roomImageStorage?: RoomImageStorage; publicMarketplaceRepository?: ContactRequestRepositoryPort; residentOccupancyRepository?: PrismaResidentOccupancyRepository; contractRepository?: PrismaContractRepository; contractIdempotency?: ContractIdempotencyService; objectStorage?: ObjectStorage; contractDocumentService?: ContractDocumentService; invoiceRepository?: PrismaInvoiceRepository; billingWorkspaceRepository?: PrismaBillingWorkspaceRepository; invoicePricing?: InvoicePricing; invoiceZalo?: InvoiceZaloService; utilityTariffRepository?: PrismaUtilityTariffManagementRepository; propertyServiceRepository?: PrismaPropertyServiceRepository; parkingManagementRepository?: PrismaParkingManagementRepository }): express.Router {
   const router = express.Router();
   router.use(rejectClientAuthority);
   router.use(csrfProtection(deps.config));
   router.use("/auth", createAuthRouter(deps));
+  if (deps.enrollment) router.use(createEnrollmentRouter(deps, deps.enrollment));
+  if (deps.accountManagementRepository) router.use(createAccountManagementRouter(deps, deps.accountManagementRepository, deps.enrollment));
   if (deps.propertyRoomRepository) router.use(createPropertyRoomRouter(deps, deps.propertyRoomRepository));
   if (deps.roomImageRepository) router.use(createRoomImageRouter(deps, deps.roomImageRepository, deps.roomImageStorage ?? new UnconfiguredRoomImageStorage()));
   if (deps.publicMarketplaceRepository) router.use(createPublicMarketplaceRouter(deps, deps.publicMarketplaceRepository));

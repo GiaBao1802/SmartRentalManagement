@@ -17,13 +17,14 @@ export const rejectClientAuthority: RequestHandler = (request, _response, next) 
   const headerKeys = ["owner_id", "resident_id", "role", "x-owner-id", "x-resident-id", "x-role"];
   const path = request.originalUrl.split("?")[0] ?? "";
   const isRoomResidentAdd = request.method === "POST" && /^\/api\/v1\/rooms\/\d+\/residents\/?$/.test(path);
-  const isFlexibleChargeCreate = request.method === "POST" && /^\/api\/v1\/properties\/\d+\/flexible-service-charges\/?$/.test(path);
   const isParkingAssignmentCreate = request.method === "POST" && /^\/api\/v1\/properties\/\d+\/parking-assignments\/?$/.test(path);
   const isParkingVehicleCreate = request.method === "POST" && /^\/api\/v1\/properties\/\d+\/vehicles\/?$/.test(path);
-  const bodyHasAuthority = body && typeof body === "object" && Object.keys(body).some((key) => forbiddenKeys.has(key) || (key === "resident_id" && ! (isRoomResidentAdd || isFlexibleChargeCreate || isParkingAssignmentCreate || isParkingVehicleCreate)));
+  const bodyHasAuthority = body && typeof body === "object" && Object.keys(body).some((key) => forbiddenKeys.has(key) || (key === "resident_id" && ! (isRoomResidentAdd || isParkingAssignmentCreate || isParkingVehicleCreate)));
   const isInvoiceList = request.method === "GET" && request.originalUrl.split("?")[0] === "/api/v1/invoices";
   const isBillingWorkspace = request.method === "GET" && request.originalUrl.split("?")[0] === "/api/v1/billing/workspace";
-  const queryHasAuthority = query && typeof query === "object" && Object.keys(query).some((key) => forbiddenKeys.has(key) || (key === "resident_id" && !isInvoiceList && !isBillingWorkspace));
+  // These are allowlisted search filters on this exact GET, never identity authority.
+  const isAccountList = request.method === "GET" && path === "/api/v1/accounts";
+  const queryHasAuthority = query && typeof query === "object" && Object.keys(query).some((key) => (forbiddenKeys.has(key) && !(key === "role" && isAccountList)) || (key === "resident_id" && !isInvoiceList && !isBillingWorkspace && !isAccountList));
   if (bodyHasAuthority || queryHasAuthority || headerKeys.some((key) => request.headers[key] !== undefined)) {
     next(validationError("Không được gửi trường xác định vai trò hoặc phạm vi Owner/Resident."));
     return;

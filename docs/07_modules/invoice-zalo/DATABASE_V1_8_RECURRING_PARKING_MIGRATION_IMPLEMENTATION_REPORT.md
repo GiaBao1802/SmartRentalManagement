@@ -15,18 +15,18 @@ No table or column was added. Invoice amounts, finalized snapshots, legacy aggre
 
 ## Files changed
 
-- `GocTro-SmartBuilding/Database V1.8/schema.sql`
-- `GocTro-SmartBuilding/Database V1.8/seed.sql` — versioned clean-install header only; synthetic fixture data is unchanged.
-- `GocTro-SmartBuilding/Database V1.8/erd.md`
-- `GocTro-SmartBuilding/Database V1.8/README.md`
-- `GocTro-SmartBuilding/Database V1.8/runtime_validator.sql`
-- `GocTro-SmartBuilding/Database V1.8/migrations/V1_7_to_V1_8_recurring_parking_invoice_linkage.sql`
+- `database/baselines/v1.8/schema.sql`
+- `database/baselines/v1.8/seed.sql` — versioned clean-install header only; synthetic fixture data is unchanged.
+- `database/baselines/v1.8/erd.md`
+- `database/baselines/v1.8/README.md`
+- `database/baselines/v1.8/runtime_validator.sql`
+- `database/baselines/v1.8/migrations/V1_7_to_V1_8_recurring_parking_invoice_linkage.sql`
 - `SmartRentalManagement/database/schema.prisma`
 - `SmartRentalManagement/backend/src/invoices/invoice-itemized.postgres.integration.test.ts`
 - `SmartRentalManagement/docs/00_CURRENT_STATE.md`
 - `SmartRentalManagement/docs/DOCUMENT_CATALOG.md`
 - `SmartRentalManagement/docs/07_modules/invoice-zalo/DATABASE_V1_8_RECURRING_PARKING_MIGRATION_IMPLEMENTATION_REPORT.md`
-- `GocTro-SmartBuilding/docs/DATABASE_CHANGELOG.md`
+- `docs/DATABASE_CHANGELOG.md`
 
 No Requirement, API Spec, backend production logic, frontend, V1.7 source, migration history, seed data on a populated database, or Payment code was changed.
 

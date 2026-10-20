@@ -28,8 +28,8 @@ The API Spec contained explicit, not merely generic, predecessor inheritance beh
 
 ## 3. Files changed
 
-- `../../../../GocTro-SmartBuilding/docs/01_REQUIREMENTS.md` — canonical same-Contract continuity rule.
-- `../../../../GocTro-SmartBuilding/docs/04_API_SPEC.md` — aligned directly conflicting Contract Renewal/Invoice behavior; no endpoint or DTO changes.
+- `docs/01_REQUIREMENTS.md` — canonical same-Contract continuity rule.
+- `docs/04_API_SPEC.md` — aligned directly conflicting Contract Renewal/Invoice behavior; no endpoint or DTO changes.
 - `backend/src/invoices/meter-continuity.repository.ts` — Owner/Property/Contract-scoped Prisma read repository.
 - `backend/src/invoices/meter-continuity.resolver.ts` — independent per-utility resolution, provenance, validation, explicit unresolved results.
 - `backend/src/invoices/meter-continuity.repository.test.ts`

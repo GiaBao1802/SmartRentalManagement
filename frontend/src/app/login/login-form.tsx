@@ -1,60 +1,39 @@
 "use client";
-
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../components/auth-provider";
 import { loginErrorMessage } from "../../lib/api/errors";
-
+import { loginTarget } from "../../lib/api/credentialView";
+import AuthLayout from "../components/auth-layout";
+import PasswordField from "../components/password-field";
+import styles from "../components/auth-flow.module.css";
 export default function LoginForm() {
-  const router = useRouter();
-  const { status, user, login } = useAuth();
-  const [identifier, setIdentifier] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const redirectTarget = useRef<string | null>(null);
-
+  const router = useRouter(); const { status, user, login } = useAuth();
+  const [identifier, setIdentifier] = useState(""); const [password, setPassword] = useState("");
+  const [error, setError] = useState(""); const [busy, setBusy] = useState(false);
+  const pending = useRef(false); const redirectTarget = useRef<string | null>(null); const alert = useRef<HTMLParagraphElement>(null);
   useEffect(() => {
     if (status !== "authenticated" || !user) return;
-    router.replace(redirectTarget.current ?? (user.account.role === "resident" ? "/tenant" : "/admin/properties"));
+    router.replace(redirectTarget.current ?? loginTarget(user.account.role, new URLSearchParams(window.location.search).get("next"), window.location.origin));
   }, [router, status, user]);
-
+  useEffect(() => { if (error) alert.current?.focus(); }, [error]);
   async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (busy) return;
-    setBusy(true);
-    setError("");
+    event.preventDefault(); if (pending.current) return;
+    pending.current = true; setBusy(true); setError("");
     try {
       const account = await login(identifier, password);
-      const defaultPath = account.account.role === "resident" ? "/tenant" : "/admin/properties";
-      const requested = new URLSearchParams(window.location.search).get("next") ?? defaultPath;
-      const next = requested.startsWith("/") && !requested.startsWith("//") && (account.account.role === "admin" || requested === "/tenant") ? requested : defaultPath;
-      redirectTarget.current = next;
-      router.replace(next);
-    } catch (reason) {
-      setError(loginErrorMessage(reason));
-    } finally {
-      setBusy(false);
-    }
+      const next = loginTarget(account.account.role, new URLSearchParams(window.location.search).get("next"), window.location.origin);
+      redirectTarget.current = next; router.replace(next);
+    } catch (reason) { setError(loginErrorMessage(reason)); }
+    finally { pending.current = false; setBusy(false); }
   }
-
-  return <main className="login-page">
-    <a className="login-back" href="/">← Về trang chủ</a>
-    <div className="login-layout">
-      <aside className="login-brand-panel"><a className="login-logo" href="/"><img src="/assets/goc-tro-logo-newstyle.svg" alt="Góc trọ · Chốn về bình yên" /></a><span className="login-brand-kicker">KHÔNG GIAN QUẢN LÝ</span><h2>Vận hành khu trọ<br />gọn gàng, an tâm.</h2><p>Một nơi để theo dõi khu vực, phòng và thông tin cư dân của bạn.</p><div className="login-brand-rule"><span /><span /><span /></div></aside>
-      <section className="login-card">
-        <span className="eyebrow">CỔNG QUẢN LÝ GÓC TRỌ</span>
-        <h1>Chào mừng trở lại</h1>
-        <p>Đăng nhập bằng email hoặc số điện thoại để tiếp tục.</p>
-        <form onSubmit={submit}>
-          <label>Email hoặc số điện thoại<input autoComplete="username" required value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="Nhập email hoặc số điện thoại" /></label>
-          <label>Mật khẩu<input autoComplete="current-password" type="password" required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Nhập mật khẩu" /></label>
-          {error && <p className="login-error" role="alert">{error}</p>}
-          <button className="button primary login-submit" type="submit" disabled={busy}>{busy ? "Đang đăng nhập…" : "Đăng nhập"}</button>
-        </form>
-        <div className="login-demo"><strong>Đăng nhập an toàn</strong><span>Phiên làm việc được lưu bằng cookie bảo mật do máy chủ quản lý.</span></div>
-        <p className="login-help">Quên mật khẩu? Vui lòng liên hệ quản trị viên để được hỗ trợ.</p>
-      </section>
-    </div>
-  </main>;
+  return <AuthLayout title="Chào mừng trở lại" description="Đăng nhập bằng email hoặc số điện thoại để tiếp tục." footer={<a href="/forgot-password">Quên mật khẩu?</a>}>
+    <form className={styles.form} onSubmit={submit}>
+      <div className={styles.field}><label className={styles.label} htmlFor="login-identifier">Email hoặc số điện thoại</label><input id="login-identifier" className={styles.input} autoComplete="username" required maxLength={254} disabled={busy} value={identifier} onChange={event => setIdentifier(event.target.value)} aria-invalid={Boolean(error)} aria-describedby={error ? "login-error" : undefined} /></div>
+      <PasswordField label="Mật khẩu" value={password} onChange={setPassword} disabled={busy} autoComplete="current-password" minimum={1} />
+      {error && <p id="login-error" className={`${styles.message} ${styles.error}`} tabIndex={-1} ref={alert} role="alert">{error}</p>}
+      <button className={styles.submit} type="submit" disabled={busy}>{busy ? "Đang đăng nhập…" : "Đăng nhập"}</button>
+      <p className={styles.help}>Phiên làm việc được lưu bằng cookie bảo mật do máy chủ quản lý.</p>
+    </form>
+  </AuthLayout>;
 }

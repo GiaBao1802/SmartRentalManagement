@@ -68,8 +68,8 @@ No valid V1 state can contain two Admin Accounts under one Owner, so cross-Accou
 
 ## 8. Requirement/API updates
 
-- `GocTro-SmartBuilding/docs/01_REQUIREMENTS.md`: §2.1 and §5 now state one Owner = one Admin Account, defer multi-admin/staff/delegated-admin, and require a future approval/design/security/E2E process. Contract idempotency requirements preserve Owner + Account scope, require cross-Owner testing, and classify same-Owner multi-Admin isolation as N/A for V1 and mandatory if multi-admin is later approved.
-- `GocTro-SmartBuilding/docs/04_API_SPEC.md`: §2 authority and §5.7 implementation status now make the V1 cardinality and test disposition explicit. No endpoint, request, response, or API-version contract changed.
+- `docs/01_REQUIREMENTS.md`: §2.1 and §5 now state one Owner = one Admin Account, defer multi-admin/staff/delegated-admin, and require a future approval/design/security/E2E process. Contract idempotency requirements preserve Owner + Account scope, require cross-Owner testing, and classify same-Owner multi-Admin isolation as N/A for V1 and mandatory if multi-admin is later approved.
+- `docs/04_API_SPEC.md`: §2 authority and §5.7 implementation status now make the V1 cardinality and test disposition explicit. No endpoint, request, response, or API-version contract changed.
 
 ## 9. Database change status
 
@@ -110,7 +110,7 @@ Authenticated Admin/Resident Contract HTTP and browser E2E remains **PENDING**. 
 - `SmartRentalManagement/docs/07_modules/contract/DATABASE_V1_5_CONTRACT_IDEMPOTENCY_DESIGN.md` (status/reconciliation note)
 - `SmartRentalManagement/docs/07_modules/contract/CONTRACT_BUSINESS_RULE_ALIGNMENT_P1_FIX_REPORT.md` (current P1 status and next task)
 - `SmartRentalManagement/docs/DOCUMENT_CATALOG.md` (registered new report; preserved prior runtime report as historical evidence)
-- `GocTro-SmartBuilding/docs/01_REQUIREMENTS.md` (V1 Account invariant and idempotency test applicability)
-- `GocTro-SmartBuilding/docs/04_API_SPEC.md` (authority and idempotency status clarification only)
+- `docs/01_REQUIREMENTS.md` (V1 Account invariant and idempotency test applicability)
+- `docs/04_API_SPEC.md` (authority and idempotency status clarification only)
 
 No database, Prisma, migration, seed, validator, backend runtime or frontend file was modified.

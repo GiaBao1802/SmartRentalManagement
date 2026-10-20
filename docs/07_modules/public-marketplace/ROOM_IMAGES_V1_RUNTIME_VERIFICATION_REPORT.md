@@ -16,7 +16,7 @@ Runtime verification exposed two repository issues. Prisma rejected the gallery'
 - `docs/07_modules/public-marketplace/ROOM_IMAGES_V1_SCHEMA_MIGRATION_DESIGN.md`
 - `docs/07_modules/public-marketplace/DATABASE_V1_4_ROOM_IMAGES_MIGRATION_REPORT.md`
 - `docs/07_modules/public-marketplace/ROOM_IMAGES_V1_BACKEND_IMPLEMENTATION_REPORT.md`
-- Canonical Requirement and API Spec in the adjacent `GocTro-SmartBuilding` project
+- Canonical Requirement and API Spec in `docs/01_REQUIREMENTS.md` and `docs/04_API_SPEC.md`
 - `Database V1.4/schema.sql`, `seed.sql`, and `runtime_validator.sql`
 - `database/schema.prisma`, current Room Images routes/repository/service/storage/tests, and Auth/session/CSRF startup code
 

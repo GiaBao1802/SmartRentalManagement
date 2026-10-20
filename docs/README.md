@@ -18,12 +18,12 @@ Tài liệu được phân nhóm theo nguồn và phạm vi để dễ tìm, đ�
 ```text
 docs/
 ├── 00_overview/                    Tổng quan dự án
-├── 01_requirements/                Requirement mirror/notes (không thay canonical source)
+├── 01_requirements/                Scope và Function Matrix hỗ trợ Requirement
 ├── 02_architecture/                Kiến trúc và domain model
 ├── 03_database/
 │   ├── prisma/                     Prisma mapping và report
 │   └── migrations/                 Kế hoạch/ghi nhận migration dữ liệu
-├── 04_api/                         API notes (không thay canonical API Spec)
+├── 04_api/                         API notes bổ trợ canonical API Spec
 ├── 05_backend/{auth,hardening}/     Backend foundation, auth và hardening
 ├── 06_frontend/{integrations,design/} Tích hợp FE và thiết kế/wireframe
 ├── 07_modules/                     Tài liệu theo domain nghiệp vụ
@@ -37,11 +37,12 @@ docs/
 
 ## Canonical product documents
 
-Requirement và API Spec canonical của workspace hiện nằm trong project tài liệu liền kề, không được di chuyển hoặc sao chép vào đây:
+Canonical product documents của workspace nằm trong repository này:
 
-- [01_REQUIREMENTS.md](../../GocTro-SmartBuilding/docs/01_REQUIREMENTS.md)
-- [04_API_SPEC.md](../../GocTro-SmartBuilding/docs/04_API_SPEC.md)
+- [01_REQUIREMENTS.md](01_REQUIREMENTS.md)
+- [04_API_SPEC.md](04_API_SPEC.md)
+- [DATABASE_CHANGELOG.md](DATABASE_CHANGELOG.md)
 
-Physical database authority và baseline hiện hành được ghi trong project tài liệu đó cùng database version artifacts. Prisma mapping của ứng dụng nằm tại [`database/schema.prisma`](../database/schema.prisma).
+Physical database authority và baseline hiện hành nằm tại [`database/baselines/v1.8/`](../database/baselines/v1.8/). Prisma mapping của ứng dụng nằm tại [`database/schema.prisma`](../database/schema.prisma).
 
 Thư mục `99_archive/` hiện được giữ làm đích quy ước; không có tài liệu nào bị đưa vào archive chỉ vì đã cũ. Tài liệu lịch sử và tài liệu bị supersede vẫn được giữ tại nhóm chủ đề thích hợp, với trạng thái rõ trong catalog.

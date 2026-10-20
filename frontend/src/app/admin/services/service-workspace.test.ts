@@ -1,10 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFileSync, existsSync } from "node:fs";
 import { ADMIN_NAV_GROUPS } from "../../components/admin-navigation";
-import React from "react";
-import { renderToStaticMarkup } from "react-dom/server";
-import DeferredFeatureScreen, { DEFERRED_FEATURES } from "../../components/deferred-feature-screen";
 import { SERVICE_WORKSPACE_SECTIONS } from "./service-workspace";
+
+test("Service entry still redirects to utilities after overview removal", () => {
+  const page = readFileSync(new URL("./page.tsx", import.meta.url), "utf8");
+  assert.match(page, /redirect\("\/admin\/services\/utilities"\)/);
+  assert.doesNotMatch(page, /service-overview/);
+});
 
 test("Admin sidebar exposes one entry for the Service module and hides legacy bookings", () => {
   const group = ADMIN_NAV_GROUPS.find((item) => item.label === "Dịch vụ & Hỗ trợ");
@@ -35,22 +39,13 @@ test("Service workspace gives direct access to all approved sections with busine
   assert.equal(labels.some((label) => label === "Phát sinh dịch vụ" || label === "Danh mục dịch vụ phát sinh"), false);
 });
 
-test("primary Admin navigation hides deferred feature entries while their lock screens remain", () => {
+test("primary Admin navigation hides deferred feature entries after their unused routes are removed", () => {
   const items = ADMIN_NAV_GROUPS.flatMap((group) => group.items);
   assert.deepEqual(items.filter((item) => ["/admin/viewings", "/admin/complaints"].includes(item.href)), []);
 });
 
-test("Lịch tiện ích and Khiếu nại render deferred screens without workflow actions or API references", () => {
-  const calendar = renderToStaticMarkup(React.createElement(DeferredFeatureScreen, DEFERRED_FEATURES.amenityCalendar));
-  assert.match(calendar, /Lịch tiện ích/);
-  assert.match(calendar, /Phiên bản sau/);
-  assert.match(calendar, /Spa, Room Care/);
-  assert.match(calendar, /href="\/admin\/services\/utilities"/);
-  assert.doesNotMatch(calendar, /api\/viewing-requests|Lịch xem phòng/);
-
-  const complaints = renderToStaticMarkup(React.createElement(DeferredFeatureScreen, DEFERRED_FEATURES.complaints));
-  assert.match(complaints, /Chức năng Khiếu nại sẽ được hoàn thiện trong phiên bản tiếp theo/);
-  assert.match(complaints, /trạng thái và lịch sử khiếu nại chưa được mở/);
-  assert.match(complaints, /Phiên bản sau/);
-  assert.doesNotMatch(complaints, /api\/maintenance-requests|Xử lý khiếu nại/);
+test("out-of-flow pages are removed without adding navigation", () => {
+  for (const route of ["amenities", "bookings", "complaints", "viewings", "services/charges"]) {
+    assert.equal(existsSync(new URL(`../${route}/page.tsx`, import.meta.url)), false, route);
+  }
 });

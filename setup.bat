@@ -37,6 +37,15 @@ if errorlevel 1 (
   goto :failed
 )
 
+if not exist ".env" (
+  copy /Y ".env.example" ".env" >nul
+  if errorlevel 1 (
+    echo ERROR: Could not create the local Docker Compose .env example.
+    goto :failed
+  )
+  echo Created root .env for Docker Compose. Configure its password before db:up.
+)
+
 if not exist "backend\.env" (
   copy /Y "backend\.env.example" "backend\.env" >nul
   if errorlevel 1 (
@@ -59,7 +68,7 @@ if not exist "frontend\.env.local" if exist "frontend\.env.example" (
 
 echo.
 echo Installing locked project dependencies with npm ci...
-npm ci
+call npm ci
 if errorlevel 1 (
   echo ERROR: Dependency installation failed. Check the npm output above and retry setup.bat.
   goto :failed
@@ -67,7 +76,7 @@ if errorlevel 1 (
 
 echo.
 echo Generating the Prisma client (does not connect to or modify PostgreSQL)...
-npm run db:generate
+call npm run db:generate
 if errorlevel 1 (
   echo ERROR: Prisma client generation failed. Check backend\.env and the npm output above.
   goto :failed
@@ -79,6 +88,8 @@ echo Before launch, configure backend\.env DATABASE_URL for a local PostgreSQL 1
 echo containing the project's Database V1.8 schema. Do not use a shared/production database.
 echo The launcher currently expects localhost:5432/Goctro_test3.
 echo Database provisioning is not included: this setup does not run migrations, schema SQL, or seed.
+echo Follow docs\10_operations\DATABASE_V1_8_SETUP.md for guarded db:bootstrap and db:seed.
+echo The old db:migrate command is blocked because its Prisma history belongs to the legacy demo.
 echo When the local database is ready, double-click launch.bat.
 echo.
 pause

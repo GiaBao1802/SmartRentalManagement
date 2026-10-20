@@ -1,10 +1,6 @@
-import HomePage from "./home-page";
+export { default } from "./_property-explorer/listing-page";
 
 export const metadata = {
-  title: "Tìm phòng trọ dễ dàng, ở yên tâm",
-  description: "Khám phá phòng trọ trống theo khu vực, xem giá rõ ràng và kết nối với chủ trọ trên Góc trọ.",
+  title: "Góc Trọ · Tìm phòng trên bản đồ Việt Nam",
+  description: "Khám phá phòng đang cho thuê trên bản đồ 34 tỉnh thành. Lọc giá, diện tích và xem thông tin phòng công khai trên Góc Trọ.",
 };
-
-export default function Page() {
-  return <HomePage />;
-}

@@ -70,15 +70,19 @@ test("PostgreSQL V1.8 Fixed/Flexible Service API and itemized Invoice lifecycle"
     const flexibleId = BigInt(flexibleItem.body.data.pricing_item_id);
     const flexPrice1 = await send(base, `/api/v1/properties/11/pricing-items/${flexibleId}/price-versions?kind=FLEXIBLE_SERVICE`, "POST", { effective_from: "2026-11-01", unit_price: "150000" });
     assert.equal(flexPrice1.response.status, 201, JSON.stringify(flexPrice1.body));
-    const chargeResult = await send(base, "/api/v1/properties/11/flexible-service-charges", "POST", { room_id: "101", contract_id: "3001", resident_id: "1001", pricing_item_id: flexibleId.toString(), quantity: "2", occurred_at: "2026-11-20T10:00:00+07:00" }, { "Idempotency-Key": "pass3-care-charge-001" });
-    assert.equal(chargeResult.response.status, 201, JSON.stringify(chargeResult.body));
-    const chargeId = BigInt(chargeResult.body.data.flexible_service_charge_id);
-    assert.equal(chargeResult.body.data.amount, "300000");
-    assert.equal(chargeResult.body.data.status, "READY");
-    const replay = await send(base, "/api/v1/properties/11/flexible-service-charges", "POST", { room_id: "101", contract_id: "3001", resident_id: "1001", pricing_item_id: flexibleId.toString(), quantity: "2", occurred_at: "2026-11-20T10:00:00+07:00" }, { "Idempotency-Key": "pass3-care-charge-001" });
-    assert.equal(replay.response.status, 200); assert.equal(replay.body.meta.replayed, true); assert.equal(replay.body.data.flexible_service_charge_id, chargeId.toString());
-    const reusedKey = await send(base, "/api/v1/properties/11/flexible-service-charges", "POST", { room_id: "101", contract_id: "3001", resident_id: "1001", pricing_item_id: flexibleId.toString(), quantity: "3", occurred_at: "2026-11-20T10:00:00+07:00" }, { "Idempotency-Key": "pass3-care-charge-001" });
-    assert.equal(reusedKey.response.status, 409);
+    // Test-only stored charge fixtures preserve Billing coverage after retiring manual charge issuance.
+    // This helper is inside the exact disposable-target guard above; it is not an application API.
+    const fixtureCharge = (versionId: bigint, unitPrice: bigint, quantity: number, occurredAt: Date, event: string) => prisma.flexibleServiceCharge.create({ data: {
+      ownerId: 1n, propertyId: 11n, roomId: 101n, contractId: 3001n, residentId: 1001n,
+      propertyPricingItemId: flexibleId, kind: "FLEXIBLE_SERVICE", propertyPriceVersionId: versionId,
+      occurredAt, quantity: String(quantity), unit: "lần", unitPriceSnapshot: unitPrice,
+      amount: unitPrice * BigInt(quantity), sourceSystem: "BILLING_TEST", sourceEventKey: event,
+      payloadFingerprint: Buffer.alloc(32), status: "READY", actorAccountId: 1n,
+    } });
+    const chargeFixture = await fixtureCharge(BigInt(flexPrice1.body.data.price_version_id), 150000n, 2, new Date("2026-11-20T10:00:00+07:00"), "pass3-care-charge-001");
+    const chargeId = chargeFixture.flexibleServiceChargeId;
+    assert.equal(chargeFixture.amount, 300000n);
+    assert.equal(chargeFixture.status, "READY");
     const foreign = await send(base, "/api/v1/properties/21/pricing-items"); assert.equal(foreign.response.status, 404);
 
     const fixedPrice2 = await send(base, `/api/v1/properties/11/pricing-items/${fixedId}/price-versions?kind=FIXED_SERVICE`, "POST", { effective_from: "2026-12-01", unit_price: "75000" });
@@ -87,9 +91,9 @@ test("PostgreSQL V1.8 Fixed/Flexible Service API and itemized Invoice lifecycle"
     assert.equal(flexPrice2.response.status, 201, JSON.stringify(flexPrice2.body));
     const immutableVersionId = BigInt(flexPrice1.body.data.price_version_id);
     await assert.rejects(() => prisma.propertyPriceVersion.update({ where: { propertyPriceVersionId: immutableVersionId }, data: { unitPrice: 175000n } }), "published price history is immutable in the locked schema");
-    const outOfPeriod = await serviceRepository.createCharge(1n, 11n, 1n, { roomId: 101n, contractId: 3001n, residentId: 1001n, itemId: flexibleId, quantity: "1", occurredAt: new Date("2026-12-20T10:00:00+07:00"), sourceEventKey: "pass3-care-out-of-period" });
+    const outOfPeriod = { charge: await fixtureCharge(BigInt(flexPrice2.body.data.price_version_id), 200000n, 1, new Date("2026-12-20T10:00:00+07:00"), "pass3-care-out-of-period") };
     outOfPeriodChargeId = outOfPeriod!.charge.flexibleServiceChargeId;
-    assert.equal(outOfPeriod!.charge.unitPriceSnapshot, 200000n, "December event selects the December price version");
+    assert.equal(outOfPeriod!.charge.unitPriceSnapshot, 200000n, "December fixture uses the December price version");
     const fixedHistory = await serviceRepository.listItems(1n, 11n, "FIXED_SERVICE");
     const fixedRecord = fixedHistory?.items.find((row) => row.propertyPricingItemId === fixedId); assert.ok(fixedRecord);
     assert.deepEqual(fixedRecord.priceVersions.map((version) => [version.versionNo, version.unitPrice]), [[2, 75000n], [1, 45000n]]);
@@ -130,9 +134,9 @@ test("PostgreSQL V1.8 Fixed/Flexible Service API and itemized Invoice lifecycle"
     const rereadAfterPriceChanges = await prisma.invoice.findUniqueOrThrow({ where: { invoiceId: invoice.invoiceId }, include: { invoiceItems: true } });
     assert.deepEqual({ total: rereadAfterPriceChanges.totalAmount, items: rereadAfterPriceChanges.invoiceItems.map((row) => [row.itemKey, row.amount, row.labelSnapshot]) }, immutableBefore, "publishing newer Fixed and Flexible prices cannot rewrite a finalized Invoice snapshot");
 
-    const rollbackEvent = await serviceRepository.createCharge(1n, 11n, 1n, { roomId: 101n, contractId: 3001n, residentId: 1001n, itemId: flexibleId, quantity: "1", occurredAt: new Date("2026-12-20T10:00:00+07:00"), sourceEventKey: "pass3-care-charge-rollback" });
+    const rollbackEvent = { charge: await fixtureCharge(BigInt(flexPrice2.body.data.price_version_id), 200000n, 1, new Date("2026-12-20T10:00:00+07:00"), "pass3-care-charge-rollback") };
     rollbackChargeId = rollbackEvent!.charge.flexibleServiceChargeId;
-    assert.equal(rollbackEvent!.charge.unitPriceSnapshot, 200000n, "December event selects the later effective price");
+    assert.equal(rollbackEvent!.charge.unitPriceSnapshot, 200000n, "December fixture uses the later effective price");
     const nextInvoice = await prisma.invoice.create({ data: {
       invoiceNo: "PASS3-SERVICE-ROLLBACK", contractId: contract.contractId, propertyId: contract.propertyId, ownerId: 1n,
       periodStart: new Date("2026-12-15T00:00:00Z"), periodEnd: new Date("2027-01-14T00:00:00Z"), rentAmount: contract.rentAmount, electricityPreviousKwh: "1460.000", waterPreviousM3: "82.000",

@@ -1,0 +1,21 @@
+{
+  "version": "1.8",
+  "originalSource": "GocTro-SmartBuilding/Database V1.8 (adjacent workspace project; historical origin)",
+  "originalChangelog": "GocTro-SmartBuilding/docs/DATABASE_CHANGELOG.md (historical origin)",
+  "canonicalSource": "SmartRentalManagement/database/baselines/v1.8",
+  "canonicalChangelog": "SmartRentalManagement/docs/DATABASE_CHANGELOG.md",
+  "copiedAt": "2026-10-16",
+  "role": "Current local/development physical baseline for SmartRentalManagement; original sibling source retained only as provenance.",
+  "catalogGeneratedOn": "PostgreSQL 18.6; clean disposable DB; no seed; locale-independent ordering",
+  "sha256": {
+    "schema.sql": "99455a5908e31d615fd7b4d58c1f41cccabca5c0fc0dad68381327caefd5512c",
+    "seed.sql": "e15798a3860e5e4a232f06a1be1dba0b5ff83fcc7be789b4ad0d4b15da76cdf1",
+    "erd.md": "0b792296a02cabd962164507655b21fc99904c3bec1b72129d9f44ff8cce4e0b",
+    "SOURCE_README.md": "b7c4f82379782975f3c766a44f93a7e5789851a1c0032c64cc2dc7b6c75a8f8c",
+    "SOURCE_DATABASE_CHANGELOG.md": "e046c7511b1443603ae32b218a3c6fa8c2bfd91bb9fdd3138969355e102e9a18",
+    "runtime_validator.sql": "93e7883aea405e839d7cdac760a11ecaf811fe82a867e31a04a433df853d605f",
+    "runtime_validator_fixture.sql": "e619affcd7e4b02441f8403355ab7ad2490c83397e6e473755d9be2810d2c7bd",
+    "migrations/V1_7_to_V1_8_recurring_parking_invoice_linkage.sql": "0f410921589c07348860375ece2356e566a901fba76d1da258eedb89f23ab400",
+    "expected-catalog.json": "87cc04caab3fca0b97b1086d456a4380953791ce995cadfa68ed50809478dce1"
+  }
+}

@@ -6,7 +6,7 @@
 2. Với tài liệu thật sự liên miền/toàn dự án, chọn nhóm theo loại: audit ở `08_audits/`, test ở `09_testing/`, vận hành ở `10_operations/`, báo cáo tổng hợp ở `11_project-reports/`, quyết định ở `12_decisions/`.
 3. Phân nhóm theo `DOCUMENT_CATALOG.md`. Không tạo thư mục mới nếu đã có nhóm phù hợp.
 4. Không đặt task report ở root `docs/`. Root chỉ dành cho `README.md`, `DOCUMENT_CATALOG.md`, `DOCUMENTATION_RULES.md` và canonical document nếu chủ dự án quyết định lưu canonical tại đây.
-5. Không di chuyển hoặc sao chép canonical Requirement/API/database authority chỉ để khớp cây thư mục. Cập nhật link và ghi rõ nơi canonical đang được quản lý.
+5. Canonical Requirement/API/database authority được quản lý trong repository này tại `docs/01_REQUIREMENTS.md`, `docs/04_API_SPEC.md`, `docs/DATABASE_CHANGELOG.md` và `database/baselines/v1.8/`. Nguồn sibling cũ chỉ được giữ như provenance/lịch sử, không phải authority hiện hành.
 
 ## Tạo và cập nhật report
 
@@ -26,7 +26,7 @@ Tài liệu lịch sử vẫn ở thư mục theo chủ đề và được đán
 
 ## Phạm vi và authority
 
-Tài liệu trong SmartRentalManagement mô tả source/report của project này. Khi Requirement, API Spec hoặc Database canonical được quản lý ở project liền kề, hãy link tới đúng canonical source; không biến report kỹ thuật thành source of truth nghiệp vụ.
+Tài liệu trong SmartRentalManagement mô tả source/report của project này. Requirement, API Spec và Database canonical hiện được quản lý trong repository này; report kỹ thuật không tự trở thành source of truth nghiệp vụ.
 
 Hướng dẫn agent áp dụng toàn repository được đặt tại [`../AGENTS.md`](../AGENTS.md). Nếu làm việc trong `frontend/`, đọc thêm [`../frontend/AGENTS.md`](../frontend/AGENTS.md); hướng dẫn frontend chỉ bổ sung quy tắc riêng, không thay Source of Truth.
 

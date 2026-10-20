@@ -1,14 +1,21 @@
 # Document catalog
 
+## Current source baseline — 2026-10-19
+
+[Legacy-to-current migration plan §10](08_audits/LEGACY_TO_CURRENT_MIGRATION_PLAN.md#10-current-product-flow-baseline-and-source-cleanup--2026-10-19) — CURRENT / SOURCE CLEANUP COMPLETE; runtime validation scoped. User-approved current-flow baseline,20 removed files and16 modified files; old demo/unlinked/deferred/transitional implementations removed,410 guards and current V1/financial dependencies preserved. Earlier inventory/preservation statements in reports describe their original snapshot. Parking implementation exists in current source; runtime closure is not asserted.
+
 `CURRENT` means current reference/baseline for the stated scope; it does not automatically mean an approval or lock. `REFERENCE` is useful supporting material. `HISTORICAL` records a past state. `SUPERSEDED` has a newer replacement for its scope. Check each document's own status and the canonical sources before implementation.
 
 | Path | Domain / purpose | Status | Notes |
 |---|---|---|---|
 | `README.md` | Navigation | CURRENT | Entry point for this documentation tree. |
 | `../AGENTS.md` | Repository-wide agent working rules | CURRENT | Governance/instructions only; not business Source of Truth. Frontend work also follows `frontend/AGENTS.md`. |
-| `00_CURRENT_STATE.md` | Project Checkpoint / Navigation | CURRENT | Current project checkpoint only; not canonical business authority. Database V1.8 is locked for local/development. Service workspace has four internal tabs; `/admin/services` redirects to Utilities; Admin Lịch tiện ích and Khiếu nại show deferred-feature screens with prior workflow source preserved. Service/API/DB state and known responsive limitation are recorded there. Billing remains partial. |
+| `00_CURRENT_STATE.md` | Project Checkpoint / Navigation | CURRENT | Current project checkpoint only; not canonical business authority. Database V1.8 is locked for local/development. Service workspace has four internal tabs; `/admin/services` redirects to Utilities; The unlinked Lịch tiện ích/Khiếu nại routes and old workflows have been removed under the approved current-flow cleanup (§10). Service/API/DB state and known responsive limitation are recorded there. Billing remains partial. |
 | `DOCUMENTATION_RULES.md` | Governance | CURRENT | Placement, report/history rules, Source of Truth order, task-start/end workflow, and conflict handling. |
 | `DOCUMENT_CATALOG.md` | Catalog | CURRENT | This inventory. |
+| `01_REQUIREMENTS.md` | Product requirements | CURRENT — CANONICAL | Business requirements authority for SmartRentalManagement. Historical source provenance is retained in the dependency copies and reports. |
+| `04_API_SPEC.md` | API contract | CURRENT — CANONICAL | `/api/v1` contract authority for SmartRentalManagement. Historical source provenance is retained where applicable. |
+| `DATABASE_CHANGELOG.md` | Database changelog | CURRENT — CANONICAL | Version history and physical-baseline authority; Database V1.8 is the current locked local/development baseline. |
 | `11_project-reports/SOURCE_OF_TRUTH_CURRENT_STATE_GOVERNANCE_FINALIZATION_REPORT.md` | Project governance / Current State workflow | CURRENT | Records evidence checked, stale API baseline metadata reconciled, authority order, workflow, catalog, and checkpoint finalization. |
 | `11_project-reports/AGENTS_MD_PROJECT_WORKFLOW_SETUP_REPORT.md` | Project governance / Root agent instructions | CURRENT | Records creation of repository-wide workflow instructions and their documentation integration. |
 | `11_project-reports/ADMIN_SAAS_UI_UX_REDESIGN_REPORT.md` | Cross-domain / Admin UI, navigation and responsive visual foundation | REFERENCE — PRE-VISUAL-QA SNAPSHOT | Records the shared SaaS styling/navigation baseline before the page-specific visual QA and logo correction in `ADMIN_SAAS_UI_UX_VISUAL_QA_AND_CLEANUP_REPORT.md`. |
@@ -25,6 +32,8 @@
 | `07_modules/auth/AUTHENTICATED_ADMIN_BROWSER_SMOKE_SETUP_REPORT.md` | Auth / Admin browser smoke setup | CURRENT — SETUP PASS | Existing DEV Admin authenticated in local browser; session survived reload and 2 read-only Invoice rows rendered. No account/database rows changed. Full Invoice filter/network/responsive verification remains a separate follow-up. |
 | `06_frontend/design/wireframes/wireframe-quan-ly-khach-thue-v2.html` | Frontend design / Resident wireframe | REFERENCE | Design source; not an API contract. |
 | `06_frontend/design/CORE_MODULES_SAAS_REDESIGN_REPORT.md` | Frontend design / Auth, Property-Room, Resident-Occupancy | REFERENCE | Shared Góc Trọ brand/UI redesign; runtime and E2E smoke limits are stated in the report. |
+| `06_frontend/design/BRAND_IDENTITY_V2_UI_SYSTEM_IMPLEMENTATION_REPORT.md` | Frontend design / cross-surface brand identity v2.0 | CURRENT — SOURCE + AUTOMATED CHECKS PASS; BROWSER VISUAL REVIEW NOT VERIFIED | Applies the supplied v2.0 Ô cửa sáng logo, palette, self-hosted fonts and shared UI rules to Auth, current Admin flows, Resident and Public surfaces. Typecheck, 76/76 tests and production build pass; exact 1440/768/390/320px visual review remains unverified due browser/renderer tooling. No business/API/database change. |
+| `06_frontend/design/PUBLIC_LANDING_PAGE_IMPLEMENTATION_REPORT.md` | Frontend design / Public landing | CURRENT — SOURCE + AUTOMATED CHECKS PASS; BROWSER VISUAL REVIEW NOT VERIFIED | Adds static `/landing` with brand-aligned storytelling, purposeful motion, current-product content and Explorer navigation. Typecheck, 76/76 tests and build pass; browser viewport/animation/overflow review remains unverified due loopback tooling. |
 | `06_frontend/integrations/FRONTEND_INTEGRATION_PASS_1_AUTH_PROPERTY_ROOM_REPORT.md` | Frontend / Auth + Property/Room | REFERENCE | First FE integration pass. |
 | `07_modules/contract/CONTRACT_API_V1_2_MIGRATION_REPORT.md` | Contract | SUPERSEDED | Prior V1.2 report; V1.3 report is later state. Its blocked result is retained as history. |
 | `07_modules/contract/CONTRACT_API_V1_3_MIGRATION_REPORT.md` | Contract | REFERENCE | Contract V1.3 migration report; see its own implementation/test status. |
@@ -83,7 +92,7 @@
 | `07_modules/property-room/PROPERTY_ROOM_ROOM_IMAGES_FINAL_HOST_BROWSER_CLOSURE_REPORT.md` | Property / Room + Room Images | CURRENT | Latest local V1.4 closure pass: health, 27-table baseline, automated regressions, and 0-image browser flow pass; native file picker and image/gallery host-browser scenarios remain unverified, so E2E stays PARTIAL. |
 | `07_modules/property-room/LOCAL_GOCTRO_TEST3_V1_3_TO_V1_4_MIGRATION_REPORT.md` | Property / Room + Room Images / Local database operations | CURRENT | Local Goctro_test3 was migrated additively to V1.4 after backup; 26-table fingerprints preserved and runtime validator passed 87/87. See the latest closure report for the subsequent Admin browser session and remaining image-picker limits. |
 | `07_modules/property-room/DATABASE_V1_4_RUNTIME_VALIDATOR_POPULATED_DB_COMPATIBILITY_REPORT.md` | Property / Room + Database V1.4 runtime validator | CURRENT | Separates 18 clean-seed fixture assertions from the 69-check clean/populated runtime validator; PostgreSQL 18 validation passed on clean, populated, and local Goctro_test3 targets. Local 27-table/9-image baseline remained unchanged. |
-| `07_modules/public-marketplace/PUBLIC_SALES_3D_PROTOTYPE_REPORT.md` | Public marketplace / 3D explorer | CURRENT | Active /rooms map listing with preserved incoming search links, retained /public-sales preview, full-viewport scene, floating panels/result drawer, pinned 34-feature GeoJSON, Z-up camera safe-area/drag tests, preserved Express/PostgreSQL flow, API outage/recovery and desktop/mobile evidence; forced GPU failure remains unverified. |
+| `07_modules/public-marketplace/PUBLIC_SALES_3D_PROTOTYPE_REPORT.md` | Public marketplace / 3D explorer | CURRENT | Homepage map explorer with logo-derived orange/forest/cream theme and desktop/mobile evidence, visible login, retained /rooms listing/detail dependencies, removed /public-sales route after shared-code relocation, preserved incoming search links, full-viewport scene, floating panels/result drawer, pinned 34-feature GeoJSON, Z-up camera safe-area/drag tests, preserved Express/PostgreSQL flow, API outage/recovery and desktop/mobile evidence; forced GPU failure remains unverified. |
 | `07_modules/public-marketplace/PUBLIC_SALES_FUNNEL_V1_AUDIT.md` | Public marketplace / sales funnel | HISTORICAL | Audit snapshot recorded the pre-implementation gap; backend implementation and local/dev V1.4 runtime evidence are in the current implementation report. |
 | `07_modules/public-marketplace/PUBLIC_SALES_FUNNEL_V1_BACKEND_IMPLEMENTATION_REPORT.md` | Public marketplace / sales funnel | CURRENT | Public list/detail/contact and Owner-scoped Admin inbox implementation, PostgreSQL 18 V1.4 HTTP smoke, regressions, and known toolchain/production limits. |
 | `07_modules/public-marketplace/PUBLIC_SALES_FUNNEL_V1_FRONTEND_IMPLEMENTATION_REPORT.md` | Public marketplace / sales funnel | REFERENCE | Frontend implementation and local browser evidence; Admin inbox, availability transitions, and full responsive viewport checks remain open, so E2E is partial. |
@@ -101,10 +110,14 @@
 | `03_database/DATABASE_V1_6_RESIDENT_AVATAR_ACCOUNT_PHONE_MIGRATION_REPORT.md` | Database V1.6 / Resident avatar + Account phone | HISTORICAL — LOCKED PREDECESSOR | Goctro_test3 was validated at V1.6 before its later V1.7 additive migration. Historical V1.6 validation and backup evidence remain unchanged. |
 | `08_audits/MIGRATION_GAP_REPORT.md` | Cross-domain project audit | HISTORICAL | Static migration gap snapshot dated 2026-10-07; target descriptions reflect that audit date. |
 | `08_audits/PRE_GIT_REPOSITORY_AUDIT_AND_CLEANUP_PLAN.md` | Cross-domain repository structure / Git delta / cleanup preparation | CURRENT — REVIEW REQUIRED | Audits current Git delta, route/import usage, legacy candidates, artifacts, secrets/ignore rules and pre-push readiness; removes only two temporary logs and generated TypeScript state. No legacy source removed. |
+| `08_audits/SOURCE_REVIEW_ZIP_EXPORT_REPORT.md` | Cross-domain source export / external review package | HISTORICAL — INITIAL FILTERED EXPORT | Records the earlier filtered source ZIP. It is superseded as the complete review bundle by root `SOURCE_REVIEW_GUIDE.md`, `FILE_MANIFEST.md`, and `SmartRentalManagement_Full_Source_Review.zip`, which add canonical Database V1.8 artifacts and external requirements/API docs. |
+| External source-review guide/export | REFERENCE — NOT IN RELEASE BASELINE | Retained outside the application baseline; no runtime or governance dependency. |
+| External file manifest/ZIP export | REFERENCE — NOT IN RELEASE BASELINE | Historical packaging evidence; hashes and provenance are not required to run the application. |
 | `08_audits/PRE_GIT_STEP_1_UNTRACKED_FILE_REVIEW.md` | Cross-domain repository staging preparation | CURRENT — STEP 1 REVIEW | Individually classifies the full non-ignored untracked inventory and records staging sets; no files staged or deleted. |
 | `08_audits/PRE_GIT_STEP_3_TRACKED_DELETION_REVIEW.md` | Cross-domain repository staging preparation | CURRENT — STEP 3 REVIEW | Confirms three documentation deletions are intentional moves with preserved replacements; no staging, restore, or deletion was performed. |
-| `08_audits/PRE_GIT_STEP_4_LEGACY_RETIREMENT_AUDIT.md` | Cross-domain repository cleanup / legacy retirement | CURRENT — STEP 4 REVIEW | Audits 65 legacy/compat items; identifies 10 safe-removal units, 4 retained 410 stubs, and compatibility/product decisions requiring later review. No source was deleted or staged. Step 5 remains backend typecheck diagnostic review. |
+| `08_audits/PRE_GIT_STEP_4_LEGACY_RETIREMENT_AUDIT.md` | Cross-domain repository cleanup / legacy retirement | REFERENCE — PRE-PHASE-1 SNAPSHOT | Preserves the earlier inventory before source removal. Current cleanup status, fresh diagnostic measurements and phased next steps are in LEGACY_TO_CURRENT_MIGRATION_PLAN.md; historical no-deletion claims apply only to the earlier audit. |
 | `10_operations/LOCAL_DEV_STARTUP_REPORT.md` | Local operations | REFERENCE | Windows local development startup procedure and diagnostics. |
+| `10_operations/DATABASE_V1_8_SETUP.md` | Database operations / new checkout setup | CURRENT — NATIVE SQL REHEARSAL PASS; DOCKER UNVERIFIED | SQL V1.8 source provenance, guarded new-database bootstrap/seed, blocked legacy migration, separate PostgreSQL 18 volume, existing-data procedure, runtime guards and Windows Prisma DLL limitation. |
 | `10_operations/REPOSITORY_CLEANUP_REPORT.md` | Repository operations | HISTORICAL | Records a prior cleanup pass. |
 | `11_project-reports/Tom_tat_chinh_sua_Goc_tro.md` | Project summary | HISTORICAL | Summary of edits to the earlier legacy Góc Trọ app. |
 | `12_decisions/V1_1_MIGRATION_DECISIONS.md` | Data migration decisions | HISTORICAL | V1.1-era decision record; not a current migration authorization. |
@@ -113,9 +126,44 @@
 
 ## Canonical sources outside this repository
 
-- Product requirements: `../GocTro-SmartBuilding/docs/01_REQUIREMENTS.md`
-- API contract: `../GocTro-SmartBuilding/docs/04_API_SPEC.md`
-- Current Goctro_test3 physical schema is Database V1.8 in the adjacent `GocTro-SmartBuilding` project; V1.8 is the current local/development locked baseline (PostgreSQL 18.6, 40 public tables). Database V1.7 is its historical locked predecessor. The canonical Requirement still contains several older V1.6/V1.7-current statements; Changelog, V1.8 promotion report, and Current State establish the physical baseline.
+- Product requirements: `01_REQUIREMENTS.md`
+- API contract: `04_API_SPEC.md`
+- Current Goctro_test3 physical schema is Database V1.8 in `database/baselines/v1.8/`; V1.8 is the current local/development locked baseline (PostgreSQL 18.6, 40 public tables). Database V1.7 is its historical locked predecessor. The canonical Requirement still contains several older V1.6/V1.7-current statements; Changelog, V1.8 promotion report, and Current State establish the physical baseline.
 - Current Prisma mapping for this application: `../database/schema.prisma`
 
-These paths are references to the adjacent workspace project; they are not duplicated under this repository's `docs/`.
+The former sibling paths are retained only as historical provenance in the relevant copies and reports; they are not current authority.
+
+## Database legacy review / source package — 2026-10-16
+
+| Document | Status | Scope |
+|---|---|---|
+| External database/source review package | REFERENCE — NOT IN RELEASE BASELINE | Dependency inventory and export manifests remain outside the application baseline. |
+
+## Legacy-to-current migration workflow — 2026-10-16
+
+| Document | Status | Scope |
+|---|---|---|
+| [LEGACY_TO_CURRENT_MIGRATION_PLAN.md](08_audits/LEGACY_TO_CURRENT_MIGRATION_PLAN.md) | CURRENT — PHASE 1 COMPLETE; PHASE 2 PARTIAL | Consumer inventory, four removed frontend orphans, eight removed blocked handlers/two helpers, fresh 174→121 diagnostic comparison, before/after tests and six-stage checklist. No DB/history/env change. |
+
+## Post Legacy Phase 1 review export — 2026-10-16
+
+| Artifact | Status | Scope |
+|---|---|---|
+| Phase 1 review export/evidence | REFERENCE — NOT IN RELEASE BASELINE | Historical diff and validation evidence are retained outside the runtime/documentation baseline. |
+
+## Accounts Phase 2 — 2026-10-16
+
+The live [migration plan §7](08_audits/LEGACY_TO_CURRENT_MIGRATION_PLAN.md) records current Accounts V1 read/status/invitation audit-revoke, legacy Accounts410 retirement, new121→115 diagnostic evidence, FE72/Auth20/Resident49/retirement13/Accounts16 and disposable PostgreSQL/API6 checks. Enrollment/reset delivery/consumption remains PARTIAL pending canonical reconciliation/provider. No new duplicate report; previous export/report evidence remains historical and unchanged.
+
+### Phase 2 review follow-up — 2026-10-16
+
+[Legacy-to-current migration plan §8](08_audits/LEGACY_TO_CURRENT_MIGRATION_PLAN.md#8-phase-2-review-fixes--2026-10-16-partial) — CURRENT checkpoint/evidence index for invitation revoke header/retry fixes and the Current State/Catalog raw-vs-LF hash investigation. Sibling workspace review artifact directory: SmartRentalManagement_Phase2_Review_Fixes (review-fix diff, frozen manifest, old-hash addendum and final document copies). Original Phase 2 evidence is preserved; no historical report was rewritten. Phase2 remains PARTIAL; no enrollment/reset/Phase3 implementation.
+
+### Phase 2 enrollment/reset completion — 2026-10-18
+
+[Legacy-to-current migration plan §9](08_audits/LEGACY_TO_CURRENT_MIGRATION_PLAN.md#9-phase-2-enrollmentreset-completion--2026-10-18) — CURRENT implementation/validation checkpoint. Real V1 invitation/accept/phone-login/reset/change-password, guarded disposable harness and FE integration are implemented. Unit11, PostgreSQL/HTTP15, Accounts19, Auth20, retirement13, FE75 PASS; FE typecheck/build PASS; BE115 existing diagnostics. Browser Admin invite/GET verified, new-password handoff incomplete. Production binding/provider/durable storage remain open; Phase2 PARTIAL. Canonical Requirement§5 and API§5.1–5.2 are now in `docs/01_REQUIREMENTS.md` and `docs/04_API_SPEC.md`; sibling evidence directory SmartRentalManagement_Phase2_Completion_20261018 includes task-only patch/snapshots and distinct raw/LF hashes. Historical reports and prior hash evidence are retained unchanged.
+
+
+### Auth browser/UI verification — 2026-10-19
+
+[AUTH_BROWSER_UI_VERIFICATION.md](07_modules/auth/AUTH_BROWSER_UI_VERIFICATION.md) — CURRENT scoped evidence: actual Admin invitation/human accept/Resident login and forgot/human reset/login, persisted status/hash-verifier results and HTTP session revocation. 1440/768/390px Auth and invitation UI checks, generic link errors, expiry, 503 retry and controlled pending-link restart verified. Enrollment12, PostgreSQL/HTTP16, Accounts19, Auth20, retirement13, FE77/typecheck/isolated production build PASS; BE115 diagnostic lines unchanged. Browser mismatch intermediate state and repeated password-submit clicks NOT RUN; production provider/durable lifecycle remain open, Phase2 PARTIAL. Includes screenshots and frontend/e2e human-assisted CUA checks. Prior reports/frozen evidence unchanged.

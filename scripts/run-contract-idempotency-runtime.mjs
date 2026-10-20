@@ -31,9 +31,9 @@ try {
   targetUrl.pathname = `/${safeDb}`;
   const target = new pg.Client({ connectionString: targetUrl.toString(), connectionTimeoutMillis: 5_000 });
   await target.connect();
-  const dbSource = path.resolve(root, "..", "GocTro-SmartBuilding", "Database V1.5");
+  const dbSource = path.join(root, "database", "baselines", "v1.5");
   const schema = await readFile(path.join(dbSource, "schema.sql"), "utf8");
-  const seed = await readFile(path.resolve(dbSource, "..", "Database V1.4", "seed.sql"), "utf8");
+  const seed = await readFile(path.join(root, "database", "baselines", "v1.4", "seed.sql"), "utf8");
   await target.query(schema);
   await target.query(seed);
   const tableCount = await target.query("SELECT count(*)::int AS count FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'");

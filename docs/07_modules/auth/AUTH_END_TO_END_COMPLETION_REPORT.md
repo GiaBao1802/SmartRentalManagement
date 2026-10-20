@@ -6,7 +6,7 @@
 
 ## 1. Phạm vi và nguồn đã audit
 
-Đã đọc quy tắc/catalog tài liệu và canonical Requirement/API Spec ở project `GocTro-SmartBuilding`, các report Auth trước đây, cùng source hiện tại:
+Đã đọc quy tắc/catalog tài liệu và canonical Requirement/API Spec tại `docs/01_REQUIREMENTS.md` và `docs/04_API_SPEC.md` trong SmartRentalManagement, các report Auth trước đây, cùng source hiện tại:
 
 - Backend: `backend/src/auth/**`, `backend/src/middleware/{auth,csrf,error-handler}.ts`, `backend/src/config/env.ts`, `backend/src/app.ts`, `backend/src/server.ts`.
 - Frontend: `frontend/src/app/components/auth-provider.tsx`, Admin shell, Resident portal, login form, `frontend/src/lib/api/{apiClient,authApi,errors}.ts`.

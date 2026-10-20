@@ -1,45 +1,49 @@
-# Góc trọ
+# Góc Trọ / SmartRentalManagement
 
-Monorepo scaffold for migrating the existing UI to Next.js, adding a Node.js API, and using PostgreSQL.
+Monorepo Next.js/React frontend, Express/TypeScript API, Prisma 6.12 và PostgreSQL. Node.js 24.11+, npm 11.6+. Database **V1.8** là current locked local/dev baseline: PostgreSQL **18.6**, **40 public tables**. Trạng thái module và các phần chưa hoàn tất nằm trong [Current State](docs/00_CURRENT_STATE.md).
 
-## Structure
+## Source và database authority
 
-- `frontend/` — Next.js App Router application.
-- `backend/` — Node.js, Express, and TypeScript API.
-- `database/` — PostgreSQL schema, Prisma migrations, and local demo seed data.
-- `legacy/` — preserved HTML/CSS/JS reference app, assets, and wireframes used during migration.
-- `docs/` — [documentation index, catalog, and project records](docs/README.md).
+- `frontend/`: ứng dụng Next App Router hiện hành; `backend/src/server.ts`: API entrypoint, V1 endpoints dưới `/api/v1`.
+- `database/schema.prisma`: mapping ORM hiện hành. SQL vẫn enforce CHECKs/triggers/partial indexes Prisma không thể biểu diễn đầy đủ.
+- `database/baselines/v1.8/`: baseline SQL/seed/ERD/validators/migration chính thức, với nguồn và hashes trong `PROVENANCE.json`. Source of Truth hiện hành là `database/baselines/v1.8/` cùng `docs/DATABASE_CHANGELOG.md`; Requirement/API là `docs/01_REQUIREMENTS.md` và `docs/04_API_SPEC.md`. Nguồn sibling cũ chỉ còn là provenance lịch sử.
+- `database/migrations/`, các `schema.*.prisma` snapshot và `database/seeds/seed.ts`: lịch sử legacy/demo, **không tương đương V1.8**. Giữ nguyên để tra cứu; không chạy lên V1.8. `db:migrate` đã bị chặn ở root và backend.
+- `legacy/`: chỉ còn wireframe, artwork/tham chiếu và JSON demo lịch sử; không còn ứng dụng hoặc launcher demo. Không dùng JSON này làm dữ liệu ứng dụng.
+- [Documentation](docs/README.md), [Database setup chi tiết](docs/10_operations/DATABASE_V1_8_SETUP.md).
 
-## Requirements
+## Baseline sản phẩm hiện hành — 2026-10-19
 
-- Node.js 24.11 or newer and npm 11.6 or newer.
-- Docker Desktop (or Docker Engine with Compose) for the local PostgreSQL service, or a PostgreSQL instance matching `DATABASE_URL`.
+Giữ Public Explorer → chi tiết phòng → liên hệ; Auth/Accounts/invitation/quên-reset mật khẩu; các mục sidebar Admin và bốn tab Service (Điện & nước, Fixed, Flexible, Parking); Resident portal cùng chi tiết hợp đồng/tài liệu và entry kỹ thuật liên quan. Provider/storage chưa cấu hình không làm các luồng này trở thành source thừa.
 
-## Start development
+Đã gỡ landing/listing cũ, Amenities/Bookings demo, trang nhập charge chuyển tiếp, hai route deferred ngoài navigation và backend demo/auth cũ. Các URL API đã retire vẫn trả 410; Billing tiếp tục đọc charge/snapshot hiện có. Không triển khai luồng thay thế hoặc đổi database. Chi tiết và kiểm chứng: [migration plan §10](docs/08_audits/LEGACY_TO_CURRENT_MIGRATION_PLAN.md#10-current-product-flow-baseline-and-source-cleanup--2026-10-19).
 
-1. Install dependencies: `npm install`
-2. Copy `backend/.env.example` to `backend/.env`.
-3. Start PostgreSQL: `npm run db:up`
-4. Generate the Prisma client: `npm run db:generate`
-5. Apply the schema: `npm run db:migrate`
-6. Load development sample data: `npm run db:seed`
-7. Start frontend and backend: `npm run dev`
+## A. Máy mới / database mới
 
-The public homepage runs at `http://localhost:3000`; sign-in is available at `/login`.
-The development seed creates three role-based demo accounts: `admin`, `landlord`, and `tenant`. Each uses `123456` by default; set `DEV_ADMIN_PASSWORD`, `DEV_LANDLORD_PASSWORD`, and `DEV_TENANT_PASSWORD` before running the seed to change them. These credentials are for local development only.
+1. `npm ci` (hoặc `setup.bat` trên Windows để tạo env templates khi thiếu và cài/generate dependencies).
+2. Copy root `.env.example` → `.env`, `backend/.env.example` → `backend/.env`, `frontend/.env.example` → `frontend/.env.local` **chỉ khi file chưa tồn tại**. Đặt password local riêng và secrets cần thiết; đồng bộ backend URL với instance. Không commit env thật.
+3. Nếu dùng Docker: `npm run db:up`. Service `postgres18` dùng image `postgres:18.6`, volume mới `goctro_pg18_v18_data`, mount `/var/lib/postgresql`; không tái dùng PG17 volume. Nếu đã có PostgreSQL native, dùng đúng instance và tạo database trống riêng thay vì chạy thêm container trùng cổng.
+4. Cấp URL setup riêng rồi bootstrap/seed theo thứ tự:
 
-`ADMIN` can manage the full system and create accounts at `/admin/accounts`. `LANDLORD` can manage only properties assigned to that account and their related rooms, tenants, contracts, invoices, amenities, and requests. Landlords choose which rooms to publish; published vacant rooms from all landlords appear together on the public homepage. `TENANT` can view only their linked profile, contracts, invoices, amenity bookings, and support requests at `/tenant`. The demo landlord is assigned Tòa A; the demo tenant is linked to Nguyễn Văn A.
+```powershell
+$env:GOCTRO_SETUP_DATABASE_URL = 'postgresql://goctro:<URL_ENCODED_LOCAL_PASSWORD>@localhost:5432/Goctro_test3?schema=public'
+npm run db:bootstrap -- --database Goctro_test3
+# Chỉ tiếp tục khi bước trước exit 0.
+npm run db:seed -- --database Goctro_test3
+npm run db:inspect -- --database Goctro_test3
+Remove-Item Env:GOCTRO_SETUP_DATABASE_URL
+npm run db:validate
+npm run db:generate
+npm run dev:all
+```
 
-## API currently available
+Bootstrap áp dụng đúng SQL V1.8, chỉ vào database đã tồn tại có schema trống. Seed là tùy chọn, chỉ chấp nhận schema V1.8 chính xác với cả 40 bảng chưa có dữ liệu. Chạy lại bootstrap/seed sẽ bị từ chối, không ghi đè. Công cụ setup không tự đọc `DATABASE_URL`/`.env` thật, không DROP/reset hoặc tự áp migration cũ. Seed có dữ liệu synthetic và không có password login mặc định; provision DEV credential riêng theo tài liệu.
 
-- `GET /api/health` — API process health.
-- `GET /api/health/db` — PostgreSQL connection health.
-- `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/logout` — local session login/logout.
-- `GET /api/public/rooms`, `POST /api/public/viewing-requests` — paginated public marketplace listings and viewing requests. Only rooms marked for marketplace publication appear.
-- `GET /api/tenants?page=1&pageSize=20&search=` — searchable, paginated tenant list with current room and vehicle details.
-- Staff endpoints for properties/rooms, tenants, contracts, invoices, amenities/bookings, viewing requests, and maintenance requests require an admin or landlord session; landlord queries are scoped to assigned properties.
-- The management UI is available at `/admin/properties`, `/admin/tenants`, `/admin/contracts`, `/admin/invoices`, `/admin/amenities`, `/admin/bookings`, `/admin/viewings`, `/admin/complaints`, and `/admin/accounts` (admin only).
+`setup.bat` không tự tạo database/apply schema/seed. `db:down` chỉ stop service PG18 và giữ volume. Launcher mặc định yêu cầu `localhost:5432/Goctro_test3`, FE `http://localhost:3000`, BE `http://localhost:4000`, login `/login`. Kiểm tra `/api/health`, `/api/health/db`, `/api/v1/auth/csrf`. Database port/tên khác cần backend local config và `npm run dev`; xem hướng dẫn chi tiết.
 
-Start the preserved reference app with `node legacy/server.js` if needed. The Next.js app is the active frontend.
+## B. Database đã có dữ liệu
 
-The Prisma schema is in `database/schema.prisma`; migrations are kept in `database/migrations`. Domain reference is in `docs/02_architecture/DOMAIN_MODEL.md`; see [`docs/README.md`](docs/README.md) for the documentation map. The initial migration and seed data are for local development and should be reviewed before applying to a shared database.
+Xác định instance/version/schema, sao lưu và đánh giá khác biệt trước. `db:inspect -- --database NAME` với URL setup riêng chỉ đọc/so catalog V1.8. Không chạy bootstrap/seed/migration legacy trên dữ liệu hiện có, không dùng `migrate resolve` khi chưa chứng minh equivalence. Artifact upgrade V1.7→V1.8 được giữ để review; task này không cung cấp lệnh nâng cấp tự động cho DB populated/legacy. Không dùng SQL clean-install làm migration và không gắn PG17 volume vào PG18.
+
+## Kiểm chứng tooling
+
+`npm run test:db-setup` kiểm tra guards/config; `npm run test:db-setup:runtime` yêu cầu cluster PostgreSQL disposable riêng qua `GOCTRO_V18_TEST_ADMIN_URL` (role `v18_smoke`, local, port khác 5432). Chi tiết kết quả và giới hạn Docker/Windows DLL lock trong [DATABASE_V1_8_SETUP.md](docs/10_operations/DATABASE_V1_8_SETUP.md). Không coi schema hoặc UI tồn tại là bằng chứng mọi module đã hoàn tất.

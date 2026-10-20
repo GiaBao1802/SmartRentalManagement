@@ -6,8 +6,8 @@
 
 ## 2. Sources reviewed
 
-- `GocTro-SmartBuilding/docs/04_API_SPEC.md` §§2, 5.7–5.9, 7, 9.3, 13–14.
-- `GocTro-SmartBuilding/docs/01_REQUIREMENTS.md` Invoice, Contract termination, privacy, and tenant-scope sections.
+- `docs/04_API_SPEC.md` §§2, 5.7–5.9, 7, 9.3, 13–14.
+- `docs/01_REQUIREMENTS.md` Invoice, Contract termination, privacy, and tenant-scope sections.
 - `docs/07_modules/invoice-zalo/INVOICE_ZALO_API_MIGRATION_REPORT.md`.
 - `backend/src/invoices/**`, `backend/src/zalo/**`, `backend/src/auth/v1.router.ts`, and legacy route registration in `backend/src/app.ts`.
 - Contract V1.3 implementation and `docs/07_modules/contract/CONTRACT_API_V1_3_RESIDENT_SUCCESSOR_PRIVACY_FIX_REPORT.md`.
@@ -147,8 +147,8 @@ The previous early-termination boundary blocker is resolved. New tests cover nor
 
 ## 17. Files changed in this hardening pass
 
-- `GocTro-SmartBuilding/docs/01_REQUIREMENTS.md` — defined effective Contract end date for billing, final-period truncation and full/non-prorated service/utility treatment.
-- `GocTro-SmartBuilding/docs/04_API_SPEC.md` — aligned billing boundary with the approved rule and marked Invoice/Zalo LOCKED / DOCUMENTED.
+- `docs/01_REQUIREMENTS.md` — defined effective Contract end date for billing, final-period truncation and full/non-prorated service/utility treatment.
+- `docs/04_API_SPEC.md` — aligned billing boundary with the approved rule and marked Invoice/Zalo LOCKED / DOCUMENTED.
 - `backend/src/invoices/invoice.billing.ts` and `invoice.repository.ts` — made effective-date selection explicit and used it for validation and generation.
 - `backend/src/invoices/invoice.billing.test.ts` and `invoice.repository.test.ts` — added normal/terminated Contract, no-later-period, no-drift and full-rent coverage.
 - `SmartRentalManagement/docs/07_modules/invoice-zalo/API_SPEC_INVOICE_ZALO_HARDENING_REPORT.md` — this report.

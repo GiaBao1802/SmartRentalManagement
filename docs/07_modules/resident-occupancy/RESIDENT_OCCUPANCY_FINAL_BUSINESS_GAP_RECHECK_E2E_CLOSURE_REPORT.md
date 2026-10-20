@@ -13,9 +13,9 @@ Chưa thể đóng toàn bộ Resident/Occupancy vì chưa có cách provisionin
 
 ## 2. Nguồn đối chiếu
 
-- Canonical Requirement: `../GocTro-SmartBuilding/docs/01_REQUIREMENTS.md`, §§7, 16, 21.3.
-- Canonical API Spec: `../GocTro-SmartBuilding/docs/04_API_SPEC.md`, §§2, 5.2, 5.5, 6–9.
-- Current DB: `../GocTro-SmartBuilding/Database V1.5/schema.sql`.
+- Canonical Requirement: `docs/01_REQUIREMENTS.md`, §§7, 16, 21.3.
+- Canonical API Spec: `docs/04_API_SPEC.md`, §§2, 5.2, 5.5, 6–9.
+- Current DB: `database/baselines/v1.5/schema.sql`.
 - ORM mapping: `database/schema.prisma`.
 - Backend: `backend/src/residents/`, `backend/src/auth/`, Contract termination code/tests.
 - Frontend: Resident list/detail, Room resident panel, Resident API helpers, `/tenant` portal.

@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
-import { Be_Vietnam_Pro } from "next/font/google";
+import "./brand-fonts.css";
 import "./globals.css";
 import { AuthProvider } from "./components/auth-provider";
 
-const beVietnamPro = Be_Vietnam_Pro({ subsets: ["vietnamese", "latin"], weight: ["400", "500", "600", "700"], display: "swap" });
-
 export const metadata: Metadata = {
   title: {
-    default: "Góc trọ – Tìm dễ, ở yên",
+    default: "Góc Trọ – Một góc yên tâm.",
     template: "%s | Góc trọ",
   },
   description: "Tìm phòng trọ phù hợp và quản lý nhà trọ trên Góc trọ.",
@@ -18,7 +16,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="vi">
-      <body className={beVietnamPro.className}><AuthProvider>{children}</AuthProvider></body>
+      <body><AuthProvider>{children}</AuthProvider></body>
     </html>
   );
 }

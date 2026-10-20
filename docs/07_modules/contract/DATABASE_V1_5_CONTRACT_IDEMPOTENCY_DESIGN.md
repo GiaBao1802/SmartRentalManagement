@@ -21,7 +21,7 @@ The current Contract router validates that `Idempotency-Key` is 1–128 visible 
 Sources reviewed:
 
 - `docs/DOCUMENTATION_RULES.md` and `docs/DOCUMENT_CATALOG.md`.
-- Canonical `../GocTro-SmartBuilding/docs/01_REQUIREMENTS.md` and `docs/04_API_SPEC.md`.
+- Canonical `docs/01_REQUIREMENTS.md` and `docs/04_API_SPEC.md` in SmartRentalManagement.
 - `docs/07_modules/contract/CONTRACT_BUSINESS_REQUIREMENT_AUDIT.md`.
 - `docs/07_modules/contract/CONTRACT_BUSINESS_RULE_ALIGNMENT_P1_FIX_REPORT.md`.
 - `database/schema.prisma`, `Database V1.4/schema.sql`, and `Database V1.4/erd.md`.

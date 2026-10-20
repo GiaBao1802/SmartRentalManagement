@@ -3,13 +3,13 @@
 **Ngày audit:** 2026-10-14  
 **Trạng thái:** CURRENT — read-only audit, không phải implementation/lock  
 **Phạm vi runtime:** PostgreSQL 18.6, `Goctro_test3` trên `localhost:5432`  
-**Repository:** `SmartRentalManagement`; canonical Requirement/API và Database V1.8 lấy từ `../GocTro-SmartBuilding`.
+**Repository:** `SmartRentalManagement`; canonical Requirement/API tại `docs/01_REQUIREMENTS.md` và `docs/04_API_SPEC.md`, cùng Database V1.8 tại `database/baselines/v1.8/`.
 
 ## 1. Phạm vi và nguồn đã kiểm tra
 
 Audit gồm cấu hình điện/nước, Facility, Fixed Service, Flexible Paid Service, Parking, kết nối với Billing, Prisma, các Admin page/backend route và dữ liệu Goctro_test3. Chỉ chạy truy vấn `SELECT`; không thay đổi code, cấu trúc hay dữ liệu.
 
-Nguồn chính: `GocTro-SmartBuilding/docs/01_REQUIREMENTS.md`, `docs/04_API_SPEC.md`, `docs/DATABASE_CHANGELOG.md`, `Database V1.8/{README.md,erd.md,schema.sql,runtime_validator.sql}`, `SmartRentalManagement/database/schema.prisma`, backend dưới `backend/src/invoices`, `backend/src/app.ts`, `backend/src/auth/v1.router.ts`, và frontend `frontend/src/app/admin`.
+Nguồn chính: `docs/01_REQUIREMENTS.md`, `docs/04_API_SPEC.md`, `docs/DATABASE_CHANGELOG.md`, `database/baselines/v1.8/{README.md,erd.md,schema.sql,runtime_validator.sql}`, `SmartRentalManagement/database/schema.prisma`, backend dưới `backend/src/invoices`, `backend/src/app.ts`, `backend/src/auth/v1.router.ts`, và frontend `frontend/src/app/admin`.
 
 ## 2. Canonical product model
 

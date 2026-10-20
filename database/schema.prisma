@@ -7,7 +7,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Database V1.7 mapping. Status domains remain varchar + PostgreSQL CHECK constraints.
+// Database V1.8 mapping (40 tables); SQL baseline: database/baselines/v1.8/schema.sql.
+// V1.8 recurring Parking partial uniqueness is enforced by SQL, not a Prisma @@unique.
+// Status domains remain varchar + PostgreSQL CHECK constraints.
 // Keep these as String so Prisma does not expect native PostgreSQL enum types.
 
 model Owner {

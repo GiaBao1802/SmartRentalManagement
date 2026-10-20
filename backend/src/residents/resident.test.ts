@@ -253,7 +253,7 @@ function statusSyncRepo(options: { activeCount?: number; failDestination?: boole
 }
 
 test("new Resident has server-managed left status and cannot choose status on create", async () => {
-  assert.equal(validateResidentCreate({ full_name: "New" }).residenceStatus, undefined);
+  assert.equal("residenceStatus" in validateResidentCreate({ full_name: "New" }), false);
   assert.throws(() => validateResidentCreate({ full_name: "New", residence_status: "living" }));
   assert.throws(() => validateResidentCreate({ full_name: "New", residence_status: "left" }));
   const harness = statusSyncRepo();

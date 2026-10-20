@@ -9,8 +9,8 @@
 Đã đọc theo thứ tự yêu cầu:
 
 - `docs/DOCUMENTATION_RULES.md`, `docs/README.md`, `docs/DOCUMENT_CATALOG.md`.
-- Canonical `GocTro-SmartBuilding/docs/01_REQUIREMENTS.md` §6 và các quy tắc sức chứa liên quan.
-- Canonical `GocTro-SmartBuilding/docs/04_API_SPEC.md` §5.4.
+- Canonical `docs/01_REQUIREMENTS.md` §6 và các quy tắc sức chứa liên quan.
+- Canonical `docs/04_API_SPEC.md` §5.4.
 - `docs/07_modules/property-room/PROPERTY_ROOM_API_V1_2_MIGRATION_REPORT.md` và `docs/06_frontend/integrations/FRONTEND_INTEGRATION_PASS_1_AUTH_PROPERTY_ROOM_REPORT.md`.
 - `Property-Room-Audit-Patch.zip` gồm `PROPERTY_ROOM_AUDIT.md` và `property-room.patch`; đối chiếu với source hiện tại, không áp dụng lại patch.
 - Backend `backend/src/properties/**`, mount trong `backend/src/auth/v1.router.ts`, và retirement routes tại `backend/src/app.ts`.

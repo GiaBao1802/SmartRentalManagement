@@ -16,3 +16,8 @@ export async function verifyPassword(password: string, encodedHash: string | nul
   const matches = expected.length === actual.length && timingSafeEqual(expected, actual);
   return Boolean(encodedHash) && validEncoding && matches;
 }
+
+export async function hashPassword(password: string): Promise<string> {
+  const salt = randomBytes(16).toString("hex");
+  return `scrypt$${salt}$${(await deriveKey(password, salt, 64)).toString("hex")}`;
+}

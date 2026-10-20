@@ -3,7 +3,7 @@
 - **Date:** 2026-10-14
 - **Status:** IMPLEMENTATION PASS — PostgreSQL V1.8 integration PASS
 - **Scope:** Backend scheduler, durable Admin closeout reminders, next-day/catch-up draft generation, tests and operational documentation.
-- **Authority checked:** `../GocTro-SmartBuilding/docs/01_REQUIREMENTS.md`, `docs/04_API_SPEC.md`, Database V1.8 artifacts and changelog; repository `AGENTS.md`, documentation rules/current state/catalog; Billing end-to-end gap audit; V1.8 Invoice finalize integration closure; Admin Billing connectivity/browser closure.
+- **Authority checked:** `docs/01_REQUIREMENTS.md`, `docs/04_API_SPEC.md`, Database V1.8 artifacts and changelog; repository `AGENTS.md`, documentation rules/current state/catalog; Billing end-to-end gap audit; V1.8 Invoice finalize integration closure; Admin Billing connectivity/browser closure.
 
 ## 1. Scope and previous P0 gaps
 

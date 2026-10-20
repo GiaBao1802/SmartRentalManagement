@@ -13,13 +13,17 @@
     "dev": "concurrently -k -n frontend,backend -c blue,green \"npm:dev --workspace=@goctro/frontend\" \"npm:dev --workspace=@goctro/backend\"",
     "dev:all": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/dev-all.ps1",
     "dev:stop": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/dev-stop.ps1",
-    "legacy:dev": "node legacy/server.js",
     "build": "npm run build --workspace=@goctro/frontend && npm run build --workspace=@goctro/backend",
-    "db:up": "docker compose up -d postgres",
-    "db:down": "docker compose down",
+    "db:up": "docker compose --env-file .env up -d --wait postgres18",
+    "db:down": "docker compose --env-file .env stop postgres18",
+    "db:bootstrap": "node scripts/database-v18.mjs bootstrap",
+    "db:inspect": "node scripts/database-v18.mjs inspect",
+    "db:validate": "npm run db:validate --workspace=@goctro/backend",
+    "test:db-setup": "node --test scripts/database-v18.test.mjs",
+    "test:db-setup:runtime": "node --test scripts/database-v18.integration.test.mjs",
     "db:generate": "npm run db:generate --workspace=@goctro/backend",
-    "db:migrate": "npm run db:migrate --workspace=@goctro/backend",
-    "db:seed": "npm run db:seed --workspace=@goctro/backend"
+    "db:migrate": "node scripts/database-v18.mjs block-legacy-migrate",
+    "db:seed": "node scripts/database-v18.mjs seed"
   },
   "devDependencies": {
     "concurrently": "9.2.4"

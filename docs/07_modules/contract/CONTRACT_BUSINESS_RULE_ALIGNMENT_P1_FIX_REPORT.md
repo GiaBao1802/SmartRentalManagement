@@ -23,7 +23,7 @@ Automated results: Contract **132/132 PASS**, real PostgreSQL Contract runtime s
 
 ## 3. Authority and sources
 
-- `GocTro-SmartBuilding/docs/01_REQUIREMENTS.md` and `docs/04_API_SPEC.md` (canonical product/API sources; updated only for these approved rules).
+- `docs/01_REQUIREMENTS.md` and `docs/04_API_SPEC.md` in SmartRentalManagement (canonical product/API sources; updated only for these approved rules).
 - `SmartRentalManagement/docs/DOCUMENTATION_RULES.md`, `docs/DOCUMENT_CATALOG.md`, and `docs/07_modules/contract/CONTRACT_BUSINESS_REQUIREMENT_AUDIT.md`.
 - Contract frontend/API migration reports, Contract V1.3 migration and Resident successor privacy reports, latest Contract API hardening report, and Resident/Occupancy API hardening report.
 - `database/schema.prisma`; current Contract repository, routes, validators and tests; Resident/Occupancy, Property/Room, Invoice reading fields/repository; Admin and Resident Contract UI; current API/idempotency helpers.

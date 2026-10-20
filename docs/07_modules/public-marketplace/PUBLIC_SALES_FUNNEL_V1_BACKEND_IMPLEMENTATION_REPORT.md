@@ -15,8 +15,8 @@ Backend typecheck/build still fail on 174 existing legacy diagnostics in `backen
 
 ## 2. Sources and authority
 
-- Canonical product requirements: `../GocTro-SmartBuilding/docs/01_REQUIREMENTS.md`
-- Canonical API contract: `../GocTro-SmartBuilding/docs/04_API_SPEC.md`
+- Canonical product requirements: `docs/01_REQUIREMENTS.md`
+- Canonical API contract: `docs/04_API_SPEC.md`
 - Database V1.4 `schema.sql`, `seed.sql`, and `runtime_validator.sql`
 - Current `database/schema.prisma`
 - Public Sales Funnel audit and Room Images design/implementation/runtime reports
@@ -40,7 +40,7 @@ The V1 router had no Public Room list/detail or Contact Request handlers. Public
 - `backend/src/auth/v1.router.ts`, `backend/src/app.ts` — mount and wire the V1 Public Marketplace repository/router.
 - `backend/src/middleware/error-handler.ts` — map oversized JSON bodies to a safe HTTP 413 response.
 - `backend/package.json` — `test:public-marketplace` command.
-- `../GocTro-SmartBuilding/docs/04_API_SPEC.md` — implementation/current-baseline annotations only; no endpoint or business rule changed.
+- `docs/04_API_SPEC.md` — implementation/current-baseline annotations only; no endpoint or business rule changed.
 - `docs/DOCUMENT_CATALOG.md` — catalog this report and mark the prior gap snapshot historical.
 - This report.
 

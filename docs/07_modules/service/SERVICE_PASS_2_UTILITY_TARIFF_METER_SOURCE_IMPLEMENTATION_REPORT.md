@@ -20,7 +20,7 @@ No duplicate resolver/calculator was added. No meter-reading CRUD was added.
 
 ## 3. API contract
 
-Updated canonical [`docs/04_API_SPEC.md`](../../../../GocTro-SmartBuilding/docs/04_API_SPEC.md) with:
+Updated canonical [`docs/04_API_SPEC.md`](../../04_API_SPEC.md) with:
 
 - `GET /properties/{property_id}/utility-tariffs`
 - `POST /properties/{property_id}/utility-tariffs/{utility_type}/versions`
@@ -93,7 +93,7 @@ This pass covers only Electricity/Water utility tariffs and Contract initial met
 - `frontend/src/app/components/admin-shell.tsx`
 - `frontend/src/app/globals.css`
 - `frontend/package.json`
-- `../GocTro-SmartBuilding/docs/04_API_SPEC.md`
+- `docs/04_API_SPEC.md`
 - `docs/00_CURRENT_STATE.md`
 - `docs/DOCUMENT_CATALOG.md`
 - this report

@@ -202,7 +202,9 @@ if (-not (Test-Path -LiteralPath $backendEnv -PathType Leaf)) {
   Write-Failure 'BACKEND_START_FAILED' 'backend/.env is missing. Create it locally; secrets are not displayed by this launcher.'
 }
 $databaseUrl = $env:DATABASE_URL
+$databaseSource = 'process environment'
 if (-not $databaseUrl) {
+  $databaseSource = 'backend/.env'
   $databaseLine = Get-Content -LiteralPath $backendEnv | Where-Object { $_ -match '^\s*DATABASE_URL\s*=' } | Select-Object -First 1
   if ($databaseLine) { $databaseUrl = ($databaseLine -split '=', 2)[1].Trim().Trim('"').Trim("'") }
 }
@@ -216,7 +218,8 @@ try {
   Write-Failure 'BACKEND_START_FAILED' 'DATABASE_URL is not a valid PostgreSQL connection URL. The value will not be printed.'
 }
 if ($databaseUri.Host -notin @('localhost', '127.0.0.1', '::1') -or $databaseUri.Port -ne $PostgresPort -or $databaseName -ne 'Goctro_test3') {
-  Write-Failure 'BACKEND_START_FAILED' "configured database target must be localhost:$PostgresPort/Goctro_test3. The connection URL is not displayed."
+  $actualTarget = "host=$($databaseUri.Host); port=$($databaseUri.Port); database=$databaseName; source=$databaseSource"
+  Write-Failure 'BACKEND_START_FAILED' "configured database target must be localhost:$PostgresPort/Goctro_test3. Found $actualTarget. Credentials are not displayed."
 }
 Write-Host 'PostgreSQL       OK'
 

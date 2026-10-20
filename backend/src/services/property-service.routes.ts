@@ -4,10 +4,9 @@ import type { AuthDependencies } from "../middleware/auth.js";
 import { authenticateRequest, foreignResourceNotFound, getAdminOwnerId, requireAdmin } from "../middleware/auth.js";
 import { ApiError, conflict, validationError } from "../middleware/api-error.js";
 import { parseBigIntId, sendJson } from "../utils/ids.js";
-import { servicePriceInputIsValid, type FlexibleChargeInput, type PrismaPropertyServiceRepository, type ServiceKind, type ServicePriceInput } from "./property-service.repository.js";
+import { servicePriceInputIsValid, type PrismaPropertyServiceRepository, type ServiceKind, type ServicePriceInput } from "./property-service.repository.js";
 
-type Repo = Pick<PrismaPropertyServiceRepository, "listItems" | "createItem" | "retireItem" | "publishPrice" | "listCharges" | "createCharge">;
-const KINDS: ServiceKind[] = ["FIXED_SERVICE", "FLEXIBLE_SERVICE"];
+type Repo = Pick<PrismaPropertyServiceRepository, "listItems" | "createItem" | "retireItem" | "publishPrice">;
 function id(value: unknown, label = "ID") { try { return parseBigIntId(value); } catch { throw validationError(`${label} không hợp lệ.`); } }
 function exactBody(body: unknown, fields: string[]) {
   if (!body || typeof body !== "object" || Array.isArray(body)) throw validationError("Dữ liệu dịch vụ không hợp lệ.");
@@ -36,12 +35,6 @@ function money(value: unknown) {
   if (result > 9_223_372_036_854_775_807n) throw validationError("Đơn giá vượt giới hạn lưu trữ.");
   return result;
 }
-function dateTime(value: unknown) {
-  if (typeof value !== "string" || !/(Z|[+-]\d{2}:?\d{2})$/i.test(value)) throw validationError("Ngày giờ phát sinh phải kèm múi giờ.");
-  const date = new Date(value);
-  if (Number.isNaN(date.valueOf())) throw validationError("Ngày giờ phát sinh không hợp lệ.");
-  return date;
-}
 function itemDto(item: any) {
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
   const current = (item.priceVersions ?? []).find((row: any) => row.effectiveFrom.toISOString().slice(0, 10) <= today);
@@ -50,18 +43,13 @@ function itemDto(item: any) {
 function versionDto(version: any) {
   return { price_version_id: String(version.propertyPriceVersionId), version_no: version.versionNo, effective_from: version.effectiveFrom.toISOString().slice(0, 10), unit_price: version.unitPrice.toString(), source_name: version.sourceName, source_reference: version.sourceReference, reason: version.reason, published_at: version.publishedAt.toISOString() };
 }
-function chargeDto(row: any) {
-  const charge = row.charge ?? row;
-  return {
-    flexible_service_charge_id: String(charge.flexibleServiceChargeId), property_id: String(charge.propertyId), room_id: String(charge.roomId), contract_id: String(charge.contractId), resident_id: charge.residentId === null ? null : String(charge.residentId),
-    service: row.pricingItem ? { code: row.pricingItem.code, name: row.pricingItem.name } : undefined,
-    room_code: row.room?.roomCode, contract_no: row.contract?.contractNo, resident_name: row.resident?.fullName ?? null,
-    quantity: charge.quantity.toString(), unit: charge.unit, unit_price_snapshot: charge.unitPriceSnapshot.toString(), amount: charge.amount.toString(), occurred_at: charge.occurredAt.toISOString(), status: charge.status, invoice_id: charge.invoiceId === null ? null : String(charge.invoiceId), source_system: charge.sourceSystem, source_event_key: charge.sourceEventKey,
-  };
-}
-
 export function createPropertyServiceRouter(auth: AuthDependencies, repository: Repo): express.Router {
   const router = express.Router();
+  // The transitional manual-charge screen and its exclusive API are retired.
+  // Existing charge records remain inputs to Billing; no replacement workflow is introduced.
+  router.use("/properties/:property_id/flexible-service-charges", (_req, res) => {
+    res.status(410).json({ code: "ENDPOINT_RETIRED", error: "Công cụ ghi nhận phát sinh thủ công đã ngừng sử dụng." });
+  });
   const admin: RequestHandler[] = [authenticateRequest(auth), requireAdmin];
   router.get("/properties/:property_id/pricing-items", ...admin, async (req, res, next) => {
     try {
@@ -113,28 +101,6 @@ export function createPropertyServiceRouter(auth: AuthDependencies, repository: 
       if (!result) { foreignResourceNotFound(); return; }
       sendJson(res, 201, { data: versionDto(result) });
     } catch (error) { mapWriteError(error, next, "Không thể phát hành phiên bản giá."); }
-  });
-  router.get("/properties/:property_id/flexible-service-charges", ...admin, async (req, res, next) => {
-    try {
-      const page = Number(req.query.page ?? 1), pageSize = Number(req.query.page_size ?? 20);
-      if (!Number.isInteger(page) || page < 1 || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100 || Object.keys(req.query).some((key) => !["page", "page_size"].includes(key))) throw validationError("Thông tin phân trang không hợp lệ.");
-      const data = await repository.listCharges(getAdminOwnerId(req.auth!), id(req.params.property_id), page, pageSize);
-      if (!data) { foreignResourceNotFound(); return; }
-      sendJson(res, 200, { data: data.charges.map(chargeDto), meta: { page: data.meta.page, page_size: data.meta.pageSize, total_items: data.meta.totalItems, total_pages: data.meta.totalPages } });
-    } catch (error) { next(error); }
-  });
-  router.post("/properties/:property_id/flexible-service-charges", ...admin, async (req, res, next) => {
-    try {
-      const body = exactBody(req.body, ["room_id", "contract_id", "resident_id", "pricing_item_id", "quantity", "occurred_at"]);
-      const key = req.get("Idempotency-Key")?.trim();
-      if (!key || key.length < 8 || key.length > 200) throw validationError("Thiếu khóa Idempotency-Key hợp lệ để chống ghi trùng phát sinh.");
-      const quantity = text(body.quantity, "Số lượng", 20)!;
-      if (!/^\d+(?:\.\d{1,3})?$/.test(quantity) || Number(quantity) <= 0) throw validationError("Số lượng phải lớn hơn 0 và tối đa 3 chữ số thập phân.");
-      const input: FlexibleChargeInput = { roomId: id(body.room_id, "Phòng"), contractId: id(body.contract_id, "Hợp đồng"), residentId: body.resident_id === null || body.resident_id === undefined || body.resident_id === "" ? null : id(body.resident_id, "Người thuê"), itemId: id(body.pricing_item_id, "Dịch vụ"), quantity, occurredAt: dateTime(body.occurred_at), sourceEventKey: key };
-      const result = await repository.createCharge(getAdminOwnerId(req.auth!), id(req.params.property_id), req.auth!.accountId, input);
-      if (!result) { foreignResourceNotFound(); return; }
-      sendJson(res, result.replayed ? 200 : 201, { data: chargeDto(result), meta: { replayed: result.replayed } });
-    } catch (error) { mapWriteError(error, next, "Không thể ghi nhận phát sinh dịch vụ."); }
   });
   return router;
 }

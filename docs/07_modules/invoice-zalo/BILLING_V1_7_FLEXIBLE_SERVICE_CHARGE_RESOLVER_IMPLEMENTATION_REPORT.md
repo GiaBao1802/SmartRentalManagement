@@ -41,8 +41,8 @@ Database V1.7 enforces `UNIQUE(owner_id, source_system, source_event_key)` and a
 - `backend/src/invoices/flexible-service-charge.repository.test.ts`
 - `backend/src/invoices/flexible-service-charge.resolver.test.ts`
 - `backend/package.json` — included new tests in `test:invoices`.
-- `../GocTro-SmartBuilding/docs/01_REQUIREMENTS.md` — recorded the approved inclusive Vietnam-date period membership rule.
-- `../GocTro-SmartBuilding/docs/04_API_SPEC.md` — aligned the Flexible Service rule; no endpoint/DTO changes.
+- `docs/01_REQUIREMENTS.md` — recorded the approved inclusive Vietnam-date period membership rule.
+- `docs/04_API_SPEC.md` — aligned the Flexible Service rule; no endpoint/DTO changes.
 - `docs/00_CURRENT_STATE.md`
 - `docs/DOCUMENT_CATALOG.md`
 - This report.

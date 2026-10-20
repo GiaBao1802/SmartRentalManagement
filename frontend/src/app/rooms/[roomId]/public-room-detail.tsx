@@ -1,5 +1,6 @@
 "use client";
 
+import BrandLogo from "../../components/brand-logo";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ApiError } from "../../../lib/api/errors";
@@ -31,7 +32,7 @@ export default function PublicRoomDetailPage({ roomId }: { roomId: string }) {
   useEffect(() => { void load(); }, [load, retry]);
 
   return <main className="public-site public-detail-page">
-    <header className="public-header"><a className="home-logo" href="/" aria-label="Góc Trọ"><img src="/logo-goc-tro.png" alt="Góc trọ" /></a><nav aria-label="Điều hướng chính"><a href="/rooms">Tìm phòng</a></nav><div className="public-header-actions"><a className="public-login-link" href="/login">Đăng nhập quản lý</a></div></header>
+    <header className="public-header"><a className="home-logo" href="/" aria-label="Góc Trọ"><BrandLogo /></a><nav aria-label="Điều hướng chính"><a href="/rooms">Tìm phòng</a></nav><div className="public-header-actions"><a className="public-login-link" href="/login">Đăng nhập quản lý</a></div></header>
     {loading ? <section className="public-section"><div className="public-detail-skeleton" aria-label="Đang tải thông tin phòng" aria-busy="true"><div /><span /><span /></div></section> : unavailable ? <section className="public-section public-detail-unavailable" role="status"><span className="eyebrow">Tin phòng</span><h1>Phòng này hiện không còn khả dụng.</h1><p>Tin phòng có thể đã được cập nhật trong lúc bạn xem.</p><Link className="button primary" href="/rooms">Xem các phòng khác</Link></section> : error || !room ? <section className="public-section public-detail-unavailable" role="alert"><span className="eyebrow">Tin phòng</span><h1>Chưa tải được thông tin phòng.</h1><p>Vui lòng thử lại hoặc quay về danh sách phòng.</p><button className="button" type="button" onClick={() => setRetry((value) => value + 1)}>Thử lại</button><Link className="button" href="/rooms">Xem danh sách phòng</Link></section> : <>
       <section className="public-detail-shell"><div className="public-detail-breadcrumb"><Link href="/rooms">Danh sách phòng</Link><span aria-hidden="true">/</span><span>{room.property.name}</span></div>
         <div className="public-detail-layout"><div className="public-detail-main"><PublicRoomGallery roomCode={room.room_code} propertyName={room.property.name} images={room.images} />
@@ -42,6 +43,6 @@ export default function PublicRoomDetailPage({ roomId }: { roomId: string }) {
         </div><aside className="public-contact-panel" id="lien-he"><span className="eyebrow">Quan tâm căn phòng này?</span><h2>Để chủ trọ liên hệ với bạn</h2><p>Gửi thông tin liên hệ để chủ trọ phản hồi. Đây chưa phải xác nhận đặt phòng.</p><PublicContactForm roomId={room.room_id} roomLabel={`${room.property.name} · ${room.room_code}`} /></aside></div>
       </section>
     </>}
-    <footer className="public-footer"><a className="home-logo" href="/" aria-label="Góc Trọ"><img src="/logo-goc-tro.png" alt="Góc trọ" /></a><span>Tìm dễ, ở yên.</span><Link href="/rooms">Xem các phòng khác</Link></footer>
+    <footer className="public-footer"><a className="home-logo" href="/" aria-label="Góc Trọ"><BrandLogo /></a><span>Một góc yên tâm.</span><Link href="/rooms">Xem các phòng khác</Link></footer>
   </main>;
 }

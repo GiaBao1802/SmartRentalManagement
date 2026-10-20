@@ -13,7 +13,7 @@ export function PublicRoomCard({ room }: { room: PublicRoomListItem }) {
   const [imageFailed, setImageFailed] = useState(false);
   useEffect(() => setImageFailed(false), [imageUrl]);
   return <article className="room-listing" data-room-id={room.room_id}>
-    {imageUrl && !imageFailed ? <img className="room-cover-image" src={imageUrl} alt={`Ảnh phòng ${room.room_code} tại ${room.property.name}`} loading="lazy" onError={() => setImageFailed(true)} /> : <div className="room-art public-room-placeholder" aria-label="Phòng chưa có ảnh bìa"><img src="/assets/logo-goc-tro-mark.png" alt="" /><span>Chưa có ảnh bìa</span></div>}
+    {imageUrl && !imageFailed ? <img className="room-cover-image" src={imageUrl} alt={`Ảnh phòng ${room.room_code} tại ${room.property.name}`} loading="lazy" onError={() => setImageFailed(true)} /> : <div className="room-art public-room-placeholder" aria-label="Phòng chưa có ảnh bìa"><img src="/assets/brand-v2/mark.svg" alt="" /><span>Chưa có ảnh bìa</span></div>}
     <div className="room-info"><span className="room-location">{room.property.province}</span><h3>{room.property.name} · Phòng {room.room_code}</h3><p>{room.property.address}</p>
       {room.public_description && <p>{room.public_description}</p>}
       <div className="room-tags"><span>{room.area_m2 ? `${room.area_m2} m²` : "Diện tích liên hệ"}</span><span>Tối đa {room.default_capacity} người</span></div>
