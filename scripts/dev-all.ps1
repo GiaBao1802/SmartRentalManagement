@@ -193,8 +193,42 @@ function Wait-ForHealth([string] $Url, [int] $TimeoutSeconds, [string] $Expected
   return $false
 }
 
+function Assert-Dependencies {
+  $lockfile = Join-Path $projectRoot 'package-lock.json'
+  if (-not (Test-Path -LiteralPath $lockfile -PathType Leaf)) {
+    Write-Failure 'DEPENDENCIES_INCOMPLETE' 'package-lock.json is missing. Run setup.bat from a clean checkout.'
+  }
+  $requiredExecutables = @('concurrently.cmd', 'next.cmd', 'prisma.cmd', 'tsx.cmd')
+  $missing = @($requiredExecutables | Where-Object { -not (Test-Path -LiteralPath (Join-Path $projectRoot "node_modules/.bin/$_") -PathType Leaf) })
+  if ($missing.Count) {
+    Write-Failure 'DEPENDENCIES_INCOMPLETE' "Required npm executables are missing ($($missing -join ', ')). Run setup.bat; the launcher will not reinstall packages."
+  }
+  $dependencyCheck = Join-Path $runtimeDirectory 'dependency-check.json'
+  & npm.cmd ls --workspaces --include=dev --depth=0 --json *> $dependencyCheck
+  if ($LASTEXITCODE -ne 0) {
+    Write-Failure 'DEPENDENCIES_INCOMPLETE' "Installed dependencies do not match package-lock.json. Run setup.bat; see $dependencyCheck"
+  }
+}
+
 New-Item -ItemType Directory -Path $runtimeDirectory -Force | Out-Null
 Write-Host 'Checking local prerequisites...'
+Assert-Dependencies
+if ($FrontendPort -ne 3000) {
+  Write-Failure 'FRONTEND_PORT_UNSUPPORTED' 'This launcher is restricted to frontend port 3000 because backend CSRF origin is configured as one exact trusted origin.'
+}
+$trustedFrontendOrigin = 'http://localhost:3000'
+if ($env:FRONTEND_ORIGIN -and $env:FRONTEND_ORIGIN -ne $trustedFrontendOrigin) {
+  Write-Failure 'FRONTEND_ORIGIN_MISMATCH' 'Process FRONTEND_ORIGIN must be exactly http://localhost:3000 for this launcher.'
+}
+if (-not $env:FRONTEND_ORIGIN) {
+  $frontendOriginLine = Get-Content -LiteralPath $backendEnv -ErrorAction SilentlyContinue | Where-Object { $_ -match '^\s*FRONTEND_ORIGIN\s*=' } | Select-Object -First 1
+  if ($frontendOriginLine) {
+    $configuredFrontendOrigin = ($frontendOriginLine -split '=', 2)[1].Trim().Trim('"').Trim("'")
+    if ($configuredFrontendOrigin -ne $trustedFrontendOrigin) {
+      Write-Failure 'FRONTEND_ORIGIN_MISMATCH' 'backend/.env FRONTEND_ORIGIN must be exactly http://localhost:3000 for this launcher.'
+    }
+  }
+}
 if (-not (Test-TcpPort 'localhost' $PostgresPort)) {
   Write-Failure 'POSTGRES_NOT_REACHABLE' "PostgreSQL is not reachable at localhost:$PostgresPort. Start the existing PostgreSQL 18 service and retry. No database process was started or stopped."
 }
@@ -238,17 +272,21 @@ if ($backendPids.Count -gt 1) {
   Write-Failure 'PORT_4000_OCCUPIED_BY_UNKNOWN_PROCESS' "multiple distinct processes own port $BackendPort ($($backendPids -join ', ')); none were stopped."
 }
 
-if ($backendPids.Count -eq 1 -and -not $backendHealthy) {
+if ($backendPids.Count -eq 1) {
   $ownerPid = [int]$backendPids[0]
   $snapshot = Get-ProcessSnapshot
   $verifiedRootPid = Get-VerifiedProjectRootPid $ownerPid $snapshot 'backend'
   if ($verifiedRootPid -le 0) {
     $label = Get-SafeProcessLabel $ownerPid $snapshot
-    Write-Failure 'PORT_4000_OCCUPIED_BY_UNKNOWN_PROCESS' "health did not return the Goctro backend response; $label. The process was left untouched."
+    Write-Failure 'PORT_4000_OCCUPIED_BY_UNKNOWN_PROCESS' "port $BackendPort is occupied by an unverified process ($label). It was left untouched; stop it manually or choose a free port."
   }
-  Write-Warning "Stale backend verified in the project process tree ($((Get-SafeProcessLabel $ownerPid $snapshot))); restarting that tree only."
-  Stop-VerifiedTree $verifiedRootPid $snapshot $BackendPort
-  $backendPids = @()
+  if (-not $backendHealthy) {
+    Write-Warning "Stale backend verified in the project process tree ($((Get-SafeProcessLabel $ownerPid $snapshot))); restarting that tree only."
+    Stop-VerifiedTree $verifiedRootPid $snapshot $BackendPort
+    $backendPids = @()
+  } else {
+    Write-Host "Backend          OK (healthy; verified project ownership; reused)"
+  }
 }
 
 if ($backendPids.Count -eq 0) {
@@ -264,7 +302,7 @@ if ($backendPids.Count -eq 0) {
   }
   Write-Host 'Backend          OK (started)'
 } else {
-  Write-Host 'Backend          OK (already healthy; reused)'
+  Write-Host 'Backend          OK (already healthy; verified project ownership; reused)'
 }
 
 $dbHealth = Invoke-LocalGet "$backendUrl/api/health/db" 4
@@ -320,7 +358,7 @@ if ($frontendPids.Count -eq 0) {
   Write-Host 'Frontend         OK (already healthy; reused)'
 }
 
-$csrf = Invoke-LocalGet "$backendUrl/api/v1/auth/csrf" 4 'http://localhost:3000'
+$csrf = Invoke-LocalGet "$backendUrl/api/v1/auth/csrf" 4 $trustedFrontendOrigin
 if ($csrf.Status -ne 200) { Write-Failure 'BACKEND_START_FAILED' "CSRF bootstrap returned HTTP $($csrf.Status)." }
 try {
   $csrfBody = $csrf.Body | ConvertFrom-Json
@@ -328,7 +366,7 @@ try {
 } catch { Write-Failure 'BACKEND_START_FAILED' 'CSRF endpoint returned an unreadable response.' }
 $csrfAllowOrigin = [string]$csrf.Headers['Access-Control-Allow-Origin']
 $csrfAllowCredentials = [string]$csrf.Headers['Access-Control-Allow-Credentials']
-if ($csrfAllowOrigin -ne 'http://localhost:3000' -or $csrfAllowCredentials -ne 'true') {
+if ($csrfAllowOrigin -ne $trustedFrontendOrigin -or $csrfAllowCredentials -ne 'true') {
   Write-Failure 'BACKEND_START_FAILED' 'CSRF endpoint did not allow the expected frontend origin with credentials.'
 }
 

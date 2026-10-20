@@ -2,8 +2,21 @@
 setlocal EnableExtensions
 cd /d "%~dp0"
 
-if not exist "node_modules" (
-  echo Dependencies are not installed. Run setup.bat first.
+if not exist "package-lock.json" (
+  echo package-lock.json is missing. Re-clone the project and run setup.bat.
+  goto :failed
+)
+
+where node >nul 2>nul
+if errorlevel 1 (
+  echo Node.js is missing. Install the required Node.js version, then run setup.bat.
+  goto :failed
+)
+
+echo Validating installed dependencies...
+call npm ls --workspaces --include=dev --depth=0 --json >nul 2>nul
+if errorlevel 1 (
+  echo Dependencies are incomplete or do not match package-lock.json. Run setup.bat first.
   goto :failed
 )
 
