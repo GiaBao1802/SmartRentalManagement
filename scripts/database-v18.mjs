@@ -5,7 +5,13 @@ import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 
 export const baselineDirectory = fileURLToPath(new URL('../database/baselines/v1.8/', import.meta.url));
-export class SetupError extends Error {}
+export class SetupError extends Error {
+  constructor(message, kind = null) {
+    super(message);
+    this.name = 'SetupError';
+    this.kind = kind;
+  }
+}
 const hash = (value) => createHash('sha256').update(value).digest('hex');
 const quote = (value) => '"' + value.replaceAll('"', '""') + '"';
 
@@ -83,8 +89,44 @@ export async function readCatalog(client) {
   return result;
 }
 
+const routineCommentVariants = {
+  room_images_lock_parent_before_insert_fn: [
+    `    -- Fail fast if another transaction is inserting into this Room. A waiting\n    -- INSERT would retain its original statement snapshot after the row lock\n    -- is released and could miss the committed association in its count check.\n`,
+    `    -- Fail fast rather than wait for a parent row lock: a blocked INSERT keeps\n    -- its original statement snapshot and may miss the competing committed row.\n`,
+    `    -- Updating updated_at both records the gallery mutation and makes a\n    -- transaction using a stale REPEATABLE READ snapshot fail serialization.\n`,
+    `    -- Update the parent version so a stale REPEATABLE READ transaction fails\n    -- with a serialization error instead of checking an old gallery snapshot.\n`,
+  ],
+};
+
+function normalizeRoutine(row) {
+  const variants = routineCommentVariants[row.name];
+  if (!variants) return row;
+  let definition = row.definition;
+  for (const comment of variants) definition = definition.replace(comment, '');
+  return { ...row, definition };
+}
+
+export function normalizeCatalog(catalog) {
+  const normalized = {};
+  for (const [key, rows] of Object.entries(catalog)) {
+    normalized[key] = rows.map((row) => {
+      const copy = { ...row };
+      if (key === 'columns') delete copy.position;
+      return key === 'routines' ? normalizeRoutine(copy) : copy;
+    }).sort((a, b) => {
+      const left = JSON.stringify(a), right = JSON.stringify(b);
+      return left < right ? -1 : left > right ? 1 : 0;
+    });
+  }
+  return normalized;
+}
+
+export function catalogsMatch(actual, expected) {
+  return JSON.stringify(normalizeCatalog(actual)) === JSON.stringify(normalizeCatalog(expected));
+}
+
 export function assertCatalog(actual, expected) {
-  if (JSON.stringify(actual) !== JSON.stringify(expected)) throw new SetupError('Schema differs from the reviewed V1.8 catalog (including migration history/constraints/indexes/triggers). Stop and review the existing database; bootstrap is not an upgrade.');
+  if (!catalogsMatch(actual, expected)) throw new SetupError('Schema differs from the reviewed V1.8 catalog (including migration history/constraints/indexes/triggers). Stop and review the existing database; bootstrap is not an upgrade.', 'schema');
 }
 
 async function assertPublicOnly(client) {
@@ -105,6 +147,37 @@ export async function assertEmptyTables(client, catalog) {
     const { rows } = await client.query(`SELECT EXISTS(SELECT 1 FROM public.${quote(table)} LIMIT 1) AS populated`);
     if (rows[0].populated) throw new SetupError(`Seed refused: application data exists in ${table}. Seed is one-shot, not an upsert/upgrade tool.`);
   }
+}
+
+export async function readDatabaseState(client, baseline) {
+  await assertPublicOnly(client);
+  const { rows: objectRows } = await client.query(`SELECT (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public') + (SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public') + (SELECT count(*) FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace WHERE n.nspname='public') AS count`);
+  if (Number(objectRows[0].count) === 0) return 'empty_schema';
+  const actual = await readCatalog(client);
+  if (!catalogsMatch(actual, baseline.catalog)) return 'incompatible';
+  const tables = baseline.catalog.relations.filter((r) => ['r', 'p'].includes(r.kind));
+  for (const table of tables) {
+    const { rows } = await client.query(`SELECT EXISTS(SELECT 1 FROM public.${quote(table.name)} LIMIT 1) AS populated`);
+    if (rows[0].populated) return 'v18_populated';
+  }
+  return 'v18_empty';
+}
+
+export function classifySetupError(error) {
+  if (error?.kind) return error.kind;
+  if (error?.code === '3D000') return 'missing';
+  if (['28P01', '28000', '42501'].includes(error?.code)) return 'auth';
+  if (['ECONNREFUSED', 'ETIMEDOUT', 'ENOTFOUND', 'EHOSTUNREACH', 'ECONNRESET'].includes(error?.code)) return 'connection';
+  if (/database .* does not exist/i.test(error?.message || '')) return 'missing';
+  if (/password authentication failed|authentication failed|no pg_hba\.conf entry|client password must be a string/i.test(error?.message || '')) return 'auth';
+  if (/connect ECONNREFUSED|connect ETIMEDOUT|ENOTFOUND/i.test(error?.message || '')) return 'connection';
+  if (/Schema differs|incompatible|Unexpected user schema/.test(error?.message || '')) return 'schema';
+  if (/Connected server identity|PostgreSQL 18\.6/.test(error?.message || '')) return 'target';
+  return 'unknown';
+}
+
+export function setupExitCode(kind) {
+  return { unknown: 1, missing: 2, auth: 3, connection: 4, schema: 5, target: 6 }[kind] || 1;
 }
 
 export async function applyDatabase(client, mode, baseline) {
@@ -136,7 +209,7 @@ export async function runCommand(args, env = process.env) {
   if (mode === 'block-legacy-migrate') {
     throw new SetupError('db:migrate is blocked: database/migrations is LEGACY/demo history, not Database V1.8. For a NEW EMPTY database use npm run db:bootstrap -- --database NAME, then db:seed. For existing data follow docs/10_operations/DATABASE_V1_8_SETUP.md; no automatic upgrade is supplied.');
   }
-  if (!['bootstrap', 'seed', 'inspect'].includes(mode) || flag !== '--database' || extra.length) throw new SetupError('Usage: database-v18.mjs bootstrap|seed|inspect --database NAME');
+  if (!['bootstrap', 'seed', 'inspect', 'state'].includes(mode) || flag !== '--database' || extra.length) throw new SetupError('Usage: database-v18.mjs bootstrap|seed|inspect|state --database NAME');
   const target = parseTarget(env.GOCTRO_SETUP_DATABASE_URL, database);
   const baseline = await loadBaseline();
   const client = new pg.Client({ connectionString: target.connectionString, connectionTimeoutMillis: 5000, application_name: 'goctro-v18-setup' });
@@ -151,6 +224,14 @@ export async function runCommand(args, env = process.env) {
       await assertPublicOnly(client);
       assertCatalog(await readCatalog(client), baseline.catalog);
       await client.query('ROLLBACK');
+    } else if (mode === 'state') {
+      await client.query('BEGIN READ ONLY');
+      await client.query('SET LOCAL search_path=public,pg_catalog');
+      const state = await readDatabaseState(client, baseline);
+      await client.query('ROLLBACK');
+      if (state === 'incompatible') throw new SetupError('Database state: schema_incompatible. Inspect the existing database; no write was attempted.', 'schema');
+      console.log(`Database state: ${state}; database=${target.database}; host=${target.host}; port=${target.port}. Read-only.`);
+      return;
     } else await applyDatabase(client, mode, baseline);
     console.log(`Database V1.8 ${mode}: PASS; database=${target.database}; host=${target.host}; port=${target.port}; tables=40. Credentials hidden.`);
   } finally { await client.end().catch(() => {}); }
@@ -158,7 +239,9 @@ export async function runCommand(args, env = process.env) {
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   runCommand(process.argv.slice(2)).catch((error) => {
+    const kind = classifySetupError(error);
+    console.error(`SETUP_ERROR kind=${kind}`);
     console.error(error instanceof SetupError ? error.message : `Database setup failed; SQLSTATE/error code=${error.code || 'UNAVAILABLE'}. Transaction rolled back if started. Connection strings and SQL detail are hidden.`);
-    process.exitCode = 1;
+    process.exitCode = setupExitCode(kind);
   });
 }

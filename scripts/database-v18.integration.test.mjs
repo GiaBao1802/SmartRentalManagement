@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import pg from 'pg';
 import { PrismaClient } from '@prisma/client';
-import { applyDatabase, baselineDirectory, loadBaseline, readCatalog, assertCatalog } from './database-v18.mjs';
+import { applyDatabase, baselineDirectory, loadBaseline, readCatalog, assertCatalog, readDatabaseState } from './database-v18.mjs';
 
 const adminUrl = process.env.GOCTRO_V18_TEST_ADMIN_URL;
 test('V1.8 real PostgreSQL bootstrap/seed and safety guards', { skip: !adminUrl }, async (t) => {
@@ -42,18 +42,25 @@ test('V1.8 real PostgreSQL bootstrap/seed and safety guards', { skip: !adminUrl 
   }
   try {
     const db = await createDatabase();
+    await t.test('state classifies an existing empty schema before bootstrap', async () => {
+      assert.equal((await readDatabaseState(db.client, baseline)), 'empty_schema');
+      assert.equal(cli('state', db).status, 0);
+      assert.match(cli('state', db).stdout, /empty_schema/);
+    });
     await t.test('empty database bootstrap runs the actual canonical SQL and creates 40 tables', async () => {
       const result = cli('bootstrap', db);
       assert.equal(result.status, 0, result.stderr);
       assert.equal(await countTables(db.client), 40);
       await db.client.query('SET search_path=public,pg_catalog');
       assertCatalog(await readCatalog(db.client), baseline.catalog);
+      assert.equal((await readDatabaseState(db.client, baseline)), 'v18_empty');
     });
     await t.test('seed accepts existing V1.8 schema with zero business rows', async () => {
       const result = cli('seed', db);
       assert.equal(result.status, 0, result.stderr);
       assert.equal((await db.client.query('SELECT count(*)::int AS n FROM owners')).rows[0].n, 2);
       assert.equal((await db.client.query('SELECT count(*)::int AS n FROM accounts')).rows[0].n, 6);
+      assert.equal((await readDatabaseState(db.client, baseline)), 'v18_populated');
     });
     await t.test('Prisma reads the actual seeded V1.8 relations', async () => {
       const prisma = new PrismaClient({ datasources: { db: { url: db.url } } });
@@ -106,7 +113,7 @@ test('V1.8 real PostgreSQL bootstrap/seed and safety guards', { skip: !adminUrl 
       assert.equal(cli('bootstrap', seededHistory).status, 0);
       await seededHistory.client.query('CREATE TABLE _prisma_migrations(id text)');
       const seed = cli('seed', seededHistory);
-      assert.equal(seed.status, 1);
+      assert.equal(seed.status, 5);
       assert.match(seed.stderr, /Schema differs/);
       assert.equal((await seededHistory.client.query('SELECT count(*)::int AS n FROM owners')).rows[0].n, 0);
     });
@@ -115,7 +122,7 @@ test('V1.8 real PostgreSQL bootstrap/seed and safety guards', { skip: !adminUrl 
       assert.equal(cli('bootstrap', drift).status, 0);
       await drift.client.query('DROP INDEX invoice_items_invoice_parking_assignment_unique');
       const result = cli('seed', drift);
-      assert.equal(result.status, 1);
+      assert.equal(result.status, 5);
       assert.match(result.stderr, /Schema differs/);
       assert.equal((await drift.client.query('SELECT count(*)::int AS n FROM owners')).rows[0].n, 0);
     });
@@ -139,6 +146,27 @@ test('V1.8 real PostgreSQL bootstrap/seed and safety guards', { skip: !adminUrl 
       assert.equal(cli('bootstrap', failure).status, 0);
       await assert.rejects(applyDatabase(failure.client, 'seed', { ...baseline, seedSql: baseline.seedSql + '\nSELECT missing_setup_test_function();' }));
       assert.equal((await failure.client.query('SELECT count(*)::int AS n FROM owners')).rows[0].n, 0);
+    });
+    await t.test('seed failure leaves a safe V1.8-empty state and retry succeeds', async () => {
+      const retry = await createDatabase();
+      assert.equal(cli('bootstrap', retry).status, 0);
+      const failingSeed = baseline.seedSql.replace(
+        'ON CONFLICT (owner_id) DO NOTHING;\n\nINSERT INTO properties',
+        'ON CONFLICT (owner_id) DO NOTHING;\nSELECT missing_setup_retry_function();\n\nINSERT INTO properties',
+      );
+      await assert.rejects(applyDatabase(retry.client, 'seed', { ...baseline, seedSql: failingSeed }));
+      assert.equal(await readDatabaseState(retry.client, baseline), 'v18_empty');
+      const retrySeed = cli('seed', retry);
+      assert.equal(retrySeed.status, 0, retrySeed.stderr);
+      assert.equal(await readDatabaseState(retry.client, baseline), 'v18_populated');
+    });
+    await t.test('logic-changing function drift is rejected while comment-only catalog normalization is accepted', async () => {
+      const drift = await createDatabase();
+      assert.equal(cli('bootstrap', drift).status, 0);
+      await drift.client.query(`CREATE OR REPLACE FUNCTION public.room_images_lock_parent_before_insert_fn() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN OLD; END; $$`);
+      const result = cli('inspect', drift);
+      assert.equal(result.status, 5);
+      assert.match(result.stderr, /Schema differs/);
     });
   } finally {
     for (const client of clients) await client.end();

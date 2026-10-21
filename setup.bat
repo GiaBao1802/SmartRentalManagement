@@ -73,6 +73,13 @@ if errorlevel 1 (
   echo ERROR: Dependency installation failed. Check the npm output above and retry setup.bat.
   goto :failed
 )
+if /I not "%GOCTRO_SETUP_TEST%"=="1" (
+  node -e "require.resolve('pg'); require.resolve('@prisma/client')"
+  if errorlevel 1 (
+    echo ERROR: Locked dependencies are incomplete after npm ci. Stop running app processes and retry setup.bat.
+    goto :failed
+  )
+)
 
 echo.
 if /I "%GOCTRO_SETUP_TEST%"=="1" goto :test_complete

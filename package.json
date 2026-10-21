@@ -18,6 +18,7 @@
     "db:down": "docker compose --env-file .env stop postgres18",
     "db:bootstrap": "node scripts/database-v18.mjs bootstrap",
     "db:inspect": "node scripts/database-v18.mjs inspect",
+    "db:state": "node scripts/database-v18.mjs state",
     "db:validate": "npm run db:validate --workspace=@goctro/backend",
     "test:db-setup": "node --test scripts/database-v18.test.mjs",
     "test:db-setup:runtime": "node --test scripts/database-v18.integration.test.mjs",

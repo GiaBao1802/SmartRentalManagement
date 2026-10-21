@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { baselineDirectory, parseTarget, unwrapTransaction, loadBaseline, readCatalog, assertCatalog, runCommand } from './database-v18.mjs';
+import { baselineDirectory, parseTarget, unwrapTransaction, loadBaseline, readCatalog, assertCatalog, catalogsMatch, classifySetupError, setupExitCode, runCommand } from './database-v18.mjs';
 
 async function removeTemporary(directory) {
   const resolved = path.resolve(directory);
@@ -51,6 +51,32 @@ test('catalog comparison order is independent of server collation', async () => 
   const second = await readCatalog({ query: async () => ({ rows: [...rows].reverse() }) });
   assertCatalog(first, second);
 });
+test('catalog comparison ignores physical column order but keeps semantic column attributes', () => {
+  const expected = { columns: [
+    { relation: 'residents', name: 'birth_date', position: 7, type: 'date', not_null: false, identity: '', generated: '', default_value: null },
+    { relation: 'residents', name: 'avatar_storage_key', position: 8, type: 'text', not_null: false, identity: '', generated: '', default_value: null },
+  ] };
+  const reordered = { columns: [
+    { ...expected.columns[1], position: 14 },
+    { ...expected.columns[0], position: 7 },
+  ] };
+  assert.equal(catalogsMatch(reordered, expected), true);
+  assert.throws(() => assertCatalog({ columns: [{ ...expected.columns[0], type: 'timestamp' }, expected.columns[1]] }, expected), /differs/);
+});
+test('only the reviewed room-image routine comment variants are normalized', async () => {
+  const baseline = await loadBaseline();
+  const expected = baseline.catalog.routines.find((row) => row.name === 'room_images_lock_parent_before_insert_fn');
+  const commentOnly = expected.definition.replace('Fail fast if another transaction is inserting into this Room. A waiting\n    -- INSERT would retain its original statement snapshot after the row lock\n    -- is released and could miss the committed association in its count check.', 'Fail fast rather than wait for a parent row lock: a blocked INSERT keeps\n    -- its original statement snapshot and may miss the competing committed row.').replace('Updating updated_at both records the gallery mutation and makes a\n    -- transaction using a stale REPEATABLE READ snapshot fail serialization.', 'Update the parent version so a stale REPEATABLE READ transaction fails\n    -- with a serialization error instead of checking an old gallery snapshot.');
+  assert.equal(catalogsMatch({ routines: [{ ...expected, definition: commentOnly }] }, { routines: [expected] }), true);
+  assert.equal(catalogsMatch({ routines: [{ ...expected, definition: commentOnly.replace('RETURN NEW;', 'RETURN OLD;') }] }, { routines: [expected] }), false);
+});
+test('setup error classes have distinct guarded exit codes', () => {
+  assert.equal(setupExitCode(classifySetupError({ code: '3D000' })), 2);
+  assert.equal(setupExitCode(classifySetupError(new Error('database "missing" does not exist'))), 2);
+  assert.equal(setupExitCode(classifySetupError({ code: '28P01' })), 3);
+  assert.equal(setupExitCode(classifySetupError({ code: 'ECONNREFUSED' })), 4);
+  assert.equal(setupExitCode(classifySetupError(new Error('Schema differs from the reviewed V1.8 catalog'))), 5);
+});
 test('legacy migration exits nonzero without reading connection configuration', () => {
   const entry = fileURLToPath(new URL('./database-v18.mjs', import.meta.url));
   const result = spawnSync(process.execPath, [entry, 'block-legacy-migrate'], { encoding: 'utf8', env: { ...process.env, GOCTRO_SETUP_DATABASE_URL: 'not-used' } });
@@ -71,6 +97,7 @@ test('Compose and npm commands use the new V1.8 path and separate PG18 volume', 
     assert.match(scripts['db:migrate'], /block-legacy-migrate$/);
     assert.match(scripts['db:generate'], /schema\.prisma|workspace=@goctro\/backend/);
   }
+  assert.match(JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8')).scripts['db:state'], /database-v18\.mjs state$/);
 });
 
 test('Windows setup continues after npm and preserves existing local env files', { skip: process.platform !== 'win32' }, async () => {
