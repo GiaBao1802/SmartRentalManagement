@@ -16,6 +16,14 @@ $backendLog = Join-Path $runtimeDirectory 'backend.log'
 $frontendLog = Join-Path $runtimeDirectory 'frontend.log'
 $backendUrl = "http://127.0.0.1:$BackendPort"
 $frontendUrl = "http://localhost:$FrontendPort"
+$testDatabaseUrl = $env:GOCTRO_SETUP_TEST_DATABASE_URL
+if ($testDatabaseUrl) {
+  try { $testDatabaseUri = [Uri]::new($testDatabaseUrl) } catch { Write-Failure 'BACKEND_START_FAILED' 'GOCTRO_SETUP_TEST_DATABASE_URL is invalid.' }
+  if ($testDatabaseUri.Host -notin @('localhost', '127.0.0.1', '::1') -or $testDatabaseUri.Port -le 0) {
+    Write-Failure 'BACKEND_START_FAILED' 'GOCTRO_SETUP_TEST_DATABASE_URL must target local PostgreSQL.'
+  }
+  $PostgresPort = $testDatabaseUri.Port
+}
 
 function Write-Failure([string] $Code, [string] $Message) {
   Write-Host "$Code`: $Message" -ForegroundColor Red
@@ -251,7 +259,8 @@ try {
 } catch {
   Write-Failure 'BACKEND_START_FAILED' 'DATABASE_URL is not a valid PostgreSQL connection URL. The value will not be printed.'
 }
-if ($databaseUri.Host -notin @('localhost', '127.0.0.1', '::1') -or $databaseUri.Port -ne $PostgresPort -or $databaseName -ne 'Goctro_test3') {
+ $isDisposableTestTarget = $testDatabaseUrl -and $databaseUri.AbsoluteUri -eq $testDatabaseUri.AbsoluteUri -and $databaseName -like 'goctro_setup_test_*'
+if (-not $isDisposableTestTarget -and ($databaseUri.Host -notin @('localhost', '127.0.0.1', '::1') -or $databaseUri.Port -ne $PostgresPort -or $databaseName -ne 'Goctro_test3')) {
   $actualTarget = "host=$($databaseUri.Host); port=$($databaseUri.Port); database=$databaseName; source=$databaseSource"
   Write-Failure 'BACKEND_START_FAILED' "configured database target must be localhost:$PostgresPort/Goctro_test3. Found $actualTarget. Credentials are not displayed."
 }

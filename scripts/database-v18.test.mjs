@@ -85,14 +85,13 @@ test('Windows setup continues after npm and preserves existing local env files',
     await writeFile(path.join(temporary, 'package.json'), '{}');
     await writeFile(path.join(temporary, 'bin/npm.cmd'), '@echo off\r\nif "%~1"=="--version" (\r\n echo 11.6.0\r\n exit /b 0\r\n)\r\necho %*>>npm-steps.log\r\nexit /b 0\r\n');
     const key = Object.keys(process.env).find((k) => k.toLowerCase() === 'path') || 'Path';
-    const env = { ...process.env, [key]: `${path.join(temporary, 'bin')}${path.delimiter}${process.env[key] || ''}` };
+    const env = { ...process.env, GOCTRO_SETUP_TEST: '1', [key]: `${path.join(temporary, 'bin')}${path.delimiter}${process.env[key] || ''}` };
     const run = () => spawnSync(process.env.ComSpec || 'cmd.exe', ['/d', '/c', 'setup.bat'], { cwd: temporary, env, input: '\r\n', encoding: 'utf8', timeout: 20000 });
     const first = run();
     assert.equal(first.status, 0, first.stdout + first.stderr);
     assert.match(first.stdout, /Setup complete/);
     const steps = await readFile(path.join(temporary, 'npm-steps.log'), 'utf8');
     assert.match(steps, /ci/);
-    assert.match(steps, /run db:generate/);
     for (const filename of ['.env', 'backend/.env', 'frontend/.env.local']) await access(path.join(temporary, filename));
     await writeFile(path.join(temporary, '.env'), 'PRESERVE_ROOT=1');
     await writeFile(path.join(temporary, 'backend/.env'), 'PRESERVE_BACKEND=1');

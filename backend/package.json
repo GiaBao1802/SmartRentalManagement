@@ -13,6 +13,7 @@
     "test:accounts:runtime": "tsx --test src/accounts/account.postgres.integration.test.ts",
     "test:legacy-retirement": "tsx --test src/legacy-retirement.test.ts",
     "dev:provision-admin": "tsx scripts/provision-dev-admin.ts",
+    "dev:provision-credentials": "tsx scripts/provision-dev-admin.ts",
     "test:property-room": "tsx --test src/properties/property-room.test.ts",
     "test:resident-occupancy": "tsx --test src/residents/resident.test.ts",
     "test:room-images": "tsx --test src/room-images/room-image.test.ts src/room-images/room-image.repository.test.ts src/room-images/room-image.routes.test.ts",

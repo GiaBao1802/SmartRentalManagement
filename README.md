@@ -19,7 +19,7 @@ Giữ Public Explorer → chi tiết phòng → liên hệ; Auth/Accounts/invita
 
 ## A. Máy mới / database mới
 
-1. `npm ci` (hoặc `setup.bat` trên Windows để tạo env templates khi thiếu và cài/generate dependencies).
+1. `npm ci` (hoặc `setup.bat` trên Windows để tạo env templates khi thiếu, cài dependency, setup/inspect database V1.8, provision credential DEV và khởi động app).
 2. Copy root `.env.example` → `.env`, `backend/.env.example` → `backend/.env`, `frontend/.env.example` → `frontend/.env.local` **chỉ khi file chưa tồn tại**. Đặt password local riêng và secrets cần thiết; đồng bộ backend URL với instance. Không commit env thật.
 3. Nếu dùng Docker: `npm run db:up`. Service `postgres18` dùng image `postgres:18.6`, volume mới `goctro_pg18_v18_data`, mount `/var/lib/postgresql`; không tái dùng PG17 volume. Nếu đã có PostgreSQL native, dùng đúng instance và tạo database trống riêng thay vì chạy thêm container trùng cổng.
 4. Cấp URL setup riêng rồi bootstrap/seed theo thứ tự:

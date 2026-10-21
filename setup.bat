@@ -75,23 +75,16 @@ if errorlevel 1 (
 )
 
 echo.
-echo Generating the Prisma client (does not connect to or modify PostgreSQL)...
-call npm run db:generate
-if errorlevel 1 (
-  echo ERROR: Prisma client generation failed. Check backend\.env and the npm output above.
-  goto :failed
-)
+if /I "%GOCTRO_SETUP_TEST%"=="1" goto :test_complete
+echo Launching interactive database, credential, Prisma and app setup...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\setup-interactive.ps1"
+if errorlevel 1 goto :failed
+echo.
+pause
+exit /b 0
 
-echo.
+:test_complete
 echo Setup complete.
-echo Before launch, configure backend\.env DATABASE_URL for a local PostgreSQL 18 database
-echo containing the project's Database V1.8 schema. Do not use a shared/production database.
-echo The launcher currently expects localhost:5432/Goctro_test3.
-echo Database provisioning is not included: this setup does not run migrations, schema SQL, or seed.
-echo Follow docs\10_operations\DATABASE_V1_8_SETUP.md for guarded db:bootstrap and db:seed.
-echo The old db:migrate command is blocked because its Prisma history belongs to the legacy demo.
-echo When the local database is ready, double-click launch.bat.
-echo.
 pause
 exit /b 0
 
