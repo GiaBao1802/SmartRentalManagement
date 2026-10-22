@@ -1,2 +1,2 @@
-/database/baselines/v1.8/*.sql text eol=lf
-/database/baselines/v1.8/*.json text eol=lf
+/database/baselines/v1.8/*.sql -text
+/database/baselines/v1.8/*.json -text
