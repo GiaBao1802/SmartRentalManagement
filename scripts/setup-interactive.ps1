@@ -31,7 +31,6 @@ Write-Host "Database target: host=$($uri.Host); port=$($uri.Port); database=$db"
 if (-not (Yes 'Confirm this database target before inspection/setup?')) { Fail 'Database target was not confirmed.' }
 $env:GOCTRO_SETUP_DATABASE_URL = $dbUrl
 $dataState = $null
-$seededBySetup = $false
 try {
   $stateExit = Invoke-Db 'state' $db
   if ($stateExit -eq 2) {
@@ -61,13 +60,13 @@ try {
     $dataState = 'v18_empty'
   }
   if ($dataState -eq 'v18_empty') {
-    if (Yes 'Seed the empty V1.8 schema with sample data?') { $seedExit = Invoke-Db 'seed' $db; if ($seedExit -ne 0) { Fail 'Bootstrap is complete but seed failed; no dependent steps ran. Rerun after fixing the seed cause; the safe state is V1.8 schema with empty tables.' }; $dataState = 'v18_populated'; $seededBySetup = $true } else { Write-Host 'Seed skipped; no application data was written.' }
+    if (Yes 'Seed the empty V1.8 schema with sample data?') { $seedExit = Invoke-Db 'seed' $db; if ($seedExit -ne 0) { Fail 'Bootstrap is complete but seed failed; no dependent steps ran. Rerun after fixing the seed cause; the safe state is V1.8 schema with empty tables.' }; $dataState = 'v18_populated' } else { Write-Host 'Seed skipped; no application data was written.' }
   }
   if ($dataState -eq 'v18_populated') { Write-Host 'Compatible populated V1.8 database detected; bootstrap and seed were skipped. Existing credentials were preserved.' }
   if ($dataState -notin @('v18_empty', 'v18_populated')) { Fail "Unexpected database state '$dataState'; no dependent steps ran." }
 } finally { Remove-Item Env:GOCTRO_SETUP_DATABASE_URL -ErrorAction SilentlyContinue }
 if ($testOverride) { $bytes = New-Object byte[] 32; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes); $env:SESSION_SECRET = [Convert]::ToBase64String($bytes); $env:DATABASE_URL = $dbUrl; $env:NODE_ENV = 'development' }
-if (-not $SkipCredential -and $seededBySetup -and (Yes 'Provision or reset DEV email credentials now?')) { $env:DATABASE_URL = $dbUrl; $env:NODE_ENV = 'development'; npm run dev:provision-credentials --workspace=@goctro/backend; if ($LASTEXITCODE -ne 0) { Fail 'Credential provisioning failed; startup skipped.' }; if (-not $testOverride) { Remove-Item Env:DATABASE_URL -ErrorAction SilentlyContinue } } else { Write-Host 'Credential provisioning skipped. Existing credentials were not changed.' }
+if (-not $SkipCredential -and (Yes 'Provision or reset DEV email credentials now?')) { $env:DATABASE_URL = $dbUrl; $env:NODE_ENV = 'development'; npm run dev:provision-credentials --workspace=@goctro/backend; if ($LASTEXITCODE -ne 0) { Fail 'Credential provisioning failed; startup skipped.' }; if (-not $testOverride) { Remove-Item Env:DATABASE_URL -ErrorAction SilentlyContinue } } else { Write-Host 'Credential provisioning skipped. Existing credentials were not changed.' }
 npm run db:generate; if ($LASTEXITCODE -ne 0) { Fail 'Prisma generation failed; startup skipped.' }
 npm run dev:all; if ($LASTEXITCODE -ne 0) { Fail 'Application startup failed.' }
 Write-Host 'Setup completed. Login: http://localhost:3000/login' -ForegroundColor Green
