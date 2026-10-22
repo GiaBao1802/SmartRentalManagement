@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 import { baselineDirectory, parseTarget, unwrapTransaction, loadBaseline, readCatalog, assertCatalog, catalogsMatch, classifySetupError, setupExitCode, runCommand } from './database-v18.mjs';
 
 async function removeTemporary(directory) {
@@ -41,6 +42,13 @@ test('reviewed artifacts load and tampering fails closed', async () => {
     await appendFile(path.join(temporary, 'seed.sql'), '\n-- unreviewed edit');
     await assert.rejects(loadBaseline(temporary), /integrity mismatch/);
   } finally { await removeTemporary(temporary); }
+});
+test('every artifact recorded in provenance retains its reviewed raw bytes', async () => {
+  const manifest = JSON.parse(await readFile(path.join(baselineDirectory, 'PROVENANCE.json'), 'utf8'));
+  for (const [filename, expected] of Object.entries(manifest.sha256)) {
+    const bytes = await readFile(path.join(baselineDirectory, filename));
+    assert.equal(createHash('sha256').update(bytes).digest('hex'), expected, filename);
+  }
 });
 test('catalog drift in a constraint/index is rejected', () => {
   assert.throws(() => assertCatalog({ indexes: [] }, { indexes: ['expected'] }), /differs/);
