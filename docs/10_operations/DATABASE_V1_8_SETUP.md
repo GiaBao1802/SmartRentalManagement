@@ -62,17 +62,106 @@ Seed là tùy chọn cho DB mới; bỏ bước seed nếu muốn dữ liệu ng
 
 Kiểm tra artifact offline bằng `npm.cmd run db:verify-artifacts` trước setup: lệnh đối chiếu raw-byte SHA-256 của toàn bộ 9 artifact trong `PROVENANCE.json` với working tree và Git HEAD, đồng thời kiểm tra attribute `text` đã unset. Không kết nối database và không cần dependency npm. Toàn bộ cây `database/baselines/v1.8/**` dùng `-text` để giữ đúng bytes reviewed (kể cả line ending hỗn hợp); không normalize LF/CRLF hoặc regenerate hash để vượt guard. Trước khi phát hành, chạy lại lệnh trên checkout sạch của commit cần push, kể cả khi Git status ở workspace chính không báo artifact modified.
 
-Trên Windows, `setup.bat` gọi helper tương tác để kiểm tra target local, phân loại trạng thái database bằng truy vấn READ ONLY, bootstrap/seed khi người dùng xác nhận đúng nhánh, cho chọn provision/reset credential và khởi động qua `dev:all`. Không ghi đè env có sẵn âm thầm. Database chưa tồn tại mới được hỏi tạo rồi gọi `createdb`; database có public schema trống được hỏi bootstrap trực tiếp, không tạo lại database; schema không tương thích, lỗi auth/kết nối hoặc target identity sai đều dừng trước mọi ghi. Schema V1.8 trống được hỏi seed; database V1.8 đã có dữ liệu bỏ qua bootstrap/seed nhưng vẫn cho mở luồng credential. `INITIAL` không ghi đè credential đã provision; `RESET` là lựa chọn riêng và yêu cầu xác nhận của công cụ.
+Trên Windows, `setup.bat` có menu tiếng Việt: **Cài đặt lần đầu**, **Cập nhật và khởi động**, **Thoát**. Batch đặt codepage UTF-8; helper PowerShell có BOM UTF-8 để Windows PowerShell 5.1 đọc đúng dấu. Cửa sổ được giữ khi kết thúc/lỗi. Không có guard npm-stub/test-mode bỏ qua kiểm tra thật. Không ghi đè env hiện có; env backend mới được tạo với session secret và key local ngẫu nhiên. Không dùng mật khẩu demo làm secret.
+
+Chế độ cài lần đầu phân loại database READ ONLY. Database chưa tồn tại mới được hỏi tạo rồi gọi `createdb`; tìm PATH, Program Files PostgreSQL 18 và Windows service executable trước khi báo thiếu tooling. Database có public schema trống được hỏi bootstrap trực tiếp; V1.8 trống được hỏi seed; database có dữ liệu giữ nguyên, mặc định giữ credential. Schema drift báo nhóm/object/thuộc tính khác rồi dừng; lỗi quyền/kết nối không dẫn sang tạo/seed. Không tự cài PostgreSQL hoặc nâng cấp schema.
+
+Chế độ cập nhật yêu cầu người dùng tự pull Git trước. Không tạo database/bootstrap/seed/migration/reset. Dấu vết dependency hash cả ba package manifests, lockfile, Node/npm/platform/arch và cài đặt npm liên quan; kết hợp kiểm tra dependency thật, không chỉ kiểm tra node_modules tồn tại. Chỉ ghi dấu thành công sau npm ci và validation. Dấu vết Prisma xét mapping/tooling và client bị thiếu. Dấu vết runtime xét code/env; restart chỉ process đã xác minh thuộc project, theo PID/thời điểm khởi động và target đã ghi nhận, không lấy health của process cũ làm bằng chứng bản mới chạy.
 
 `npm run db:state -- --database NAME` là phép kiểm tra READ ONLY hỗ trợ helper: trả `empty_schema`, `v18_empty` hoặc `v18_populated`; schema drift trả lỗi `schema_incompatible`. `npm run db:inspect` vẫn là kiểm tra catalog nghiêm ngặt. So sánh catalog không dùng thứ tự vật lý cột; vẫn so tên, kiểu, default, nullability, identity/generated và các cấu trúc khác. Hai biến thể comment đã được xác minh của riêng `room_images_lock_parent_before_insert_fn` được đối chiếu tương đương; function logic, constraint, index, trigger hoặc thuộc tính khác thay đổi vẫn bị chặn. Không xóa comment bằng regex trên SQL/function body.
 
-Sau khi bootstrap và seed V1.8 trên database local/dev PostgreSQL 18, chạy PowerShell `$env:NODE_ENV='development'; npm run dev:provision-credentials --workspace=@goctro/backend` (bí danh cũ `dev:provision-admin` vẫn dùng được). Công cụ yêu cầu `NODE_ENV=development`, loopback:5432, database không phải database hệ thống, đúng catalog V1.8 (40 bảng), rồi yêu cầu chọn rõ `INITIAL` hoặc `RESET` và nhập/xác nhận riêng hai mật khẩu ẩn, dài 12–1024 ký tự. Cặp được hỗ trợ là Admin `admin.one@example.test` và Resident `resident.one@example.test` (profile 1001); profile này có số `+84000000101` trong seed nhưng số đó không hợp lệ theo Auth V1, nên công cụ không nới validation và dùng email làm định danh Resident fallback. Resident 1001 phải có occupancy active và hợp đồng active. `INITIAL` từ chối nếu credential đã có dấu hiệu được provision; `RESET` bắt buộc gõ đúng tên database để xác nhận. Công cụ chỉ cập nhật hai Account tồn tại trong một transaction, không mở khóa, đổi role, đổi status, tạo Account hay lưu mật khẩu thuần. Không dùng trên account thật.
+Sau seed mới, setup tự gọi công cụ provision với `INITIAL`, target chính xác và mật khẩu demo **`Goctro123456789`**. Dùng `hashPassword`/`verifyPassword` hiện hành và policy 12–1024 ký tự. Chỉ hỗ trợ Admin `admin.one@example.test` (Account 1/Owner 1) và Resident `resident.one@example.test` (Account 2/profile 1001, cùng Owner và có occupancy/hợp đồng active). Phone fixture `+84000000101` không được Auth V1 chấp nhận; giữ validation production và dùng email. Guard kiểm tra NODE_ENV development, URL local, identity server, catalog V1.8 và liên kết trước ghi. Transaction cập nhật đúng hai Account, giữ role/status/hồ sơ, không tạo Account. INITIAL chỉ cho phép hai hash khớp chính xác seed reviewed; verify được demo password cho biết đã provision, các trường hợp khác là unknown/partial và bị từ chối INITIAL.
 
-Sau khi cấu hình backend đúng database đã dựng, chạy `npm run dev:all` (hoặc `launch.bat`). Kiểm tra `http://localhost:4000/api/health`, `/api/health/db`, `/api/v1/auth/csrf` và frontend `http://localhost:3000`. Launcher hiện cố định DB `localhost:5432/Goctro_test3`; nếu chủ động dùng port/tên DB khác cho development, cấu hình backend tương ứng và dùng `npm run dev`, không bỏ guard launcher một cách âm thầm.
+Database populated luôn giữ credential, kể cả khi có hash seed. Không còn câu hỏi RESET trong cả hai nhánh menu. RESET là công cụ riêng, chỉ dành dev: `npm.cmd run dev:provision-credentials --workspace=@goctro/backend -- --mode RESET --database NAME --confirm-target HOST:PORT/NAME --confirm-reset "RESET HOST:PORT/NAME admin.one@example.test resident.one@example.test"`. Phải tự thay NAME/HOST/PORT bằng đúng target đã kiểm tra; không dùng lệnh này như bước cập nhật thông thường. INITIAL dùng cùng CLI với `--mode INITIAL`, không `--confirm-reset`, chỉ khi có bằng chứng hai credential seed nguyên vẹn. STATUS chỉ đọc để kiểm tra; unknown/partial phải review và xác nhận RESET riêng. Không tự provision khi chạy lại menu. Mật khẩu demo chỉ cho local/dev, không dùng cho DB/session/production; chỉ hiện khi vừa provision/reset thành công.
 
-`setup.bat` hỗ trợ tạo templates khi thiếu, `npm ci`, generate Prisma; nó không chạy SQL/migration/seed tự động. Đã dùng `call npm` để batch Windows tiếp tục sau từng lệnh. Khi Prisma generate báo DLL `EPERM`, dừng đúng process của project đang giữ engine rồi chạy lại theo quy trình vận hành của bạn; không kill toàn bộ Node. Generate không kết nối DB. Lượt audit xác nhận PID 536 đang giữ DLL, nên không thay thế client tại chỗ; generation vào output thử nghiệm riêng được kiểm tra riêng.
+Startup dùng menu setup, hỗ trợ target local/dev đã xác nhận với tên/cổng khác (ví dụ `Goctro_dev_v18`); không khóa tên database và không cần override test. Kiểm tra `http://localhost:4000/api/health`, `/api/health/db`, `/api/v1/auth/csrf`, frontend `http://localhost:3000` và CORS đúng trusted origin. Không chạy thêm launcher sau setup; dùng mục cập nhật để khởi động lại.
+
+Nếu seed thành công nhưng provision/generate/startup lỗi, phần đã hoàn thành được báo rõ; chạy lại không seed lặp. Nếu bootstrap xong nhưng seed rollback, lần sau nhận V1.8 empty và có thể seed lại sau khi khắc phục nguyên nhân. Prisma EPERM/DLL chỉ xử lý process project được xác minh, không kill toàn bộ Node/PostgreSQL. Provider và storage chưa cấu hình được ghi rõ ở thông báo cuối.
+
+Cấu hình kiểm thử riêng: `GOCTRO_SETUP_CONFIG_DIR` trỏ tới thư mục ignored có `backend.env` và `frontend.env`. Guard bắt buộc role `v18_smoke`, loopback, cổng khác 5432 và tên `goctro_setup_test_*`; env thật không được dùng thay thế. Để rehearsal nhánh cài lần đầu mà không chiếm 5432, đặt thêm `GOCTRO_SETUP_REHEARSAL_DEFAULT=1`: chỉ sau khi guard disposable trên PASS mới ánh xạ tuple mặc định sang fixture. Flag không có config riêng hoặc giá trị khác 1 bị từ chối. Menu in rõ đây là kiểm thử, không phải bằng chứng runtime bộ mặc định 5432/postgres. Không bỏ kiểm tra schema/identity/account/dependency. Không dùng các biến kiểm thử này trên máy người dùng; dấu vết/log trong runtime của config riêng, không đưa lên Git.
+
+### Quyết định cuối về cấu hình — 2026-10-23
+
+Cài lần đầu cố định `localhost:5432`, role `postgres`, database `Goctro_dev_v18`; chỉ hỏi mật khẩu PostgreSQL ẩn khi thiếu, không hỏi host/cổng/user/database hoặc đổi cấu hình. Env mới có secret ngẫu nhiên. Env hiện có chỉ được bổ sung mật khẩu PostgreSQL còn thiếu khi đúng tuple; các giá trị khác giữ nguyên. Sai tuple dừng trước tạo env phụ/dependency/inspection và hướng dẫn dùng Cập nhật. Update giữ nguyên mọi target local/development được guard chấp nhận, kể cả database cũ; không tự tạo/bootstrap/seed/provision/reset và không hỏi lại password đã lưu. Database thiếu ở target khác phải xử lý cấu hình hiện tại, không chuyển mặc định. Kết nối/auth lỗi dừng, không đổi PostgreSQL. Không chạy launcher khác sau setup.
+
+Bảng kiểm chứng bên dưới ghi lại phiên bản menu trước quyết định rút gọn (đã có wizard và RESET trong cài lần đầu). Không dùng bằng chứng đó thay thế kiểm chứng bản cuối; kết quả bản cuối được bổ sung riêng.
+
+### Kiểm chứng bản cuối rút gọn — 2026-10-23
+
+Đã chạy lại trên native PostgreSQL 18.6 SCRAM disposable `127.0.0.1:55448`, role `v18_smoke`, database `goctro_setup_test_*`. Không truy vấn/ghi `Goctro_test3`, không sử dụng hoặc chiếm 5432, không thay env thật hay dừng PostgreSQL khác.
+
+| Phạm vi | Bằng chứng mới |
+|---|---|
+| Menu runtime | 12/12 tests PASS (11 subtests + wrapper), 13 lượt `setup.bat` qua terminal với stdin lập trình; khoảng 331 giây |
+| Fresh setup | Helper tạo DB chưa tồn tại → bootstrap → seed → INITIAL đúng hai Account có sẵn → Prisma generate → API/DB/CSRF/frontend health PASS; 6 Account seed, không tạo thêm Account |
+| Login/authorization | Email Admin và Resident HTTP 200 với demo password; Resident đọc rental profile 1001, gọi Admin Accounts bị 403. Đây là API login, không phải browser login |
+| Populated/rerun/update | Không seed/provision/reset, không hỏi mật khẩu web; credential/timestamps và số lượng các bảng kiểm tra giữ nguyên. Credential Admin tùy chỉnh vẫn login sau update; update không đổi giữ đúng PID. Lượt fresh được chạy update tiếp, bỏ qua ci/generate |
+| Cấu hình target khác | First-time không bật ánh xạ rehearsal bị từ chối trước password/install/DB; bytes env và snapshot credential/counts không đổi. Update thực tế chạy target disposable khác mặc định, không khóa tên DB |
+| Database thiếu | Update target khác mặc định báo cần xử lý cấu hình hiện tại, không tạo DB/chuyển target. First-time fixture thiếu DB có xác nhận và tạo qua createdb thật |
+| Auth/kết nối/drift | PostgreSQL sai password trả 28P01; cổng không có server trả ECONNREFUSED; table drift được báo cụ thể. Tất cả chặn tạo/seed/provision/generate/startup |
+| Dependency/cache | Cố ý thiếu executable: npm ci thật → generate → startup PASS, giữ credential/data kiểm tra. Các lượt không đổi bỏ qua npm ci/generate; cache fingerprint tests PASS |
+| RESET riêng | Không còn RESET prompt ở menu. Gọi helper riêng: sai xác nhận không ghi; đúng xác nhận chỉ đổi hai row credential, password riêng cũ bị 401/demo mới được 200 |
+| SQL/provision regression | 23/23 PASS: schema trống, V1.8 empty/populated, guards, thay logic function, INITIAL rerun/unknown/partial, RESET, credential rollback, bootstrap/seed rollback và retry; CORE 78/78, FIXTURE 171/171 |
+| Unit/prompt/config fixture | 18/18 PASS: bộ mặc định chính xác localhost/5432/postgres/Goctro_dev_v18, chỉ một SecureString prompt khi thiếu password, encode đúng ký tự reserved, bổ sung password không đổi giá trị khác; thiếu env; giữ target Goctro_test3 trong fixture không kết nối; không có wizard; npm ci lỗi chặn dependency; ownership PID; test seam không config hoặc target 5432 bị từ chối |
+| Static checks | Backend typecheck PASS; JS syntax/PowerShell parse PASS, helper giữ UTF-8 BOM; diff whitespace PASS; integrity 9/9 working tree = Git HEAD = provenance |
+
+**Giới hạn:** tuple production `localhost:5432/postgres/Goctro_dev_v18` được kiểm chứng bằng prompt/env fixture cô lập (mô phỏng input), không kết nối runtime tuple này. Runtime full stack dùng ánh xạ disposable có guard sang 55448/v18_smoke; đây không phải PASS trực tiếp của PostgreSQL 5432 hay role postgres. `Goctro_test3` chỉ xuất hiện trong fixture văn bản không kết nối; native update target khác được chứng minh bằng DB disposable khác tên. Các lượt menu runtime dùng terminal/stdin lập trình, không phải quan sát double-click GUI hoặc thao tác nhập ẩn của con người. Không đổi npm stub/guard production để đạt PASS. Docker, browser login, phone login và provider/storage vẫn NOT VERIFIED. Bằng chứng cũ về wizard/RESET menu không còn là hướng dẫn cho bản cuối.
+
+Mật khẩu PostgreSQL do người dùng nhập được lưu vào backend env local; nếu sai, công cụ dừng, không tự đổi target hoặc hỏi wizard. Sửa đúng credential trong cấu hình hiện tại trước khi chạy lại. Mật khẩu web demo chỉ thiết lập sau seed mới; nếu bước provision thất bại sau seed, dùng STATUS/provision CLI riêng có guard như hướng dẫn, không seed/reset ngầm qua menu.
+
+Sau kiểm chứng bản cuối đã dừng hai cây process app được xác minh, dừng đúng cluster disposable 55448 và xóa riêng `.local/setup-final` (data/config/password/log/prepare helper). Fixture có thể dựng lại từ baseline; không còn credential test lưu tại đó. Không stage/commit/push/deploy. `backend/.env.example` dùng tuple mặc định mới với placeholder; env thật và SQL/provenance giữ nguyên.
 
 ## Cơ chế bảo vệ
+
+### Kiểm chứng menu Windows — 2026-10-23
+
+Trạng thái: native PostgreSQL 18.6 disposable/API PASS, chờ review source. Chạy trên cluster SCRAM riêng `127.0.0.1:55448`, role `v18_smoke`, các database `goctro_setup_test_*` và config riêng dưới ignored `.local/`; không dùng env thật hoặc target `Goctro_test3` để rehearsal.
+
+| Kiểm tra thực thi | Kết quả |
+|---|---|
+| `setup.bat` qua terminal tương tác: tạo DB chưa tồn tại → bootstrap → seed → credential demo → generate → API/DB/frontend/CSRF | PASS trên `goctro_setup_test_complete`; menu và input tiếng Việt có dấu |
+| Suite menu thật `scripts/setup-menu.integration.test.mjs` | 10/10 PASS, gồm một lượt first-time hoàn chỉnh khác qua helper; không dùng bằng chứng task cũ thay thế |
+| Auth V1 email Admin/Resident bằng `Goctro123456789` | HTTP 200; Resident rental đúng profile 1001; API Accounts Admin trả 403 với Resident |
+| Cập nhật lặp | Bỏ qua ci/generate khi không đổi; snapshot credential/counts không đổi; cùng PID app được tái sử dụng |
+| Đổi credential Admin trong fixture rồi cập nhật | Mật khẩu riêng vẫn login được, không bị áp mặc định |
+| RESET sai/đúng xác nhận | Sai: giữ credential, dừng startup; đúng: đổi đúng hai row, password cũ không login được |
+| Dependency thiếu executable | npm ci thật → generate → startup PASS, giữ dữ liệu/credential |
+| Manifest/npm environment/mapping/client thiếu | Unit fingerprint phát hiện thay đổi; không giả lập PASS runtime cho từng biến thể |
+| npm ci lỗi | Fixture npm cố ý exit nonzero: không ghi stamp thành công, chặn database/provision/startup; không có bypass trong setup thật |
+| Schema drift/kết nối/auth lỗi | Menu thật dừng, không hỏi tạo DB hoặc chạy bootstrap/seed/provision/startup; báo object/thuộc tính drift |
+| Provision PostgreSQL integration | 8/8 PASS: seed evidence chính xác, INITIAL rerun/unknown/partial từ chối, RESET xác nhận, account locked/linkage sai/production/target/schema sai chặn trước ghi; lỗi update thứ hai rollback cả hai credential |
+| Database tooling integration | 15/15 PASS; CORE 78/78, FIXTURE 171/171; seed rollback để lại V1.8 empty và retry thành công |
+| Unit/cache/ownership/menu | 17/17 PASS; có test PID/ParentProcessId tái sử dụng theo CreationDate, không nhận launcher/harness làm app |
+| Env mới trong clone riêng | PASS: tạo templates, session secret và key local ngẫu nhiên 32 byte, input PostgreSQL ẩn; hủy trước inspect; chạy update rồi hủy giữ nguyên bytes cả ba env |
+| Backend typecheck và strict typecheck hai file provision/tooling test | PASS |
+| Baseline artifact | 9/9 raw-byte working tree = HEAD = provenance; không sửa SQL/hash |
+
+Các lỗi tích hợp tìm thấy và đã sửa: PORT backend bị truyền sang frontend; trạng thái seed/thông báo kết quả không đúng; PID snapshot không phải số đơn; process thoát sau health; ownership workspace marker bị đổi slash; cây process đi nhầm ancestor/descendant khi PID tái sử dụng. Guard hiện kiểm tra thời điểm tạo cả hai chiều và kiểm tra lại PID trước stop. Có dry-run cây process thật và test mô phỏng. Trong các lượt thử helper cũ, có phiên bị ngắt trước khi ghi đầy đủ log stop; không có đủ bằng chứng để khẳng định trạng thái của mọi process ngoài task trong các phiên đó. Không dùng việc suite cuối PASS để suy ra các phiên lỗi trước không có ảnh hưởng.
+
+Next/npm hiện có cảnh báo lỗ hổng dependency; có lượt Next dừng sau cảnh báo. Launcher kiểm tra frontend ổn định qua ba probe và thử lại tối đa một lần, không báo PASS từ HTTP 200 thoáng qua. Không nâng cấp dependency hoặc chạy audit fix trong task này. Docker, double-click GUI, browser login, phone fixture login và giao nhận provider/storage ngoài DB: NOT VERIFIED. Lỗi DLL lock riêng trên process không thuộc project: NOT RUN (giữ nguyên process, không ép kill).
+
+Chạy lại suite menu bằng cấu hình disposable đã chuẩn bị và seed/provision:
+
+```powershell
+$env:GOCTRO_SETUP_CONFIG_DIR = 'D:\path-to-ignored-disposable-config'
+$env:GOCTRO_SETUP_MENU_RUNTIME = '1'
+node --import tsx --test scripts/setup-menu.integration.test.mjs
+# URL admin disposable cho các suite SQL/provision: role v18_smoke, loopback, cổng khác 5432.
+# Đặt GOCTRO_V18_TEST_ADMIN_URL cục bộ, không đưa credential vào report/log.
+node --import tsx --test backend/scripts/provision-dev-admin.integration.test.ts
+```
+
+Suite menu cố ý thay credential/schema chỉ trong fixture disposable, cài dependency theo lockfile và khởi động/dừng app đã xác minh. Không chạy suite này với env/DB thật. Không có browser credential handoff hoặc browser-login PASS được tuyên bố.
+
+Sau rehearsal đã dừng app theo PID/target được ghi và dừng cluster 55448 bằng `pg_ctl` trên đúng data directory. Đã xóa riêng thư mục disposable gồm data/config/password test và clone tạm; dữ liệu test có thể dựng lại từ baseline. Các file env thật giữ nguyên thời điểm sửa trước task; source UI/audit ngoài phạm vi được giữ nguyên. Không stage/commit/push/deploy trong task này.
+
+Các file thuộc bản sửa để review:
+
+- Entry/orchestration: `setup.bat`, `scripts/setup-interactive.ps1`, `scripts/setup-cache.mjs`, `scripts/dev-all.ps1`, `scripts/dev-stop.ps1`, `package.json`.
+- Provision/catalog/integrity: `backend/scripts/provision-dev-admin.ts`, `scripts/database-v18.mjs`, `scripts/verify-baseline-integrity.mjs`.
+- Tests: `scripts/database-v18.test.mjs`, `scripts/database-v18.integration.test.mjs`, `scripts/setup-cache.test.mjs`, `scripts/process-ownership.test.ps1`, `scripts/setup-menu.integration.test.mjs`, `backend/scripts/provision-dev-admin.integration.test.ts`.
+- Tài liệu: `README.md`, tài liệu này, `LOCAL_DEV_STARTUP_REPORT.md`, `../00_CURRENT_STATE.md`, `../DOCUMENT_CATALOG.md`.
+- Gỡ hai wrapper cũ ở root; có thể phục hồi từ Git HEAD nếu review yêu cầu. Artifact SQL/baseline/migration/seed và PROVENANCE không thay đổi.
 
 - `db:bootstrap` không tạo database container/role: database phải tồn tại và public schema phải chưa có table/sequence/type/routine/index hoặc history. Custom user schemas cũng bị từ chối. `_prisma_migrations` tồn tại là blocker. Không DROP/TRUNCATE/reset/ghi đè.
 - URL setup phải local, `--database NAME` khớp URL và identity server; yêu cầu PostgreSQL 18.6+ trong major 18. Không fallback sang `.env` thật. Thông báo chỉ hiện tên DB/host/port; lỗi SQL chỉ hiện mã, không in connection string, credentials hoặc detail chứa dữ liệu.

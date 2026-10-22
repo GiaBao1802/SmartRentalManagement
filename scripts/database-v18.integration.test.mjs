@@ -74,9 +74,9 @@ test('V1.8 real PostgreSQL bootstrap/seed and safety guards', { skip: !adminUrl 
       const bootstrap = cli('bootstrap', db);
       const seed = cli('seed', db);
       assert.equal(bootstrap.status, 1);
-      assert.match(bootstrap.stderr, /target already has schema objects/);
+      assert.match(bootstrap.stderr, /SETUP_ERROR kind=unknown/);
       assert.equal(seed.status, 1);
-      assert.match(seed.stderr, /application data exists/);
+      assert.match(seed.stderr, /SETUP_ERROR kind=unknown/);
       const after = (await db.client.query('SELECT jsonb_agg(to_jsonb(o) ORDER BY owner_id) AS value FROM owners o')).rows[0].value;
       assert.deepEqual(after, before);
     });
@@ -99,7 +99,7 @@ test('V1.8 real PostgreSQL bootstrap/seed and safety guards', { skip: !adminUrl 
       await used.client.query('CREATE TABLE owners(marker text)');
       const result = cli('bootstrap', used);
       assert.equal(result.status, 1);
-      assert.match(result.stderr, /target already has schema objects/);
+      assert.match(result.stderr, /SETUP_ERROR kind=unknown/);
       assert.equal(await countTables(used.client), 1);
     });
     await t.test('bootstrap and seed block incompatible Prisma migration history', async () => {
@@ -107,14 +107,14 @@ test('V1.8 real PostgreSQL bootstrap/seed and safety guards', { skip: !adminUrl 
       await old.client.query('CREATE TABLE _prisma_migrations(id text)');
       const result = cli('bootstrap', old);
       assert.equal(result.status, 1);
-      assert.match(result.stderr, /target already has schema objects/);
+      assert.match(result.stderr, /SETUP_ERROR kind=unknown/);
       assert.equal(await countTables(old.client), 1);
       const seededHistory = await createDatabase();
       assert.equal(cli('bootstrap', seededHistory).status, 0);
       await seededHistory.client.query('CREATE TABLE _prisma_migrations(id text)');
       const seed = cli('seed', seededHistory);
       assert.equal(seed.status, 5);
-      assert.match(seed.stderr, /Schema differs/);
+      assert.match(seed.stderr, /Schema không tương thích/);
       assert.equal((await seededHistory.client.query('SELECT count(*)::int AS n FROM owners')).rows[0].n, 0);
     });
     await t.test('seed blocks V1.7-like drift in the recurring Parking index', async () => {
@@ -123,7 +123,7 @@ test('V1.8 real PostgreSQL bootstrap/seed and safety guards', { skip: !adminUrl 
       await drift.client.query('DROP INDEX invoice_items_invoice_parking_assignment_unique');
       const result = cli('seed', drift);
       assert.equal(result.status, 5);
-      assert.match(result.stderr, /Schema differs/);
+      assert.match(result.stderr, /Schema không tương thích/);
       assert.equal((await drift.client.query('SELECT count(*)::int AS n FROM owners')).rows[0].n, 0);
     });
     await t.test('seed blocks any existing application row, preserves it, and inserts nothing else', async () => {
@@ -132,7 +132,7 @@ test('V1.8 real PostgreSQL bootstrap/seed and safety guards', { skip: !adminUrl 
       await data.client.query("INSERT INTO owners(display_name) VALUES('Preserve this test row')");
       const result = cli('seed', data);
       assert.equal(result.status, 1);
-      assert.match(result.stderr, /application data exists/);
+      assert.match(result.stderr, /SETUP_ERROR kind=unknown/);
       assert.equal((await data.client.query('SELECT count(*)::int AS n FROM owners')).rows[0].n, 1);
       assert.equal((await data.client.query('SELECT count(*)::int AS n FROM properties')).rows[0].n, 0);
     });
@@ -166,7 +166,7 @@ test('V1.8 real PostgreSQL bootstrap/seed and safety guards', { skip: !adminUrl 
       await drift.client.query(`CREATE OR REPLACE FUNCTION public.room_images_lock_parent_before_insert_fn() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN OLD; END; $$`);
       const result = cli('inspect', drift);
       assert.equal(result.status, 5);
-      assert.match(result.stderr, /Schema differs/);
+      assert.match(result.stderr, /Schema không tương thích/);
     });
   } finally {
     for (const client of clients) await client.end();

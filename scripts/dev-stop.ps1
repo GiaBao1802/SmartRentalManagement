@@ -1,4 +1,4 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path.TrimEnd('\')
@@ -14,11 +14,14 @@ function Get-ProcessChain([int] $ProcessId, [object[]] $Snapshot) {
   $chain = [System.Collections.Generic.List[object]]::new()
   $seen = [System.Collections.Generic.HashSet[int]]::new()
   $currentId = $ProcessId
+  $child = $null
   for ($depth = 0; $depth -lt 12 -and $currentId -gt 0; $depth++) {
     if (-not $seen.Add($currentId)) { break }
     $process = $Snapshot | Where-Object { [int]$_.ProcessId -eq $currentId } | Select-Object -First 1
     if (-not $process) { break }
+    if ($child -and (-not $process.CreationDate -or -not $child.CreationDate -or [datetime]$process.CreationDate -gt [datetime]$child.CreationDate)) { break }
     $chain.Add($process)
+    $child = $process
     $currentId = [int]$process.ParentProcessId
   }
   return ,$chain.ToArray()
@@ -45,24 +48,29 @@ function Get-VerifiedRootPid([int] $ListenerPid, [object[]] $Snapshot, [Validate
   $chain = Get-ProcessChain $ListenerPid $Snapshot
   if (-not $chain.Count -or -not (Test-ProjectEntry $chain[0] $Kind)) { return 0 }
   $workspaceMarker = if ($Kind -eq 'backend') { 'npm run dev --workspace=@goctro/backend' } else { 'npm run dev --workspace=@goctro/frontend' }
-  $watchMarker = if ($Kind -eq 'backend') { 'tsx' } else { 'next' }
+  $workspaceMarker = $workspaceMarker.Replace('/', '\')
   $rootPid = [int]$chain[0].ProcessId
   foreach ($process in $chain) {
     $command = ([string]$process.CommandLine).ToLowerInvariant().Replace('/', '\')
-    if ($command.Contains($workspaceMarker)) { $rootPid = [int]$process.ProcessId }
-    elseif ($command.Contains($watchMarker) -and $command.Contains($projectRoot.ToLowerInvariant().Replace('/', '\'))) { $rootPid = [int]$process.ProcessId }
+    if ($command.Contains($workspaceMarker)) { return [int]$process.ProcessId }
+    elseif (Test-ProjectEntry $process $Kind) { $rootPid = [int]$process.ProcessId }
   }
   return $rootPid
 }
 
 function Get-TreeProcessIds([int] $RootPid, [object[]] $Snapshot) {
+  $rootProcess = $Snapshot | Where-Object { [int]$_.ProcessId -eq $RootPid } | Select-Object -First 1
+  if (-not $rootProcess -or -not $rootProcess.CreationDate) { throw 'Không xác minh được thời điểm tạo process gốc; chưa dừng process.' }
   $ids = [System.Collections.Generic.HashSet[int]]::new()
   [void]$ids.Add($RootPid)
   $changed = $true
   while ($changed) {
     $changed = $false
     foreach ($process in $Snapshot) {
-      if ($ids.Contains([int]$process.ParentProcessId) -and $ids.Add([int]$process.ProcessId)) { $changed = $true }
+      if ($ids.Contains([int]$process.ParentProcessId)) {
+        $parent = $Snapshot | Where-Object { [int]$_.ProcessId -eq [int]$process.ParentProcessId } | Select-Object -First 1
+        if ($parent -and $parent.CreationDate -and $process.CreationDate -and [datetime]$process.CreationDate -ge [datetime]$parent.CreationDate -and $ids.Add([int]$process.ProcessId)) { $changed = $true }
+      }
     }
   }
   $depths = @{}
@@ -96,14 +104,18 @@ foreach ($entry in @(@{ Port = $backendPort; Kind = 'backend' }, @{ Port = $fron
     if ($stopped.Contains($listenerPid)) { continue }
     $rootPid = Get-VerifiedRootPid $listenerPid $snapshot $entry.Kind
     if ($rootPid -le 0) {
-      Write-Host "Skipped port $($entry.Port): listener PID $listenerPid is not verified as this project's $($entry.Kind)." -ForegroundColor Yellow
+      Write-Host "Giữ nguyên cổng $($entry.Port): PID $listenerPid chưa được xác minh thuộc $($entry.Kind) của project." -ForegroundColor Yellow
       continue
     }
     foreach ($id in (Get-TreeProcessIds $rootPid $snapshot)) {
+      $captured = $snapshot | Where-Object { [int]$_.ProcessId -eq $id } | Select-Object -First 1
+      $current = Get-Process -Id $id -ErrorAction SilentlyContinue
+      if (-not $current) { continue }
+      if ([Math]::Abs(($current.StartTime.ToUniversalTime() - ([datetime]$captured.CreationDate).ToUniversalTime()).TotalMilliseconds) -ge 2) { throw "PID $id đã đổi thời điểm tạo; giữ nguyên để tránh dừng PID tái sử dụng." }
       Stop-Process -Id $id -Force -ErrorAction SilentlyContinue
       [void]$stopped.Add([int]$id)
     }
-    Write-Host "Stopped verified project $($entry.Kind) process tree (root PID $rootPid)."
+    Write-Host "Đã dừng process $($entry.Kind) được xác minh thuộc project (PID gốc $rootPid)."
   }
 }
-Write-Host 'PostgreSQL was left running.'
+Write-Host 'Giữ nguyên PostgreSQL; không bật/tắt dịch vụ.'

@@ -1,4 +1,6 @@
-param(
+﻿param(
+  [string] $ConfirmedDatabase = '',
+  [switch] $RestartVerified,
   [int] $PostgresPort = 5432,
   [int] $BackendPort = 4000,
   [int] $FrontendPort = 3000,
@@ -8,22 +10,18 @@ param(
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
+$OutputEncoding = [Console]::OutputEncoding
 
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path.TrimEnd('\')
 $backendEnv = Join-Path $projectRoot 'backend/.env'
+if ($env:GOCTRO_SETUP_CONFIG_DIR) { $backendEnv = Join-Path $env:GOCTRO_SETUP_CONFIG_DIR 'backend.env' }
 $runtimeDirectory = Join-Path $projectRoot '.local/dev-all'
+if ($env:GOCTRO_SETUP_RUNTIME_DIR) { $runtimeDirectory = Join-Path $env:GOCTRO_SETUP_RUNTIME_DIR 'dev-all' }
 $backendLog = Join-Path $runtimeDirectory 'backend.log'
 $frontendLog = Join-Path $runtimeDirectory 'frontend.log'
 $backendUrl = "http://127.0.0.1:$BackendPort"
 $frontendUrl = "http://localhost:$FrontendPort"
-$testDatabaseUrl = $env:GOCTRO_SETUP_TEST_DATABASE_URL
-if ($testDatabaseUrl) {
-  try { $testDatabaseUri = [Uri]::new($testDatabaseUrl) } catch { Write-Failure 'BACKEND_START_FAILED' 'GOCTRO_SETUP_TEST_DATABASE_URL is invalid.' }
-  if ($testDatabaseUri.Host -notin @('localhost', '127.0.0.1', '::1') -or $testDatabaseUri.Port -le 0) {
-    Write-Failure 'BACKEND_START_FAILED' 'GOCTRO_SETUP_TEST_DATABASE_URL must target local PostgreSQL.'
-  }
-  $PostgresPort = $testDatabaseUri.Port
-}
 
 function Write-Failure([string] $Code, [string] $Message) {
   Write-Host "$Code`: $Message" -ForegroundColor Red
@@ -79,11 +77,14 @@ function Get-ProcessChain([int] $ProcessId, [object[]] $Snapshot) {
   $chain = [System.Collections.Generic.List[object]]::new()
   $seen = [System.Collections.Generic.HashSet[int]]::new()
   $currentId = $ProcessId
+  $child = $null
   for ($depth = 0; $depth -lt 12 -and $currentId -gt 0; $depth++) {
     if (-not $seen.Add($currentId)) { break }
     $process = $Snapshot | Where-Object { [int]$_.ProcessId -eq $currentId } | Select-Object -First 1
     if (-not $process) { break }
+    if ($child -and (-not $process.CreationDate -or -not $child.CreationDate -or [datetime]$process.CreationDate -gt [datetime]$child.CreationDate)) { break }
     $chain.Add($process)
+    $child = $process
     $currentId = [int]$process.ParentProcessId
   }
   return ,$chain.ToArray()
@@ -110,24 +111,29 @@ function Get-VerifiedProjectRootPid([int] $ListenerPid, [object[]] $Snapshot, [V
   $chain = Get-ProcessChain $ListenerPid $Snapshot
   if (-not $chain.Count -or -not (Test-ProjectEntry $chain[0] $Kind)) { return 0 }
   $workspaceMarker = if ($Kind -eq 'backend') { 'npm run dev --workspace=@goctro/backend' } else { 'npm run dev --workspace=@goctro/frontend' }
-  $watchMarker = if ($Kind -eq 'backend') { 'tsx' } else { 'next' }
+  $workspaceMarker = $workspaceMarker.Replace('/', '\')
   $rootPid = [int]$chain[0].ProcessId
   foreach ($process in $chain) {
     $command = ([string]$process.CommandLine).ToLowerInvariant().Replace('/', '\')
-    if ($command.Contains($workspaceMarker)) { $rootPid = [int]$process.ProcessId }
-    elseif ($command.Contains($watchMarker) -and $command.Contains($projectRoot.ToLowerInvariant().Replace('/', '\'))) { $rootPid = [int]$process.ProcessId }
+    if ($command.Contains($workspaceMarker)) { return [int]$process.ProcessId }
+    elseif (Test-ProjectEntry $process $Kind) { $rootPid = [int]$process.ProcessId }
   }
   return $rootPid
 }
 
 function Get-TreeProcessIds([int] $RootPid, [object[]] $Snapshot) {
+  $rootProcess = $Snapshot | Where-Object { [int]$_.ProcessId -eq $RootPid } | Select-Object -First 1
+  if (-not $rootProcess -or -not $rootProcess.CreationDate) { throw 'Không xác minh được thời điểm tạo process gốc; chưa dừng process.' }
   $ids = [System.Collections.Generic.HashSet[int]]::new()
   [void]$ids.Add($RootPid)
   $changed = $true
   while ($changed) {
     $changed = $false
     foreach ($process in $Snapshot) {
-      if ($ids.Contains([int]$process.ParentProcessId) -and $ids.Add([int]$process.ProcessId)) { $changed = $true }
+      if ($ids.Contains([int]$process.ParentProcessId)) {
+        $parent = $Snapshot | Where-Object { [int]$_.ProcessId -eq [int]$process.ParentProcessId } | Select-Object -First 1
+        if ($parent -and $parent.CreationDate -and $process.CreationDate -and [datetime]$process.CreationDate -ge [datetime]$parent.CreationDate -and $ids.Add([int]$process.ProcessId)) { $changed = $true }
+      }
     }
   }
   $depths = @{}
@@ -147,6 +153,10 @@ function Get-TreeProcessIds([int] $RootPid, [object[]] $Snapshot) {
 
 function Stop-VerifiedTree([int] $RootPid, [object[]] $Snapshot, [int] $Port, [string] $FailureCode = 'BACKEND_START_FAILED') {
   foreach ($id in (Get-TreeProcessIds $RootPid $Snapshot)) {
+    $captured = $Snapshot | Where-Object { [int]$_.ProcessId -eq $id } | Select-Object -First 1
+    $current = Get-Process -Id $id -ErrorAction SilentlyContinue
+    if (-not $current) { continue }
+    if ([Math]::Abs(($current.StartTime.ToUniversalTime() - ([datetime]$captured.CreationDate).ToUniversalTime()).TotalMilliseconds) -ge 2) { Write-Failure $FailureCode "PID $id đã đổi thời điểm tạo; không dừng PID có thể đã tái sử dụng." }
     Stop-Process -Id $id -Force -ErrorAction SilentlyContinue
   }
   $deadline = (Get-Date).AddSeconds(6)
@@ -154,7 +164,7 @@ function Stop-VerifiedTree([int] $RootPid, [object[]] $Snapshot, [int] $Port, [s
     Start-Sleep -Milliseconds 250
     $remaining = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
   } while ($remaining -and (Get-Date) -lt $deadline)
-  if ($remaining) { Write-Failure $FailureCode "port $Port did not release after stopping the verified project process tree." }
+  if ($remaining) { Write-Failure $FailureCode "Cổng $Port chưa được giải phóng sau khi dừng process đã xác minh của project." }
 }
 
 function Get-ListenerPids([int] $Port) {
@@ -164,13 +174,13 @@ function Get-ListenerPids([int] $Port) {
   }
   catch {
     if ($_.Exception.Message -match 'No MSFT_NetTCPConnection objects found|No matching MSFT_NetTCPConnection') { return ,@() }
-    throw "Could not safely inspect port $Port listener ownership: $($_.Exception.Message)"
+    throw "Không xác minh được process đang giữ cổng $Port; dừng để kiểm tra quyền đọc process."
   }
 }
 
 function Get-SafeProcessLabel([int] $ProcessId, [object[]] $Snapshot) {
   $process = $Snapshot | Where-Object { [int]$_.ProcessId -eq $ProcessId } | Select-Object -First 1
-  if (-not $process) { return "PID=$ProcessId; process details unavailable" }
+  if (-not $process) { return "PID=$ProcessId; không đọc được thông tin process" }
   $name = [System.IO.Path]::GetFileName([string]$process.ExecutablePath)
   return "PID=$ProcessId; image=$name"
 }
@@ -178,24 +188,27 @@ function Get-SafeProcessLabel([int] $ProcessId, [object[]] $Snapshot) {
 function Start-WorkspaceDev([ValidateSet('backend', 'frontend')] [string] $Kind, [string] $LogPath) {
   $workspace = if ($Kind -eq 'backend') { '@goctro/backend' } else { '@goctro/frontend' }
   $command = "npm run dev --workspace=$workspace"
+  $previousPort = $env:PORT
   try {
+    $env:PORT = if ($Kind -eq 'backend') { [string]$BackendPort } else { [string]$FrontendPort }
     Start-Process -FilePath $env:ComSpec -ArgumentList @('/d', '/c', $command) -WorkingDirectory $projectRoot -WindowStyle Hidden -RedirectStandardOutput $LogPath -RedirectStandardError ($LogPath + '.err') | Out-Null
   } catch {
-    Write-Failure "$($Kind.ToUpperInvariant())_START_FAILED" "could not start the existing npm dev script. See $LogPath"
-  }
+    Write-Failure "$($Kind.ToUpperInvariant())_START_FAILED" "Không chạy được npm dev. Xem $LogPath"
+  } finally { $env:PORT = $previousPort }
 }
 
-function Wait-ForHealth([string] $Url, [int] $TimeoutSeconds, [string] $ExpectedService = '') {
+function Wait-ForHealth([string] $Url, [int] $TimeoutSeconds, [string] $ExpectedService = '', [int] $Consecutive = 1) {
   $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+  $successes = 0
   do {
     $probe = Invoke-LocalGet $Url 2
     if ($probe.Status -eq 200) {
-      if (-not $ExpectedService) { return $true }
+      if (-not $ExpectedService) { $successes++; if ($successes -ge $Consecutive) { return $true } }
       try {
         $body = $probe.Body | ConvertFrom-Json
         if ($body.status -eq 'ok' -and $body.service -eq $ExpectedService) { return $true }
       } catch { }
-    }
+    } else { $successes = 0 }
     Start-Sleep -Seconds 1
   } while ((Get-Date) -lt $deadline)
   return $false
@@ -204,44 +217,40 @@ function Wait-ForHealth([string] $Url, [int] $TimeoutSeconds, [string] $Expected
 function Assert-Dependencies {
   $lockfile = Join-Path $projectRoot 'package-lock.json'
   if (-not (Test-Path -LiteralPath $lockfile -PathType Leaf)) {
-    Write-Failure 'DEPENDENCIES_INCOMPLETE' 'package-lock.json is missing. Run setup.bat from a clean checkout.'
+    Write-Failure 'DEPENDENCIES_INCOMPLETE' 'Thiếu package-lock.json. Kiểm tra checkout rồi chạy setup.bat.'
   }
   $requiredExecutables = @('concurrently.cmd', 'next.cmd', 'prisma.cmd', 'tsx.cmd')
   $missing = @($requiredExecutables | Where-Object { -not (Test-Path -LiteralPath (Join-Path $projectRoot "node_modules/.bin/$_") -PathType Leaf) })
   if ($missing.Count) {
-    Write-Failure 'DEPENDENCIES_INCOMPLETE' "Required npm executables are missing ($($missing -join ', ')). Run setup.bat; the launcher will not reinstall packages."
+    Write-Failure 'DEPENDENCIES_INCOMPLETE' "Thiếu công cụ npm ($($missing -join ', ')). Chạy setup.bat để cài đúng lockfile."
   }
-  $dependencyCheck = Join-Path $runtimeDirectory 'dependency-check.json'
-  & npm.cmd ls --workspaces --include=dev --depth=0 --json *> $dependencyCheck
-  if ($LASTEXITCODE -ne 0) {
-    Write-Failure 'DEPENDENCIES_INCOMPLETE' "Installed dependencies do not match package-lock.json. Run setup.bat; see $dependencyCheck"
+  $dependencyState = & node (Join-Path $PSScriptRoot 'setup-cache.mjs') installed
+  if ($LASTEXITCODE -ne 0 -or $dependencyState -ne 'READY') {
+    Write-Failure 'DEPENDENCIES_INCOMPLETE' 'Dependency không đủ/không khớp package-lock.json. Chạy setup.bat.'
   }
 }
 
 New-Item -ItemType Directory -Path $runtimeDirectory -Force | Out-Null
-Write-Host 'Checking local prerequisites...'
+Write-Host 'Kiểm tra môi trường local và dependency...'
 Assert-Dependencies
 if ($FrontendPort -ne 3000) {
-  Write-Failure 'FRONTEND_PORT_UNSUPPORTED' 'This launcher is restricted to frontend port 3000 because backend CSRF origin is configured as one exact trusted origin.'
+  Write-Failure 'FRONTEND_PORT_UNSUPPORTED' 'Frontend phải dùng cổng 3000 để khớp trusted origin của CSRF.'
 }
 $trustedFrontendOrigin = 'http://localhost:3000'
 if ($env:FRONTEND_ORIGIN -and $env:FRONTEND_ORIGIN -ne $trustedFrontendOrigin) {
-  Write-Failure 'FRONTEND_ORIGIN_MISMATCH' 'Process FRONTEND_ORIGIN must be exactly http://localhost:3000 for this launcher.'
+  Write-Failure 'FRONTEND_ORIGIN_MISMATCH' 'FRONTEND_ORIGIN phải là http://localhost:3000.'
 }
 if (-not $env:FRONTEND_ORIGIN) {
   $frontendOriginLine = Get-Content -LiteralPath $backendEnv -ErrorAction SilentlyContinue | Where-Object { $_ -match '^\s*FRONTEND_ORIGIN\s*=' } | Select-Object -First 1
   if ($frontendOriginLine) {
     $configuredFrontendOrigin = ($frontendOriginLine -split '=', 2)[1].Trim().Trim('"').Trim("'")
     if ($configuredFrontendOrigin -ne $trustedFrontendOrigin) {
-      Write-Failure 'FRONTEND_ORIGIN_MISMATCH' 'backend/.env FRONTEND_ORIGIN must be exactly http://localhost:3000 for this launcher.'
+      Write-Failure 'FRONTEND_ORIGIN_MISMATCH' 'FRONTEND_ORIGIN trong env backend phải là http://localhost:3000.'
     }
   }
 }
-if (-not (Test-TcpPort 'localhost' $PostgresPort)) {
-  Write-Failure 'POSTGRES_NOT_REACHABLE' "PostgreSQL is not reachable at localhost:$PostgresPort. Start the existing PostgreSQL 18 service and retry. No database process was started or stopped."
-}
 if (-not (Test-Path -LiteralPath $backendEnv -PathType Leaf)) {
-  Write-Failure 'BACKEND_START_FAILED' 'backend/.env is missing. Create it locally; secrets are not displayed by this launcher.'
+  Write-Failure 'BACKEND_START_FAILED' 'Thiếu cấu hình backend local. Chạy setup.bat ở chế độ cài lần đầu.'
 }
 $databaseUrl = $env:DATABASE_URL
 $databaseSource = 'process environment'
@@ -251,20 +260,36 @@ if (-not $databaseUrl) {
   if ($databaseLine) { $databaseUrl = ($databaseLine -split '=', 2)[1].Trim().Trim('"').Trim("'") }
 }
 if (-not $databaseUrl) {
-  Write-Failure 'BACKEND_START_FAILED' 'DATABASE_URL is missing from the backend environment. The value will not be printed.'
+  Write-Failure 'BACKEND_START_FAILED' 'Thiếu DATABASE_URL trong cấu hình backend. Không hiển thị giá trị chứa secret.'
 }
 try {
   $databaseUri = [Uri]::new($databaseUrl)
   $databaseName = [Uri]::UnescapeDataString($databaseUri.AbsolutePath.Trim('/'))
 } catch {
-  Write-Failure 'BACKEND_START_FAILED' 'DATABASE_URL is not a valid PostgreSQL connection URL. The value will not be printed.'
+  Write-Failure 'BACKEND_START_FAILED' 'DATABASE_URL không hợp lệ; giá trị chứa secret được ẩn.'
 }
- $isDisposableTestTarget = $testDatabaseUrl -and $databaseUri.AbsoluteUri -eq $testDatabaseUri.AbsoluteUri -and $databaseName -like 'goctro_setup_test_*'
-if (-not $isDisposableTestTarget -and ($databaseUri.Host -notin @('localhost', '127.0.0.1', '::1') -or $databaseUri.Port -ne $PostgresPort -or $databaseName -ne 'Goctro_test3')) {
-  $actualTarget = "host=$($databaseUri.Host); port=$($databaseUri.Port); database=$databaseName; source=$databaseSource"
-  Write-Failure 'BACKEND_START_FAILED' "configured database target must be localhost:$PostgresPort/Goctro_test3. Found $actualTarget. Credentials are not displayed."
+if ($env:NODE_ENV -ne 'development') { Write-Failure 'ENVIRONMENT_REJECTED' 'Launcher chỉ chạy với NODE_ENV=development. Dùng setup.bat để đọc cấu hình local.' }
+if ($databaseUri.Scheme -notin @('postgres','postgresql') -or $databaseUri.Host -notin @('localhost','127.0.0.1','::1') -or $databaseName -notmatch '^[A-Za-z][A-Za-z0-9_]{0,62}$' -or $databaseName -in @('postgres','template0','template1')) {
+  Write-Failure 'TARGET_REJECTED' 'Chỉ hỗ trợ database PostgreSQL local/dev không phải database hệ thống.'
 }
-Write-Host 'PostgreSQL       OK'
+if ($ConfirmedDatabase -cne $databaseName) { Write-Failure 'TARGET_NOT_CONFIRMED' 'Target chưa được xác nhận. Hãy dùng setup.bat.' }
+$PostgresPort = if ($databaseUri.Port -gt 0) { $databaseUri.Port } else { 5432 }
+if (-not (Test-TcpPort $databaseUri.Host $PostgresPort)) {
+  Write-Failure 'POSTGRES_NOT_REACHABLE' "Không kết nối được PostgreSQL tại $($databaseUri.Host):$PostgresPort. Kiểm tra dịch vụ hiện có; không tự bật/tắt PostgreSQL."
+}
+Write-Host "PostgreSQL OK: host=$($databaseUri.Host); port=$PostgresPort; database=$databaseName"
+
+$processStamp = Join-Path $runtimeDirectory 'processes.json'
+$recorded = $null
+try { $recorded = Get-Content -LiteralPath $processStamp -Raw -Encoding UTF8 | ConvertFrom-Json } catch { }
+function Test-RecordedProcess([string]$kind, [int]$processId) {
+  if (-not $recorded -or -not $recorded.PSObject.Properties[$kind] -or -not $recorded.PSObject.Properties['target']) { return $false }
+  $process = Get-Process -Id $processId -ErrorAction SilentlyContinue
+  if (-not $process) { return $false }
+  $entry = $recorded.$kind
+  if (-not $entry -or -not $entry.PSObject.Properties['id'] -or -not $entry.PSObject.Properties['started']) { return $false }
+  return $entry -and $entry.id -eq $processId -and $entry.started -eq $process.StartTime.ToUniversalTime().Ticks.ToString() -and $recorded.target -eq "$($databaseUri.Host):$PostgresPort/$databaseName"
+}
 
 $backendHealthUrl = "$backendUrl/api/health"
 $backendHealth = Invoke-LocalGet $backendHealthUrl 3
@@ -278,7 +303,7 @@ if ($backendHealth.Status -eq 200) {
 }
 
 if ($backendPids.Count -gt 1) {
-  Write-Failure 'PORT_4000_OCCUPIED_BY_UNKNOWN_PROCESS' "multiple distinct processes own port $BackendPort ($($backendPids -join ', ')); none were stopped."
+  Write-Failure 'PORT_4000_OCCUPIED_BY_UNKNOWN_PROCESS' "Nhiều process giữ cổng $BackendPort ($($backendPids -join ', ')); chưa dừng process nào."
 }
 
 if ($backendPids.Count -eq 1) {
@@ -287,14 +312,14 @@ if ($backendPids.Count -eq 1) {
   $verifiedRootPid = Get-VerifiedProjectRootPid $ownerPid $snapshot 'backend'
   if ($verifiedRootPid -le 0) {
     $label = Get-SafeProcessLabel $ownerPid $snapshot
-    Write-Failure 'PORT_4000_OCCUPIED_BY_UNKNOWN_PROCESS' "port $BackendPort is occupied by an unverified process ($label). It was left untouched; stop it manually or choose a free port."
+    Write-Failure 'PORT_4000_OCCUPIED_BY_UNKNOWN_PROCESS' "Cổng $BackendPort bị process chưa xác minh giữ ($label). Giữ nguyên process; kiểm tra và xử lý cổng trước khi chạy lại."
   }
-  if (-not $backendHealthy) {
-    Write-Warning "Stale backend verified in the project process tree ($((Get-SafeProcessLabel $ownerPid $snapshot))); restarting that tree only."
+  if (-not $backendHealthy -or $RestartVerified -or -not (Test-RecordedProcess 'backend' $ownerPid)) {
+    Write-Warning "Khởi động lại backend đã xác minh thuộc project ($((Get-SafeProcessLabel $ownerPid $snapshot)))."
     Stop-VerifiedTree $verifiedRootPid $snapshot $BackendPort
     $backendPids = @()
   } else {
-    Write-Host "Backend          OK (healthy; verified project ownership; reused)"
+    Write-Host 'Backend OK (đã xác minh project; tái sử dụng)'
   }
 }
 
@@ -302,85 +327,105 @@ if ($backendPids.Count -eq 0) {
   Start-WorkspaceDev 'backend' $backendLog
   if (-not (Wait-ForHealth $backendHealthUrl $BackendTimeoutSeconds 'backend')) {
     $snapshot = Get-ProcessSnapshot
-    $ownerPid = (Get-ListenerPids $BackendPort | Select-Object -First 1)
+    $listeners = Get-ListenerPids $BackendPort
+    $ownerPid = if ($listeners.Count) { $listeners[0] } else { $null }
     if ($ownerPid) {
       $rootPid = Get-VerifiedProjectRootPid ([int]$ownerPid) $snapshot 'backend'
       if ($rootPid -gt 0) { Stop-VerifiedTree $rootPid $snapshot $BackendPort }
     }
-    Write-Failure 'BACKEND_HEALTH_TIMEOUT' "backend did not return HTTP 200 within $BackendTimeoutSeconds seconds. See $backendLog"
+    Write-Failure 'BACKEND_HEALTH_TIMEOUT' "Backend chưa trả HTTP 200 sau $BackendTimeoutSeconds giây. Xem $backendLog"
   }
-  Write-Host 'Backend          OK (started)'
+  Write-Host 'Backend OK (vừa khởi động)'
 } else {
-  Write-Host 'Backend          OK (already healthy; verified project ownership; reused)'
+  Write-Host 'Backend OK (đã xác minh project; tái sử dụng)'
 }
 
 $dbHealth = Invoke-LocalGet "$backendUrl/api/health/db" 4
 if ($dbHealth.Status -ne 200) {
   if ($backendPids.Count -eq 0) {
     $snapshot = Get-ProcessSnapshot
-    $ownerPid = (Get-ListenerPids $BackendPort | Select-Object -First 1)
+    $listeners = Get-ListenerPids $BackendPort
+    $ownerPid = if ($listeners.Count) { $listeners[0] } else { $null }
     if ($ownerPid) {
       $rootPid = Get-VerifiedProjectRootPid ([int]$ownerPid) $snapshot 'backend'
       if ($rootPid -gt 0) { Stop-VerifiedTree $rootPid $snapshot $BackendPort }
     }
   }
-  Write-Failure 'BACKEND_DB_HEALTH_FAILED' "backend is reachable but /api/health/db returned HTTP $($dbHealth.Status). Check local database connectivity; no migration or seed was run."
+  Write-Failure 'BACKEND_DB_HEALTH_FAILED' "Backend truy cập được nhưng /api/health/db trả HTTP $($dbHealth.Status). Kiểm tra kết nối database; các bước trước đã hoàn thành vẫn được giữ."
 }
-Write-Host 'Database health  OK'
+Write-Host 'Kết nối database qua API OK'
 
 $frontendPids = Get-ListenerPids $FrontendPort
 if ($frontendPids.Count -gt 1) {
-  Write-Failure 'FRONTEND_START_FAILED' "multiple distinct processes own port $FrontendPort; none were stopped."
+  Write-Failure 'FRONTEND_START_FAILED' "Nhiều process giữ cổng $FrontendPort; chưa dừng process nào."
 }
 $frontendProbe = Invoke-LocalGet "$frontendUrl/" 3
 $frontendHealthy = $frontendProbe.Status -ge 200 -and $frontendProbe.Status -lt 400
-if ($frontendPids.Count -eq 1 -and -not $frontendHealthy) {
+if ($frontendPids.Count -eq 1 -and (-not $frontendHealthy -or $RestartVerified -or -not (Test-RecordedProcess 'frontend' ([int]$frontendPids[0])))) {
   $ownerPid = [int]$frontendPids[0]
   $snapshot = Get-ProcessSnapshot
   $verifiedRootPid = Get-VerifiedProjectRootPid $ownerPid $snapshot 'frontend'
   if ($verifiedRootPid -le 0) {
-    Write-Failure 'FRONTEND_START_FAILED' "port $FrontendPort is occupied by $((Get-SafeProcessLabel $ownerPid $snapshot)); the process was left untouched."
+    Write-Failure 'FRONTEND_START_FAILED' "Cổng $FrontendPort bị process chưa xác minh giữ ($((Get-SafeProcessLabel $ownerPid $snapshot))); giữ nguyên process."
   }
-  Write-Warning "Stale frontend verified in the project process tree ($((Get-SafeProcessLabel $ownerPid $snapshot))); restarting that tree only."
+  Write-Warning "Khởi động lại frontend đã xác minh thuộc project ($((Get-SafeProcessLabel $ownerPid $snapshot)))."
   Stop-VerifiedTree $verifiedRootPid $snapshot $FrontendPort 'FRONTEND_START_FAILED'
   $frontendPids = @()
 }
 if ($frontendPids.Count -eq 0) {
-  Start-WorkspaceDev 'frontend' $frontendLog
-  if (-not (Wait-ForHealth "$frontendUrl/" $FrontendTimeoutSeconds)) {
+  $frontendReady = $false
+  for ($attempt = 1; $attempt -le 2; $attempt++) {
+    Start-WorkspaceDev 'frontend' $frontendLog
+    if (Wait-ForHealth "$frontendUrl/" $FrontendTimeoutSeconds '' 3) { $frontendReady = $true; break }
     $snapshot = Get-ProcessSnapshot
-    $ownerPid = (Get-ListenerPids $FrontendPort | Select-Object -First 1)
+    $listeners = Get-ListenerPids $FrontendPort
+    $ownerPid = if ($listeners.Count) { $listeners[0] } else { $null }
     if ($ownerPid) {
       $rootPid = Get-VerifiedProjectRootPid ([int]$ownerPid) $snapshot 'frontend'
       if ($rootPid -gt 0) { Stop-VerifiedTree $rootPid $snapshot $FrontendPort 'FRONTEND_START_FAILED' }
     }
-    Write-Failure 'FRONTEND_START_FAILED' "frontend did not become reachable within $FrontendTimeoutSeconds seconds. See $frontendLog"
+    if ($ownerPid -and (Get-VerifiedProjectRootPid ([int]$ownerPid) $snapshot 'frontend') -le 0) { Write-Failure 'FRONTEND_START_FAILED' 'Cổng frontend đã bị process khác chiếm trong lúc chờ; giữ nguyên process.' }
+    if ($attempt -eq 1) { Write-Host 'Frontend chưa ổn định hoặc vừa thoát; thử khởi động lại một lần sau khi đã kiểm tra cổng/process.' }
   }
-  Write-Host 'Frontend         OK (started)'
+  if (-not $frontendReady) { Write-Failure 'FRONTEND_START_FAILED' "Frontend chưa ổn định sau hai lần thử. Xem $frontendLog và .err; kiểm tra cảnh báo dependency/cổng trước khi thử lại." }
+  Write-Host 'Frontend OK (vừa khởi động)'
 } else {
-  if (-not $frontendHealthy) { Write-Failure 'FRONTEND_START_FAILED' "port $FrontendPort is occupied, but the frontend did not return HTTP 2xx/3xx." }
+  if (-not $frontendHealthy) { Write-Failure 'FRONTEND_START_FAILED' "Cổng $FrontendPort đang bị giữ nhưng không trả HTTP 2xx/3xx." }
   $snapshot = Get-ProcessSnapshot
   $ownerPid = [int]$frontendPids[0]
   if ((Get-VerifiedProjectRootPid $ownerPid $snapshot 'frontend') -le 0) {
-    Write-Failure 'FRONTEND_START_FAILED' "port $FrontendPort serves HTTP but is not owned by this project's frontend ($((Get-SafeProcessLabel $ownerPid $snapshot))); no duplicate was started."
+    Write-Failure 'FRONTEND_START_FAILED' "Cổng $FrontendPort trả HTTP nhưng không thuộc frontend project ($((Get-SafeProcessLabel $ownerPid $snapshot))); không tạo process trùng."
   }
-  Write-Host 'Frontend         OK (already healthy; reused)'
+  Write-Host 'Frontend OK (đang chạy; tái sử dụng)'
 }
 
 $csrf = Invoke-LocalGet "$backendUrl/api/v1/auth/csrf" 4 $trustedFrontendOrigin
-if ($csrf.Status -ne 200) { Write-Failure 'BACKEND_START_FAILED' "CSRF bootstrap returned HTTP $($csrf.Status)." }
+if ($csrf.Status -ne 200) { Write-Failure 'BACKEND_START_FAILED' "Khởi tạo CSRF trả HTTP $($csrf.Status)." }
 try {
   $csrfBody = $csrf.Body | ConvertFrom-Json
-  if (-not $csrfBody.data.csrf_token) { Write-Failure 'BACKEND_START_FAILED' 'CSRF endpoint returned HTTP 200 without a token.' }
-} catch { Write-Failure 'BACKEND_START_FAILED' 'CSRF endpoint returned an unreadable response.' }
+  if (-not $csrfBody.data.csrf_token) { Write-Failure 'BACKEND_START_FAILED' 'Endpoint CSRF trả HTTP 200 nhưng thiếu token.' }
+} catch { Write-Failure 'BACKEND_START_FAILED' 'Không đọc được phản hồi CSRF.' }
 $csrfAllowOrigin = [string]$csrf.Headers['Access-Control-Allow-Origin']
 $csrfAllowCredentials = [string]$csrf.Headers['Access-Control-Allow-Credentials']
 if ($csrfAllowOrigin -ne $trustedFrontendOrigin -or $csrfAllowCredentials -ne 'true') {
-  Write-Failure 'BACKEND_START_FAILED' 'CSRF endpoint did not allow the expected frontend origin with credentials.'
+  Write-Failure 'BACKEND_START_FAILED' 'CSRF không cho phép trusted frontend origin kèm credential.'
 }
 
 Write-Host 'CSRF             OK'
+$processRecord = @{ target = "$($databaseUri.Host):$PostgresPort/$databaseName" }
+foreach ($kind in @('backend','frontend')) {
+  $port = if ($kind -eq 'backend') { $BackendPort } else { $FrontendPort }
+  $listeners = Get-ListenerPids $port
+  if (-not $listeners.Count) { Write-Failure 'PROCESS_EXITED_AFTER_HEALTH' "Process $kind đã thoát sau health; chưa ghi dấu startup thành công. Xem log." }
+  $listener = [int]$listeners[0]
+  $snapshot = Get-ProcessSnapshot
+  if ((Get-VerifiedProjectRootPid $listener $snapshot $kind) -le 0) { Write-Failure 'PROCESS_OWNER_CHANGED' "Process giữ cổng $port không còn được xác minh thuộc $kind của project. Giữ nguyên process và chưa ghi dấu startup thành công." }
+  $process = Get-Process -Id $listener -ErrorAction SilentlyContinue
+  if (-not $process) { Write-Failure 'PROCESS_EXITED_AFTER_HEALTH' "Process $kind đã thoát sau health; chưa ghi dấu startup thành công. Xem log." }
+  $processRecord[$kind] = @{ id = $listener; started = $process.StartTime.ToUniversalTime().Ticks.ToString() }
+}
+$processRecord | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $processStamp -Encoding UTF8
 Write-Host ''
-Write-Host 'Local environment is ready.' -ForegroundColor Green
+Write-Host 'Môi trường local đã sẵn sàng.' -ForegroundColor Green
 Write-Host "Frontend: $frontendUrl"
 Write-Host "Login:    $frontendUrl/login"

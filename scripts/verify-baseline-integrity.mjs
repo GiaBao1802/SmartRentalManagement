@@ -11,13 +11,13 @@ const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 // No database client, environment file or connection configuration is loaded.
 export async function verifyBaselineArtifacts() {
   const manifest = JSON.parse(await readFile(path.join(root, relativeDirectory, 'PROVENANCE.json'), 'utf8'));
-  if (manifest.version !== '1.8') throw new Error('Unexpected baseline version.');
+  if (manifest.version !== '1.8') throw new Error('Phiên bản baseline không phải V1.8.');
   let failed = false;
   for (const [filename, expected] of Object.entries(manifest.sha256)) {
     const relativePath = relativeDirectory + filename;
     const workingTree = sha256(await readFile(path.join(root, relativePath)));
     const blob = spawnSync('git', ['cat-file', 'blob', `HEAD:${relativePath}`], { cwd: root });
-    if (blob.status !== 0) throw new Error(`Cannot read HEAD artifact: ${filename}`);
+    if (blob.status !== 0) throw new Error(`Không đọc được artifact trong Git HEAD: ${filename}`);
     const head = sha256(blob.stdout);
     const attributes = spawnSync('git', ['check-attr', '-z', 'text', '--', relativePath], { cwd: root, encoding: 'utf8' });
     const bytePreserving = attributes.status === 0 && attributes.stdout.split('\0')[2] === 'unset';
@@ -25,7 +25,7 @@ export async function verifyBaselineArtifacts() {
     console.log(JSON.stringify({ artifact: filename, expected, workingTree, head, bytePreserving, result: pass ? 'PASS' : 'FAIL' }));
     failed ||= !pass;
   }
-  if (failed) throw new Error('Baseline integrity failed. Preserve reviewed bytes; do not regenerate provenance hashes.');
+  if (failed) throw new Error('Artifact không khớp baseline. Giữ đúng bytes đã review; không tạo lại hash provenance để ép PASS.');
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

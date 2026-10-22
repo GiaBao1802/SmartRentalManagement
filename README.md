@@ -19,6 +19,29 @@ Giữ Public Explorer → chi tiết phòng → liên hệ; Auth/Accounts/invita
 
 ## A. Máy mới / database mới
 
+Trên Windows, mở **`setup.bat`** làm entry duy nhất (menu tiếng Việt):
+
+1. **Cài đặt lần đầu**: cố định **localhost:5432**, user **postgres**, database **Goctro_dev_v18**; chỉ nhập **mật khẩu PostgreSQL** bằng input ẩn nếu chưa có. Không hỏi/đổi host, cổng, user hoặc database. Kiểm tra Node 24.11+/npm 11.6+, cài project theo lockfile khi cần, tạo env còn thiếu và secret local ngẫu nhiên. PostgreSQL 18.6+ phải được cài/chạy sẵn. Xác nhận đúng target trước tạo DB/bootstrap/seed; kết nối sai thì dừng, không tự đổi cấu hình/dịch vụ.
+2. **Cập nhật và khởi động**: sau khi tự `git pull`, giữ database/env/credential, không bootstrap/seed/migration/reset. Dependency không đổi và đã kiểm tra đầy đủ thì bỏ qua `npm ci`; Prisma chỉ generate khi mapping/tooling đổi hoặc client thiếu. Process được xác minh thuộc project sẽ restart khi code/env đổi; process khác giữ nguyên.
+3. **Thoát**.
+
+Database V1.8 đã có dữ liệu được giữ nguyên; schema không tương thích hoặc lỗi kết nối/quyền sẽ dừng. Bootstrap không phải upgrade. Nếu `.env` đã trỏ target khác bộ mặc định, cài lần đầu dừng và hướng dẫn chọn **Cập nhật và khởi động**; không ghi đè file hoặc mở wizard. Nhánh cập nhật dùng nguyên target local/development đã lưu, kể cả `Goctro_test3`, không hỏi lại mật khẩu khi cấu hình đầy đủ. Thiếu env/database thì báo chưa hoàn tất cài đặt; target khác bị thiếu phải xử lý cấu hình hiện tại, không tự chuyển target.
+
+Sau seed mới thành công, công cụ tự thiết lập đúng hai Account mẫu đã tồn tại:
+
+| Vai trò | Email | Mật khẩu demo local/dev |
+|---|---|---|
+| Admin | `admin.one@example.test` | `Goctro123456789` |
+| Resident | `resident.one@example.test` | `Goctro123456789` |
+
+Mật khẩu này được chủ động công khai chỉ cho demo local/dev; không dùng làm password PostgreSQL, session secret hoặc credential production. Resident dùng email; phone fixture chưa hợp lệ với Auth V1. Database populated luôn **Sử dụng mật khẩu hiện có**, không tự provision/reset và không hỏi mật khẩu web khi chạy setup. RESET chỉ còn ở công cụ CLI riêng với xác nhận đúng target và hai email (xem hướng dẫn chi tiết). INITIAL chỉ chấp nhận hai hash seed chính xác đã review; credential khác/partial không bị suy đoán hoặc ghi đè.
+
+Setup thành công tự khởi động app và kiểm tra API/DB/frontend, mở `http://localhost:3000/login` để đăng nhập. Lần sau dùng mục **Cập nhật và khởi động**; hai launcher cũ đã gỡ. Provider invitation/reset/Zalo và storage ngoài PostgreSQL cần cấu hình riêng.
+
+Nếu lỗi, đọc bước đã hoàn thành và log `.local/setup`/`.local/dev-all`; lỗi sau seed/provision không yêu cầu seed/reset lại. Lỗi EPERM/DLL: dừng đúng process project đang giữ file; không kill mọi Node hoặc PostgreSQL. Integrity: chạy `npm.cmd run db:verify-artifacts`, giữ nguyên bytes và hash reviewed. PowerShell chặn npm.ps1: dùng `npm.cmd`.
+
+### Lệnh thủ công dành cho developer (không cần chạy thêm sau setup)
+
 1. `npm ci` (hoặc `setup.bat` trên Windows để tạo env templates khi thiếu, cài dependency, setup/inspect database V1.8, provision credential DEV và khởi động app).
 2. Copy root `.env.example` → `.env`, `backend/.env.example` → `backend/.env`, `frontend/.env.example` → `frontend/.env.local` **chỉ khi file chưa tồn tại**. Đặt password local riêng và secrets cần thiết; đồng bộ backend URL với instance. Không commit env thật.
 3. Nếu dùng Docker: `npm run db:up`. Service `postgres18` dùng image `postgres:18.6`, volume mới `goctro_pg18_v18_data`, mount `/var/lib/postgresql`; không tái dùng PG17 volume. Nếu đã có PostgreSQL native, dùng đúng instance và tạo database trống riêng thay vì chạy thêm container trùng cổng.
@@ -33,12 +56,12 @@ npm run db:inspect -- --database Goctro_test3
 Remove-Item Env:GOCTRO_SETUP_DATABASE_URL
 npm run db:validate
 npm run db:generate
-npm run dev:all
+.\setup.bat
 ```
 
 Bootstrap áp dụng đúng SQL V1.8, chỉ vào database đã tồn tại có schema trống. Seed là tùy chọn, chỉ chấp nhận schema V1.8 chính xác với cả 40 bảng chưa có dữ liệu. Chạy lại bootstrap/seed sẽ bị từ chối, không ghi đè. Công cụ setup không tự đọc `DATABASE_URL`/`.env` thật, không DROP/reset hoặc tự áp migration cũ. Seed có dữ liệu synthetic và không có password login mặc định; provision DEV credential riêng theo tài liệu.
 
-`setup.bat` không tự tạo database/apply schema/seed. `db:down` chỉ stop service PG18 và giữ volume. Launcher mặc định yêu cầu `localhost:5432/Goctro_test3`, FE `http://localhost:3000`, BE `http://localhost:4000`, login `/login`. Kiểm tra `/api/health`, `/api/health/db`, `/api/v1/auth/csrf`. Database port/tên khác cần backend local config và `npm run dev`; xem hướng dẫn chi tiết.
+`db:down` chỉ stop service PG18 và giữ volume. Dùng menu setup cho startup có guard; FE `http://localhost:3000`, BE `http://localhost:4000`, login `/login`. Kiểm tra `/api/health`, `/api/health/db`, `/api/v1/auth/csrf`.
 
 ## B. Database đã có dữ liệu
 

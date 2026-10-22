@@ -1,6 +1,10 @@
 # Local Development Startup (Windows)
 
-## One-command startup
+## Entry hiện hành — 2026-10-23
+
+Mở `setup.bat`, chọn Cài đặt lần đầu hoặc Cập nhật và khởi động. Cài mới cố định localhost:5432/postgres/Goctro_dev_v18, chỉ hỏi mật khẩu PostgreSQL ẩn khi thiếu. Env target khác không bị ghi đè; chọn Cập nhật để giữ target cũ. Menu cập nhật thay thế hai launcher cũ, giữ dữ liệu/env/credential, không tự seed/provision/reset. RESET là công cụ CLI riêng có xác nhận. Xem [hướng dẫn hiện hành](DATABASE_V1_8_SETUP.md). Các phần bên dưới là bằng chứng lịch sử của launcher trước menu, không phải hướng dẫn target hiện tại.
+
+## One-command startup (historical)
 
 From the repository root, run:
 
@@ -31,7 +35,7 @@ The CSRF check verifies an HTTP 200 response, token presence, and the expected c
 - A frontend listener is reused only when it is reachable and its Next.js process belongs to this repository. An unrelated process on port 3000 is left untouched and reported.
 - `npm run dev:stop` stops only listener process trees positively identified as this repository's backend or frontend. It never stops PostgreSQL.
 - The launcher does not restore PID state after reboot and does not trust stale PID files. It does not run migrations, schema SQL, or seed scripts.
-- The legacy `launch.ps1` delegates to `dev:all` so it shares the same checks; `launch.bat` continues to call that wrapper and opens the frontend after success.
+- The historical wrapper has been retired in favor of the setup menu.
 - Backend logs are written under the ignored `.local/dev-all/` directory; database URLs and secrets are not printed by the launcher.
 
 ## Checks and recovery
@@ -78,5 +82,5 @@ Final verification returned HTTP 200 for `/api/health` through both localhost an
 - `package.json` — added `dev:all` and `dev:stop` commands.
 - `scripts/dev-all.ps1` — prerequisite, process ownership, bounded health, and startup logic.
 - `scripts/dev-stop.ps1` — safe stop for verified project backend/frontend process trees.
-- `launch.ps1` — delegates to the new launcher while preserving the existing open-browser behavior.
+- Historical launcher wrapper — retired in favor of the setup menu.
 - `docs/10_operations/LOCAL_DEV_STARTUP_REPORT.md` — this guide and diagnostics.

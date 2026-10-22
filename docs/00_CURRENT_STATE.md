@@ -2,9 +2,15 @@
 
 ## Last Updated
 
-2026-10-20
+2026-10-23
 
 ## Project Status
+
+### Windows setup menu — 2026-10-23 (review pending)
+
+Quyết định cuối: Cài lần đầu cố định localhost:5432/postgres/Goctro_dev_v18, chỉ hỏi mật khẩu PostgreSQL ẩn nếu thiếu; env khác được giữ nguyên và hướng dẫn dùng Cập nhật. Cập nhật giữ target/credential cũ, không hỏi/reset mật khẩu web. RESET chỉ còn CLI riêng có xác nhận. Rehearsal mặc định dùng ánh xạ disposable chặt ở cổng riêng, không chiếm 5432; bằng chứng phiên trước trong hướng dẫn được đánh dấu lịch sử, kết quả bản cuối ghi riêng. Không đổi nghiệp vụ/baseline hay primary next task.
+
+`setup.bat` là entry Windows tiếng Việt với Cài đặt lần đầu / Cập nhật và khởi động / Thoát; bỏ hai launcher cũ. Cài mới provision mật khẩu demo công khai `Goctro123456789` cho hai Account seed sau kiểm tra catalog/identity/linkage trong transaction; cập nhật giữ credential và không seed/migrate. Hỗ trợ tên database local khác, cache dependency/Prisma và restart process đã xác minh khi code/env đổi. Native PostgreSQL 18.6 disposable đã chạy qua tạo DB/bootstrap/seed/provision/generate/startup và Auth V1 email; Resident rental/403 Admin, RESET có xác nhận và rollback đã có kiểm chứng. Xem [hướng dẫn và bằng chứng vận hành](10_operations/DATABASE_V1_8_SETUP.md). Phone fixture, Docker, double-click GUI và provider/storage ngoài DB chưa được xác minh. Chưa commit/push trong task này; không đổi baseline hoặc dữ liệu `Goctro_test3`. Không đổi active module/primary next task.
 
 ### Public landing page — 2026-10-20
 

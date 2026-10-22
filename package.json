@@ -21,7 +21,7 @@
     "db:state": "node scripts/database-v18.mjs state",
     "db:verify-artifacts": "node scripts/verify-baseline-integrity.mjs",
     "db:validate": "npm run db:validate --workspace=@goctro/backend",
-    "test:db-setup": "node --test scripts/database-v18.test.mjs",
+    "test:db-setup": "node --test scripts/database-v18.test.mjs scripts/setup-cache.test.mjs",
     "test:db-setup:runtime": "node --test scripts/database-v18.integration.test.mjs",
     "db:generate": "npm run db:generate --workspace=@goctro/backend",
     "db:migrate": "node scripts/database-v18.mjs block-legacy-migrate",

@@ -129,6 +129,24 @@ export function assertCatalog(actual, expected) {
   if (!catalogsMatch(actual, expected)) throw new SetupError('Schema differs from the reviewed V1.8 catalog (including migration history/constraints/indexes/triggers). Stop and review the existing database; bootstrap is not an upgrade.', 'schema');
 }
 
+export function catalogDifferences(actual, expected) {
+  const a = normalizeCatalog(actual), e = normalizeCatalog(expected);
+  const result = [];
+  for (const group of new Set([...Object.keys(a), ...Object.keys(e)])) {
+    if (JSON.stringify(a[group]) === JSON.stringify(e[group])) continue;
+    const key = row => [row.relation, row.tablename, row.name, row.indexname, row.arguments].filter(v => v !== undefined).join('/');
+    const actualRows = new Map((a[group] || []).map(row => [key(row), row]));
+    const expectedRows = new Map((e[group] || []).map(row => [key(row), row]));
+    for (const id of new Set([...actualRows.keys(), ...expectedRows.keys()])) {
+      const left = actualRows.get(id), right = expectedRows.get(id);
+      if (JSON.stringify(left) === JSON.stringify(right)) continue;
+      const fields = [...new Set([...Object.keys(left || {}), ...Object.keys(right || {})])].filter(f => JSON.stringify(left?.[f]) !== JSON.stringify(right?.[f]));
+      result.push(`${group}: ${id}; ${!left ? 'thiếu' : !right ? 'ngoài baseline' : 'khác thuộc tính ' + fields.join(', ')}`);
+    }
+  }
+  return result;
+}
+
 async function assertPublicOnly(client) {
   const { rows } = await client.query(`SELECT nspname FROM pg_namespace WHERE nspname<>'public' AND nspname<>'information_schema' AND nspname !~ '^pg_'`);
   if (rows.length) throw new SetupError('Unexpected user schema exists. This tool supports only the reviewed public-schema baseline.');
@@ -154,7 +172,10 @@ export async function readDatabaseState(client, baseline) {
   const { rows: objectRows } = await client.query(`SELECT (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public') + (SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public') + (SELECT count(*) FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace WHERE n.nspname='public') AS count`);
   if (Number(objectRows[0].count) === 0) return 'empty_schema';
   const actual = await readCatalog(client);
-  if (!catalogsMatch(actual, baseline.catalog)) return 'incompatible';
+  if (!catalogsMatch(actual, baseline.catalog)) {
+    for (const difference of catalogDifferences(actual, baseline.catalog)) console.error(`Khác biệt schema: ${difference}`);
+    return 'incompatible';
+  }
   const tables = baseline.catalog.relations.filter((r) => ['r', 'p'].includes(r.kind));
   for (const table of tables) {
     const { rows } = await client.query(`SELECT EXISTS(SELECT 1 FROM public.${quote(table.name)} LIMIT 1) AS populated`);
@@ -230,10 +251,10 @@ export async function runCommand(args, env = process.env) {
       const state = await readDatabaseState(client, baseline);
       await client.query('ROLLBACK');
       if (state === 'incompatible') throw new SetupError('Database state: schema_incompatible. Inspect the existing database; no write was attempted.', 'schema');
-      console.log(`Database state: ${state}; database=${target.database}; host=${target.host}; port=${target.port}. Read-only.`);
+      console.log(`Database state: ${state}; database=${target.database}; host=${target.host}; port=${target.port}. Chỉ đọc.`);
       return;
     } else await applyDatabase(client, mode, baseline);
-    console.log(`Database V1.8 ${mode}: PASS; database=${target.database}; host=${target.host}; port=${target.port}; tables=40. Credentials hidden.`);
+    console.log(`Database V1.8 ${mode}: PASS; database=${target.database}; host=${target.host}; port=${target.port}; tables=40. Đã ẩn credential.`);
   } finally { await client.end().catch(() => {}); }
 }
 
@@ -241,7 +262,17 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   runCommand(process.argv.slice(2)).catch((error) => {
     const kind = classifySetupError(error);
     console.error(`SETUP_ERROR kind=${kind}`);
-    console.error(error instanceof SetupError ? error.message : `Database setup failed; SQLSTATE/error code=${error.code || 'UNAVAILABLE'}. Transaction rolled back if started. Connection strings and SQL detail are hidden.`);
+    const explanation = modeIsLegacy(error) ? 'db:migrate bị chặn: database/migrations là lịch sử LEGACY/demo, không phải baseline V1.8. Dùng setup/db:bootstrap chỉ cho database mới trống hoặc review migration riêng cho dữ liệu hiện có.' : {
+      missing: 'Database chưa tồn tại.',
+      auth: 'PostgreSQL từ chối xác thực hoặc quyền truy cập.',
+      connection: 'Không kết nối được PostgreSQL; kiểm tra host/cổng/dịch vụ.',
+      schema: 'Schema không tương thích catalog V1.8; không dùng bootstrap làm upgrade.',
+      target: 'Identity/phiên bản server không khớp target local PostgreSQL 18.6+.',
+      unknown: 'Không hoàn thành được kiểm tra/cài đặt database; xem mã lỗi và hướng dẫn vận hành.',
+    }[kind] || 'Target không hợp lệ.';
+    console.error(`${explanation} SQLSTATE/mã lỗi=${error.code || 'UNAVAILABLE'}. Nếu transaction đã bắt đầu thì đã yêu cầu rollback. Đã ẩn URL/secret/SQL detail.`);
     process.exitCode = setupExitCode(kind);
   });
 }
+
+function modeIsLegacy(error) { return error instanceof SetupError && error.message.startsWith('db:migrate is blocked:'); }
