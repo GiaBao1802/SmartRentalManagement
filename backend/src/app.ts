@@ -30,6 +30,7 @@ import { PrismaUtilityTariffManagementRepository } from "./services/utility-tari
 import { PrismaPropertyServiceRepository } from "./services/property-service.repository.js";
 import { PrismaParkingManagementRepository } from "./services/parking-management.repository.js";
 import { PrismaAccountManagementRepository } from "./accounts/account.repository.js";
+import { PrismaNotificationRepository } from "./notifications/notification.repository.js";
 
 const app = express();
 
@@ -71,6 +72,7 @@ app.use("/api/v1", createV1Router({
   utilityTariffRepository: new PrismaUtilityTariffManagementRepository(prisma),
   propertyServiceRepository: new PrismaPropertyServiceRepository(prisma),
   parkingManagementRepository: new PrismaParkingManagementRepository(prisma),
+  notificationRepository: new PrismaNotificationRepository(prisma),
 }));
 
 app.get("/api/health", (_request, response) => {
