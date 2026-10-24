@@ -947,7 +947,7 @@ Callbacks verify signature, merchant/order references, provider IDs, invoice, an
 
 **Current business meaning:** Facility (for example Pool/Gym) describes a shared Property asset and is not automatically paid or subscription-based. Paid Services may be Fixed (Property configured, charged per eligible Room, price selected at `period_start` and held for the period; in V1 it applies to all eligible Rooms in that Property) or Flexible (a valid service-generated billable charge; server selects the effective Property price at `occurred_at`; each charge belongs to an Invoice period when its `occurred_at` Vietnam calendar date in `Asia/Ho_Chi_Minh` is from `period_start` through and including `period_end`; no automatic refund/rewrite after billed/finalized). Electricity uses the effective Property tariff selected at `period_start` and progressive kWh tiers; Water uses one effective Property price per m³. Water provider/locality/source details are informational audit metadata only, with no live provider integration. A tariff change during a period applies next period, with no split, day allocation, or tariff-boundary reading. Pricing authority is Property-scoped; Contract cannot override utility, service, or Parking prices. Free Parking entitlement creates no Invoice Item; legacy unclassified assignment is neither assumed paid nor free. Recurring Parking charge requires active paid entitlement, a valid Property price item/version, and eligibility at `period_start`; if it activates later, charge begins next period. No mid-period proration. V1.7 line/tier monetary amounts use decimal-safe half-up rounding and finalized total is the sum of rounded Invoice Item amounts.
 
-Every effective price change appends a Price Version with effective date and source/reference where applicable. Historical prices remain append-only; finalized Invoice renders its own immutable item snapshot and never looks up the current catalog price/name. The existing Admin-only Flexible charge-creation endpoint remains an internal/operational capability for authorized service fulfillment and transition handling; it is not the intended primary Resident product flow. The approved product direction is for a Resident to request/use an available amenity, follow scheduling when required, and for the backend to create a billable charge after the usage is performed or confirmed complete. Resident request, scheduling and completion endpoints require a future API contract; this section does not introduce them or change the existing endpoint.
+Every effective price change appends a Price Version with effective date and source/reference where applicable. Historical prices remain append-only; finalized Invoice renders its own immutable item snapshot and never looks up the current catalog price/name. The existing Admin-only Flexible charge-creation endpoint remains an internal/operational capability for authorized service fulfillment and transition handling; it is not the intended primary Resident product flow. The approved product direction is for a Resident to request/use an available amenity, follow scheduling when required, and for the backend to create a billable charge after the usage is performed or confirmed complete. `GET /me/services` only exposes the active catalog/current price for browsing. Resident request, scheduling, and completion endpoints require a future API contract; this section does not introduce them or change the existing Admin endpoints.
 
 #### Admin Fixed/Flexible Service management contract
 
@@ -962,6 +962,12 @@ The following endpoints are mounted under `/api/v1` and are Admin-only. Owner is
 | `POST /properties/{property_id}/pricing-items/{pricing_item_id}/price-versions?kind=FIXED_SERVICE\|FLEXIBLE_SERVICE` | Atomically publish an immutable version. Exact body: `effective_from` (`YYYY-MM-DD`), `unit_price` (non-negative VND integer string), optional `source_name`, `source_reference`, `reason`. Duplicate effective date is `409`; the item must be active and its unit comes from the catalog. No draft lifecycle exists. |
 | `GET /properties/{property_id}/flexible-service-charges?page=&page_size=` | List Owner/Property-scoped events with safe service, Room, Contract and Resident labels, amount snapshots and `READY/INVOICED/VOID` status. |
 | `POST /properties/{property_id}/flexible-service-charges` | Record a Flexible event. Requires `Idempotency-Key`. Exact body: `room_id`, `contract_id`, optional nullable `resident_id`, `pricing_item_id`, positive `quantity` (up to 3 decimals), and timezone-qualified `occurred_at`. The server validates the Owner/Property/Room/Contract/Resident/item relation, Contract date range, and active Flexible item; resolves the latest published Property price on the `Asia/Ho_Chi_Minh` calendar date; and stores server-derived unit, unit-price/amount snapshots and a payload fingerprint. Same key and payload replays the original charge; same key with a different payload is `409`. New events start `READY`. |
+
+#### Resident Flexible Service catalog read
+
+| Method and path | Behavior |
+|---|---|
+| `GET /me/services` | Resident-only read of active `FLEXIBLE_SERVICE` catalog items for active Properties linked to the authenticated Resident's active Occupancies. The client cannot choose Owner, Resident, or Property scope. Returns each Property and its active services, description, unit, and at most one current price effective on the `Asia/Ho_Chi_Minh` calendar date; `current_price` is `null` until a price is effective. Retired items, Fixed Services, Parking, and price history are omitted. This endpoint does not request/use a service, reserve a time, create a charge, or initiate payment. |
 
 Fixed price resolution uses the published Property version effective at Invoice `period_start`, for every eligible Room, for the full period without proration. Flexible charges are included only when their `occurred_at` Vietnam calendar date is within the Invoice's inclusive `period_start`–`period_end` range and matches its Contract/Room. Billing readiness and finalization use the existing same resolvers; a successful finalization consumes the eligible charge and creates the Invoice Item atomically. A failed finalization leaves the charge `READY`. The API has no edit/void operation for a billed charge and no note field because Database V1.8 has no note column. Future corrections must preserve financial history.
 
@@ -1271,7 +1277,7 @@ This writes a `complaint_history` row. Cross-Owner Property/Room returns `404`.
 
 ## 10. Endpoint matrix
 
-All paths are relative to `/api/v1`. This matrix currently contains **114 endpoint definitions**. `Resident-self` means a Resident can act only on their own resource. `Admin-owner` means only the authenticated Owner's records. `Mixed-scope` means the endpoint applies distinct Admin/Resident filters described above.
+All paths are relative to `/api/v1`. This matrix currently contains **115 endpoint definitions**. `Resident-self` means a Resident can act only on their own resource. `Admin-owner` means only the authenticated Owner's records. `Mixed-scope` means the endpoint applies distinct Admin/Resident filters described above.
 
 | Method | Endpoint | Role | Scope | Transaction | Idempotent/replay | Notes |
 |---|---|---|---|---|---|---|
@@ -1348,6 +1354,7 @@ All paths are relative to `/api/v1`. This matrix currently contains **114 endpoi
 | POST | `/payments/momo/callback` | MoMo | Provider-signed | Yes | Yes | Idempotent callback |
 | POST | `/payments/zalopay/callback` | ZaloPay | Provider-signed | Yes | Yes | Idempotent callback |
 | GET | `/properties/{property_id}/pricing-items` | Admin | Owner Property | No | Yes | Fixed/Flexible catalog; `?kind=PARKING` returns Parking catalog and versions |
+| GET | `/me/services` | Resident | Resident-self active Occupancy | No | Yes | Active Flexible catalog/current effective price for current occupied Properties |
 | POST | `/properties/{property_id}/pricing-items` | Admin | Owner Property | Yes | Yes | Create Fixed/Flexible/PARKING catalog item |
 | POST | `/properties/{property_id}/pricing-items/{pricing_item_id}/retire` | Admin | Owner item | Yes | No | Soft-retire; preserves history |
 | GET | `/properties/{property_id}/pricing-items/{pricing_item_id}/price-versions` | Admin | Owner item | No | Yes | Immutable published history |
@@ -1416,7 +1423,7 @@ All paths are relative to `/api/v1`. This matrix currently contains **114 endpoi
 | Utility Tariff | — | R/C publish own Property | — |
 | Payment | — | R own transactions | R/C own checkout and attempts |
 | Zalo OA invoice send/log | — | C/R own | R own send history |
-| Facility/Paid Service/Pricing | — | Fixed/Flexible catalog, price-version and charge routes specified; Facility management remains open | Fixed/Flexible contract is Admin-only; resident charge self-service is not specified |
+| Facility/Paid Service/Pricing | — | Fixed/Flexible catalog, price-version and charge routes specified; Facility management remains open | R active Flexible catalog/current price via `/me/services`; request/use/scheduling/charge creation remains unspecified |
 | Parking/vehicles | — | R/C/U/A own | R/C/U own vehicle/assignment |
 | Complaint | — | R/U own | R/C own |
 | Contact Request | C | R/U own | — |

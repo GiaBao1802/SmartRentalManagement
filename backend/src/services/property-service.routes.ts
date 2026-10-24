@@ -1,12 +1,12 @@
 import express, { type RequestHandler } from "express";
 import { Prisma } from "@prisma/client";
 import type { AuthDependencies } from "../middleware/auth.js";
-import { authenticateRequest, foreignResourceNotFound, getAdminOwnerId, requireAdmin } from "../middleware/auth.js";
+import { authenticateRequest, foreignResourceNotFound, getAdminOwnerId, getResidentContext, requireAdmin, requireResident } from "../middleware/auth.js";
 import { ApiError, conflict, validationError } from "../middleware/api-error.js";
 import { parseBigIntId, sendJson } from "../utils/ids.js";
 import { servicePriceInputIsValid, type PrismaPropertyServiceRepository, type ServiceKind, type ServicePriceInput } from "./property-service.repository.js";
 
-type Repo = Pick<PrismaPropertyServiceRepository, "listItems" | "createItem" | "retireItem" | "publishPrice">;
+type Repo = Pick<PrismaPropertyServiceRepository, "listItems" | "listResidentServices" | "createItem" | "retireItem" | "publishPrice">;
 function id(value: unknown, label = "ID") { try { return parseBigIntId(value); } catch { throw validationError(`${label} không hợp lệ.`); } }
 function exactBody(body: unknown, fields: string[]) {
   if (!body || typeof body !== "object" || Array.isArray(body)) throw validationError("Dữ liệu dịch vụ không hợp lệ.");
@@ -51,6 +51,29 @@ export function createPropertyServiceRouter(auth: AuthDependencies, repository: 
     res.status(410).json({ code: "ENDPOINT_RETIRED", error: "Công cụ ghi nhận phát sinh thủ công đã ngừng sử dụng." });
   });
   const admin: RequestHandler[] = [authenticateRequest(auth), requireAdmin];
+  const resident: RequestHandler[] = [authenticateRequest(auth), requireResident];
+  router.get("/me/services", ...resident, async (req, res, next) => {
+    try {
+      const context = getResidentContext(req.auth!);
+      const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+      const groups = await repository.listResidentServices(context.ownerId, context.residentId, new Date(`${today}T00:00:00.000Z`));
+      sendJson(res, 200, { data: groups.map(({ property, services }) => ({
+        property_id: String(property.propertyId),
+        property_name: property.name,
+        services: services.map((item) => ({
+          service_id: String(item.propertyPricingItemId),
+          name: item.name,
+          description: item.description,
+          unit: item.unit,
+          current_price: item.priceVersions[0] ? {
+            unit_price: item.priceVersions[0].unitPrice.toString(),
+            effective_from: item.priceVersions[0].effectiveFrom.toISOString().slice(0, 10),
+          } : null,
+        })),
+      })) });
+    } catch (error) { next(error); }
+  });
+
   router.get("/properties/:property_id/pricing-items", ...admin, async (req, res, next) => {
     try {
       const allowed = ["kind"];

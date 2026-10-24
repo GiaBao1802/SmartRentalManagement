@@ -11,6 +11,45 @@ const vndMax = 9_223_372_036_854_775_807n;
 export class PrismaPropertyServiceRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
+  async listResidentServices(ownerId: bigint, residentId: bigint, effectiveOn: Date) {
+    const occupancies = await this.prisma.roomResident.findMany({
+      where: { ownerId, residentId, status: "active" },
+      select: { propertyId: true },
+    });
+    const propertyIds = [...new Set(occupancies.map((row) => row.propertyId.toString()))].map(BigInt);
+    if (propertyIds.length === 0) return [];
+
+    const properties = await this.prisma.property.findMany({
+      where: { ownerId, propertyId: { in: propertyIds }, status: "active" },
+      orderBy: [{ name: "asc" }, { propertyId: "asc" }],
+      select: { propertyId: true, name: true },
+    });
+    if (properties.length === 0) return [];
+
+    const items = await this.prisma.propertyPricingItem.findMany({
+      where: { ownerId, propertyId: { in: properties.map((property) => property.propertyId) }, kind: "FLEXIBLE_SERVICE", status: "active" },
+      orderBy: [{ propertyId: "asc" }, { name: "asc" }, { propertyPricingItemId: "asc" }],
+      select: {
+        propertyPricingItemId: true,
+        propertyId: true,
+        name: true,
+        description: true,
+        unit: true,
+        priceVersions: {
+          where: { effectiveFrom: { lte: effectiveOn } },
+          orderBy: [{ effectiveFrom: "desc" }, { versionNo: "desc" }],
+          take: 1,
+          select: { versionNo: true, effectiveFrom: true, unitPrice: true },
+        },
+      },
+    });
+
+    return properties.map((property) => ({
+      property,
+      services: items.filter((item) => item.propertyId === property.propertyId),
+    }));
+  }
+
   async listItems(ownerId: bigint, propertyId: bigint, kind?: ServiceKind) {
     const property = await this.prisma.property.findFirst({ where: { ownerId, propertyId }, select: { propertyId: true, name: true } });
     if (!property) return null;

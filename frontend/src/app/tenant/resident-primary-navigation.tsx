@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import { notificationApi } from "../../lib/api/notificationApi";
 
 type ResidentPrimaryNavigationProps = {
-  active: "overview" | "invoices" | "notifications";
+  active: "overview" | "invoices" | "amenities" | "notifications";
   unreadCount?: number | null;
 };
 
 const links = [
   { key: "overview", href: "/tenant", label: "Tổng quan" },
   { key: "invoices", href: "/tenant/invoices", label: "Hóa đơn" },
+  { key: "amenities", href: "/tenant/amenities", label: "Tiện ích" },
   { key: "notifications", href: "/tenant/notifications", label: "Thông báo" },
 ] as const;
 

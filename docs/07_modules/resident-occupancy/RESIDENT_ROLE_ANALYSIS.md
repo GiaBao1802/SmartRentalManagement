@@ -55,23 +55,24 @@ Tất cả path dưới đây tương đối với `/api/v1`; authorization luô
 | Rental | `GET /me/rental` | Backend route/repository và UI `/tenant` hiện có; Resident session/browser closure còn thiếu trong báo cáo Resident/Occupancy |
 | Contracts | `GET /me/contracts`, `GET /contracts/{id}`, `GET /contracts/{id}/documents`, `GET /contract-documents/{id}` | Backend/API và một phần UI hợp đồng/tài liệu hiện có; Resident authenticated E2E chưa đóng |
 | Invoices/payments | `GET /invoices`, `GET /invoices/{id}`, `GET /invoices/{id}/zalo-send-logs`, `POST /invoices/{id}/payment-sessions`, `POST /payment-sessions/{id}/attempts`, `GET /payment-sessions/{id}`, `GET /invoices/{id}/payments` | Contract đã định nghĩa; Resident UI/runtime phụ thuộc payment provider và cần xác minh theo source hiện hành |
-| Service | API Fixed/Flexible hiện chủ yếu là Admin; Resident tự yêu cầu/sử dụng dịch vụ chưa có endpoint/DTO cụ thể trong API Spec | Requirement muốn xem và sử dụng tiện ích; rule Flexible cancellation/refund và flow resident còn mở |
+| Service | `GET /me/services` chỉ đọc danh mục Flexible đang hoạt động/giá hiện hành theo nơi cư trú đang hoạt động; chưa có API Resident yêu cầu, đặt lịch, sử dụng hoặc tạo charge | Catalog UI đã có; lịch/booking và luồng sử dụng vẫn cần nguồn lịch, dữ liệu và contract được Admin chốt |
 | Parking | `GET /properties/{id}/parking-areas`, `GET /parking-areas/{id}/slots`, `GET /me/vehicles`, `POST /me/vehicles`, `PATCH /vehicles/{id}`, `GET /parking-assignments`, `POST /me/parking-assignments`, `POST /parking-assignments/{id}/end` | API Spec liệt kê quyền Resident; cần đối chiếu route implementation/UI từng bước trước khi chọn module |
 | Complaints | `POST /complaints`, `GET /me/complaints`, `GET /complaints/{id}`, `POST /complaints/{id}/notes`, `POST /complaints/{id}/reopen` | API Spec liệt kê; SLA target còn mở; phải dùng Complaint category cho “Báo cáo nhà trọ” |
 | Notifications | `GET /notifications`, `PATCH /notifications/{id}/read`, `POST /notifications/read-all`, `GET /notification-preferences`, `PATCH /notification-preferences` | API Spec liệt kê; delivery chỉ in-app, không email/push |
 
-Không được thêm endpoint tiện ích, booking, payment hoặc profile/avatar transport mới bằng suy luận. API Spec §13 còn nêu các blocker cross-domain; cần kiểm tra lại chính xác implementation khi giao từng module.
+`GET /me/services` chỉ phục vụ việc xem catalog và giá hiện hành; không suy rộng endpoint này thành booking, đăng ký sử dụng, charge hoặc thanh toán. Các endpoint tiện ích ngoài catalog, payment và profile/avatar transport phải có contract được duyệt trước khi làm. API Spec §13 còn nêu các blocker cross-domain; cần kiểm tra lại chính xác implementation khi giao từng module.
 
 ## 5. User flow
 
 1. Admin mời Resident trong Owner scope. Hệ thống xác minh recipient binding, token một lần và hạn 24 giờ; Resident tự đặt mật khẩu, sau đó đăng nhập bằng phone (email login tương thích theo contract). Không trả token/password cho Admin; reset là luồng riêng, token 30 phút, thành công thu hồi session và không auto-login.
 2. Sau đăng nhập, frontend lấy role/profile từ `/auth/me` và điều hướng Resident sang `/tenant`. Mọi `me` endpoint tự suy ra Resident từ session; truy cập tài nguyên người khác phải bị từ chối/che bằng 404 theo API.
 3. Resident xem phòng, lượt cư trú hiện tại/lịch sử và hợp đồng/tài liệu của mình.
-4. Resident xem hóa đơn; chỉ hóa đơn unpaid đã finalize mới có thể mở payment session. Theo dõi attempt/callback và trạng thái thanh toán từ backend; hai lần thất bại trong một phiên kết thúc phiên nhưng có thể mở phiên mới.
-5. Resident có thể quản lý xe/đăng ký slot theo quyền và điều kiện hợp đồng/sức chứa; lịch sử assignment phải được giữ.
-6. Resident gửi Complaint gắn nơi ở hợp lệ, theo dõi lịch sử, và chỉ thực hiện note/reopen theo quy tắc trạng thái.
-7. Resident xem/cập nhật tùy chọn thông báo in-app; thay đổi preference không đồng nghĩa thông báo đã gửi.
-8. Resident cập nhật trường hồ sơ được phép/đổi mật khẩu bằng API đã xác thực; mọi thay đổi danh tính và xác thực phải đồng bộ và không cho client tự chọn ID/role.
+4. Resident mở `/tenant/amenities` để xem các mục `FLEXIBLE_SERVICE` đang hoạt động, mô tả/đơn vị và giá hiện hành theo Property gắn với Occupancy đang hoạt động. Trang chỉ xem catalog, không đặt lịch hay đăng ký sử dụng.
+5. Resident xem hóa đơn; chỉ hóa đơn unpaid đã finalize mới có thể mở payment session. Theo dõi attempt/callback và trạng thái thanh toán từ backend; hai lần thất bại trong một phiên kết thúc phiên nhưng có thể mở phiên mới.
+6. Resident có thể quản lý xe/đăng ký slot theo quyền và điều kiện hợp đồng/sức chứa; lịch sử assignment phải được giữ.
+7. Resident gửi Complaint gắn nơi ở hợp lệ, theo dõi lịch sử, và chỉ thực hiện note/reopen theo quy tắc trạng thái.
+8. Resident xem/cập nhật tùy chọn thông báo in-app; thay đổi preference không đồng nghĩa thông báo đã gửi.
+9. Resident cập nhật trường hồ sơ được phép/đổi mật khẩu bằng API đã xác thực; mọi thay đổi danh tính và xác thực phải đồng bộ và không cho client tự chọn ID/role.
 
 ## 6. Thứ tự module cư dân đang triển khai
 
@@ -82,7 +83,7 @@ Ngày 2026-10-23, chủ dự án chọn triển khai theo từng module và dừ
 | 1 | Tổng quan/hồ sơ cư dân | Thông tin liên hệ, trạng thái cư trú và hợp đồng từ dữ liệu hiện có | UI nền đã có; không thêm chức năng sửa hồ sơ chưa có API |
 | 2 | Trung tâm hóa đơn | Đếm theo trạng thái, lọc, phân trang và xem chi tiết an toàn | Đã triển khai và được người dùng xem; không thêm nút thanh toán khi checkout chưa sẵn sàng |
 | 3 | Thông báo/cài đặt in-app | Inbox self-scope, lọc chưa đọc, read/read-all và lưu preference | Đã triển khai; chờ review. Chỉ hiển thị notification đã tồn tại; producer/trigger mapping chưa đầy đủ |
-| 4 | Tiện ích/dịch vụ và đăng ký sử dụng | Danh mục chủ trọ đã tạo, thông tin và đăng ký của cư dân | Chưa code. Resident request API/DTO và flow nghiệp vụ chưa đủ; phải chốt contract trước khi nối UI |
+| 4 | Tiện ích/dịch vụ | Xem catalog Flexible do Admin tạo, mô tả/đơn vị/giá hiện hành; đăng ký và lịch đặt chỗ để sau | Catalog UI và read-only `GET /me/services` đã triển khai riêng. Chờ review. Lịch/booking/đăng ký/use/charge API chưa làm; phụ thuộc nguồn dữ liệu/luồng Admin được chốt |
 | 5 | Thanh toán | Checkout hóa đơn hoặc khoản phí, attempt và provider return | Chưa code. Chỉ tiếp tục khi provider/runtime readiness được xác nhận; không mô phỏng kết quả thanh toán |
 | — | Khiếu nại/phản hồi | Tạo và theo dõi yêu cầu của cư dân | Tạm hoãn theo quyết định của người dùng cho tới khi Admin có nơi tiếp nhận/xử lý |
 | — | Auth/enrollment/reset | Đăng nhập, lời mời, quên/reset và đổi password | Nền local/dev đã có; production delivery/runtime còn gate riêng |
@@ -93,7 +94,7 @@ Ngày 2026-10-23, chủ dự án chọn triển khai theo từng module và dừ
 - API cho phép Resident tự sửa phone/email/avatar nhưng không chốt request schema, chuẩn email, cách xác thực thay đổi phone/email, hay cách cập nhật đồng bộ `residents.phone/email` với `accounts.phone/email` (hai bảng có unique constraint riêng). Không được để login identity khác hồ sơ hiển thị; module đầu tiên phải kiểm tra uniqueness và cập nhật nguyên tử hoặc báo rõ blocker nếu canonical behavior chưa đủ.
 - Phone normalization đã có helper `normalizeVietnamPhone`; dùng cùng helper cho login/enrollment/profile. Số phone profile `null` và khả năng bỏ phone sau khi đã provisioned cần đối chiếu enrollment/login invariants.
 - Avatar được duyệt ở mức nghiệp vụ và storage key trong V1.8, nhưng API Spec nói rõ upload transport chưa chỉ định. Module đầu tiên không thêm upload giả, file URL công khai, DB binary hoặc path tuyệt đối.
-- API Spec chưa định nghĩa cách Resident đăng ký/sử dụng Fixed/Flexible service; Requirement §13 cũng để cancellation/refund chi tiết mở. Chưa được suy diễn thành subscription/booking.
+- `GET /me/services` chỉ cho Resident đọc catalog Flexible đang hoạt động và giá hiện hành. API Spec chưa định nghĩa cách Resident đăng ký/sử dụng dịch vụ, lấy lịch trống hoặc xác nhận hoàn tất; Requirement §13 cũng để cancellation/refund chi tiết mở. Không suy diễn thành subscription/booking.
 - Một số quyền endpoint liệt kê trong API Spec có thể chưa được mount hoặc chưa có UI. Cần đánh dấu “chưa xác minh” cho đến khi source/API runtime được đối chiếu ở module tương ứng.
 - Resident/Occupancy report hiện trạng thái PARTIAL/NO LOCK vì chưa xác nhận Resident authenticated E2E và ghi nhận các profile/self-service gaps; trạng thái hiện tại mới hơn xác nhận enrollment/reset đã có local/dev, nên không dùng câu blocker lịch sử như mô tả toàn bộ hiện tại.
 - `docs/01_REQUIREMENTS.md` có header/schema alignment cũ V1.6; `docs/00_CURRENT_STATE.md` và `docs/DATABASE_CHANGELOG.md` xác định physical baseline hiện là Database V1.8. Task này không thay đổi schema.
@@ -122,3 +123,9 @@ Browser authenticated ban đầu tải được một notification chưa đọc.
 Theo góp ý review, badge chấm vàng và số notification chưa đọc được dùng chung trên menu Tổng quan, Hóa đơn và Thông báo. Hai trang đầu đọc số đếm từ API self-account; trang Thông báo dùng số đếm đang cập nhật trong inbox. Khi count bằng 0 hoặc chưa tải được, menu không hiện badge.
 
 Source hiện chỉ có scheduler tạo notification chốt kỳ cho tài khoản Admin và chưa có đầy đủ Resident notification producers hoặc consumer áp dụng bốn preference. Vì vậy trang chỉ hiện record đã lưu; preference được lưu theo account nhưng không tuyên bố mọi loại trigger đã được nối. Không có email/push trong V1. **Trạng thái: module UI/API implemented; chờ review người dùng; trigger integrations còn ngoài phạm vi/requirement mapping chưa đủ.**
+
+## 12. Kết quả module 4 — Catalog tiện ích Cư dân — 2026-10-24
+
+Đã thêm trang `/tenant/amenities` và mục Tiện ích trên menu Resident. Trang nhóm theo khu trọ liên kết với Occupancy đang hoạt động; chỉ hiển thị catalog `FLEXIBLE_SERVICE` đang hoạt động, mô tả, đơn vị và giá có hiệu lực hiện tại. Cư dân có thể mở/thu gọn chi tiết. API `GET /me/services` tự lấy Owner/Resident từ session, chỉ đọc và không nhận `property_id` do client gửi. Không thêm schema/migration, UI Admin, lịch trống, booking, đăng ký/use, charge, payment hoặc AI.
+
+Đối chiếu API/Requirement trước khi code; lịch/đặt chỗ và luồng sử dụng còn chờ phía Admin chốt nguồn dữ liệu và contract. Frontend/backend typecheck PASS; trang và thao tác mở chi tiết được xác nhận trên browser desktop đã đăng nhập, console không có lỗi. Automated tests, mobile viewport và production build không chạy. **Trạng thái: module catalog UI/API đã làm; chờ người dùng review.**

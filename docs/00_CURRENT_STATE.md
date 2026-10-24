@@ -2,7 +2,7 @@
 
 ## Last Updated
 
-2026-10-23
+2026-10-24
 
 ## Project Status
 
@@ -15,6 +15,10 @@ Quyết định cuối: Cài lần đầu cố định localhost:5432/postgres/G
 ### Resident role — Notifications module in review, 2026-10-23
 
 The `/tenant` overview and `/tenant/invoices` remain in place; the user reviewed the invoice center and confirmed no payment button is needed yet because checkout is not ready. Added Resident navigation and `/tenant/notifications` for account-scoped in-app inbox, unread/read-all actions, pagination, and stored preference toggles. The unread yellow dot/count now comes from the same account-scoped API on Overview, Invoices, and Notifications. Existing V1.8 tables and API contract are used; no schema or migration changed. Notification producers were not added, so the inbox shows persisted records and preferences do not claim to control every producer. Admin UI/workflows, other roles' UI, and other modules were not changed. Frontend/backend typechecks and authenticated desktop browser load passed; automated tests, mobile viewport, and production build were not run. See [Resident role analysis](07_modules/resident-occupancy/RESIDENT_ROLE_ANALYSIS.md).
+
+### Resident role — Utilities catalog module in review, 2026-10-24
+
+Added `/tenant/amenities` and the Resident navigation item **Tiện ích**. The page reads active Flexible Service catalog items for the Resident's currently active Occupancy Properties, groups them by Property, and shows description, unit, and the effective current price when one exists. Added the Resident-only read endpoint `GET /api/v1/me/services`; Owner/Resident/Property scope comes from the authenticated session and active Occupancy, with no client-selected IDs. No database/schema changes. Admin UI/endpoints and other roles were not changed. Scheduling, booking, service registration/use, charges, and payments remain deferred until the Admin catalog/schedule source and their API/business contract are available. Frontend/backend typechecks PASS; authenticated desktop page load and detail expansion PASS, and the browser console had no errors. Automated tests, mobile viewport, and production build were not run. User review is pending. See [Resident role analysis](07_modules/resident-occupancy/RESIDENT_ROLE_ANALYSIS.md).
 ### Public landing page — 2026-10-20
 
 Trang giới thiệu Góc Trọ đã được thêm tại `/landing`; `/` tiếp tục là Public Explorer. Landing dùng nhận diện Ô cửa sáng và kể đúng luồng hiện hành: khám phá bản đồ → lọc/xem phòng → gửi liên hệ, có phần bổ trợ về các workspace quản lý. Explorer có liên kết `Giới thiệu Góc Trọ`; CTA chính về `/`, đăng nhập về `/login`. Hero/reveal animation hỗ trợ reduced motion và nội dung vẫn hiển thị khi JavaScript không chạy. Frontend typecheck, 76/76 tests và production build với `/landing` static (20/20 trang) PASS. Browser visual 1440/768/390/320, animation, console/network và overflow là **NOT VERIFIED** vì browser/loopback tooling không truy cập server; không có screenshot hoặc visual PASS. Không đổi backend/API/database/env/nghiệp vụ và không ghi `Goctro_test3`. Xem [Public landing page implementation](06_frontend/design/PUBLIC_LANDING_PAGE_IMPLEMENTATION_REPORT.md). Việc này không thay Active Module hoặc Exact Next Task.
@@ -58,7 +62,7 @@ Latest Auth browser/UI pass (2026-10-19): Admin invitation → human accept → 
 
 ## Active Module
 
-**Legacy-to-current Phase2 — enrollment/reset local/dev implementation and closure.** Actual API/PostgreSQL flow passes; browser new-password handoff and production adapters remain open. See migration plan§9; do not start Phase3.
+**Resident module 4 — Utilities catalog UI/API, awaiting user review.** `/tenant/amenities` displays the active Flexible Service catalog and current prices for active Resident Occupancies; scheduling/booking/use/charges/payments are deferred. See [Resident role analysis](07_modules/resident-occupancy/RESIDENT_ROLE_ANALYSIS.md). Legacy-to-current Phase2 browser handoff/production adapter gates remain separate and open.
 
 ### Legacy-to-current migration — Phase 1 completed, 2026-10-16
 
@@ -149,7 +153,7 @@ Workspace code and PostgreSQL read-model integration pass on V1.8 rehearsal. Aut
 
 ## Exact Next Task
 
-**Review Resident module 3 at `/tenant/notifications` before authorizing module 4.** The module scope, API boundary, and remaining notification-trigger limitations are recorded in [Resident role analysis](07_modules/resident-occupancy/RESIDENT_ROLE_ANALYSIS.md). Frontend/backend typechecks and authenticated desktop browser load passed. Automated tests, mobile viewport, and production build remain unrun. The previous Legacy-to-current Phase2 browser password-mismatch/repeated-submit and production adapter gates remain open and are not started by this task.
+**Review Resident module 4 at `/tenant/amenities`.** Confirm the catalog content and details layout before authorizing another module. Scheduling, booking, service registration/use, charges, and payments remain deferred pending Admin source data and an approved contract. Frontend/backend typechecks and authenticated desktop page/detail review PASS; automated tests, mobile viewport, and production build remain unrun. The Legacy-to-current Phase2 browser handoff and production adapter gates remain open and separate.
 ## Resume Checklist
 
 1. Read repository-wide [AGENTS.md](../AGENTS.md), [Documentation Rules](DOCUMENTATION_RULES.md), this checkpoint, and the [Document Catalog](DOCUMENT_CATALOG.md).

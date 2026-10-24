@@ -1920,3 +1920,100 @@ tbody tr:hover td { background: #fffcf8; }
   .resident-notice-pagination { align-items: flex-start; flex-direction: column; }
   .resident-notice-pagination > div { width: 100%; justify-content: space-between; }
 }
+
+.resident-amenities-layout { gap: 20px !important; }
+.resident-amenity-hero { position: relative; display: flex; min-height: 206px; align-items: center; gap: 24px; overflow: hidden; padding: 30px 34px; border: 1px solid #0e5a4f1c; border-radius: 20px; background: linear-gradient(112deg, #fff 0%, #f7faf6 58%, #e7f1ea 100%); box-shadow: 0 10px 30px #0b2b2a08; }
+.resident-amenity-hero::before { position: absolute; top: -145px; right: 95px; width: 310px; height: 310px; border: 1px solid #0e5a4f12; border-radius: 50%; content: ""; }
+.resident-amenity-hero::after { position: absolute; right: 170px; bottom: -170px; width: 250px; height: 250px; border: 1px solid #0e5a4f12; border-radius: 50%; content: ""; }
+.resident-amenity-hero-copy { position: relative; z-index: 1; max-width: 590px; }
+.resident-amenity-hero h1 { margin: 8px 0 7px; color: var(--color-text-primary); font-size: clamp(29px, 4vw, 38px); letter-spacing: -.045em; }
+.resident-amenity-hero p { max-width: 540px; margin: 0; color: var(--color-text-secondary); font-size: 12px; line-height: 1.75; }
+.resident-amenity-hero-art { position: relative; display: grid; width: 130px; height: 130px; flex: 0 0 130px; place-items: center; margin-left: auto; }
+.resident-amenity-orbit { position: absolute; border: 1px solid #0e5a4f20; border-radius: 50%; }
+.resident-amenity-orbit.orbit-one { inset: 5px; }
+.resident-amenity-orbit.orbit-two { inset: 18px; border-style: dashed; border-color: #0e5a4f2b; }
+.resident-amenity-hero-icon { position: relative; display: grid; width: 73px; height: 73px; place-items: center; border: 1px solid #0e5a4f1c; border-radius: 24px; background: var(--color-brand-green); color: white; box-shadow: 0 12px 25px #0e5a4f36; transform: rotate(-7deg); }
+.resident-amenity-hero-icon .resident-amenity-icon { width: 34px; height: 34px; }
+.resident-amenity-spark { position: absolute; width: 10px; height: 10px; border: 2px solid #fff; border-radius: 50%; background: var(--color-brand-yellow); box-shadow: 0 0 0 3px #ffb02026; }
+.resident-amenity-spark.spark-one { top: 18px; right: 20px; }
+.resident-amenity-spark.spark-two { bottom: 20px; left: 17px; width: 7px; height: 7px; background: var(--color-brand-green); }
+.resident-amenity-hero-count { position: relative; z-index: 1; display: grid; min-width: 104px; gap: 5px; padding: 13px 15px; border: 1px solid #0e5a4f17; border-radius: 14px; background: #ffffffd9; text-align: center; box-shadow: 0 8px 22px #0b2b2a08; }
+.resident-amenity-hero-count strong { color: var(--color-brand-green); font-size: 24px; line-height: 1; }
+.resident-amenity-hero-count span { color: var(--color-text-secondary); font-size: 9px; white-space: nowrap; }
+.resident-amenity-content { display: grid; gap: 16px; }
+.resident-amenity-section-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; }
+.resident-amenity-section-heading h2 { margin: 5px 0 0; color: var(--color-text-primary); font-size: 18px; letter-spacing: -.025em; }
+.resident-amenity-count-pill { display: inline-flex; min-height: 29px; align-items: center; gap: 7px; padding: 6px 10px; border: 1px solid #0e5a4f20; border-radius: 999px; background: #f8fbf8; color: var(--color-brand-green); font-size: 9px; font-weight: 750; white-space: nowrap; }
+.resident-amenity-count-pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--color-brand-yellow); box-shadow: 0 0 0 3px #ffb02025; }
+.resident-amenity-properties { display: grid; gap: 15px; }
+.resident-amenity-property { overflow: hidden; padding: 19px; border: 1px solid var(--color-border); border-radius: 17px; background: #fff; box-shadow: 0 5px 20px #0b2b2a05; }
+.resident-amenity-property-heading { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-bottom: 15px; padding-bottom: 14px; border-bottom: 1px solid #e7ece8; }
+.resident-amenity-property-heading > div { display: flex; min-width: 0; align-items: center; gap: 11px; }
+.resident-amenity-property-mark { display: grid; width: 39px; height: 39px; flex: 0 0 39px; place-items: center; border: 1px solid #0e5a4f18; border-radius: 12px; background: #edf4ef; color: var(--color-brand-green); }
+.resident-amenity-icon { width: 22px; height: 22px; }
+.resident-amenity-icon.is-small { width: 18px; height: 18px; }
+.resident-amenity-property-heading .resident-eyebrow { font-size: 8px; }
+.resident-amenity-property-heading h3 { margin: 3px 0 0; color: var(--color-text-primary); font-size: 14px; line-height: 1.4; }
+.resident-amenity-property-heading > span { color: var(--color-text-secondary); font-size: 9px; white-space: nowrap; }
+.resident-amenity-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; gap: 12px; }
+.resident-amenity-card { display: flex; min-width: 0; flex-direction: column; padding: 16px; border: 1px solid #dfe7e1; border-radius: 14px; background: linear-gradient(160deg, #fff 0%, #fbfcfa 100%); transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+.resident-amenity-card:hover, .resident-amenity-card.is-expanded { border-color: #a8c9b6; box-shadow: 0 9px 22px #0b2b2a0d; transform: translateY(-2px); }
+.resident-amenity-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.resident-amenity-card-icon { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 12px; background: #eaf3ed; color: var(--color-brand-green); }
+.resident-amenity-kind { padding: 5px 7px; border-radius: 999px; background: #f1f5f1; color: #5d7166; font-size: 8px; font-weight: 700; }
+.resident-amenity-card h3 { margin: 13px 0 5px; color: var(--color-text-primary); font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; }
+.resident-amenity-card-description { min-height: 38px; margin: 0; color: var(--color-text-secondary); font-size: 10px; line-height: 1.65; overflow-wrap: anywhere; }
+.resident-amenity-card-price { display: grid; gap: 4px; margin-top: 14px; padding: 11px 12px; border: 1px solid #e5eee7; border-radius: 10px; background: #f6faf6; }
+.resident-amenity-card-price > span { color: #697970; font-size: 8px; }
+.resident-amenity-card-price strong { color: var(--color-brand-green); font-size: 14px; line-height: 1.35; overflow-wrap: anywhere; }
+.resident-amenity-card-price small { color: var(--color-text-secondary); font-size: 9px; }
+.resident-amenity-details { display: grid; gap: 7px; margin-top: 12px; padding: 11px 12px; border-left: 2px solid var(--color-brand-yellow); border-radius: 0 9px 9px 0; background: #fffaf0; }
+.resident-amenity-details > div { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.resident-amenity-details > div span { color: #727d75; font-size: 8px; }
+.resident-amenity-details > div strong { color: var(--color-text-primary); font-size: 9px; text-align: right; }
+.resident-amenity-details > p { margin: 2px 0 0; color: #727d75; font-size: 8px; line-height: 1.55; }
+.resident-amenity-detail-button { display: flex; min-height: 34px; align-items: center; justify-content: space-between; gap: 10px; margin-top: auto; padding: 9px 1px 0; border: 0; background: transparent; color: var(--color-brand-green); font: inherit; font-size: 9px; font-weight: 750; cursor: pointer; }
+.resident-amenity-detail-button > span { display: grid; width: 22px; height: 22px; place-items: center; border: 1px solid #0e5a4f20; border-radius: 7px; background: #f7faf7; font-size: 14px; }
+.resident-amenity-detail-button:hover { color: #08443c; }
+.resident-amenity-property-empty { display: flex; min-height: 72px; align-items: center; padding: 13px 15px; border: 1px dashed #d5e1d8; border-radius: 11px; background: #fafcf9; color: var(--color-text-secondary); font-size: 10px; line-height: 1.6; }
+.resident-amenity-state { display: flex; min-height: 170px; align-items: center; justify-content: center; gap: 15px; padding: 22px 18px; border: 1px dashed #cfdcd2; border-radius: 14px; background: #fafcf9; }
+.resident-amenity-state-icon { display: grid; width: 47px; height: 47px; flex: 0 0 47px; place-items: center; border-radius: 15px; background: #edf4ef; color: var(--color-brand-green); }
+.resident-amenity-state h3 { margin: 0 0 5px; color: var(--color-text-primary); font-size: 12px; }
+.resident-amenity-state p { max-width: 390px; margin: 0; color: var(--color-text-secondary); font-size: 10px; line-height: 1.65; }
+.resident-amenity-state .resident-secondary-button { min-height: 31px; margin-top: 10px; padding: 6px 10px; font-size: 9px; }
+.resident-amenity-state.is-error { border-color: #e6c3bb; background: #fffaf8; }
+.resident-amenity-state.is-error .resident-amenity-state-icon { background: #fff0ec; color: #963c2e; }
+.resident-amenities-page button:focus-visible, .resident-amenities-page a:focus-visible { outline: 3px solid #ffb02099; outline-offset: 2px; }
+
+@media (max-width: 900px) {
+  .resident-amenity-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .resident-amenity-hero-art { width: 112px; height: 112px; flex-basis: 112px; }
+}
+@media (max-width: 620px) {
+  .resident-amenities-layout { gap: 14px !important; }
+  .resident-amenity-hero { min-height: 174px; gap: 8px; padding: 20px 17px; border-radius: 16px; }
+  .resident-amenity-hero-copy { max-width: 58%; }
+  .resident-amenity-hero h1 { font-size: 28px; }
+  .resident-amenity-hero p { font-size: 10px; line-height: 1.6; }
+  .resident-amenity-hero-art { position: absolute; top: 16px; right: 7px; width: 85px; height: 85px; margin: 0; }
+  .resident-amenity-hero-icon { width: 50px; height: 50px; border-radius: 17px; }
+  .resident-amenity-hero-icon .resident-amenity-icon { width: 25px; height: 25px; }
+  .resident-amenity-spark.spark-one { top: 11px; right: 11px; }
+  .resident-amenity-spark.spark-two { bottom: 8px; left: 9px; }
+  .resident-amenity-hero-count { position: absolute; right: 14px; bottom: 17px; min-width: 82px; gap: 3px; padding: 8px 10px; }
+  .resident-amenity-hero-count strong { font-size: 18px; }
+  .resident-amenity-hero-count span { font-size: 7px; }
+  .resident-amenity-section-heading { align-items: flex-start; }
+  .resident-amenity-section-heading h2 { font-size: 15px; }
+  .resident-amenity-count-pill { min-height: 26px; padding: 5px 8px; font-size: 8px; }
+  .resident-amenity-property { padding: 14px; border-radius: 14px; }
+  .resident-amenity-property-heading { margin-bottom: 12px; padding-bottom: 11px; }
+  .resident-amenity-property-mark { width: 34px; height: 34px; flex-basis: 34px; border-radius: 10px; }
+  .resident-amenity-property-heading h3 { font-size: 12px; }
+  .resident-amenity-property-heading > span { font-size: 8px; }
+  .resident-amenity-grid { grid-template-columns: 1fr; gap: 9px; }
+  .resident-amenity-card { padding: 14px; }
+  .resident-amenity-card-description { min-height: 0; }
+  .resident-amenity-state { min-height: 145px; gap: 11px; padding: 17px 12px; }
+  .resident-amenity-state-icon { width: 40px; height: 40px; flex-basis: 40px; border-radius: 13px; }
+}
