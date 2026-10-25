@@ -2,9 +2,21 @@
 
 ## Last Updated
 
-2026-10-24
+2026-10-26
 
 ## Project Status
+
+### Repository GitHub handoff audit — 2026-10-26 (logo review pending)
+
+The 2026-10-26 audit found mixed, unstaged local changes on `main`; that inventory is a historical snapshot. Cloudy 2D source/assets/handoffs were subsequently committed and pushed to GitHub `main` as `f793f33` (frontend preview only; no AI/backend chat). Three older logo files remain marked deleted locally and await a separate owner decision; they were excluded from that push. A fresh offline check matched all nine V1.8 baseline artifacts to provenance and Git HEAD. Frontend and backend typechecks, frontend API/UI 76/76, Cloudy 6/6 and mock-repository Auth 20/20 passed in the audit; the first Auth attempt was blocked by sandbox loopback permissions and the authorized retry passed. No live DB/API, setup, or full E2E verification was performed. README/manual clone guidance and remaining historical link gaps are recorded in [GitHub handoff readiness](10_operations/GITHUB_HANDOFF_READINESS_2026_10_26.md). This handoff does not change the active module, physical DB baseline, or the single Exact Next Task below.
+
+### Cloudy 2D illustration — 2026-10-25
+
+The frontend mounts one shared DOM/CSS Cloudy illustration on Public Explorer/landing/rooms and authenticated Admin/Resident routes. Desktop mouse movement eases the aligned eye layers by at most 3px horizontally and 2.5px vertically, with a center dead zone and sparse blinking. Cloudy can be dragged by mouse or touch and remembers its position for the tab session; mobile and reduced-motion modes keep the eyes centered, and reduced motion disables blinking. A frontend-only suggestion boundary supports a short, scoped, expiring thought bubble after inactivity. Its production source currently returns no suggestion and makes no network request; labeled preview text exists only in development. Clicking Cloudy opens a responsive chat panel. Development mode permits a temporary text conversation with an explicitly labeled mock service, while production keeps sending disabled and says Cloudy is being completed. No AI/backend chat endpoint or database persistence exists. Auth, dev, and other routes do not mount Cloudy. The former 3D report remains historical. This scoped frontend change does not alter the active module or exact next task. See [Cloudy suggestion frontend handoff](07_modules/public-marketplace/CLOUDY_SUGGESTION_FRONTEND_HANDOFF.md) and [Cloudy chat frontend handoff](07_modules/public-marketplace/CLOUDY_CHAT_FRONTEND_HANDOFF.md).
+
+### Cloudy 3D mascot removed — 2026-10-25
+
+The former Cloudy 3D mascot is no longer mounted in the current frontend. Its dedicated components, CSS and project GLB/BLEND/verification assets were removed. The integration report remains historical evidence; Three.js, React Three Fiber and Drei remain for the Public Explorer map. That removal pass did not add a 2D mascot, chat or AI service; the separate 2D integration is recorded above. This scoped removal did not change the active module or exact next task.
 
 ### Windows setup menu — 2026-10-23 (review pending)
 

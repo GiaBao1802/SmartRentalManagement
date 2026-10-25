@@ -10,6 +10,7 @@ Tài liệu được phân nhóm theo nguồn và phạm vi để dễ tìm, đ�
 - [Database Prisma mapping](03_database/prisma/) — các report mapping theo phiên bản; xem catalog để phân biệt baseline hiện hành và lịch sử.
 - [Module documentation](07_modules/) — tài liệu theo từng domain; module-first được ưu tiên.
 - [Operations](10_operations/) — khởi động local và vận hành workspace.
+- [GitHub handoff readiness](10_operations/GITHUB_HANDOFF_READINESS_2026_10_26.md) — inventory trước staging, giới hạn kiểm chứng và các quyết định còn chờ.
 - [Project reports](11_project-reports/) — báo cáo tổng hợp dự án.
 - [Decisions](12_decisions/) — decision records.
 

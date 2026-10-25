@@ -40,18 +40,19 @@ Image/tag và mount PG18 được mô tả tại [Docker Official Postgres](http
 **PostgreSQL native mới:** không cần `db:up`. Tạo database trống bằng pgAdmin hoặc `createdb` của đúng instance, với owner/user sẽ chạy bootstrap. Ví dụ (tên role tùy máy; sẽ được hỏi password):
 
 ```powershell
-createdb -h localhost -p 5432 -U goctro Goctro_test3
+createdb -h localhost -p 5432 -U goctro REPLACE_WITH_NEW_EMPTY_DB
 ```
 
 **Cài schema và seed:** công cụ không tự đọc `.env`/`DATABASE_URL` để tránh vô tình dùng DB đang chạy. Cấp biến đích setup riêng và xác nhận đúng tên DB. Ví dụ bên dưới là placeholder; thay bằng credentials của database mới trên máy:
 
 ```powershell
-$env:GOCTRO_SETUP_DATABASE_URL = 'postgresql://goctro:<URL_ENCODED_LOCAL_PASSWORD>@localhost:5432/Goctro_test3?schema=public'
-npm run db:bootstrap -- --database Goctro_test3
+$newDatabaseName = 'REPLACE_WITH_NEW_EMPTY_DB'
+$env:GOCTRO_SETUP_DATABASE_URL = "postgresql://goctro:<URL_ENCODED_LOCAL_PASSWORD>@localhost:5432/${newDatabaseName}?schema=public"
+npm run db:bootstrap -- --database $newDatabaseName
 if ($LASTEXITCODE -ne 0) { throw 'Bootstrap failed; stop here.' }
-npm run db:seed -- --database Goctro_test3
+npm run db:seed -- --database $newDatabaseName
 if ($LASTEXITCODE -ne 0) { throw 'Seed failed; stop here.' }
-npm run db:inspect -- --database Goctro_test3
+npm run db:inspect -- --database $newDatabaseName
 if ($LASTEXITCODE -ne 0) { throw 'Baseline inspection failed.' }
 Remove-Item Env:GOCTRO_SETUP_DATABASE_URL
 npm run db:validate
@@ -59,6 +60,7 @@ npm run db:generate
 ```
 
 Seed là tùy chọn cho DB mới; bỏ bước seed nếu muốn dữ liệu nghiệp vụ trống. Schema tồn tại với 40 bảng không có row là điều kiện seed hợp lệ. Seed chứa identities giả, email `.test`, password hashes từ secrets ngẫu nhiên đã bỏ; không có mật khẩu login mặc định.
+Thay `REPLACE_WITH_NEW_EMPTY_DB`, role và password placeholder bằng target mới đã kiểm tra trước khi chạy; ví dụ này không nhằm vào `Goctro_test3` populated được ghi trong các report lịch sử.
 
 Kiểm tra artifact offline bằng `npm.cmd run db:verify-artifacts` trước setup: lệnh đối chiếu raw-byte SHA-256 của toàn bộ 9 artifact trong `PROVENANCE.json` với working tree và Git HEAD, đồng thời kiểm tra attribute `text` đã unset. Không kết nối database và không cần dependency npm. Toàn bộ cây `database/baselines/v1.8/**` dùng `-text` để giữ đúng bytes reviewed (kể cả line ending hỗn hợp); không normalize LF/CRLF hoặc regenerate hash để vượt guard. Trước khi phát hành, chạy lại lệnh trên checkout sạch của commit cần push, kể cả khi Git status ở workspace chính không báo artifact modified.
 

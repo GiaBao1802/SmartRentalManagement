@@ -2,6 +2,16 @@
 
 Monorepo Next.js/React frontend, Express/TypeScript API, Prisma 6.12 và PostgreSQL. Node.js 24.11+, npm 11.6+. Database **V1.8** là current locked local/dev baseline: PostgreSQL **18.6**, **40 public tables**. Trạng thái module và các phần chưa hoàn tất nằm trong [Current State](docs/00_CURRENT_STATE.md).
 
+## Clone và điểm bắt đầu bàn giao
+
+```powershell
+git clone https://github.com/GiaBao1802/SmartRentalManagement.git
+cd SmartRentalManagement
+git status --short --branch
+```
+
+Đọc [AGENTS.md](AGENTS.md), [Current State](docs/00_CURRENT_STATE.md), [Document Catalog](docs/DOCUMENT_CATALOG.md) và [GitHub handoff readiness](docs/10_operations/GITHUB_HANDOFF_READINESS_2026_10_26.md) trước khi chạy setup hoặc triển khai. Bản GitHub chỉ chứa những file đã được chủ dự án duyệt và commit; thay đổi local chưa commit, file `.env` và dữ liệu PostgreSQL không đi theo lệnh clone. Dùng `setup.bat` trên Windows cho một database local/development mới sau khi đã xác nhận target; nhánh cài lần đầu có thể tạo database, bootstrap, seed và provision tài khoản demo. Không chạy nó như một phép kiểm tra chỉ đọc.
+
 ## Source và database authority
 
 - `frontend/`: ứng dụng Next App Router hiện hành; `backend/src/server.ts`: API entrypoint, V1 endpoints dưới `/api/v1`.
@@ -15,7 +25,7 @@ Monorepo Next.js/React frontend, Express/TypeScript API, Prisma 6.12 và Postgre
 
 Giữ Public Explorer → chi tiết phòng → liên hệ; Auth/Accounts/invitation/quên-reset mật khẩu; các mục sidebar Admin và bốn tab Service (Điện & nước, Fixed, Flexible, Parking); Resident portal cùng chi tiết hợp đồng/tài liệu và entry kỹ thuật liên quan. Provider/storage chưa cấu hình không làm các luồng này trở thành source thừa.
 
-Đã gỡ landing/listing cũ, Amenities/Bookings demo, trang nhập charge chuyển tiếp, hai route deferred ngoài navigation và backend demo/auth cũ. Các URL API đã retire vẫn trả 410; Billing tiếp tục đọc charge/snapshot hiện có. Không triển khai luồng thay thế hoặc đổi database. Chi tiết và kiểm chứng: [migration plan §10](docs/08_audits/LEGACY_TO_CURRENT_MIGRATION_PLAN.md#10-current-product-flow-baseline-and-source-cleanup--2026-10-19).
+Đã gỡ landing/listing **cũ**, Amenities/Bookings demo, trang nhập charge chuyển tiếp, hai route deferred ngoài navigation và backend demo/auth cũ. Trang giới thiệu **mới** ở `/landing`; `/` và `/rooms` dùng Public Explorer. Các URL API đã retire vẫn trả 410; Billing tiếp tục đọc charge/snapshot hiện có. Cloudy 2D ở frontend có bong bóng gợi ý và chat mô phỏng chỉ trong development; production chưa có chat AI/backend và khóa gửi. Chi tiết và kiểm chứng: [migration plan §10](docs/08_audits/LEGACY_TO_CURRENT_MIGRATION_PLAN.md#10-current-product-flow-baseline-and-source-cleanup--2026-10-19), [Cloudy chat handoff](docs/07_modules/public-marketplace/CLOUDY_CHAT_FRONTEND_HANDOFF.md).
 
 ## A. Máy mới / database mới
 
@@ -48,18 +58,19 @@ Nếu lỗi, đọc bước đã hoàn thành và log `.local/setup`/`.local/dev
 4. Cấp URL setup riêng rồi bootstrap/seed theo thứ tự:
 
 ```powershell
-$env:GOCTRO_SETUP_DATABASE_URL = 'postgresql://goctro:<URL_ENCODED_LOCAL_PASSWORD>@localhost:5432/Goctro_test3?schema=public'
-npm run db:bootstrap -- --database Goctro_test3
+$newDatabaseName = 'REPLACE_WITH_NEW_EMPTY_DB'
+$env:GOCTRO_SETUP_DATABASE_URL = "postgresql://goctro:<URL_ENCODED_LOCAL_PASSWORD>@localhost:5432/${newDatabaseName}?schema=public"
+npm run db:bootstrap -- --database $newDatabaseName
 # Chỉ tiếp tục khi bước trước exit 0.
-npm run db:seed -- --database Goctro_test3
-npm run db:inspect -- --database Goctro_test3
+npm run db:seed -- --database $newDatabaseName
+npm run db:inspect -- --database $newDatabaseName
 Remove-Item Env:GOCTRO_SETUP_DATABASE_URL
 npm run db:validate
 npm run db:generate
 .\setup.bat
 ```
 
-Bootstrap áp dụng đúng SQL V1.8, chỉ vào database đã tồn tại có schema trống. Seed là tùy chọn, chỉ chấp nhận schema V1.8 chính xác với cả 40 bảng chưa có dữ liệu. Chạy lại bootstrap/seed sẽ bị từ chối, không ghi đè. Công cụ setup không tự đọc `DATABASE_URL`/`.env` thật, không DROP/reset hoặc tự áp migration cũ. Seed có dữ liệu synthetic và không có password login mặc định; provision DEV credential riêng theo tài liệu.
+Thay `REPLACE_WITH_NEW_EMPTY_DB`, role `goctro` và `<URL_ENCODED_LOCAL_PASSWORD>` theo database mới đã kiểm tra và do bạn kiểm soát; không sao chép tên database populated trong các report lịch sử. Bootstrap áp dụng đúng SQL V1.8, chỉ vào database đã tồn tại có schema trống. Seed là tùy chọn, chỉ chấp nhận schema V1.8 chính xác với cả 40 bảng chưa có dữ liệu. Chạy lại bootstrap/seed sẽ bị từ chối, không ghi đè. Công cụ setup không tự đọc `DATABASE_URL`/`.env` thật, không DROP/reset hoặc tự áp migration cũ. Seed có dữ liệu synthetic và không có password login mặc định; provision DEV credential riêng theo tài liệu.
 
 `db:down` chỉ stop service PG18 và giữ volume. Dùng menu setup cho startup có guard; FE `http://localhost:3000`, BE `http://localhost:4000`, login `/login`. Kiểm tra `/api/health`, `/api/health/db`, `/api/v1/auth/csrf`.
 
