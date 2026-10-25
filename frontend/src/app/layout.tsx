@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./brand-fonts.css";
 import "./globals.css";
 import { AuthProvider } from "./components/auth-provider";
+import { Cloudy2D } from "./components/cloudy-2d";
 
 export const metadata: Metadata = {
   title: {
@@ -16,7 +17,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="vi">
-      <body><AuthProvider>{children}</AuthProvider></body>
+      <body><AuthProvider>{children}<Cloudy2D /></AuthProvider></body>
     </html>
   );
 }
