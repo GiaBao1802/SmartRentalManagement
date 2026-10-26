@@ -16,16 +16,16 @@
     "build": "npm run build --workspace=@goctro/frontend && npm run build --workspace=@goctro/backend",
     "db:up": "docker compose --env-file .env up -d --wait postgres18",
     "db:down": "docker compose --env-file .env stop postgres18",
-    "db:bootstrap": "node scripts/database-v18.mjs bootstrap",
-    "db:inspect": "node scripts/database-v18.mjs inspect",
-    "db:state": "node scripts/database-v18.mjs state",
+    "db:bootstrap": "node scripts/database-v19.mjs bootstrap",
+    "db:inspect": "node scripts/database-v19.mjs inspect",
+    "db:state": "node scripts/database-v19.mjs state",
     "db:verify-artifacts": "node scripts/verify-baseline-integrity.mjs",
     "db:validate": "npm run db:validate --workspace=@goctro/backend",
     "test:db-setup": "node --test scripts/database-v18.test.mjs scripts/setup-cache.test.mjs",
     "test:db-setup:runtime": "node --test scripts/database-v18.integration.test.mjs",
     "db:generate": "npm run db:generate --workspace=@goctro/backend",
-    "db:migrate": "node scripts/database-v18.mjs block-legacy-migrate",
-    "db:seed": "node scripts/database-v18.mjs seed"
+    "db:migrate": "node scripts/database-v19.mjs migrate-v18",
+    "db:seed": "node scripts/database-v19.mjs seed"
   },
   "devDependencies": {
     "concurrently": "9.2.4"

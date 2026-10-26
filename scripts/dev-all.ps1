@@ -274,6 +274,10 @@ if ($databaseUri.Scheme -notin @('postgres','postgresql') -or $databaseUri.Host 
 }
 if ($ConfirmedDatabase -cne $databaseName) { Write-Failure 'TARGET_NOT_CONFIRMED' 'Target chưa được xác nhận. Hãy dùng setup.bat.' }
 $PostgresPort = if ($databaseUri.Port -gt 0) { $databaseUri.Port } else { 5432 }
+$allowedDatabaseNames = @('Goctro_test3', 'Goctro_dev_v18')
+if ($databaseName -notin $allowedDatabaseNames) {
+  Write-Failure 'TARGET_REJECTED' "Database phải là Goctro_test3 hoặc Goctro_dev_v18; target hiện tại '$databaseName'."
+}
 if (-not (Test-TcpPort $databaseUri.Host $PostgresPort)) {
   Write-Failure 'POSTGRES_NOT_REACHABLE' "Không kết nối được PostgreSQL tại $($databaseUri.Host):$PostgresPort. Kiểm tra dịch vụ hiện có; không tự bật/tắt PostgreSQL."
 }

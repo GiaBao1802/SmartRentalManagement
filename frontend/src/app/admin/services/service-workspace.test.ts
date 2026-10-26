@@ -25,7 +25,7 @@ test("Admin sidebar exposes one entry for the Service module and hides legacy bo
 test("Service workspace gives direct access to all approved sections with business labels", () => {
   assert.deepEqual(SERVICE_WORKSPACE_SECTIONS.map(({ key, label }) => [key, label]), [
     ["utilities", "Điện & nước"],
-    ["fixed", "Dịch vụ cố định"],
+    ["fixed", "Tiện ích cố định"],
     ["flexible", "Tiện ích phát sinh"],
     ["parking", "Parking"],
   ]);

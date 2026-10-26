@@ -314,9 +314,9 @@ Approved additive changes: nullable `residents.avatar_storage_key TEXT` for a re
 - **Promotion result at the time: PASS. Database V1.7 became the locked local/development physical baseline on PostgreSQL 18.6 with 40 public tables. It was later superseded by V1.8; V1.6 is the historical locked predecessor to V1.7.**
 - Detailed evidence: [`DATABASE_V1_7_LOCKED_DB_APPLY_POST_MIGRATION_VALIDATION_REPORT.md`](../../SmartRentalManagement/docs/07_modules/invoice-zalo/DATABASE_V1_7_LOCKED_DB_APPLY_POST_MIGRATION_VALIDATION_REPORT.md).
 
-## Database V1.8 — recurring Parking Invoice linkage (current local/development baseline)
+## Database V1.8 — recurring Parking Invoice linkage (historical locked predecessor to V1.9)
 
-- **Business decision:** APPROVED. **Physical implementation:** PASS. **Goctro_test3:** PostgreSQL 18.6 at `127.0.0.1:5432`, promoted from V1.7 to V1.8. **Database V1.8:** LOCKED as current local/development baseline with 40 public tables. V1.7 remains the historical locked predecessor.
+- **Business decision:** APPROVED. **Physical implementation:** PASS at its promotion. **Goctro_test3:** PostgreSQL 18.6 at `127.0.0.1:5432`, promoted from V1.7 to V1.8. V1.8 was locked with 40 public tables at that time and has since been superseded by V1.9. V1.7 remains the historical locked predecessor.
 - **Approved schema delta:** removed global `UNIQUE(parking_assignment_id)` (`invoice_items_parking_assignment_id_key`) and added `invoice_items_invoice_parking_assignment_unique` on `(invoice_id, parking_assignment_id) WHERE parking_assignment_id IS NOT NULL`. A Parking assignment may recur on separate invoices and may appear no more than once on one invoice. Existing composite Owner/Property FK and `invoice_item_source_shape` trigger remain. No table/column was added, and no row, invoice amount, finalized snapshot, legacy aggregate, or parking record was rewritten.
 - **Migration:** `Database V1.8/migrations/V1_7_to_V1_8_recurring_parking_invoice_linkage.sql` passed in the disposable V1.7→V1.8 upgrade rehearsal and on Goctro_test3. It uses one transaction, an `ACCESS EXCLUSIVE` lock across preflight/DDL, exact V1.7 inventory/constraint guards, and the protected-target session authorization. A negative preflight test with a non-PARKING assignment link stopped before DDL and retained the original constraint. The same fixture's wrong-category data was test-only and isolated.
 - **Upgrade rehearsal:** PostgreSQL 18.6, synthetic V1.7 schema/seed and regression checks before migration; V1.7 CORE 71/71 and FIXTURE 171/171 passed. V1.8 migration passed; V1.8 CORE **78/78 PASS**. Deterministic fingerprints for invoices, invoice items, legacy finalized invoices, parking assignments, and entitlements were identical before/after.
@@ -326,7 +326,7 @@ Approved additive changes: nullable `residents.avatar_storage_key TEXT` for a re
 - **Goctro_test3 backup:** custom-format backup `C:\Users\PHUONG\AppData\Local\Temp\Goctro-db-backups\Goctro_test3_pre_v1_8_20261014_003237.dump`, 281,708 bytes; `pg_restore --list` PASS; SHA-256 `3809EA398CB0665C6A041F0418413D5DC0D9617BA436E8B4D2EE999D2DDBFC9E`.
 - **Target preservation:** pre/post migration fingerprints match for all captured tables. Before and after: invoices 4 (including 3 finalized legacy aggregates); invoice items 0; parking assignments 3; parking entitlements 0. No seed was run against the populated target. Post-migration V1.8 CORE validator **78/78 PASS**, zero failed. The validator's probes rolled back.
 - **Typecheck:** still reports 174 pre-existing legacy TypeScript diagnostics; zero diagnostics in the changed Invoice integration/repository/pricing files. Production application wiring still uses `UnconfiguredInvoicePricing`; this task did not enable production finalization. Payment was not started.
-- **Current lock rule:** V1.8 is the current locked local/development physical baseline. LOCK prevents ad hoc schema changes during backend/frontend work; it does not prohibit a future approved requirement change with a new versioned migration and runtime validation.
+- **Lock rule at V1.8 promotion:** V1.8 was then the locked local/development physical baseline. It is now the historical predecessor to V1.9; its artifacts and promotion evidence remain preserved.
 - Detailed implementation and evidence: [`DATABASE_V1_8_RECURRING_PARKING_MIGRATION_IMPLEMENTATION_REPORT.md`](../../SmartRentalManagement/docs/07_modules/invoice-zalo/DATABASE_V1_8_RECURRING_PARKING_MIGRATION_IMPLEMENTATION_REPORT.md).
 
 ```yaml
@@ -341,8 +341,34 @@ Target backup and archive-list verification: PASS
 Goctro_test3 preservation fingerprints: PASS
 PostgreSQL version: 18.6
 Public tables: 40
-Database V1.8: LOCK (current local/development baseline)
+Database V1.8: LOCK (historical predecessor; current when promoted)
 Database V1.7: historical locked predecessor
 Production Invoice finalization: still fail-closed / not wired
 Payment: not started
+```
+
+## Database V1.9 — Admin Flexible Service schedules and packages (current local/development baseline)
+
+- **Business decision:** APPROVED 2026-10-26. **Physical implementation:** PASS and locked on local `Goctro_dev_v18`, PostgreSQL 18.6 at `localhost:5432`. V1.9 has 41 public tables; V1.8 remains the immutable 40-table predecessor.
+- **Scope:** add one Owner/Property-scoped `property_flexible_service_configurations` row per newly configured Flexible Service. `BOOKING` stores selected weekdays, a shared daily opening window, visit duration and concurrent capacity. `SUBSCRIPTION` stores selected weekdays, a shared daily opening window and a month/year package duration. `Fixed Service`, Electricity/Water, Parking and existing financial rows remain unchanged. Resident booking, enrollment, payment and package attendance limits are not included.
+- **Integrity:** the new table has an Owner/Property/kind-scoped composite FK to `property_pricing_items`, a composite relation key for Prisma, mode-specific CHECK constraints, a valid opening-window check, and at least one open weekday. Configuration is created atomically with a new Flexible item. Mode changes are rejected after first configuration. Old price history is not relabeled; V1.8 Flexible items remain unconfigured unless an Admin explicitly configures a zero-price-history item.
+- **Migration:** `database/baselines/v1.9/migrations/V1_8_to_V1_9_flexible_service_modes.sql`; guarded, additive and transactional. It does not update or delete existing catalog, price, charge, invoice, parking, occupancy or Resident records. The setup tool recognizes only the exact V1.8 catalog and refuses `Goctro_test3`.
+- **Clean install + seed rehearsal:** PostgreSQL 18.6, 41 tables, two synthetic booking-configured sample Flexible items; V1.9 CORE validator **85/85 PASS**.
+- **Populated migration rehearsal:** V1.8→V1.9 PASS; counts and row SHA-256 matched on all 40 existing tables; V1.9 CORE validator **85/85 PASS**. The new table begins empty and the migration infers no legacy service modes.
+- **Local target apply:** exact preflight `localhost:5432/Goctro_dev_v18`, PostgreSQL 18.6 and V1.8 catalog PASS. Custom-format backup `database/generated/backups/Goctro_dev_v18_pre_v1_9_20261026_retry.dump`: 265,487 bytes, `pg_restore --list` PASS with 481 entries, SHA-256 `790C7D1E86FF80809142A2A4F569F6F951DBFE9E7B900643E7479CABA77A8CBB`. After migration, inspect/state and runtime validator 85/85 PASS; all 40 original tables' row counts and SHA-256 match. V1.9 table count is 41; configuration rows on the populated target are 0.
+- **Prisma and application checks:** Prisma validation, backend TypeScript and frontend TypeScript PASS. Feature tests, UI browser walkthrough and production build were not run; user review of the Admin page remains pending.
+- **Current lock rule:** V1.9 is the current locked local/development physical baseline. Any future schema change must follow the approved version/migration process. `Goctro_test3` was not connected or changed in this migration task.
+
+```yaml
+Database V1.9 clean schema + seed: PASS
+V1.8 -> V1.9 populated migration rehearsal: PASS; 40/40 pre-existing tables preserved
+V1.9 CORE runtime validation: 85/85 PASS (clean, rehearsal, local target)
+Goctro_dev_v18 physical migration: PASS; 41 public tables
+Goctro_dev_v18 backup + archive verification: PASS
+Prisma validate: PASS
+Backend/frontend typecheck: PASS
+Feature tests and Admin browser walkthrough: NOT RUN; user review pending
+Database V1.8: historical locked predecessor
+Database V1.9: LOCK (current local/development baseline)
+Resident bookings, package enrollment and payments: deferred
 ```

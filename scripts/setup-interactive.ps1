@@ -27,7 +27,7 @@ function Cache([string]$action,[string]$kind) {
   return $value
 }
 function DatabaseCommand([string]$command) {
-  $lines = & node scripts/database-v18.mjs $command --database $script:db
+  $lines = & node scripts/database-v19.mjs $command --database $script:db
   $script:dbExit = $LASTEXITCODE
   $script:dbText = $lines -join "`n"
   $lines | ForEach-Object { Write-Host $_ }
@@ -165,8 +165,8 @@ try {
   } else { Write-Host 'Dependency không đổi và đã kiểm tra đủ; bỏ qua npm ci.' }
   $step = 'Kiểm tra baseline và database'
   $artifactResult = & node scripts/verify-baseline-integrity.mjs
-  if ($LASTEXITCODE -ne 0) { $artifactResult | ForEach-Object { Write-Host $_ }; throw 'Artifact V1.8 không khớp; khôi phục bytes từ commit chuẩn. Không sửa hash provenance.' }
-  Write-Host 'Toàn bộ 9 artifact V1.8 khớp working tree, Git HEAD và provenance.'
+  if ($LASTEXITCODE -ne 0) { $artifactResult | ForEach-Object { Write-Host $_ }; throw 'Artifact baseline không khớp; khôi phục bytes từ commit chuẩn. Không sửa hash provenance.' }
+  Write-Host 'Artifact baseline khớp working tree, Git HEAD và provenance.'
   DatabaseCommand 'state'
   if ($dbExit -eq 2 -and $mode -eq '1') {
     if (-not (Yes 'Database chưa tồn tại. Tạo database mới')) { throw 'Chưa xác nhận tạo database.' }
@@ -183,7 +183,7 @@ try {
       2 { if (-not $matchesDefault) { throw 'Database của cấu hình hiện tại chưa tồn tại. Cần xử lý cấu hình hiện tại; không tự chuyển sang bộ mặc định hoặc tạo database trong chế độ cập nhật.' }; throw 'Chưa hoàn tất cài đặt, hãy chọn Cài đặt lần đầu. Chế độ cập nhật không tạo database.' }
       3 { throw 'PostgreSQL từ chối xác thực/quyền; kiểm tra role và mật khẩu PostgreSQL. Không tạo/seed thay thế.' }
       4 { throw 'Không kết nối được PostgreSQL; kiểm tra host/cổng và dịch vụ hiện có. Công cụ không tự bật/tắt PostgreSQL.' }
-      5 { throw 'Schema không tương thích V1.8. Xem khác biệt phía trên; review/backup và dùng quy trình migration được hỗ trợ. Bootstrap không phải upgrade.' }
+      5 { throw 'Schema không tương thích V1.9 hoặc V1.8. Xem khác biệt phía trên; review/backup trước khi migration. Bootstrap không phải upgrade.' }
       6 { throw 'Instance hoặc phiên bản PostgreSQL không khớp target local PostgreSQL 18.6+.' }
       default { throw 'Không kiểm tra được database; dừng các bước phụ thuộc.' }
     }
@@ -192,26 +192,33 @@ try {
     if (-not $match.Success) { throw 'Không đọc được trạng thái database.' }
     $dataState = $match.Groups[1].Value
   }
-  if ($mode -eq '2' -and $dataState -ne 'v18_populated' -and $dataState -ne 'v18_empty') { throw 'Chế độ cập nhật cần schema V1.8 tương thích; không bootstrap hoặc migration tự động.' }
+  if ($dataState -in @('v18_populated','v18_empty')) {
+    if (-not (Yes 'Đã tạo và kiểm tra backup khôi phục được; cho phép migration V1.8 lên V1.9 trên database đã xác nhận')) { throw 'Chưa xác nhận backup và migration; database được giữ nguyên.' }
+    $wasPopulated = $dataState -eq 'v18_populated'
+    $step = 'Migration database V1.8 lên V1.9'; DatabaseCommand 'migrate-v18'
+    if ($dbExit -ne 0) { throw 'Migration V1.8→V1.9 thất bại; transaction đã rollback nếu bắt đầu. Database không được seed/reset.' }
+    $completed.Add('Migration V1.8 → V1.9'); $dataState = if ($wasPopulated) { 'v19_populated' } else { 'v19_empty' }
+  }
+  if ($mode -eq '2' -and $dataState -ne 'v19_populated' -and $dataState -ne 'v19_empty') { throw 'Chế độ cập nhật cần schema V1.9 hoặc V1.8 đã được nâng cấp; không bootstrap hoặc seed tự động.' }
   $seededNow = $false
   if ($mode -eq '1') {
     if ($dataState -eq 'empty_schema') {
-      if (-not (Yes 'Schema đang trống. Bootstrap V1.8')) { throw 'Chưa xác nhận bootstrap.' }
-      $step = 'Bootstrap V1.8'; DatabaseCommand 'bootstrap'
+      if (-not (Yes 'Schema đang trống. Bootstrap V1.9')) { throw 'Chưa xác nhận bootstrap.' }
+      $step = 'Bootstrap V1.9'; DatabaseCommand 'bootstrap'
       if ($dbExit -ne 0) { throw 'Bootstrap thất bại; chưa chạy seed/provision/startup.' }
-      $completed.Add('Bootstrap V1.8'); $dataState = 'v18_empty'
+      $completed.Add('Bootstrap V1.9'); $dataState = 'v19_empty'
     }
-    if ($dataState -eq 'v18_empty' -and (Yes 'Seed dữ liệu mẫu vào schema V1.8 đang trống')) {
+    if ($dataState -eq 'v19_empty' -and (Yes 'Seed dữ liệu mẫu vào schema V1.9 đang trống')) {
       $step = 'Seed mẫu'; DatabaseCommand 'seed'
       if ($dbExit -ne 0) { throw 'Seed thất bại. Bootstrap có thể đã hoàn thành; kiểm tra nguyên nhân rồi chạy lại Cài đặt lần đầu. Guard sẽ kiểm tra lại schema/bảng trống, không bootstrap lại.' }
-      $completed.Add('Seed mẫu'); $seededNow = $true; $dataState = 'v18_populated'
-    } elseif ($dataState -eq 'v18_populated') { Write-Host 'Database đã có dữ liệu; bỏ qua bootstrap và seed.' }
+      $completed.Add('Seed mẫu'); $seededNow = $true; $dataState = 'v19_populated'
+    } elseif ($dataState -eq 'v19_populated') { Write-Host 'Database đã có dữ liệu; bỏ qua bootstrap và seed.' }
     if ($seededNow) {
       $step = 'Thiết lập credential demo'
       & npm.cmd run dev:provision-credentials --workspace=@goctro/backend -- --mode INITIAL --database $db --confirm-target $target
       if ($LASTEXITCODE -ne 0) { throw 'Seed đã thành công nhưng mật khẩu web chưa thiết lập. Giữ dữ liệu; dùng công cụ provision riêng theo hướng dẫn, RESET cần xác nhận rõ; không seed lại.' }
       $demoSet = $true; $completed.Add('Thiết lập hai credential demo'); Cache 'invalidate' 'runtime' | Out-Null
-    } elseif ($dataState -eq 'v18_populated') {
+    } elseif ($dataState -eq 'v19_populated') {
       Write-Host 'Sử dụng mật khẩu hiện có. Không provision hoặc RESET khi chạy lại setup.'
     }
   }
@@ -231,7 +238,7 @@ try {
   Cache 'record' 'runtime' | Out-Null; $completed.Add('API health, DB health và frontend sẵn sàng')
   Write-Host 'Hoàn tất setup.' -ForegroundColor Green
   if ($demoSet) { Write-Host 'Mật khẩu demo local/dev vừa được thiết lập: Goctro123456789' }
-  elseif ($dataState -eq 'v18_empty') { Write-Host 'Chưa seed mẫu; chưa thiết lập tài khoản/credential demo.' }
+  elseif ($dataState -eq 'v19_empty') { Write-Host 'Chưa seed mẫu; chưa thiết lập tài khoản/credential demo.' }
   else { Write-Host 'Sử dụng mật khẩu hiện có; setup không đổi credential.' }
   Write-Host 'Đăng nhập: http://localhost:3000/login'
   Write-Host 'Admin: admin.one@example.test | Resident: resident.one@example.test'

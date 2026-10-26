@@ -12,7 +12,9 @@ From the repository root, run:
 npm run dev:all
 ```
 
-The launcher checks TCP reachability for PostgreSQL at `localhost:5432`, verifies that `backend/.env` exists, and validates privately that the effective `DATABASE_URL` points to the expected local `Goctro_test3` database. It never prints the connection URL or its credentials. It then checks the backend and frontend ports. It uses the existing workspace scripts to start missing services and bounded health retries (30 seconds for the API and 45 seconds for Next.js).
+The launcher checks TCP reachability for PostgreSQL at `localhost:5432`, verifies that `backend/.env` exists, and validates privately that the effective `DATABASE_URL` points to a local `Goctro_test3` or `Goctro_dev_v18` database. It never prints the connection URL or its credentials. It then checks the backend and frontend ports. It uses the existing workspace scripts to start missing services and bounded health retries (30 seconds for the API and 45 seconds for Next.js).
+
+Current target allowlist (2026-10-23): `Goctro_test3` and `Goctro_dev_v18`. The launcher still requires a loopback host and PostgreSQL port `5432`; arbitrary database names and remote hosts remain rejected. Earlier verification below records the target used during that original startup task and is historical evidence.
 
 Expected successful output:
 

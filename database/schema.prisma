@@ -7,7 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Database V1.8 mapping (40 tables); SQL baseline: database/baselines/v1.8/schema.sql.
+// Database V1.9 mapping (41 tables); SQL baseline: database/baselines/v1.9/schema.sql.
 // V1.8 recurring Parking partial uniqueness is enforced by SQL, not a Prisma @@unique.
 // Status domains remain varchar + PostgreSQL CHECK constraints.
 // Keep these as String so Prisma does not expect native PostgreSQL enum types.
@@ -806,11 +806,41 @@ model PropertyPricingItem {
   priceVersions          PropertyPriceVersion[]
   flexibleServiceCharges FlexibleServiceCharge[]
   parkingEntitlements    ParkingEntitlement[]
+  flexibleServiceConfiguration PropertyFlexibleServiceConfiguration?
 
   @@unique([propertyId, code])
   @@unique([propertyPricingItemId, ownerId, propertyId, kind])
   @@index([ownerId, propertyId, kind, status])
   @@map("property_pricing_items")
+}
+
+model PropertyFlexibleServiceConfiguration {
+  propertyPricingItemId BigInt   @id @map("property_pricing_item_id")
+  ownerId               BigInt   @map("owner_id")
+  propertyId            BigInt   @map("property_id")
+  kind                  String   @default("FLEXIBLE_SERVICE") @db.VarChar(24)
+  serviceMode           String   @map("service_mode") @db.VarChar(16)
+  opensAt               DateTime @map("opens_at") @db.Time(0)
+  closesAt              DateTime @map("closes_at") @db.Time(0)
+  openMonday            Boolean  @default(true) @map("open_monday")
+  openTuesday           Boolean  @default(true) @map("open_tuesday")
+  openWednesday         Boolean  @default(true) @map("open_wednesday")
+  openThursday          Boolean  @default(true) @map("open_thursday")
+  openFriday            Boolean  @default(true) @map("open_friday")
+  openSaturday          Boolean  @default(true) @map("open_saturday")
+  openSunday            Boolean  @default(true) @map("open_sunday")
+  slotDurationMinutes   Int?     @map("slot_duration_minutes")
+  capacityPerSlot       Int?     @map("capacity_per_slot")
+  packageDurationCount  Int?     @map("package_duration_count")
+  packageDurationUnit   String?  @map("package_duration_unit") @db.VarChar(8)
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  pricingItem PropertyPricingItem @relation(fields: [propertyPricingItemId, ownerId, propertyId, kind], references: [propertyPricingItemId, ownerId, propertyId, kind], onDelete: Restrict)
+
+  @@unique([propertyPricingItemId, ownerId, propertyId, kind])
+  @@index([ownerId, propertyId, serviceMode])
+  @@map("property_flexible_service_configurations")
 }
 
 model PropertyPriceVersion {

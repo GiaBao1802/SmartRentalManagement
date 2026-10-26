@@ -4,9 +4,9 @@ import type { AuthDependencies } from "../middleware/auth.js";
 import { authenticateRequest, foreignResourceNotFound, getAdminOwnerId, getResidentContext, requireAdmin, requireResident } from "../middleware/auth.js";
 import { ApiError, conflict, validationError } from "../middleware/api-error.js";
 import { parseBigIntId, sendJson } from "../utils/ids.js";
-import { servicePriceInputIsValid, type PrismaPropertyServiceRepository, type ServiceKind, type ServicePriceInput } from "./property-service.repository.js";
+import { servicePriceInputIsValid, type FlexibleServiceConfigurationInput, type PrismaPropertyServiceRepository, type ServiceKind, type ServicePriceInput } from "./property-service.repository.js";
 
-type Repo = Pick<PrismaPropertyServiceRepository, "listItems" | "listResidentServices" | "createItem" | "retireItem" | "publishPrice">;
+type Repo = Pick<PrismaPropertyServiceRepository, "listItems" | "listResidentServices" | "createItem" | "saveFlexibleConfiguration" | "retireItem" | "publishPrice">;
 function id(value: unknown, label = "ID") { try { return parseBigIntId(value); } catch { throw validationError(`${label} không hợp lệ.`); } }
 function exactBody(body: unknown, fields: string[]) {
   if (!body || typeof body !== "object" || Array.isArray(body)) throw validationError("Dữ liệu dịch vụ không hợp lệ.");
@@ -23,6 +23,40 @@ function kind(value: unknown): ServiceKind {
   if (value !== "FIXED_SERVICE" && value !== "FLEXIBLE_SERVICE" && value !== "PARKING") throw validationError("Loại dịch vụ không hợp lệ.");
   return value;
 }
+function serviceConfiguration(value: unknown): FlexibleServiceConfigurationInput {
+  const body = exactBody(value, ["service_mode", "available_weekdays", "opens_at", "closes_at", "booking", "subscription"]);
+  if (body.service_mode !== "BOOKING" && body.service_mode !== "SUBSCRIPTION") throw validationError("Chọn đặt lịch hoặc gói đăng ký.");
+  if (!Array.isArray(body.available_weekdays) || body.available_weekdays.length < 1 || body.available_weekdays.length > 7
+    || body.available_weekdays.some((day) => !Number.isInteger(day) || Number(day) < 1 || Number(day) > 7)
+    || new Set(body.available_weekdays).size !== body.available_weekdays.length) {
+    throw validationError("Chọn ít nhất một ngày mở cửa hợp lệ.");
+  }
+  const parseTime = (input: unknown, label: string) => {
+    if (typeof input !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(input)) throw validationError(`${label} không hợp lệ.`);
+    const [hours, minutes] = input.split(":").map(Number);
+    return { value: input, minutes: hours * 60 + minutes };
+  };
+  const opensAt = parseTime(body.opens_at, "Giờ mở cửa");
+  const closesAt = parseTime(body.closes_at, "Giờ đóng cửa");
+  if (opensAt.minutes >= closesAt.minutes) throw validationError("Giờ đóng cửa phải sau giờ mở cửa trong cùng ngày.");
+
+  if (body.service_mode === "BOOKING") {
+    if (body.subscription !== undefined || body.booking === undefined) throw validationError("Cấu hình đặt lịch cần thời lượng và sức chứa mỗi lượt.");
+    const booking = exactBody(body.booking, ["slot_duration_minutes", "capacity_per_slot"]);
+    const duration = booking.slot_duration_minutes;
+    const capacity = booking.capacity_per_slot;
+    if (!Number.isSafeInteger(duration) || Number(duration) < 1 || Number(duration) > closesAt.minutes - opensAt.minutes) throw validationError("Thời lượng một lượt phải vừa trong khung giờ mở cửa.");
+    if (!Number.isSafeInteger(capacity) || Number(capacity) < 1 || Number(capacity) > 2_147_483_647) throw validationError("Sức chứa mỗi lượt phải là số nguyên dương.");
+    return { serviceMode: "BOOKING", availableWeekdays: (body.available_weekdays as number[]).slice().sort((a, b) => a - b), opensAt: opensAt.value, closesAt: closesAt.value, slotDurationMinutes: Number(duration), capacityPerSlot: Number(capacity), packageDurationCount: null, packageDurationUnit: null };
+  }
+
+  if (body.booking !== undefined || body.subscription === undefined) throw validationError("Cấu hình gói cần thời hạn theo tháng hoặc năm.");
+  const subscription = exactBody(body.subscription, ["duration_count", "duration_unit"]);
+  const durationCount = subscription.duration_count;
+  if (!Number.isSafeInteger(durationCount) || Number(durationCount) < 1 || Number(durationCount) > 2_147_483_647) throw validationError("Thời hạn gói phải là số nguyên dương.");
+  if (subscription.duration_unit !== "MONTH" && subscription.duration_unit !== "YEAR") throw validationError("Thời hạn gói chỉ được tính theo tháng hoặc năm.");
+  return { serviceMode: "SUBSCRIPTION", availableWeekdays: (body.available_weekdays as number[]).slice().sort((a, b) => a - b), opensAt: opensAt.value, closesAt: closesAt.value, slotDurationMinutes: null, capacityPerSlot: null, packageDurationCount: Number(durationCount), packageDurationUnit: subscription.duration_unit };
+}
 function effectiveDate(value: unknown) {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) throw validationError("Ngày hiệu lực không hợp lệ.");
   const result = new Date(`${value}T00:00:00.000Z`);
@@ -38,7 +72,16 @@ function money(value: unknown) {
 function itemDto(item: any) {
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
   const current = (item.priceVersions ?? []).find((row: any) => row.effectiveFrom.toISOString().slice(0, 10) <= today);
-  return { pricing_item_id: String(item.propertyPricingItemId), kind: item.kind, code: item.code, name: item.name, description: item.description, unit: item.unit, status: item.status, created_at: item.createdAt?.toISOString?.() ?? undefined, price_versions: (item.priceVersions ?? []).map(versionDto), current_price_version: current ? versionDto(current) : null };
+  const config = item.flexibleServiceConfiguration;
+  const configurationDto = config ? {
+    service_mode: config.service_mode,
+    available_weekdays: [config.open_monday, config.open_tuesday, config.open_wednesday, config.open_thursday, config.open_friday, config.open_saturday, config.open_sunday].flatMap((open: boolean, index: number) => open ? [index + 1] : []),
+    opens_at: config.opens_at,
+    closes_at: config.closes_at,
+    booking: config.service_mode === "BOOKING" ? { slot_duration_minutes: config.slot_duration_minutes, capacity_per_slot: config.capacity_per_slot } : null,
+    subscription: config.service_mode === "SUBSCRIPTION" ? { duration_count: config.package_duration_count, duration_unit: config.package_duration_unit } : null,
+  } : null;
+  return { pricing_item_id: String(item.propertyPricingItemId), kind: item.kind, code: item.code, name: item.name, description: item.description, unit: item.unit, status: item.status, created_at: item.createdAt?.toISOString?.() ?? undefined, price_versions: (item.priceVersions ?? []).map(versionDto), current_price_version: current ? versionDto(current) : null, service_configuration: configurationDto };
 }
 function versionDto(version: any) {
   return { price_version_id: String(version.propertyPriceVersionId), version_no: version.versionNo, effective_from: version.effectiveFrom.toISOString().slice(0, 10), unit_price: version.unitPrice.toString(), source_name: version.sourceName, source_reference: version.sourceReference, reason: version.reason, published_at: version.publishedAt.toISOString() };
@@ -86,13 +129,27 @@ export function createPropertyServiceRouter(auth: AuthDependencies, repository: 
   });
   router.post("/properties/:property_id/pricing-items", ...admin, async (req, res, next) => {
     try {
-      const body = exactBody(req.body, ["kind", "code", "name", "description", "unit"]);
-      const input = { kind: kind(body.kind), code: text(body.code, "Mã dịch vụ", 60)!.toUpperCase(), name: text(body.name, "Tên dịch vụ", 150)!, description: text(body.description, "Mô tả", 10_000, false), unit: text(body.unit, "Đơn vị", 30)! };
+      const body = exactBody(req.body, ["kind", "code", "name", "description", "unit", "service_configuration"]);
+      const itemKind = kind(body.kind);
+      const config = itemKind === "FLEXIBLE_SERVICE" ? serviceConfiguration(body.service_configuration) : undefined;
+      if (itemKind !== "FLEXIBLE_SERVICE" && body.service_configuration !== undefined) throw validationError("Chỉ tiện ích phát sinh mới nhận cấu hình lịch hoặc gói.");
+      if (itemKind === "FLEXIBLE_SERVICE" && body.unit !== undefined) throw validationError("Đơn vị của tiện ích phát sinh được xác định theo kiểu sử dụng.");
+      const unit = config ? (config.serviceMode === "BOOKING" ? "lượt" : "gói") : text(body.unit, "Đơn vị", 30)!;
+      const input = { kind: itemKind, code: text(body.code, "Mã dịch vụ", 60)!.toUpperCase(), name: text(body.name, "Tên dịch vụ", 150)!, description: text(body.description, "Mô tả", 10_000, false), unit, ...(config ? { serviceConfiguration: config } : {}) };
       if (!/^[A-Z0-9][A-Z0-9_-]*$/.test(input.code)) throw validationError("Mã dịch vụ chỉ được gồm chữ in hoa, số, dấu gạch ngang hoặc gạch dưới.");
       const result = await repository.createItem(getAdminOwnerId(req.auth!), id(req.params.property_id, "Khu vực"), input);
       if (!result) { foreignResourceNotFound(); return; }
       sendJson(res, 201, { data: itemDto(result) });
     } catch (error) { next(error); }
+  });
+  router.put("/properties/:property_id/pricing-items/:pricing_item_id/service-configuration", ...admin, async (req, res, next) => {
+    try {
+      if (Object.keys(req.query).length !== 1 || req.query.kind !== "FLEXIBLE_SERVICE") throw validationError("Cần chọn đúng loại tiện ích phát sinh.");
+      const config = serviceConfiguration(req.body);
+      const result = await repository.saveFlexibleConfiguration(getAdminOwnerId(req.auth!), id(req.params.property_id, "Khu vực"), id(req.params.pricing_item_id, "Dịch vụ"), config);
+      if (!result) { foreignResourceNotFound(); return; }
+      sendJson(res, 200, { data: itemDto(result) });
+    } catch (error) { mapWriteError(error, next, "Không thể lưu cấu hình tiện ích phát sinh."); }
   });
   router.post("/properties/:property_id/pricing-items/:pricing_item_id/retire", ...admin, async (req, res, next) => {
     try {

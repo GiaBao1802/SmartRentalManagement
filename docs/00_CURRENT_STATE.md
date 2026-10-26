@@ -6,6 +6,12 @@
 
 ## Project Status
 
+### Admin — Tiện ích phát sinh đặt lịch/gói đăng ký — 2026-10-26
+
+Implemented the Admin-only Flexible Service configuration page and APIs. A service is either bookable with selected weekdays, shared daily hours, slot duration and concurrent capacity, or a subscription package with duration in months/years and permitted use hours. Fixed Services, Electricity/Water, Parking, and Resident UI/API remain untouched. Resident booking, enrollment, payment, check-in and subscription attendance limits are deferred. Legacy Flexible items are left unconfigured; no mode is inferred from old prices.
+
+Database V1.9 is now the locked local/development baseline on PostgreSQL 18.6 `localhost:5432/Goctro_dev_v18` with 41 public tables. The additive migration passed on this target after a verified backup; the 40 old tables retained matching row counts and SHA-256 fingerprints. The V1.9 runtime validator passed 85/85. Clean install + seed and populated V1.8→V1.9 rehearsals also passed. Backend/frontend typechecks and Prisma validation pass. Feature tests and manual browser review are not run; user review of `/admin/services/flexible` is pending. No commit/push. See [Admin implementation report](07_modules/service/FLEXIBLE_SERVICE_SCHEDULING_ADMIN_IMPLEMENTATION_REPORT.md) and [V1.9 setup](10_operations/DATABASE_V1_9_SETUP.md).
+
 ### Repository GitHub handoff audit — 2026-10-26 (logo review pending)
 
 The 2026-10-26 audit found mixed, unstaged local changes on `main`; that inventory is a historical snapshot. Cloudy 2D source/assets/handoffs were subsequently committed and pushed to GitHub `main` as `f793f33` (frontend preview only; no AI/backend chat). Three older logo files remain marked deleted locally and await a separate owner decision; they were excluded from that push. A fresh offline check matched all nine V1.8 baseline artifacts to provenance and Git HEAD. Frontend and backend typechecks, frontend API/UI 76/76, Cloudy 6/6 and mock-repository Auth 20/20 passed in the audit; the first Auth attempt was blocked by sandbox loopback permissions and the authorized retry passed. No live DB/API, setup, or full E2E verification was performed. README/manual clone guidance and remaining historical link gaps are recorded in [GitHub handoff readiness](10_operations/GITHUB_HANDOFF_READINESS_2026_10_26.md). This handoff does not change the active module, physical DB baseline, or the single Exact Next Task below.
@@ -18,11 +24,11 @@ The frontend mounts one shared DOM/CSS Cloudy illustration on Public Explorer/la
 
 The former Cloudy 3D mascot is no longer mounted in the current frontend. Its dedicated components, CSS and project GLB/BLEND/verification assets were removed. The integration report remains historical evidence; Three.js, React Three Fiber and Drei remain for the Public Explorer map. That removal pass did not add a 2D mascot, chat or AI service; the separate 2D integration is recorded above. This scoped removal did not change the active module or exact next task.
 
-### Windows setup menu — 2026-10-23 (review pending)
+### Windows setup menu — V1.9 rollout — 2026-10-26
 
-Quyết định cuối: Cài lần đầu cố định localhost:5432/postgres/Goctro_dev_v18, chỉ hỏi mật khẩu PostgreSQL ẩn nếu thiếu; env khác được giữ nguyên và hướng dẫn dùng Cập nhật. Cập nhật giữ target/credential cũ, không hỏi/reset mật khẩu web. RESET chỉ còn CLI riêng có xác nhận. Rehearsal mặc định dùng ánh xạ disposable chặt ở cổng riêng, không chiếm 5432; bằng chứng phiên trước trong hướng dẫn được đánh dấu lịch sử, kết quả bản cuối ghi riêng. Không đổi nghiệp vụ/baseline hay primary next task.
+The menu keeps the local target and credentials. Fresh installs use V1.9. Existing V1.8 installations are recognized and require the operator to confirm a verified backup before the additive V1.8→V1.9 migration; the tool refuses `Goctro_test3`, skips seeding populated data and does not reset credentials. Schema drift blocks startup. Prior PostgreSQL 18.6 setup evidence remains in [the V1.8 setup history](10_operations/DATABASE_V1_8_SETUP.md); V1.9 rehearsal and apply evidence is in [the new setup guide](10_operations/DATABASE_V1_9_SETUP.md).
 
-`setup.bat` là entry Windows tiếng Việt với Cài đặt lần đầu / Cập nhật và khởi động / Thoát; bỏ hai launcher cũ. Cài mới provision mật khẩu demo công khai `Goctro123456789` cho hai Account seed sau kiểm tra catalog/identity/linkage trong transaction; cập nhật giữ credential và không seed/migrate. Hỗ trợ tên database local khác, cache dependency/Prisma và restart process đã xác minh khi code/env đổi. Native PostgreSQL 18.6 disposable đã chạy qua tạo DB/bootstrap/seed/provision/generate/startup và Auth V1 email; Resident rental/403 Admin, RESET có xác nhận và rollback đã có kiểm chứng. Xem [hướng dẫn và bằng chứng vận hành](10_operations/DATABASE_V1_8_SETUP.md). Phone fixture, Docker, double-click GUI và provider/storage ngoài DB chưa được xác minh. Chưa commit/push trong task này; không đổi baseline hoặc dữ liệu `Goctro_test3`. Không đổi active module/primary next task.
+`setup.bat` remains the Windows entry with first-time/update/exit. Fresh V1.9 schema, seed and catalog guards are in `scripts/database-v19.mjs`; V1.8 tooling and runtime suites are retained for historical regression. Setup asks before applying the migration and keeps environment/credentials. This rollout changes the physical baseline and the active Admin module. No commit/push has been made.
 
 ### Resident role — Notifications module in review, 2026-10-23
 
@@ -51,16 +57,16 @@ Validation: frontend typecheck/build PASS and tests76/76; retirement14/14; Servi
 
 Production-frontend browser smoke verified Public/Rooms shells and API-outage UI, login→forgot navigation, invitation/reset missing-token states, anonymous Admin/Resident redirects and removed Amenities404. Authenticated Admin/Resident navigation, actual room/contact data and write flows were NOT RUN. No login or form submission occurred. Existing enrollment/provider/storage limitations remain; no new feature phase is authorized.
 
-Local/development project. Database V1.8 is the current locked physical baseline. The Admin Invoice list/detail/meter/finalize/itemized workflow passed authenticated browser and PostgreSQL rehearsal checks. Period-end reminders, next-day draft scheduling, and the Admin period workspace/readiness model passed disposable PostgreSQL 18 V1.8 integration. Service Pass 3 implemented Fixed/Flexible catalogs, immutable price publishing and Billing integration. The subsequent Service IA realignment consolidates navigation, changes the Flexible product label to “Tiện ích phát sinh”, and records the future Resident usage-to-charge product direction. The Admin SaaS visual baseline has received a page-specific static QA cleanup: login/sidebar logo rendering, Service selector/density, and the Accounts form are corrected. Frontend tests, typecheck and production build pass; manual browser visual review remains pending. Parking remains the next Service implementation. Auth browser tooling now supports explicit 1440/768/390px checks; previous Service viewport limitations are historical and those Service routes were not rechecked in this Auth task. No Service rehearsal data was written to `Goctro_test3`.
+Prior local/development milestone summary: Database V1.8 supported Admin Invoice workflows, period reminder/draft scheduling, Service Pass 3 and the Fixed/Flexible catalog. V1.9 now supersedes it physically with the separately implemented Admin schedule/package configuration described above. Parking remains a separate Service gap and was not part of the active task. No feature test data was written to `Goctro_test3`.
 
 Service Pass 2 implemented Owner-scoped Electricity/Water tariff configuration APIs and Admin UI, plus navigation to the existing Contract initial-meter source flow. Authenticated API and itemized billing passed on a disposable PostgreSQL 18 V1.8 database, including tariff versioning, immutable invoice snapshots and Owner isolation. The authenticated Admin browser smoke now passes for utility Property selection, tariff/tier rendering, Contract meter-source navigation, Billing workspace and finalized Invoice breakdown. Exact 320–390px verification remains blocked because the available Codex browser controller exposes no viewport override. Pass 2 is PARTIAL for this responsive tooling limitation; `Goctro_test3` received no test data.
 
 ## Current Physical Database
 
-- `Goctro_test3`, PostgreSQL 18.6, Database V1.8, 40 public tables, **LOCKED LOCAL/DEV**.
-- V1.7→V1.8 migration and populated-target CORE validation passed (78/78); target fingerprints match and no seed was run. Prisma format/validate/generate passed.
-- Database V1.7 is the historical locked predecessor.
-- See [V1.8 recurring Parking implementation report](07_modules/invoice-zalo/DATABASE_V1_8_RECURRING_PARKING_MIGRATION_IMPLEMENTATION_REPORT.md) and [Database Changelog](DATABASE_CHANGELOG.md).
+- `Goctro_dev_v18`, PostgreSQL 18.6 on localhost:5432, Database V1.9, 41 public tables, **LOCKED LOCAL/DEV**.
+- V1.8→V1.9 additive migration and V1.9 CORE validation passed (85/85); counts and SHA-256 fingerprints match for all 40 pre-existing tables. No V1.9 seed was run on the populated target.
+- Database V1.8 remains the historical locked predecessor; `Goctro_test3` was not connected or changed in this task.
+- See [V1.9 Admin service implementation report](07_modules/service/FLEXIBLE_SERVICE_SCHEDULING_ADMIN_IMPLEMENTATION_REPORT.md), [V1.9 setup guide](10_operations/DATABASE_V1_9_SETUP.md), and [Database Changelog](DATABASE_CHANGELOG.md).
 
 ### Local database setup tooling — 2026-10-16
 
@@ -106,7 +112,7 @@ Workspace code and PostgreSQL read-model integration pass on V1.8 rehearsal. Aut
 
 ## Locked Decisions
 
-- Follow Database V1.8 physical artifacts as the current local/development schema baseline; do not make ad hoc schema changes.
+- Follow Database V1.9 physical artifacts as the current local/development schema baseline; do not make ad hoc schema changes.
 - Billing business decisions and the existing finalize endpoint are recorded in the canonical Requirement and API Spec; production route wiring, disposable V1.8 PostgreSQL runtime verification, and Admin browser workflow review are complete. This establishes local operational closure only, not production deployment readiness.
 - Contract API §5.7 is separately locked; that does not lock the whole Contract module.
 - A future database change requires an approved business-rule change, a new version/migration, and runtime validation before promotion.
@@ -121,7 +127,7 @@ Workspace code and PostgreSQL read-model integration pass on V1.8 rehearsal. Aut
 
 1. [Requirement](01_REQUIREMENTS.md) — business rules.
 2. [API Spec](04_API_SPEC.md) — API contract.
-3. [Database Changelog](DATABASE_CHANGELOG.md) and [Database V1.8 artifacts](../database/baselines/v1.8/README.md) — physical database truth.
+3. [Database Changelog](DATABASE_CHANGELOG.md) and [Database V1.9 artifacts](../database/baselines/v1.9/README.md) — physical database truth.
 4. This file — current project checkpoint, not business authority.
 5. [Document Catalog](DOCUMENT_CATALOG.md) — document index/status.
 6. Reports — evidence and history.
@@ -129,7 +135,9 @@ Workspace code and PostgreSQL read-model integration pass on V1.8 rehearsal. Aut
 
 ## Latest Important Reports
 
-- [Database V1.8 recurring Parking migration implementation](07_modules/invoice-zalo/DATABASE_V1_8_RECURRING_PARKING_MIGRATION_IMPLEMENTATION_REPORT.md) — CURRENT physical baseline/promotion evidence; V1.8 LOCKED locally. Its fail-closed note is historical and predates the production wiring report below.
+- [Tiện ích phát sinh Admin — đặt lịch/gói đăng ký](07_modules/service/FLEXIBLE_SERVICE_SCHEDULING_ADMIN_IMPLEMENTATION_REPORT.md) — CURRENT implementation; database V1.9 applied and validated on Goctro_dev_v18; user browser review pending.
+- [Database V1.9 setup and migration](10_operations/DATABASE_V1_9_SETUP.md) — CURRENT; clean install, populated migration rehearsal, backup, target fingerprints, and 85/85 validator evidence.
+- [Database V1.8 recurring Parking migration implementation](07_modules/invoice-zalo/DATABASE_V1_8_RECURRING_PARKING_MIGRATION_IMPLEMENTATION_REPORT.md) — HISTORICAL locked predecessor/promotion evidence; V1.9 supersedes its baseline status. Its fail-closed note predates later production wiring.
 - [Billing V1.8 Invoice finalize route PostgreSQL integration closure](07_modules/invoice-zalo/BILLING_V1_8_INVOICE_FINALIZE_ROUTE_POSTGRESQL_INTEGRATION_CLOSURE_REPORT.md) — CURRENT; disposable V1.8 install/validators, authenticated HTTP route, itemized persistence, concurrency, fail-closed and rollback checks pass; rehearsal deleted.
 - [Admin Billing V1 backend connectivity and final browser closure](07_modules/invoice-zalo/ADMIN_BILLING_V1_BACKEND_CONNECTIVITY_AND_FINAL_BROWSER_CLOSURE_REPORT.md) — CURRENT evidence for the scoped Invoice UI workflow; it does not establish automatic period reminders or draft scheduling.
 - [Billing V1 end-to-end business flow gap audit](07_modules/invoice-zalo/BILLING_V1_END_TO_END_BUSINESS_FLOW_GAP_AUDIT.md) — HISTORICAL GAP AUDIT; it recorded the missing reminder/draft scheduler before implementation. Scheduler and workspace implementation reports supersede those findings.
@@ -165,7 +173,7 @@ Workspace code and PostgreSQL read-model integration pass on V1.8 rehearsal. Aut
 
 ## Exact Next Task
 
-**Review Resident module 4 at `/tenant/amenities`.** Confirm the catalog content and details layout before authorizing another module. Scheduling, booking, service registration/use, charges, and payments remain deferred pending Admin source data and an approved contract. Frontend/backend typechecks and authenticated desktop page/detail review PASS; automated tests, mobile viewport, and production build remain unrun. The Legacy-to-current Phase2 browser handoff and production adapter gates remain open and separate.
+**User review of the Admin Tiện ích phát sinh module at `/admin/services/flexible`.** Check that each service can be configured as (a) a booking service with weekdays, hours, per-visit duration and concurrent capacity, or (b) a month/year package with allowed use hours and a published package price. Confirm the legacy items are not silently reclassified. Wait for the user’s review before any Resident work. Manual browser flow, mobile layout, automated feature tests and production build remain unverified.
 ## Resume Checklist
 
 1. Read repository-wide [AGENTS.md](../AGENTS.md), [Documentation Rules](DOCUMENTATION_RULES.md), this checkpoint, and the [Document Catalog](DOCUMENT_CATALOG.md).

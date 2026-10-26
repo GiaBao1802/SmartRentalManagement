@@ -1,2 +1,3 @@
 # Reviewed artifacts are hashed as raw bytes, including their original line endings.
 /database/baselines/v1.8/** -text
+/database/baselines/v1.9/** -text

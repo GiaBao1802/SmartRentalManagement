@@ -1,4 +1,4 @@
-import ServiceCatalog from "../service-catalog";
+import FlexibleServiceCatalog from "../flexible-service-catalog";
 
 export const metadata = { title: "Tiện ích phát sinh" };
-export default function FlexibleServicesPage() { return <ServiceCatalog kind="FLEXIBLE_SERVICE" />; }
+export default function FlexibleServicesPage() { return <FlexibleServiceCatalog />; }

@@ -1,0 +1,21 @@
+{
+  "version": "1.9",
+  "predecessor": "SmartRentalManagement/database/baselines/v1.8",
+  "canonicalSource": "SmartRentalManagement/database/baselines/v1.9",
+  "canonicalChangelog": "SmartRentalManagement/docs/DATABASE_CHANGELOG.md",
+  "copiedAt": "2026-10-26",
+  "role": "Additive V1.8 successor; applied to local Goctro_dev_v18 after verified backup. Clean-install and populated-upgrade rehearsals passed; V1.9 runtime validation passed on the target.",
+  "catalogGeneratedOn": "PostgreSQL 18.6; disposable exact V1.9 schema before seed; structural catalog only, no row data or environment-specific ownership/OIDs",
+  "sha256": {
+    "schema.sql": "ff1ee81bffa082915c547786efe081e540a68fc060e8189b87fafafaf3db5b37",
+    "seed.sql": "ffac093c35088c425e9df91ac87f67ef51874a877989afde85bf578ce7d5623a",
+    "erd.md": "cd4141f230355110d4c47d0d259bc700a58add391e8b3bb9334ee73b27f175c0",
+    "SOURCE_README.md": "b7c4f82379782975f3c766a44f93a7e5789851a1c0032c64cc2dc7b6c75a8f8c",
+    "SOURCE_DATABASE_CHANGELOG.md": "e046c7511b1443603ae32b218a3c6fa8c2bfd91bb9fdd3138969355e102e9a18",
+    "runtime_validator.sql": "3bb2e1969ccc0fede6c06cea1b90a3b03dbf8b542bd0c40e1befbd00eba6fe24",
+    "runtime_validator_fixture.sql": "e619affcd7e4b02441f8403355ab7ad2490c83397e6e473755d9be2810d2c7bd",
+    "migrations/V1_7_to_V1_8_recurring_parking_invoice_linkage.sql": "0f410921589c07348860375ece2356e566a901fba76d1da258eedb89f23ab400",
+    "migrations/V1_8_to_V1_9_flexible_service_modes.sql": "ee5bbcb3f509fd6016f5d1fbbe5a0f2e51cba953511bc115a9d7423b1f82c5d2",
+    "expected-catalog.json": "d5c55fa70c8a525bf47dcf8bc0c57bd476ce849239998506e52c9abb672c1e4e"
+  }
+}
