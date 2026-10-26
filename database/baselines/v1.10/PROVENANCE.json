@@ -1,0 +1,21 @@
+{
+  "version": "1.10",
+  "predecessor": "database/baselines/v1.9",
+  "role": "Current locked local/development baseline on Goctro_test3; AWS not deployed",
+  "catalogGeneratedOn": "PostgreSQL 18.6 clean V1.10 disposable database before seed; structural catalog only",
+  "sha256": {
+    "erd.md": "5fe88a8079deb265ec4f7ff75332141490a999f3c9bfd3cb6ba4b2df9ed61055",
+    "expected-catalog.json": "1bfa9e20d6e7644431f16e713fc88d5450faeb50a424c44246fd14670ea1c258",
+    "migrations/V1_7_to_V1_8_recurring_parking_invoice_linkage.sql": "0f410921589c07348860375ece2356e566a901fba76d1da258eedb89f23ab400",
+    "migrations/V1_8_auth_to_V1_10_flexible_service_modes.sql": "20c0873546fed4ea99fe67f70d220a3c1065f5a5600dfcd7d3af81d121cd72e5",
+    "migrations/V1_8_to_V1_9_flexible_service_modes.sql": "ee5bbcb3f509fd6016f5d1fbbe5a0f2e51cba953511bc115a9d7423b1f82c5d2",
+    "migrations/V1_9_to_V1_10_auth_sessions.sql": "f6f82c0c57c9526f3e5ac83825106fe8af72930464648639608b35efe5fd99b6",
+    "README.md": "29c2c7f537f0a849bcf2b11d39469419c2131fb114a10d33818d5805e504481b",
+    "runtime_validator_fixture.sql": "7f823f1682b90668ec0da757be3226d4a227512163d6b27fd9ed9a4f45c64fb0",
+    "runtime_validator.sql": "db30907851177573f4d4650b2eb6c840b324f9a7c35514cc83de9d5a579ed41f",
+    "schema.sql": "53362ebf8f7ad84ce5d88255d815e0c28852c0232432c234aff502973472bdb0",
+    "seed.sql": "ffac093c35088c425e9df91ac87f67ef51874a877989afde85bf578ce7d5623a",
+    "SOURCE_DATABASE_CHANGELOG.md": "e046c7511b1443603ae32b218a3c6fa8c2bfd91bb9fdd3138969355e102e9a18",
+    "SOURCE_README.md": "b7c4f82379782975f3c766a44f93a7e5789851a1c0032c64cc2dc7b6c75a8f8c"
+  }
+}

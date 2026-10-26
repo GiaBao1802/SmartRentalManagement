@@ -45,7 +45,7 @@ app.use(
 app.use(express.json({ limit: "1mb" }));
 app.use("/api/v1/public/explorer", createExplorerRouter(prisma));
 
-const sessions = createSessionStore(runtimeConfig.nodeEnv);
+const sessions = createSessionStore(runtimeConfig.nodeEnv, prisma);
 const objectStorage = new UnconfiguredObjectStorage();
 const invoiceRepository = new PrismaInvoiceRepository(prisma);
 const invoicePricing = new PrismaItemizedInvoicePricing();

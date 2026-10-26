@@ -10,12 +10,21 @@
 |---|---|---|---|
 | `README.md` | Navigation | CURRENT | Entry point for this documentation tree. |
 | `../AGENTS.md` | Repository-wide agent working rules | CURRENT | Governance/instructions only; not business Source of Truth. Frontend work also follows `frontend/AGENTS.md`. |
-| `00_CURRENT_STATE.md` | Project Checkpoint / Navigation | CURRENT | Current project checkpoint only; not canonical business authority. Database V1.9 is locked on Goctro_dev_v18 for local/development. Admin Flexible configuration is implemented and awaits user browser review; Resident booking/enrollment remains deferred. |
+| `00_CURRENT_STATE.md` | Project Checkpoint / Navigation | CURRENT | Current project checkpoint only; not canonical business authority. Database V1.10 is locked on Goctro_test3 on this machine; AWS is not deployed. Admin Flexible browser review remains pending. |
 | `DOCUMENTATION_RULES.md` | Governance | CURRENT | Placement, report/history rules, Source of Truth order, task-start/end workflow, and conflict handling. |
+| `07_modules/superadmin/SUPERADMIN_REQUIREMENTS_SPEC.md` | Superadmin / platform administration | CURRENT — REQUIREMENTS APPROVED; NOT IMPLEMENTED | Approved role, Owner lifecycle, platform reports, audit and boundaries; no Superadmin source or schema implementation. |
+| `07_modules/superadmin/SUPERADMIN_SCHEMA_API_GAP_REPORT.md` | Superadmin / schema and API gap analysis | REFERENCE — REVIEW ONLY | Snapshot against V1.8, before the V1.9/V1.10 database changes; identified gaps remain subject to fresh review. |
+| `07_modules/superadmin/SUPERADMIN_IDENTITY_REPORT_AUDIT_DESIGN.md` | Superadmin / account, report and audit design | REFERENCE — BUSINESS DIRECTION APPROVED | Business direction approved; detailed API/database implementation pending. |
+| `07_modules/superadmin/SUPERADMIN_SCREEN_API_DESIGN.md` | Superadmin / screen and API proposal | REFERENCE — DRAFT | Proposed flows; not current API contract. |
+| `07_modules/superadmin/SUPERADMIN_DATABASE_CHANGE_DESIGN.md` | Superadmin / data change proposal | REFERENCE — DRAFT | Proposed future Superadmin data changes; V1.10 does not implement them. |
+| `07_modules/superadmin/SUPERADMIN_DUPLICATE_CONTACT_REVIEW.md` | Superadmin / duplicate contact audit | REFERENCE — READ-ONLY SNAPSHOT | Earlier read-only Goctro_test3 contact audit; repeat before any Superadmin migration. |
+| `07_modules/auth/AUTH_PERSISTENT_SESSION_IMPLEMENTATION_REPORT.md` | Auth / PostgreSQL sessions | CURRENT — CODE + V1.10 LOCAL PASS | Auth session code and migration lineage; local V1.10 promotion and PostgreSQL integration passed. AWS not deployed. |
+| `10_operations/LOCAL_DATABASE_V1_10_PROMOTION_2026_10_27.md` | Database / V1.10 local promotion | CURRENT — PASS / LOCKED LOCAL-DEV | Verified backup, two upgrade paths, CORE 89/89, unchanged old rows on Goctro_test3. |
+| `10_operations/AWS_DATABASE_V1_10_PREPARATION.md` | AWS / demo database plan | CURRENT — PREPARED; NO AWS DATABASE | One Lightsail 8 GB machine for web, PostgreSQL and Ollama; new AWS database must use V1.10 clean schema. |
 | `DOCUMENT_CATALOG.md` | Catalog | CURRENT | This inventory. |
 | `01_REQUIREMENTS.md` | Product requirements | CURRENT — CANONICAL | Business requirements authority for SmartRentalManagement. Historical source provenance is retained in the dependency copies and reports. |
 | `04_API_SPEC.md` | API contract | CURRENT — CANONICAL | `/api/v1` contract authority for SmartRentalManagement. Historical source provenance is retained where applicable. |
-| `DATABASE_CHANGELOG.md` | Database changelog | CURRENT — CANONICAL | Version history and physical-baseline authority; Database V1.9 is the current locked local/development baseline. |
+| `DATABASE_CHANGELOG.md` | Database changelog | CURRENT — CANONICAL | Version history and physical-baseline authority; Database V1.10 is locked on Goctro_test3 on this machine. |
 | `11_project-reports/SOURCE_OF_TRUTH_CURRENT_STATE_GOVERNANCE_FINALIZATION_REPORT.md` | Project governance / Current State workflow | CURRENT | Records evidence checked, stale API baseline metadata reconciled, authority order, workflow, catalog, and checkpoint finalization. |
 | `11_project-reports/AGENTS_MD_PROJECT_WORKFLOW_SETUP_REPORT.md` | Project governance / Root agent instructions | CURRENT | Records creation of repository-wide workflow instructions and their documentation integration. |
 | `11_project-reports/ADMIN_SAAS_UI_UX_REDESIGN_REPORT.md` | Cross-domain / Admin UI, navigation and responsive visual foundation | REFERENCE — PRE-VISUAL-QA SNAPSHOT | Records the shared SaaS styling/navigation baseline before the page-specific visual QA and logo correction in `ADMIN_SAAS_UI_UX_VISUAL_QA_AND_CLEANUP_REPORT.md`. |
@@ -136,7 +145,7 @@
 
 - Product requirements: `01_REQUIREMENTS.md`
 - API contract: `04_API_SPEC.md`
-- Current local physical database is `Goctro_dev_v18`, Database V1.9 in `database/baselines/v1.9/` (PostgreSQL 18.6, 41 public tables). V1.8 remains the historical predecessor; `Goctro_test3` was not changed by this task. The canonical Requirement still contains several older V1.6/V1.7-current statements; Changelog and Current State establish the current baseline.
+- Current physical database verified on this machine is `Goctro_test3`, Database V1.10 in `database/baselines/v1.10/` (PostgreSQL 18.6, 42 public tables). V1.9 remains the team's historical predecessor and its reported `Goctro_dev_v18` target was not present on this machine. Changelog and Current State establish the local baseline.
 - Current Prisma mapping for this application: `../database/schema.prisma`
 
 The former sibling paths are retained only as historical provenance in the relevant copies and reports; they are not current authority.

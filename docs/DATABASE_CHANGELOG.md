@@ -2,6 +2,12 @@
 
 Database files are redesigned as a clean PostgreSQL V1 baseline. The previous schema described 16 tables for demo/legacy behavior. The new baseline is normalized around Owner → Property → Room, keeps history for occupancy and workflows, and excludes demo-only booking/report/plan structures. This is a breaking clean schema; no production `ALTER` migration is supplied because the project is pre-production as directed.
 
+## Database V1.10 — durable auth sessions (local promotion 2026-10-27)
+
+V1.10 preserves the published V1.9 Flexible Service schema and adds `auth_sessions` for shared server-side login sessions. The complete [V1.10 clean-install baseline](../database/baselines/v1.10/README.md) has 42 public tables. The canonical V1.9→V1.10 migration only adds `auth_sessions`. A separate, guarded local recovery migration merges the earlier unpushed auth-first branch with the team's V1.9 Flexible table; it does not alter the published V1.9 baseline.
+
+PostgreSQL 18.6 clean installation, canonical V1.9→V1.10 upgrade and populated local recovery rehearsal all passed CORE **89/89**. The clean and auth-first recovery paths yielded matching structural catalogs. `Goctro_test3` on this machine was backed up, upgraded and passed CORE 89/89 with unchanged old-row fingerprints and no seed. **V1.10 is the locked local physical baseline on this machine.** The prior V1.9 promotion on `Goctro_dev_v18` is separate historical evidence and was not modified here. No AWS database or server has been created. See [V1.10 local promotion](10_operations/LOCAL_DATABASE_V1_10_PROMOTION_2026_10_27.md).
+
 ## Audit trước khi sửa
 
 | Thành phần | Hiện trạng | Vấn đề | Requirement liên quan | Quyết định |

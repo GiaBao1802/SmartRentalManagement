@@ -16,7 +16,7 @@ V1 phải dùng dữ liệu tập trung ở backend để các thao tác đượ
 
 ### 2.1 Chủ trọ / Admin
 
-Trong V1, **mỗi Owner có đúng một Admin Account**; tài khoản đó là authority đã xác thực cho Owner tương ứng. Một Owner không hỗ trợ nhiều Admin Account trong V1. Admin là tài khoản quản trị của một chủ trọ, không phải quản trị viên toàn nền tảng. V1 không có super-admin, staff hoặc delegated admin. Multi-admin là tính năng tương lai, cần business requirement được duyệt, audit permission, thiết kế Auth/Account, phiên bản database và migration mới, security review cùng E2E coverage trước khi triển khai.
+Trong V1, **mỗi Owner có đúng một Admin Account**; tài khoản đó là authority đã xác thực cho Owner tương ứng. Một Owner không hỗ trợ nhiều Admin Account trong V1. Admin là tài khoản quản trị của một chủ trọ, không phải quản trị viên toàn nền tảng. Superadmin là vai trò quản trị nền tảng mới được chốt trong `07_modules/superadmin/SUPERADMIN_REQUIREMENTS_SPEC.md`; vai trò này tách khỏi Owner/Admin và chưa được triển khai trong source/API/database. Staff hoặc delegated admin vẫn chưa thuộc phạm vi.
 
 - Quản lý nhiều khu trọ thuộc quyền của chính chủ trọ đó.
 - Quản lý phòng, hồ sơ cư dân, tài khoản cư dân, hợp đồng, hóa đơn, giao dịch thanh toán, tiện ích, bãi xe và khiếu nại trong phạm vi được cấp quyền.
@@ -64,7 +64,7 @@ Trong V1, **mỗi Owner có đúng một Admin Account**; tài khoản đó là 
 - Hệ thống hỗ trợ đăng nhập, đăng xuất, session có thời hạn và kiểm soát quyền theo vai trò.
 - Tài khoản có trạng thái hoạt động/khóa. Tài khoản bị khóa không thể tạo session mới; session hiện có phải được xử lý theo chính sách bảo mật.
 - Tài khoản cư dân có thể được liên kết với đúng một hồ sơ cư dân theo quy tắc nghiệp vụ; việc liên kết phải tránh tạo liên kết trùng hoặc nhầm người.
-- Trong V1, mỗi Owner có đúng một Admin Account; không tạo thêm Admin Account cho cùng Owner. Database V1.5/V1.6 enforce tối đa một Admin Account cho mỗi Owner bằng `accounts.owner_id UNIQUE`. Mọi mô hình multi-admin, staff hoặc delegated admin được hoãn khỏi V1 và phải qua quy trình phê duyệt, permission/Auth/Account design, database version/migration, security review và E2E trước khi đưa vào release.
+- Trong V1, mỗi Owner có đúng một Admin Account; không tạo thêm Admin Account cho cùng Owner. Database V1.5/V1.6 enforce tối đa một Admin Account cho mỗi Owner bằng `accounts.owner_id UNIQUE`. Superadmin không làm thay đổi invariant này; việc triển khai Superadmin phải qua permission/Auth/Account design, database version/migration nếu cần, security review và E2E trước release.
 - Resident đăng nhập bằng số điện thoại Việt Nam và mật khẩu. Phone có giá trị phải được chuẩn hóa trước khi so sánh/lưu theo dạng `+84XXXXXXXXX`; chấp nhận đầu vào bắt đầu `0`, `84` hoặc `+84`, bỏ khoảng trắng đầu/cuối và separator space, `-`, `.`. Số quốc tế khác `+84` và đầu vào không hợp lệ bị từ chối; PostgreSQL enforce phone không NULL là duy nhất. Cùng một hàm chuẩn hóa phải được dùng cho đăng nhập, cập nhật hồ sơ và cấp tài khoản. Email login hiện có vẫn được giữ theo contract.
 - Mật khẩu phải được băm bằng thuật toán phù hợp. Không lưu hoặc trả mật khẩu plaintext; không dùng mật khẩu mẫu cố định trong sản phẩm.
 - Backend quyết định vai trò và quyền từ danh tính đã xác thực; không tin role, user ID hay phạm vi khu trọ do frontend tự gửi.
@@ -74,6 +74,16 @@ Trong V1, **mỗi Owner có đúng một Admin Account**; tài khoản đó là 
 - Kế thừa approval provisioning đã có: Resident có thể có hồ sơ/hợp đồng mà chưa có Account; Admin mời Resident trong Owner scope, không xem token/mật khẩu hoặc đặt mật khẩu thay Resident. Invitation dùng một lần, hết hạn sau 24 giờ; gửi qua Zalo với recipient binding đã xác minh, không suy ra quyền nhận tin chỉ từ số điện thoại. DEV/test harness retrieval được phép, không public endpoint lấy token và không bật adapter DEV ở production.
 - Reset token dùng một lần và hết hạn sau **30 phút**. TTL reset này là quyết định mới từ yêu cầu hoàn thiện ngày 2026-10-18, không phải approval lịch sử. Phát hành token không đổi mật khẩu; reset thành công thu hồi các reset token liên quan và mọi phiên đăng nhập, không tự mở khóa Account và không auto-login. Public forgot-password trả kết quả chung để không tiết lộ Account có tồn tại hay không.
 - Lịch sử invitation accepted/expired/revoked được giữ lại. Accept tạo/link Account và đánh dấu accepted nguyên tử, không ghi đè Account có sẵn. Delivery thất bại/timeout không được âm thầm vô hiệu lời mời đang dùng; không báo đã gửi khi chưa có xác nhận. Chi tiết endpoint/DTO và giới hạn hạ tầng DEV/production ở API Spec §5.2.
+
+### Superadmin — quyết định nghiệp vụ ngày 2026-10-26 (chưa triển khai)
+
+- Superadmin là loại tài khoản quản trị nền tảng riêng, không gắn với Owner hoặc Resident. Tài khoản Superadmin đầu tiên do người phụ trách kỹ thuật tạo theo yêu cầu của chủ dự án và ghi dấu vết. Quyền xem nhật ký được cấp riêng theo chỉ định của chủ dự án; Superadmin không tự cấp quyền đó cho chính mình. Chủ trọ/Admin vẫn chỉ quản lý dữ liệu Owner của mình.
+- Superadmin tạo hồ sơ Owner và lời mời trước. Chỉ khi chủ trọ tự đặt mật khẩu từ liên kết hợp lệ, hệ thống mới tạo Admin Account tương ứng; Superadmin không biết hoặc đặt mật khẩu thay. Liên kết gửi đến email đã xác nhận với chủ trọ qua một kênh khác, ví dụ cuộc gọi. Cần có dịch vụ gửi email thật và xác nhận kết quả gửi trước khi vận hành luồng này. Đây là ngoại lệ có phạm vi hẹp cho liên kết tài khoản Owner trong giai đoạn Superadmin; không mở rộng email/push notification V1 nói chung.
+- Liên kết mời tạo tài khoản Owner dùng một lần, hết hạn sau **24 giờ**. Liên kết đặt lại mật khẩu dùng một lần, hết hạn sau **30 phút**. Gửi liên kết mới làm liên kết cũ mất hiệu lực. Chỉ việc chủ trọ tự đặt lại mật khẩu thành công mới đổi mật khẩu và thu hồi phiên; gửi liên kết không mở khóa tài khoản.
+- Khóa hoặc mở khóa tài khoản Owner đều bắt buộc ghi lý do và người thực hiện. Khóa phải chặn yêu cầu tiếp theo, thu hồi tất cả phiên và chặn đăng nhập mới. Nếu thu hồi phiên lỗi, hệ thống báo để xử lý lại; không được coi phiên còn hiệu lực là hợp lệ. Mở khóa không phục hồi phiên cũ; chủ trọ đăng nhập lại. Dữ liệu khu trọ và lịch sử giữ nguyên.
+- Phản ánh gửi tới nền tảng là dữ liệu riêng với Complaint nội bộ. Bản đầu chỉ nhận phản ánh gắn với một Property, cho phép gửi ẩn danh hoặc để lại liên hệ nếu muốn được phản hồi. Superadmin có thể phản hồi thủ công khi có liên hệ; chưa hỗ trợ tệp đính kèm, phản ánh chung hoặc mở lại phản ánh đã giải quyết. Mục tiêu nội bộ là kiểm tra phản ánh mới trong **2 ngày làm việc**, chưa công bố thời hạn cam kết với người gửi. Mỗi lần đổi trạng thái ghi người xử lý và ghi chú; giới hạn tần suất gửi để chống spam.
+- Người được cấp quyền xem nhật ký phải nhập lại mật khẩu tài khoản của chính mình. Quyền xem tạm hết sau **10 phút không hoạt động** hoặc tối đa **30 phút** kể từ lần nhập lại, tùy mốc nào tới trước; cũng hết khi phiên gốc kết thúc hoặc quyền bị thu hồi. Ghi nhận lần xác thực/truy cập thành công hoặc thất bại. Định hướng giữ nhật ký **12 tháng** đã được chốt; trước production cần rà soát lại theo nhu cầu vận hành và chính sách bảo vệ dữ liệu.
+- Các quyết định này chưa sửa hợp đồng API V1.2 hoặc database V1.8. Thiết kế đã duyệt ở `07_modules/superadmin/SUPERADMIN_IDENTITY_REPORT_AUDIT_DESIGN.md`; trước khi triển khai cần API contract, database change request, kiểm thử và hạ tầng gửi email/kho phiên phù hợp.
 
 ## 6. Quản lý khu trọ và phòng
 
@@ -255,7 +265,7 @@ Bãi xe là nghiệp vụ riêng với tiện ích thông thường.
 - Foxi AI và hội thoại AI thật.
 - OCR/AI thật để đọc hợp đồng, CCCD hoặc ảnh đồng hồ điện/nước.
 - Camera/AI nhận diện biển số.
-- Email và push notification.
+- Email và push notification nói chung; ngoại lệ hẹp cho liên kết tài khoản Owner trong luồng Superadmin mới được quyết định ở §5, chưa triển khai.
 - Các tích hợp nâng cao chưa được duyệt, ngoài các hướng đã xác định cho thanh toán và gửi hóa đơn qua Zalo OA.
 - Hoàn tiền/refund tự động hoặc qua provider trong V1.
 - Role CSKH, quản lý vận hành, nhân viên kỹ thuật và các role nhân sự khác; workflow phân công/chuyển người phụ trách Complaint và lịch sử assignment (định hướng V2).
@@ -284,7 +294,7 @@ Bãi xe là nghiệp vụ riêng với tiện ích thông thường.
 
 ### 21.1 Vai trò và phạm vi dữ liệu
 
-- Admin trong V1 là chủ trọ, có thể quản lý nhiều khu trọ của mình; không có super admin hoặc admin toàn nền tảng.
+- Admin trong V1 là chủ trọ, có thể quản lý nhiều khu trọ của mình. Superadmin là vai trò nền tảng được đặc tả riêng nhưng chưa triển khai; không được dùng quyền Superadmin để bỏ qua Owner scope của Admin.
 - Chủ trọ/Admin A có thể quản lý nhiều khu trọ của A nhưng mọi thao tác đọc/ghi vào dữ liệu chủ trọ B đều bị backend từ chối.
 - Sửa URL hoặc mã bản ghi ở trình duyệt không giúp chủ trọ A truy cập dữ liệu chủ trọ B.
 - Cư dân chỉ xem hồ sơ, hợp đồng, hóa đơn, giao dịch và yêu cầu gắn với tài khoản/hồ sơ thuê đã liên kết của mình.

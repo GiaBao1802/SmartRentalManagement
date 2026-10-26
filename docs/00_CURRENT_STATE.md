@@ -6,11 +6,17 @@
 
 ## Project Status
 
+### Database V1.10 / AWS source preparation — 2026-10-27
+
+GitHub `main` already contained the team's Database V1.9 for Admin Flexible Service configuration. A separate unpushed auth-session candidate had also used the V1.9 name on this machine. The two changes are now combined in `database/baselines/v1.10/` without rewriting the team's V1.9. The configured local `Goctro_test3` was backed up, rehearsed and promoted to V1.10: 42 tables, CORE 89/89 PASS, old-row fingerprints unchanged. Clean V1.10, canonical V1.9→V1.10 and local auth-first→V1.10 paths passed on disposable databases. Backend typecheck/build, Auth 20/20, Accounts 19/19, PostgreSQL session integration 1/1 passed. See [promotion report](10_operations/LOCAL_DATABASE_V1_10_PROMOTION_2026_10_27.md) and [AWS preparation](10_operations/AWS_DATABASE_V1_10_PREPARATION.md). AWS still has no project database or web server; Git contains structure/code, not local data. The Admin Flexible Service browser review remains pending.
+
+The approved [Superadmin requirements](07_modules/superadmin/SUPERADMIN_REQUIREMENTS_SPEC.md), [gap review](07_modules/superadmin/SUPERADMIN_SCHEMA_API_GAP_REPORT.md), [identity/report/audit design](07_modules/superadmin/SUPERADMIN_IDENTITY_REPORT_AUDIT_DESIGN.md), [screen/API draft](07_modules/superadmin/SUPERADMIN_SCREEN_API_DESIGN.md), [data-change draft](07_modules/superadmin/SUPERADMIN_DATABASE_CHANGE_DESIGN.md) and [duplicate-contact snapshot](07_modules/superadmin/SUPERADMIN_DUPLICATE_CONTACT_REVIEW.md) are documented. Superadmin is not implemented in API/source/database V1.10; these design documents do not authorize its migration. Real email delivery is deferred for the demo.
+
 ### Admin — Tiện ích phát sinh đặt lịch/gói đăng ký — 2026-10-26
 
 Implemented the Admin-only Flexible Service configuration page and APIs. A service is either bookable with selected weekdays, shared daily hours, slot duration and concurrent capacity, or a subscription package with duration in months/years and permitted use hours. Fixed Services, Electricity/Water, Parking, and Resident UI/API remain untouched. Resident booking, enrollment, payment, check-in and subscription attendance limits are deferred. Legacy Flexible items are left unconfigured; no mode is inferred from old prices.
 
-Database V1.9 is now the locked local/development baseline on PostgreSQL 18.6 `localhost:5432/Goctro_dev_v18` with 41 public tables. The additive migration passed on this target after a verified backup; the 40 old tables retained matching row counts and SHA-256 fingerprints. The V1.9 runtime validator passed 85/85. Clean install + seed and populated V1.8→V1.9 rehearsals also passed. Backend/frontend typechecks and Prisma validation pass. Feature tests and manual browser review are not run; user review of `/admin/services/flexible` is pending. No commit/push. See [Admin implementation report](07_modules/service/FLEXIBLE_SERVICE_SCHEDULING_ADMIN_IMPLEMENTATION_REPORT.md) and [V1.9 setup](10_operations/DATABASE_V1_9_SETUP.md).
+At the 2026-10-26 Admin task snapshot, Database V1.9 was promoted on `Goctro_dev_v18` after backup and CORE 85/85. That database was not present on this machine when checked on 2026-10-27; this report remains evidence for that separate target. The V1.9 files and Admin feature remain in source. Feature tests and manual browser review are still pending. See [Admin implementation report](07_modules/service/FLEXIBLE_SERVICE_SCHEDULING_ADMIN_IMPLEMENTATION_REPORT.md) and [V1.9 setup](10_operations/DATABASE_V1_9_SETUP.md).
 
 ### Repository GitHub handoff audit — 2026-10-26 (logo review pending)
 
@@ -63,10 +69,10 @@ Service Pass 2 implemented Owner-scoped Electricity/Water tariff configuration A
 
 ## Current Physical Database
 
-- `Goctro_dev_v18`, PostgreSQL 18.6 on localhost:5432, Database V1.9, 41 public tables, **LOCKED LOCAL/DEV**.
-- V1.8→V1.9 additive migration and V1.9 CORE validation passed (85/85); counts and SHA-256 fingerprints match for all 40 pre-existing tables. No V1.9 seed was run on the populated target.
-- Database V1.8 remains the historical locked predecessor; `Goctro_test3` was not connected or changed in this task.
-- See [V1.9 Admin service implementation report](07_modules/service/FLEXIBLE_SERVICE_SCHEDULING_ADMIN_IMPLEMENTATION_REPORT.md), [V1.9 setup guide](10_operations/DATABASE_V1_9_SETUP.md), and [Database Changelog](DATABASE_CHANGELOG.md).
+- `Goctro_test3`, PostgreSQL 18.6 on localhost:5432, Database V1.10, 42 public tables, **LOCKED LOCAL/DEV on this machine**.
+- Local auth-first branch was merged with the team's V1.9 Flexible schema by a guarded, additive V1.10 migration after verified backup. CORE 89/89 and old-row fingerprint preservation passed; no seed was run on the populated target.
+- V1.9 remains the immutable historical predecessor in Git. The separately reported `Goctro_dev_v18` target does not exist on the PostgreSQL instance checked for this task.
+- See [V1.10 local promotion](10_operations/LOCAL_DATABASE_V1_10_PROMOTION_2026_10_27.md), [V1.9 Admin service implementation report](07_modules/service/FLEXIBLE_SERVICE_SCHEDULING_ADMIN_IMPLEMENTATION_REPORT.md), and [Database Changelog](DATABASE_CHANGELOG.md).
 
 ### Local database setup tooling — 2026-10-16
 
@@ -112,7 +118,7 @@ Workspace code and PostgreSQL read-model integration pass on V1.8 rehearsal. Aut
 
 ## Locked Decisions
 
-- Follow Database V1.9 physical artifacts as the current local/development schema baseline; do not make ad hoc schema changes.
+- Follow Database V1.10 physical artifacts as the current local/development schema baseline on `Goctro_test3`; do not make ad hoc schema changes.
 - Billing business decisions and the existing finalize endpoint are recorded in the canonical Requirement and API Spec; production route wiring, disposable V1.8 PostgreSQL runtime verification, and Admin browser workflow review are complete. This establishes local operational closure only, not production deployment readiness.
 - Contract API §5.7 is separately locked; that does not lock the whole Contract module.
 - A future database change requires an approved business-rule change, a new version/migration, and runtime validation before promotion.
@@ -127,7 +133,7 @@ Workspace code and PostgreSQL read-model integration pass on V1.8 rehearsal. Aut
 
 1. [Requirement](01_REQUIREMENTS.md) — business rules.
 2. [API Spec](04_API_SPEC.md) — API contract.
-3. [Database Changelog](DATABASE_CHANGELOG.md) and [Database V1.9 artifacts](../database/baselines/v1.9/README.md) — physical database truth.
+3. [Database Changelog](DATABASE_CHANGELOG.md) and [Database V1.10 artifacts](../database/baselines/v1.10/README.md) — current local physical database truth.
 4. This file — current project checkpoint, not business authority.
 5. [Document Catalog](DOCUMENT_CATALOG.md) — document index/status.
 6. Reports — evidence and history.
@@ -173,7 +179,7 @@ Workspace code and PostgreSQL read-model integration pass on V1.8 rehearsal. Aut
 
 ## Exact Next Task
 
-**User review of the Admin Tiện ích phát sinh module at `/admin/services/flexible`.** Check that each service can be configured as (a) a booking service with weekdays, hours, per-visit duration and concurrent capacity, or (b) a month/year package with allowed use hours and a published package price. Confirm the legacy items are not silently reclassified. Wait for the user’s review before any Resident work. Manual browser flow, mobile layout, automated feature tests and production build remain unverified.
+**Deploy the demo from the verified GitHub `main` V1.10 source to one Lightsail 8 GB machine in `ap-southeast-2`.** First recheck the project, credit and exact pushed commit; install PostgreSQL, create a new empty database from V1.10 `schema.sql`, run CORE validation, then configure the web and Ollama. The Admin Flexible Service browser review and Resident work remain separate and pending; this database promotion does not approve those flows.
 ## Resume Checklist
 
 1. Read repository-wide [AGENTS.md](../AGENTS.md), [Documentation Rules](DOCUMENTATION_RULES.md), this checkpoint, and the [Document Catalog](DOCUMENT_CATALOG.md).

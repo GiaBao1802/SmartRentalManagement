@@ -18,7 +18,7 @@ Do not start implementation from memory or a previous session summary.
 
 1. `docs/01_REQUIREMENTS.md` — business rules.
 2. `docs/04_API_SPEC.md` — API contract.
-3. `docs/DATABASE_CHANGELOG.md` and `database/baselines/v1.8/` — physical database truth.
+3. `docs/DATABASE_CHANGELOG.md` and `database/baselines/v1.10/` — current local physical database truth. V1.9 and earlier remain historical.
 4. `docs/00_CURRENT_STATE.md` — current project checkpoint.
 5. `docs/DOCUMENT_CATALOG.md` — document index/status.
 6. Reports — evidence and history, interpreted by date and scope.

@@ -6,6 +6,10 @@ import { PrismaBillingScheduleStore } from "./invoices/billing-scheduler.reposit
 import { PrismaInvoiceRepository } from "./invoices/invoice.repository.js";
 
 const port = runtimeConfig.port;
+// A production process must not announce readiness before the V1.9 session table exists.
+if (runtimeConfig.nodeEnv === "production") {
+  await prisma.$queryRaw`SELECT token_hash, account_id, created_at, last_seen_at, expires_at, absolute_expires_at FROM auth_sessions LIMIT 0`;
+}
 const billingScheduler = new BillingScheduler(new PrismaBillingScheduleStore(prisma, new PrismaInvoiceRepository(prisma)));
 const server = app.listen(port, () => {
   console.log(`Góc trọ API listening on http://localhost:${port}`);

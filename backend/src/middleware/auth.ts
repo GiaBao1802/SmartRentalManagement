@@ -45,7 +45,7 @@ function resolveContext(account: CurrentAccountRecord): AuthContext | null {
 }
 
 export function authenticateRequest(deps: AuthDependencies): RequestHandler {
-  return async (request, _response, next) => {
+  return async (request, response, next) => {
     try {
       const token = getCookie(request, SESSION_COOKIE);
       if (!token || token.length < 32 || token.length > 256) throw unauthenticated();
@@ -67,7 +67,14 @@ export function authenticateRequest(deps: AuthDependencies): RequestHandler {
       const context = resolveContext(account);
       if (!context) { await deps.sessions.revoke(tokenHash); throw unauthenticated(); }
       const idleExpiry = now + deps.config.sessionIdleMinutes * 60 * 1000;
-      await deps.sessions.touch(tokenHash, now, Math.min(idleExpiry, session.absoluteExpiresAt));
+      const expiresAt = Math.min(idleExpiry, session.absoluteExpiresAt);
+      if (!await deps.sessions.touch(tokenHash, now, expiresAt)) throw unauthenticated();
+      const cookieParts = [
+        `${SESSION_COOKIE}=${encodeURIComponent(token)}`, "Path=/api/v1", "SameSite=Lax", "HttpOnly",
+        `Max-Age=${Math.max(1, Math.floor((expiresAt - now) / 1000))}`,
+      ];
+      if (deps.config.nodeEnv === "production") cookieParts.push("Secure");
+      response.append("Set-Cookie", cookieParts.join("; "));
       request.auth = context;
       next();
     } catch (error) { next(error); }

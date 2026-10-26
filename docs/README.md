@@ -44,6 +44,6 @@ Canonical product documents của workspace nằm trong repository này:
 - [04_API_SPEC.md](04_API_SPEC.md)
 - [DATABASE_CHANGELOG.md](DATABASE_CHANGELOG.md)
 
-Physical database authority và baseline hiện hành nằm tại [`database/baselines/v1.8/`](../database/baselines/v1.8/). Prisma mapping của ứng dụng nằm tại [`database/schema.prisma`](../database/schema.prisma).
+Physical database authority và baseline local hiện hành nằm tại [`database/baselines/v1.10/`](../database/baselines/v1.10/). Prisma mapping của ứng dụng nằm tại [`database/schema.prisma`](../database/schema.prisma); bảng phiên `auth_sessions` được backend truy cập bằng SQL riêng.
 
 Thư mục `99_archive/` hiện được giữ làm đích quy ước; không có tài liệu nào bị đưa vào archive chỉ vì đã cũ. Tài liệu lịch sử và tài liệu bị supersede vẫn được giữ tại nhóm chủ đề thích hợp, với trạng thái rõ trong catalog.

@@ -1,6 +1,6 @@
 # Góc Trọ / SmartRentalManagement
 
-Monorepo Next.js/React frontend, Express/TypeScript API, Prisma 6.12 và PostgreSQL. Node.js 24.11+, npm 11.6+. Database **V1.9** là current locked local/dev baseline: PostgreSQL **18.6**, **41 public tables**. V1.9 thêm cấu hình tuần/giờ, đặt lịch và gói đăng ký cho Tiện ích phát sinh Admin; đặt lịch/đăng ký phía Resident vẫn chưa triển khai. Trạng thái module và phần còn lại nằm trong [Current State](docs/00_CURRENT_STATE.md).
+Monorepo Next.js/React frontend, Express/TypeScript API, Prisma 6.12 và PostgreSQL. Node.js 24.11+, npm 11.6+. Database **V1.10** là baseline local đã khóa trên `Goctro_test3`: PostgreSQL **18.6**, **42 public tables**. V1.10 giữ cấu hình Tiện ích phát sinh của V1.9 và thêm phiên đăng nhập bền vững. AWS chưa triển khai. Trạng thái module và phần còn lại nằm trong [Current State](docs/00_CURRENT_STATE.md).
 
 ## Clone và điểm bắt đầu bàn giao
 
@@ -16,10 +16,14 @@ git status --short --branch
 
 - `frontend/`: ứng dụng Next App Router hiện hành; `backend/src/server.ts`: API entrypoint, V1 endpoints dưới `/api/v1`.
 - `database/schema.prisma`: mapping ORM hiện hành. SQL vẫn enforce CHECKs/triggers/partial indexes Prisma không thể biểu diễn đầy đủ.
-- `database/baselines/v1.9/`: baseline SQL/seed/ERD/validators và migration chính thức; V1.8 vẫn được giữ nguyên làm tiền nhiệm lịch sử. Source of Truth vật lý hiện hành là V1.9 cùng `docs/DATABASE_CHANGELOG.md`; Requirement/API là `docs/01_REQUIREMENTS.md` và `docs/04_API_SPEC.md`.
-- `database/migrations/`, các `schema.*.prisma` snapshot và `database/seeds/seed.ts`: lịch sử legacy/demo, **không tương đương V1.9**. Giữ nguyên để tra cứu; không chạy các migration legacy. `db:migrate` chỉ nâng cấp exact V1.8 lên V1.9 sau khi backup được kiểm tra.
+- `database/baselines/v1.10/`: khung dựng mới 42 bảng, migration V1.9→V1.10, validator và catalog hiện hành. V1.9 của team được giữ nguyên làm tiền nhiệm. Source of Truth vật lý local hiện hành là V1.10 cùng `docs/DATABASE_CHANGELOG.md`; Requirement/API là `docs/01_REQUIREMENTS.md` và `docs/04_API_SPEC.md`.
+- `database/migrations/`, các `schema.*.prisma` snapshot và `database/seeds/seed.ts`: lịch sử legacy/demo, **không tương đương V1.10**. Giữ nguyên để tra cứu; không chạy các migration legacy. Lệnh `db:migrate` hiện chỉ nâng V1.8→V1.9 cho setup local đời trước; nó **không** nâng V1.9→V1.10.
 - `legacy/`: chỉ còn wireframe, artwork/tham chiếu và JSON demo lịch sử; không còn ứng dụng hoặc launcher demo. Không dùng JSON này làm dữ liệu ứng dụng.
 - [Documentation](docs/README.md), [Database V1.9 setup chi tiết](docs/10_operations/DATABASE_V1_9_SETUP.md).
+
+### Nguồn triển khai AWS
+
+GitHub `main` sau lần push V1.10 là nguồn **mã và khung database**, không chứa bản ghi, mật khẩu hoặc backup từ máy local. Trên AWS, tạo database **mới, trống** bằng [`database/baselines/v1.10/schema.sql`](database/baselines/v1.10/schema.sql), chạy [`runtime_validator.sql`](database/baselines/v1.10/runtime_validator.sql) và chỉ sau đó khởi động backend. Không chạy V1.9 `db:bootstrap` hoặc `setup.bat` để tạo database AWS V1.10. Xem [kế hoạch Lightsail](docs/10_operations/AWS_DATABASE_V1_10_PREPARATION.md).
 
 ## Baseline sản phẩm hiện hành — 2026-10-19
 

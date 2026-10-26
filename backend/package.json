@@ -9,6 +9,7 @@
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
     "test:auth": "tsx --test src/auth/auth.test.ts",
+    "test:auth:runtime": "tsx --test src/auth/session-store.postgres.integration.test.ts",
     "test:accounts": "tsx --test src/accounts/account.test.ts src/accounts/account.repository.test.ts",
     "test:accounts:runtime": "tsx --test src/accounts/account.postgres.integration.test.ts",
     "test:legacy-retirement": "tsx --test src/legacy-retirement.test.ts",
