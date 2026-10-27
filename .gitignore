@@ -27,3 +27,5 @@ build/
 .cache/
 .turbo/
 .idea/
+.cursor/
+scratch/

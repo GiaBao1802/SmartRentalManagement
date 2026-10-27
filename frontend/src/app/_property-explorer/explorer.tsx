@@ -121,13 +121,13 @@ export default function Explorer({ initialFilters }: { initialFilters?: PublicRo
 
   return <main className="explorer" onKeyDown={escape}>
     <header className="explore-header">
-      <Link className="explore-logo" href="/" aria-label="Góc Trọ — Trang tìm phòng"><BrandLogo /></Link>
+      <a className="explore-logo" href="/" aria-label="Góc Trọ — Trang chủ" onClick={() => { try { sessionStorage.removeItem('pd-trans'); } catch(e){} }}><BrandLogo /></a>
       <form className="explore-header-search" role="search" onSubmit={e => { e.preventDefault(); if (matches[0]) choose(matches[0].code); }}>
         <span aria-hidden="true">⌕</span><input ref={searchInput} aria-label="Tìm tỉnh thành" placeholder="Tìm tỉnh/thành bạn muốn sống…" value={search} onChange={e => setSearch(e.target.value)} />
         {search && <div className="explore-search-results" aria-label="Gợi ý tỉnh thành">{matches.length ? provinceButtons() : <p>Không tìm thấy tỉnh/thành.</p>}</div>}
       </form>
       <div className="explore-header-actions"><button aria-expanded={listOpen} onClick={toggleList}><span>Danh sách</span></button></div>
-      <nav aria-label="Điều hướng public"><Link className="explore-about-link" href="/landing">Giới thiệu Góc Trọ</Link><Link className="explore-resident-link" href="/login?next=%2Ftenant">Đăng nhập cư dân</Link></nav>
+      <nav aria-label="Điều hướng public"><a className="explore-about-link" href="/" onClick={() => { try { sessionStorage.removeItem('pd-trans'); } catch(e){} }}>Giới thiệu Góc Trọ</a><Link className="explore-resident-link" href="/login?next=%2Ftenant">Đăng nhập cư dân</Link></nav>
       <Link className="explore-login" href="/login">Đăng nhập admin</Link>
       <span className={`explore-mode ${mock ? "is-demo" : ""}`}><i />{mock ? "Dữ liệu minh họa" : loading ? "Đang tải tin…" : data ? "Tin đang đăng" : "Chưa tải được tin"}</span>
     </header>

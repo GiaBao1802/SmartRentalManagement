@@ -1,12 +1,13 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 import styles from "./auth-flow.module.css";
 import BrandLogo from "./brand-logo";
 export default function AuthLayout({ title, description, children, footer }: { title: string; description: string; children: ReactNode; footer?: ReactNode }) {
   return <main className={styles.page}>
-    <a className={styles.back} href="/">← Về trang chủ</a>
+    <Link className={styles.back} href="/tim-phong">← Về trang chủ</Link>
     <div className={styles.layout}>
       <aside className={styles.brand} aria-label="Góc trọ">
-        <a className={styles.logo} href="/" aria-label="Góc Trọ · Một góc yên tâm."><BrandLogo light /></a>
+        <Link className={styles.logo} href="/tim-phong" aria-label="Góc Trọ · Một góc yên tâm."><BrandLogo light /></Link>
         <div className={styles.windows} aria-hidden="true">{Array.from({ length: 12 }, (_, index) => <span key={index} />)}</div>
         <h2>Một góc yên tâm.</h2><p>Thông tin rõ ràng, việc quản lý gọn gàng. Góc của bạn, có người lo.</p>
       </aside>

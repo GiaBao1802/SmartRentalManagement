@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>(function(){var r=document.documentElement;r.classList.add('js');r.classList.remove('is-entering');try{sessionStorage.removeItem('pd-trans')}catch(e){}})()</script>
+<title>Góc Trọ — Nền Tảng Số Hóa Quản Lý Nhà Trọ Thông Minh</title>
+<meta name="description" content="Góc Trọ tự động hóa chốt điện nước, hóa đơn VietQR, quản lý phòng trống và hợp đồng điện tử cho nhà trọ & căn hộ dịch vụ.">
+<meta name="robots" content="index, follow">
+<meta name="author" content="Góc Trọ">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Góc Trọ">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Góc Trọ — Nền Tảng Quản Lý Nhà Trọ Thông Minh">
+<meta property="og:description" content="Quản lý nhà trọ tối giản, tự động và chuẩn xác theo thời gian thực.">
+<meta name="theme-color" content="#F2F3F7">
+<link rel="icon" href="/intro/assets/img/mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="/brand-fonts.css">
+<link rel="stylesheet" href="/intro/assets/css/app.css">
+<script type="module" src="/intro/assets/js/app.js"></script>
+</head>
+<body>
+<div class="loader" aria-hidden="true">
+  <canvas class="ld-cv"></canvas>
+  <div class="ld-ui">
+    <div class="ld-top"><span>Góc Trọ</span><span>Smart Rental Platform</span><span class="ld-hide-s">Hà Nội · Đà Nẵng · TP.HCM</span></div>
+    <div class="ld-bottom">
+      <div class="ld-count"><span class="ld-num">000</span><small>%</small></div>
+      <div class="ld-status"><i></i><span class="ld-msg">Thu thập dữ liệu phòng trọ và cư dân...</span></div>
+    </div>
+    <div class="ld-line"><i></i></div>
+  </div>
+</div>
+<div class="transition" aria-hidden="true"></div>
+
+<header class="site-header">
+  <nav class="nav" aria-label="Main">
+    <a class="brand-logo" href="/" aria-label="Góc Trọ">
+      <img src="/assets/brand-v2/mark.svg" width="44" height="44" alt="" />
+      <span>Góc Trọ<small>Một góc yên tâm.</small></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#top" aria-current="page">Trang chủ</a></li>
+      <li><a href="#gallery">Hình ảnh thực tế</a></li>
+      <li><a href="#features">Tính năng</a></li>
+      <li><a href="#projects">Dự án</a></li>
+      <li><a href="#contact">Liên hệ</a></li>
+    </ul>
+    
+    <a class="btn btn--green" href="/tim-phong" data-trans-title="TÌM PHÒNG NGAY" data-magnetic>
+      Tìm phòng ngay
+      <span class="btn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></span>
+    </a>
+    <button class="burger" type="button" aria-label="Mở menu" aria-expanded="false" aria-controls="mobileMenu"><span></span><span></span></button>
+  </nav>
+</header>
+
+<div class="mobile-menu" id="mobileMenu" data-lenis-prevent>
+  <ul>
+    <li><a class="mm-link" href="#top"><small>01</small>Trang chủ</a></li>
+    <li><a class="mm-link" href="#gallery"><small>02</small>Hình ảnh thực tế</a></li>
+    <li><a class="mm-link" href="#features"><small>03</small>Tính năng</a></li>
+    <li><a class="mm-link" href="#projects"><small>04</small>Dự án</a></li>
+    <li><a class="mm-link" href="#contact"><small>05</small>Liên hệ</a></li>
+  </ul>
+  <div class="mm-foot">
+    <span>Góc Trọ · Quản lý nhà trọ thông minh</span>
+    <a href="tel:0988123456">+84 988 123 456</a>
+    <a href="mailto:hotro@goctro.vn">hotro@goctro.vn</a>
+    <a class="btn btn--green" style="margin-top:14px;width:100%;justify-content:center" href="/tim-phong" data-trans-title="TÌM PHÒNG NGAY">Tìm phòng ngay</a>
+  </div>
+</div>
+
+<main>
+
+<!-- HERO SECTION -->
+<section class="hero" id="top">
+  <canvas class="hero-canvas" id="heroDots" aria-hidden="true" data-cursor="Đổi dạng"></canvas>
+  <div class="wrap">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow" data-hero>Nền tảng Quản lý Nhà trọ Thông minh</span>
+        <h1 class="display" data-hero-split>Quản lý nhà trọ <span class="accent">tối giản &amp; tự động.</span></h1>
+        <p class="lead" data-hero>Tìm phòng thực tế, chốt điện nước minh bạch, hóa đơn VietQR và hợp đồng điện tử chuẩn xác theo thời gian thực.</p>
+        <div class="hero-slot" aria-hidden="true"></div>
+        <div class="btn-row" data-hero>
+          <a class="btn btn--green" href="/tim-phong" data-trans-title="TÌM PHÒNG NGAY" data-magnetic>
+            Trải nghiệm tìm phòng ngay
+            <span class="btn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></span>
+          </a>
+          <a class="btn btn--soft" href="#gallery" data-magnetic>
+            Xem ảnh chụp thực tế
+            <span class="btn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></span>
+          </a>
+        </div>
+        <div class="hero-tags" data-hero>
+          <span class="tag"><i></i>100% Ảnh phòng chụp thật</span>
+          <span class="tag"><i></i>Minh bạch giá &amp; điện nước</span>
+          <span class="tag"><i></i>Quản lý 24/7</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="hero-hint"><b></b>Cuộn xuống để xem tiếp</div>
+</section>
+
+<!-- REAL PHOTO SHOWCASE SECTION (100% Real Photography, 0% AI) -->
+<section class="pad" id="gallery" aria-labelledby="gallery-title">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow" data-reveal>Hình ảnh thực tế 100%</span>
+      <h2 class="h2" id="gallery-title" data-split>Không gian sống &amp; Trải nghiệm thực tế.</h2>
+      <p class="muted">Toàn bộ hình ảnh được chụp trực tiếp từ các căn hộ, chuỗi phòng trọ và hệ thống công tơ đang vận hành trên nền tảng Góc Trọ.</p>
+    </div>
+
+    <div class="real-gallery-grid">
+      <!-- Card 1: Studio Apartment -->
+      <article class="real-card" data-reveal>
+        <div class="real-frame" data-clip data-tilt data-zoom-wrap>
+          <span class="real-chip"><i></i>Căn Hộ Studio</span>
+          <img src="/intro/assets/img/project-1.jpg" alt="Căn hộ studio nội thất đầy đủ" loading="lazy" data-zoom width="1400" height="934">
+        </div>
+        <div class="real-meta">
+          <h3>Vista Residence · Studio 32m²</h3>
+          <p>Phòng mới 100%, nội thất tiện nghi, bếp nấu riêng biệt và ánh sáng tự nhiên thoáng mát.</p>
+        </div>
+      </article>
+
+      <!-- Card 2: Living Corner -->
+      <article class="real-card" data-reveal>
+        <div class="real-frame" data-clip data-tilt data-zoom-wrap>
+          <span class="real-chip"><i></i>Góc Sinh Hoạt</span>
+          <img src="/intro/assets/img/gallery-living.jpg" alt="Không gian sống sinh hoạt ấm cúng tiện nghi" loading="lazy" data-zoom width="1400" height="1042">
+        </div>
+        <div class="real-meta">
+          <h3>Không Gian Sống Tiện Nghi</h3>
+          <p>Thiết kế tinh tế, không gian yên tĩnh và góc làm việc thoải mái dành cho người đi làm &amp; sinh viên.</p>
+        </div>
+      </article>
+
+      <!-- Card 3: Apartment Building -->
+      <article class="real-card" data-reveal>
+        <div class="real-frame" data-clip data-tilt data-zoom-wrap>
+          <span class="real-chip"><i></i>Tòa Nhà Vận Hành</span>
+          <img src="/intro/assets/img/project-2.jpg" alt="Tòa nhà chung cư mini căn hộ cho thuê hiện đại" loading="lazy" data-zoom width="1600" height="1184">
+        </div>
+        <div class="real-meta">
+          <h3>Chuỗi Trọ Xanh · Tòa Nhà 7 Tầng</h3>
+          <p>Hệ thống thang máy, bãi xe thông minh, camera an ninh 24/7 và cổng ra vào vân tay bảo mật.</p>
+        </div>
+      </article>
+
+      <!-- Card 4: Resident Handover -->
+      <article class="real-card" data-reveal>
+        <div class="real-frame" data-clip data-tilt data-zoom-wrap>
+          <span class="real-chip"><i></i>Bàn Giao &amp; App Cư Dân</span>
+          <img src="/intro/assets/img/project-3.jpg" alt="Cư dân nhận phòng và kích hoạt ứng dụng trên điện thoại" loading="lazy" data-zoom width="1376" height="768">
+        </div>
+        <div class="real-meta">
+          <h3>Bàn Giao Trực Tiếp &amp; Kết Nối Cư Dân</h3>
+          <p>Quản lý bàn giao phòng tận nơi, kích hoạt tài khoản cư dân và hướng dẫn thanh toán chỉ trong 3 phút.</p>
+        </div>
+      </article>
+
+      <!-- Card 5: Lease Contract Signing -->
+      <article class="real-card" data-reveal>
+        <div class="real-frame" data-clip data-tilt data-zoom-wrap>
+          <span class="real-chip"><i></i>Ký Hợp Đồng Thuê</span>
+          <img src="/intro/assets/img/gallery-couple.jpg" alt="Ký kết hợp đồng thuê phòng minh bạch điều khoản và chi phí" loading="lazy" data-zoom width="1200" height="676">
+        </div>
+        <div class="real-meta">
+          <h3>Hợp Đồng Minh Bạch Điều Khoản</h3>
+          <p>Mọi điều khoản về giá thuê, tiền cọc và biểu phí dịch vụ được công khai rõ ràng, bảo vệ quyền lợi đôi bên.</p>
+        </div>
+      </article>
+
+      <!-- Card 6: Digital Signature -->
+      <article class="real-card" data-reveal>
+        <div class="real-frame" data-clip data-tilt data-zoom-wrap>
+          <span class="real-chip"><i></i>Ký Số Chuẩn Pháp Lý</span>
+          <img src="/intro/assets/img/project-4.jpg" alt="Ký số hợp đồng điện tử trực tiếp trên màn hình tablet cảm ứng" loading="lazy" data-zoom width="1200" height="802">
+        </div>
+        <div class="real-meta">
+          <h3>Ký Số Trực Tuyến 1-Chạm</h3>
+          <p>Ký tên điện tử trực tiếp trên điện thoại, lưu trữ bảo mật trên đám mây, tra cứu và tải hợp đồng mọi lúc.</p>
+        </div>
+      </article>
+
+      <!-- Card 7: Utility Submeters -->
+      <article class="real-card" data-reveal>
+        <div class="real-frame" data-clip data-tilt data-zoom-wrap>
+          <span class="real-chip"><i></i>Công Tơ Điện Nước</span>
+          <img src="/intro/assets/img/gallery-meters.jpg" alt="Công tơ điện tử hiển thị chỉ số kWh minh bạch cho từng phòng" loading="lazy" data-zoom width="1200" height="800">
+        </div>
+        <div class="real-meta">
+          <h3>Hộp Công Tơ Riêng Biệt Từng Phòng</h3>
+          <p>Đồng hồ điện nước độc lập, có niêm phong và mã số từng phòng giúp đối soát minh bạch từng số điện.</p>
+        </div>
+      </article>
+
+      <!-- Card 8: Software Feature Calculation -->
+      <article class="real-card" data-reveal>
+        <div class="real-frame" data-clip data-tilt data-zoom-wrap>
+          <span class="real-chip"><i></i>Tính Năng Phần Mềm</span>
+          <img src="/intro/assets/img/gallery-smart-meter.jpg" alt="Giao diện chốt số điện nước và tính tiền tự động trên hệ thống Góc Trọ" loading="lazy" data-zoom width="1200" height="800">
+        </div>
+        <div class="real-meta">
+          <h3>Chốt Số Định Kỳ &amp; Tự Động Tính Tiền</h3>
+          <p>Nhập số điện nước đầu - cuối kỳ, hệ thống tự động tính theo bậc thang và xuất hóa đơn VietQR tức thì.</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- CORE FEATURES (CONCISE & STREAMLINED) -->
+<section class="pad-sm" id="features" aria-labelledby="feat-title">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow" data-reveal>Giải pháp toàn diện</span>
+      <h2 class="h2" id="feat-title" data-split>Bốn trụ cột vận hành đột phá.</h2>
+      <p class="muted">Tối giản hóa mọi nghiệp vụ quản lý phòng trọ, tạo sự an tâm tuyệt đối cho khách thuê và chủ nhà.</p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feat-card" data-reveal>
+        <div class="feat-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </div>
+        <h3>Tìm Phòng Chuẩn Xác</h3>
+        <p>100% hình ảnh thực tế, định vị bản đồ chính xác, giá niêm yết công khai và cập nhật tình trạng phòng trống realtime.</p>
+      </div>
+
+      <div class="feat-card" data-reveal>
+        <div class="feat-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <h3>Điện Nước Chuẩn Xác</h3>
+        <p>Chốt chỉ số công tơ định kỳ bằng hình ảnh, tự động tính toán tiền điện nước theo lũy tiến hoặc giá cố định minh bạch.</p>
+      </div>
+
+      <div class="feat-card" data-reveal>
+        <div class="feat-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="M7 15h2"/></svg>
+        </div>
+        <h3>Hóa Đơn VietQR</h3>
+        <p>Tự động xuất hóa đơn phòng, quét mã VietQR thanh toán trong 3 giây và tự động gạch nợ ngay lập tức.</p>
+      </div>
+
+      <div class="feat-card" data-reveal>
+        <div class="feat-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+        </div>
+        <h3>Hợp Đồng Ký Số</h3>
+        <p>Mẫu hợp đồng chuẩn pháp lý, ký số trực tiếp trên điện thoại, lưu trữ an toàn trên đám mây và tra cứu mọi lúc.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROJECTS SECTION -->
+<section class="pad" id="projects" aria-labelledby="proj-title">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow" data-reveal>Dự án tiêu biểu</span>
+      <h2 class="h2" id="proj-title" data-split>Hệ thống đang vận hành thực tế.</h2>
+      <p class="muted">Đã triển khai ổn định tại các chuỗi nhà trọ và căn hộ dịch vụ với hàng ngàn cư dân.</p>
+    </div>
+
+    <div class="work-grid">
+      <a class="work-card" href="/tim-phong" data-trans-title="TÌM PHÒNG NGAY" data-cursor="Xem" data-reveal>
+        <div class="frame" data-clip data-tilt style="aspect-ratio:1400/934">
+          <span class="chip"><i></i>Căn Hộ Dịch Vụ</span>
+          <img src="/intro/assets/img/project-1.jpg" alt="Vista Residence" loading="lazy" data-zoom width="1400" height="934">
+        </div>
+        <div class="work-meta">
+          <h3>Vista Residence</h3>
+          <p>120 căn hộ dịch vụ cao cấp · Vận hành ERP &amp; App cư dân</p>
+        </div>
+      </a>
+
+      <a class="work-card" href="/tim-phong" data-trans-title="TÌM PHÒNG NGAY" data-cursor="Xem" data-reveal>
+        <div class="frame" data-clip data-tilt style="aspect-ratio:1600/1184">
+          <span class="chip"><i></i>Chuỗi Nhà Trọ</span>
+          <img src="/intro/assets/img/project-2.jpg" alt="Chuỗi Trọ Xanh" loading="lazy" data-zoom width="1600" height="1184">
+        </div>
+        <div class="work-meta">
+          <h3>Chuỗi Trọ Xanh</h3>
+          <p>500+ phòng trọ hiện đại · Tự động hóa chốt điện nước &amp; hóa đơn</p>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT SECTION -->
+<section class="pad-sm" id="contact">
+  <div class="wrap">
+    <div class="cta" data-scale-in>
+      <div class="cta-orb" data-float="40"></div>
+      <div class="dark-dots"></div>
+      <div class="cta-row">
+        <div style="display:grid;gap:20px">
+          <span class="eyebrow">Hỗ trợ 24/7</span>
+          <h2 data-split>Bạn cần tư vấn tìm phòng hoặc vận hành nhà trọ?</h2>
+          <div class="btn-row">
+            <a class="btn btn--green" href="tel:0988123456" data-magnetic>
+              Hotline: <a href="tel:0988123456" style="color:inherit;text-decoration:underline">0988 123 456</a>
+              <span class="btn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></span>
+            </a>
+            <a class="btn btn--light" href="/tim-phong" data-trans-title="TÌM PHÒNG NGAY" data-magnetic>
+              Vào tìm phòng ngay
+              <span class="btn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></span>
+            </a>
+          </div>
+        </div>
+        <div class="contact-lines">
+          <a href="tel:0988123456">+84 988 123 456</a>
+          <a href="mailto:hotro@goctro.vn">hotro@goctro.vn</a>
+          <a href="/tim-phong" data-trans-title="TÌM PHÒNG NGAY">goctro.vn</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AUTO-REDIRECT SENTINEL SECTION (Scroll to end auto redirects to /tim-phong) -->
+<section class="pad end-sentinel" id="endSentinel" aria-labelledby="end-title">
+  <div class="wrap">
+    <div class="end-card" data-reveal>
+      <div class="end-content">
+        <div class="end-countdown-wrap">
+          <svg class="end-spinner-svg" viewBox="0 0 72 72">
+            <circle class="end-spinner-track" cx="36" cy="36" r="30" />
+            <circle class="end-spinner-progress" id="endSpinnerProgress" cx="36" cy="36" r="30" />
+          </svg>
+          <div class="end-spinner-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14M13 6l6 6-6 6"/>
+            </svg>
+          </div>
+        </div>
+        <span class="eyebrow">Trải nghiệm trực tiếp</span>
+        <h2 class="h2" id="end-title">Bạn đã xem hết giới thiệu Góc Trọ</h2>
+        <p class="end-desc">Đang tự động chuyển bạn đến trang <strong>Tìm phòng &amp; Đăng nhập</strong>...</p>
+        <div class="end-btn-wrap">
+          <a class="btn btn--green btn-lg" id="btnEndRedirect" href="/tim-phong" data-trans-title="TÌM PHÒNG NGAY" data-magnetic>
+            Vào tìm phòng ngay
+            <span class="btn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></span>
+          </a>
+        </div>
+        <div class="end-redirect-hint">
+          <span>Tự động chuyển trang sau <strong id="countdownNum">1.5</strong>s · Hoặc bấm nút ở trên</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="dark-dots"></div>
+  <div class="wrap" style="position:relative">
+    <div class="foot-sign" style="padding-top:20px;padding-bottom:20px">
+      <a class="brand-logo brand-logo-light" href="/" aria-label="Góc Trọ" style="margin-bottom:12px">
+        <img src="/assets/brand-v2/mark-light.svg" width="40" height="40" alt="" />
+        <span>Góc Trọ<small>Một góc yên tâm.</small></span>
+      </a>
+      <p class="foot-sign-line">Nền tảng số hóa quản lý nhà trọ và căn hộ cho thuê hàng đầu Việt Nam.</p>
+    </div>
+    <div class="foot-bottom">
+      <div class="foot-legal">
+        <span>© <span data-year>2026</span> Góc Trọ. All rights reserved.</span>
+        <small>Hà Nội · Đà Nẵng · TP. Hồ Chí Minh · Hotline: 0988 123 456</small>
+      </div>
+      <div class="foot-links">
+        <a href="/tim-phong" data-trans-title="TÌM PHÒNG NGAY">Tìm phòng</a>
+        <a href="/login">Đăng nhập</a>
+        <a href="#top">Lên đầu trang ↑</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<div class="lightbox" role="dialog" aria-modal="true" aria-label="Xem ảnh"><button type="button" aria-label="Đóng">×</button><img alt=""></div>
+
+<!-- AUTO-REDIRECT SCRIPT ON SCROLL END -->
+<script>
+(function() {
+  var sentinel = document.getElementById('endSentinel');
+  var btn = document.getElementById('btnEndRedirect');
+  var progressBar = document.getElementById('endSpinnerProgress');
+  var countdownNum = document.getElementById('countdownNum');
+  if (!sentinel || !btn) return;
+
+  var triggered = false;
+  var timer = null;
+
+  function triggerRedirect() {
+    if (triggered) return;
+    triggered = true;
+
+    if (progressBar) {
+      progressBar.style.transition = 'stroke-dashoffset 1.2s cubic-bezier(0.2, 0.8, 0.2, 1)';
+      progressBar.style.strokeDashoffset = '0';
+    }
+
+    var timeLeft = 1.2;
+    var interval = setInterval(function() {
+      timeLeft = Math.max(0, timeLeft - 0.1);
+      if (countdownNum) countdownNum.textContent = timeLeft.toFixed(1);
+      if (timeLeft <= 0) {
+        clearInterval(interval);
+      }
+    }, 100);
+
+    timer = setTimeout(function() {
+      // Dispatch click event to trigger the Iris transition
+      btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+      // Fallback redirect in case transition is interrupted or headless
+      setTimeout(function() {
+        if (!window.location.href.includes('/tim-phong')) {
+          window.location.href = '/tim-phong';
+        }
+      }, 1500);
+    }, 1250);
+  }
+
+  btn.addEventListener('click', function() {
+    triggered = true;
+    if (timer) clearTimeout(timer);
+  });
+
+  // Observe when bottom sentinel enters view
+  if ('IntersectionObserver' in window) {
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting && !triggered) {
+          triggerRedirect();
+        }
+      });
+    }, {
+      rootMargin: '0px 0px -20px 0px',
+      threshold: [0.1, 0.25]
+    });
+    observer.observe(sentinel);
+  }
+
+  // Hook into Lenis scroll if available
+  if (window.__pdLenis) {
+    window.__pdLenis.on('scroll', function(e) {
+      if (triggered) return;
+      if (e.progress >= 0.92) {
+        triggerRedirect();
+      }
+    });
+  }
+
+  // Fallback on scroll position near page bottom
+  window.addEventListener('scroll', function() {
+    if (triggered) return;
+    var scrollPos = window.innerHeight + (window.pageYOffset || document.documentElement.scrollTop || 0);
+    var docHeight = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    if (docHeight - scrollPos < 220) {
+      triggerRedirect();
+    }
+  }, { passive: true });
+})();
+</script>
+</body>
+</html>

@@ -40,7 +40,7 @@ function clampPosition(position: Position, element: HTMLElement): Position {
 }
 
 function isAllowedRoute(pathname: string, authenticated: boolean) {
-  if (pathname === "/" || pathname === "/landing" || pathname === "/rooms" || pathname.startsWith("/rooms/")) return true;
+  if (pathname === "/" || pathname === "/tim-phong" || pathname === "/landing" || pathname === "/rooms" || pathname.startsWith("/rooms/")) return true;
   if (pathname === "/admin" || pathname.startsWith("/admin/") || pathname === "/tenant" || pathname.startsWith("/tenant/")) return authenticated;
   return false;
 }

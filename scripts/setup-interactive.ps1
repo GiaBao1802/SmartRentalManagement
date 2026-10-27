@@ -275,7 +275,9 @@ try {
   if ($demoSet) { Write-Host 'Mật khẩu demo local/dev vừa được thiết lập: Goctro123456789' }
   elseif ($dataState -eq 'v112_empty') { Write-Host 'Chưa seed mẫu; chưa thiết lập tài khoản/credential demo.' }
   else { Write-Host 'Sử dụng mật khẩu hiện có; setup không đổi credential.' }
-  Write-Host 'Đăng nhập: http://localhost:3000/login'
+  Write-Host 'Giới thiệu: http://localhost:3000/'
+  Write-Host 'Tìm phòng:  http://localhost:3000/tim-phong'
+  Write-Host 'Đăng nhập:  http://localhost:3000/login'
   Write-Host 'Admin: admin.one@example.test | Resident: resident.one@example.test'
   Write-Host 'Resident demo dùng email; số điện thoại fixture chưa hợp lệ với Auth V1.'
   Write-Host 'Provider gửi invitation/reset/Zalo và storage ngoài database cần cấu hình riêng; setup không xác minh các dịch vụ này.'
