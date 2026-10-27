@@ -4,9 +4,13 @@
 
 2026-10-27
 
+### Goctro_test3 V1.11 promotion — 2026-10-27
+
+At the owner's request, the populated `Goctro_test3` database was backed up and upgraded directly from the exact V1.10 catalog with the canonical V1.10→V1.11 migration and its protected-target session authorization. It now has 43 public tables and is the application's configured local database. CORE 89/89 and booking 17/17 passed; all 42 old tables matched the pre-upgrade copy by row count and content. `Goctro_dev_v18` remains a separate V1.11 safety copy. Backup and migration evidence is recorded in [Database Changelog](DATABASE_CHANGELOG.md). The next task remains authenticated Resident/Admin booking review.
+
 ### Resident Flexible Service bookings — Database V1.11, 2026-10-27
 
-The Resident request flow and the Admin approval queue are implemented for configured Flexible Services in `BOOKING` mode. Pending requests reserve capacity but create no charge; Admin approval saves one READY charge at the quoted price for normal Contract billing, without creating, finalizing or paying an Invoice. V1.11 is additive to the team's unchanged V1.10 auth-session baseline. The local `Goctro_dev_v18` target was protected by a verified backup and is now at V1.11; the separate `Goctro_test3` target remains V1.10 and was not accessed by this module. PostgreSQL clean install, standard V1.10 upgrade, local catalog and rollback-only validators passed; automated and migration evidence is in the [V1.11 implementation report](07_modules/resident-occupancy/RESIDENT_FLEXIBLE_SERVICE_BOOKING_IMPLEMENTATION_REPORT.md). Authenticated user review of `/tenant/amenities` and the Admin booking queue is the next task.
+The Resident request flow and the Admin approval queue are implemented for configured Flexible Services in `BOOKING` mode. Pending requests reserve capacity but create no charge; Admin approval saves one READY charge at the quoted price for normal Contract billing, without creating, finalizing or paying an Invoice. V1.11 is additive to the team's unchanged V1.10 auth-session baseline. At this implementation snapshot, `Goctro_dev_v18` was V1.11 and `Goctro_test3` was still V1.10; the later promotion above supersedes that target status. PostgreSQL clean install, standard V1.10 upgrade, local catalog and rollback-only validators passed; automated and migration evidence is in the [V1.11 implementation report](07_modules/resident-occupancy/RESIDENT_FLEXIBLE_SERVICE_BOOKING_IMPLEMENTATION_REPORT.md). Authenticated user review of `/tenant/amenities` and the Admin booking queue is the next task.
 
 ## Project Status
 
@@ -73,8 +77,8 @@ Service Pass 2 implemented Owner-scoped Electricity/Water tariff configuration A
 
 ## Current Physical Database
 
-- `Goctro_dev_v18`, PostgreSQL 18.6 on localhost:5432, Database V1.11, 43 public tables, **LOCKED LOCAL/DEV on this machine**. A verified backup exists; booking data was preserved and no seed ran on the populated target.
-- `Goctro_test3` is a separate Database V1.10 target with 42 public tables; this Resident booking task did not connect to or change it.
+- `Goctro_test3`, PostgreSQL 18.6 on localhost:5432, Database V1.11, 43 public tables, **configured local application target**. Verified backup and old-row preservation; no seed ran.
+- `Goctro_dev_v18` remains a separate V1.11 safety copy, not the configured application target.
 - V1.11 adds the booking table to V1.10. Setup upgrades V1.8→V1.9→V1.10→V1.11 after confirming a verified backup and exact catalog preflight. See [V1.11 setup](10_operations/DATABASE_V1_11_SETUP.md), [V1.11 implementation report](07_modules/resident-occupancy/RESIDENT_FLEXIBLE_SERVICE_BOOKING_IMPLEMENTATION_REPORT.md), [V1.10 local promotion](10_operations/LOCAL_DATABASE_V1_10_PROMOTION_2026_10_27.md), and [Database Changelog](DATABASE_CHANGELOG.md).
 
 ### Local database setup tooling — 2026-10-16
@@ -121,7 +125,7 @@ Workspace code and PostgreSQL read-model integration pass on V1.8 rehearsal. Aut
 
 ## Locked Decisions
 
-- Follow Database V1.11 physical artifacts as the current local/development schema baseline on `Goctro_dev_v18`; `Goctro_test3` remains a separate V1.10 target. Do not make ad hoc schema changes.
+- Follow Database V1.11 physical artifacts as the current local/development schema baseline on `Goctro_test3`; `Goctro_dev_v18` is a separate V1.11 safety copy. Do not make ad hoc schema changes.
 - Billing business decisions and the existing finalize endpoint are recorded in the canonical Requirement and API Spec; production route wiring, disposable V1.8 PostgreSQL runtime verification, and Admin browser workflow review are complete. This establishes local operational closure only, not production deployment readiness.
 - Contract API §5.7 is separately locked; that does not lock the whole Contract module.
 - A future database change requires an approved business-rule change, a new version/migration, and runtime validation before promotion.

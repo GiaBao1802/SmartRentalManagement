@@ -1,12 +1,14 @@
 # Database V1.11 — Resident service booking setup
 
-**Status:** Locked local/development baseline on `Goctro_dev_v18`; V1.10 remains the unchanged predecessor and the separate `Goctro_test3` target remains at V1.10.
+**Status:** Locked local/development baseline V1.11 on configured `Goctro_test3`; `Goctro_dev_v18` remains a separate V1.11 safety copy. V1.10 artifacts remain unchanged.
 
 ## Existing installation
 
 After pulling the release, run `setup.bat` and choose **2. Cập nhật và khởi động**. Confirm the database target shown by setup and confirm that a recoverable backup was created and verified before an upgrade. The setup tool inspects the full catalog and upgrades only exact supported schemas in order: V1.8 → V1.9 → V1.10 → V1.11. A pre-release booking-first schema is accepted only on `Goctro_dev_v18`, where a narrow recovery migration adds the missing V1.10 auth-session table. `Goctro_test3` is blocked from this module's migration.
 
 The migrations are additive and transactional. Setup does not seed a populated database, reset credentials, or run `db push`. Pulling source does not itself migrate a database; the setup update step does that after target and backup confirmation.
+
+The owner later authorized a direct promotion of populated `Goctro_test3` with the canonical V1.10→V1.11 SQL and its protected-target session setting after a fresh verified backup. The evidence is recorded in [Database Changelog](../DATABASE_CHANGELOG.md). The setup helper's migration refusal remains in place; it can inspect an already migrated V1.11 target.
 
 ## New installation
 
