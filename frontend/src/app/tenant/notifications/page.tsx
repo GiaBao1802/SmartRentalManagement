@@ -37,6 +37,10 @@ function typeLabel(type: string) {
     complaint_update: "Cập nhật phản ánh",
     complaint_updates: "Cập nhật phản ánh",
     billing_period_closeout: "Chuẩn bị kỳ hóa đơn",
+    service_booking_requested: "Yêu cầu đặt tiện ích",
+    service_booking_approved: "Yêu cầu tiện ích đã được duyệt",
+    service_booking_rejected: "Yêu cầu tiện ích chưa được duyệt",
+    service_booking_cancelled: "Lịch tiện ích đã hủy",
   };
   return labels[type] ?? type.replaceAll("_", " ");
 }

@@ -1,0 +1,20 @@
+{
+  "version": "1.11",
+  "predecessor": "database/baselines/v1.10",
+  "role": "Current locked local/development baseline on Goctro_dev_v18; Goctro_test3 remains V1.10; AWS not deployed",
+  "catalogGeneratedOn": "PostgreSQL 18.6 Goctro_dev_v18 after the authorized V1.11 local recovery; structural catalog only",
+  "sha256": {
+    "erd.md": "37713903d2b1bd56db18fa17ba629de010a663898ed64e8d3935d723b0f01d45",
+    "expected-catalog.json": "480400ee6cba7a3370d81aa94e5a78e6a4c7a46d489bfab64b11857a5c442b04",
+    "README.md": "8bf77b4f3fb48affd0e86aeb2f7368d19fa0a2c28d8f2535a535bf140e895b78",
+    "migrations/V1_10_to_V1_11_resident_service_bookings.sql": "30b2985ca417b770ea0d494dc66ae5b2097a8e1b2995dcc2322521c6e2785ea7",
+    "migrations/V1_10_local_booking_branch_to_V1_11_auth_sessions.sql": "1670f3ec3937d452f95468c755da4992db2535788bf2d244c52c1006bffb1251",
+    "runtime_validator.sql": "d9e8156cb464a23bc3a588149d0420851ab0ad0634ae964e7a7806ba05ed6d3d",
+    "runtime_validator_fixture.sql": "d074f643c69d423d28b47c2ba80b70a675e5028212b3f9b95e0a09a128f7b6b2",
+    "runtime_validator_resident_bookings.sql": "f9b763f6d6051e6df3f92b3fbcaa8e08aa55f7bfb32f3b59ac8b78714708ccc3",
+    "schema.sql": "f2b314d0f885d470d8c6ca3d112ad188b9389bfcec039af72a9bf66df836f461",
+    "seed.sql": "914a3a80fe262e3e81ca9cca71ac47338c69131ae27b4c87f8d0d3c7e343ad26",
+    "SOURCE_README.md": "f59b3cfc44b59de71e10f8fd4fa46ae61d4b0d23f4619d9ca4d81da9419d8585",
+    "SOURCE_DATABASE_CHANGELOG.md": "48d2989d3162f5cf434fc5938ae036ccabc47855d7cb4ce98fe99dd375e5a269"
+  }
+}

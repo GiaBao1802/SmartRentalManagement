@@ -4,9 +4,9 @@ import type { AuthDependencies } from "../middleware/auth.js";
 import { authenticateRequest, foreignResourceNotFound, getAdminOwnerId, getResidentContext, requireAdmin, requireResident } from "../middleware/auth.js";
 import { ApiError, conflict, validationError } from "../middleware/api-error.js";
 import { parseBigIntId, sendJson } from "../utils/ids.js";
-import { servicePriceInputIsValid, type FlexibleServiceConfigurationInput, type PrismaPropertyServiceRepository, type ServiceKind, type ServicePriceInput } from "./property-service.repository.js";
+import { servicePriceInputIsValid, type FlexibleServiceConfigurationInput, type PrismaPropertyServiceRepository, type ResidentServiceBookingDecisionInput, type ResidentServiceBookingInput, type ServiceKind, type ServicePriceInput } from "./property-service.repository.js";
 
-type Repo = Pick<PrismaPropertyServiceRepository, "listItems" | "listResidentServices" | "createItem" | "saveFlexibleConfiguration" | "retireItem" | "publishPrice">;
+type Repo = Pick<PrismaPropertyServiceRepository, "listItems" | "listResidentServices" | "listResidentServiceAvailability" | "bookResidentService" | "listResidentServiceBookings" | "cancelResidentServiceBooking" | "listAdminServiceBookings" | "decideAdminServiceBooking" | "createItem" | "saveFlexibleConfiguration" | "retireItem" | "publishPrice">;
 function id(value: unknown, label = "ID") { try { return parseBigIntId(value); } catch { throw validationError(`${label} không hợp lệ.`); } }
 function exactBody(body: unknown, fields: string[]) {
   if (!body || typeof body !== "object" || Array.isArray(body)) throw validationError("Dữ liệu dịch vụ không hợp lệ.");
@@ -69,6 +69,40 @@ function money(value: unknown) {
   if (result > 9_223_372_036_854_775_807n) throw validationError("Đơn giá vượt giới hạn lưu trữ.");
   return result;
 }
+function serviceDate(value: unknown) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) throw validationError("Ngày sử dụng không hợp lệ.");
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  if (Number.isNaN(parsed.valueOf()) || parsed.toISOString().slice(0, 10) !== value) throw validationError("Ngày sử dụng không hợp lệ.");
+  return value;
+}
+function serviceTime(value: unknown) {
+  if (typeof value !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) throw validationError("Khung giờ không hợp lệ.");
+  return value;
+}
+function bookingDto(booking: any) {
+  return {
+    booking_id: String(booking.booking_id),
+    service_name: booking.service_name_snapshot,
+    property_name: booking.property_name ?? undefined,
+    service_date: booking.service_date,
+    start_time: booking.slot_start,
+    end_time: booking.slot_end,
+    duration_minutes: booking.slot_duration_minutes,
+    status: booking.status,
+    amount: booking.charge_amount === null || booking.charge_amount === undefined ? null : String(booking.charge_amount),
+    unit: booking.unit_snapshot ?? null,
+    invoice_no: booking.invoice_no ?? null,
+    invoice_status: booking.invoice_status ?? null,
+    decision_note: booking.decision_note ?? null,
+    resident_name: booking.resident_name ?? undefined,
+    room_code: booking.room_code ?? undefined,
+    contract_no: booking.contract_no ?? undefined,
+    can_approve: booking.can_approve ?? false,
+    can_cancel: booking.can_cancel ?? false,
+    cancelled_at: booking.cancelled_at?.toISOString?.() ?? null,
+    created_at: booking.created_at?.toISOString?.() ?? undefined,
+  };
+}
 function itemDto(item: any) {
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
   const current = (item.priceVersions ?? []).find((row: any) => row.effectiveFrom.toISOString().slice(0, 10) <= today);
@@ -112,9 +146,82 @@ export function createPropertyServiceRouter(auth: AuthDependencies, repository: 
             unit_price: item.priceVersions[0].unitPrice.toString(),
             effective_from: item.priceVersions[0].effectiveFrom.toISOString().slice(0, 10),
           } : null,
+          service_configuration: item.flexibleServiceConfiguration ? {
+            service_mode: item.flexibleServiceConfiguration.service_mode,
+            available_weekdays: [item.flexibleServiceConfiguration.open_monday, item.flexibleServiceConfiguration.open_tuesday, item.flexibleServiceConfiguration.open_wednesday, item.flexibleServiceConfiguration.open_thursday, item.flexibleServiceConfiguration.open_friday, item.flexibleServiceConfiguration.open_saturday, item.flexibleServiceConfiguration.open_sunday].flatMap((open, index) => open ? [index + 1] : []),
+            opens_at: item.flexibleServiceConfiguration.opens_at,
+            closes_at: item.flexibleServiceConfiguration.closes_at,
+            booking: item.flexibleServiceConfiguration.service_mode === "BOOKING" ? { slot_duration_minutes: item.flexibleServiceConfiguration.slot_duration_minutes, capacity_per_slot: item.flexibleServiceConfiguration.capacity_per_slot } : null,
+            subscription: item.flexibleServiceConfiguration.service_mode === "SUBSCRIPTION" ? { duration_count: item.flexibleServiceConfiguration.package_duration_count, duration_unit: item.flexibleServiceConfiguration.package_duration_unit } : null,
+          } : null,
         })),
       })) });
     } catch (error) { next(error); }
+  });
+  router.get("/me/services/:service_id/availability", ...resident, async (req, res, next) => {
+    try {
+      if (Object.keys(req.query).some((key) => key !== "date")) throw validationError("Chỉ hỗ trợ lọc lịch theo ngày.");
+      const date = serviceDate(req.query.date);
+      const context = getResidentContext(req.auth!);
+      const result = await repository.listResidentServiceAvailability(context.ownerId, context.residentId, id(req.params.service_id, "Tiện ích"), date);
+      if (!result) { foreignResourceNotFound(); return; }
+      sendJson(res, 200, { data: { service_id: String(result.serviceId), service_date: result.serviceDate, timezone: "Asia/Ho_Chi_Minh", unit: result.unit, unit_price: result.unitPrice?.toString() ?? null, price_effective_from: result.priceEffectiveFrom, slots: result.slots } });
+    } catch (error) { next(error); }
+  });
+  router.get("/me/service-bookings", ...resident, async (req, res, next) => {
+    try {
+      if (Object.keys(req.query).length) throw validationError("Danh sách lịch đã đặt không nhận bộ lọc.");
+      const context = getResidentContext(req.auth!);
+      const bookings = await repository.listResidentServiceBookings(context.ownerId, context.residentId);
+      sendJson(res, 200, { data: bookings.map(bookingDto) });
+    } catch (error) { next(error); }
+  });
+  router.post("/me/services/:service_id/bookings", ...resident, async (req, res, next) => {
+    try {
+      const body = exactBody(req.body, ["service_date", "start_time"]);
+      const input: ResidentServiceBookingInput = { serviceDate: serviceDate(body.service_date), startTime: serviceTime(body.start_time) };
+      const context = getResidentContext(req.auth!);
+      const result = await repository.bookResidentService(context.ownerId, context.residentId, req.auth!.accountId, id(req.params.service_id, "Tiện ích"), input);
+      if (!result) { foreignResourceNotFound(); return; }
+      sendJson(res, result.created ? 201 : 200, { data: bookingDto(result.booking) });
+    } catch (error) { mapWriteError(error, next, "Không thể đặt lịch tiện ích."); }
+  });
+  router.post("/me/service-bookings/:booking_id/cancel", ...resident, async (req, res, next) => {
+    try {
+      if (req.body && Object.keys(req.body).length) throw validationError("Hủy lịch không nhận dữ liệu bổ sung.");
+      const context = getResidentContext(req.auth!);
+      const booking = await repository.cancelResidentServiceBooking(context.ownerId, context.residentId, req.auth!.accountId, id(req.params.booking_id, "Lịch đã đặt"));
+      if (!booking) { foreignResourceNotFound(); return; }
+      sendJson(res, 200, { data: bookingDto(booking) });
+    } catch (error) { mapWriteError(error, next, "Không thể hủy lịch tiện ích."); }
+  });
+
+  router.get("/properties/:property_id/service-bookings", ...admin, async (req, res, next) => {
+    try {
+      if (Object.keys(req.query).some((key) => key !== "status") || (req.query.status !== undefined && req.query.status !== "PENDING")) throw validationError("Chỉ hỗ trợ xem yêu cầu đặt lịch đang chờ duyệt.");
+      const bookings = await repository.listAdminServiceBookings(getAdminOwnerId(req.auth!), id(req.params.property_id, "Khu vực"));
+      if (!bookings) { foreignResourceNotFound(); return; }
+      sendJson(res, 200, { data: bookings.map(bookingDto) });
+    } catch (error) { next(error); }
+  });
+  router.post("/properties/:property_id/service-bookings/:booking_id/decision", ...admin, async (req, res, next) => {
+    try {
+      const body = exactBody(req.body, ["decision", "reason"]);
+      if (body.decision !== "APPROVE" && body.decision !== "REJECT") throw validationError("Quyết định phải là APPROVE hoặc REJECT.");
+      const input: ResidentServiceBookingDecisionInput = {
+        decision: body.decision,
+        reason: text(body.reason, "Lý do", 1000, false),
+      };
+      const result = await repository.decideAdminServiceBooking(
+        getAdminOwnerId(req.auth!),
+        id(req.params.property_id, "Khu vực"),
+        id(req.params.booking_id, "Yêu cầu đặt tiện ích"),
+        req.auth!.accountId,
+        input,
+      );
+      if (!result) { foreignResourceNotFound(); return; }
+      sendJson(res, 200, { data: bookingDto(result.booking) });
+    } catch (error) { mapWriteError(error, next, "Không thể xử lý yêu cầu đặt tiện ích."); }
   });
 
   router.get("/properties/:property_id/pricing-items", ...admin, async (req, res, next) => {

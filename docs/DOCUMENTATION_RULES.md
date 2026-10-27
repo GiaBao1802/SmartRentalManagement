@@ -6,7 +6,7 @@
 2. Với tài liệu thật sự liên miền/toàn dự án, chọn nhóm theo loại: audit ở `08_audits/`, test ở `09_testing/`, vận hành ở `10_operations/`, báo cáo tổng hợp ở `11_project-reports/`, quyết định ở `12_decisions/`.
 3. Phân nhóm theo `DOCUMENT_CATALOG.md`. Không tạo thư mục mới nếu đã có nhóm phù hợp.
 4. Không đặt task report ở root `docs/`. Root chỉ dành cho `README.md`, `DOCUMENT_CATALOG.md`, `DOCUMENTATION_RULES.md` và canonical document nếu chủ dự án quyết định lưu canonical tại đây.
-5. Canonical Requirement/API/database authority được quản lý trong repository này tại `docs/01_REQUIREMENTS.md`, `docs/04_API_SPEC.md`, `docs/DATABASE_CHANGELOG.md` và `database/baselines/v1.10/`. V1.9 và nguồn sibling cũ được giữ như provenance/lịch sử, không phải authority hiện hành.
+5. Canonical Requirement/API/database authority được quản lý trong repository này tại `docs/01_REQUIREMENTS.md`, `docs/04_API_SPEC.md`, `docs/DATABASE_CHANGELOG.md` và `database/baselines/v1.11/`. V1.10 và các nguồn sibling cũ được giữ như provenance/lịch sử, không phải authority hiện hành.
 
 ## Tạo và cập nhật report
 

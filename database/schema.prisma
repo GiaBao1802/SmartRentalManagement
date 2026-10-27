@@ -7,7 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Database V1.10 application mapping; SQL baseline: database/baselines/v1.10/schema.sql.
+// Database V1.11 application mapping; SQL baseline: database/baselines/v1.11/schema.sql.
 // auth_sessions is accessed by backend SQL and intentionally has no Prisma model.
 // V1.8 recurring Parking partial uniqueness is enforced by SQL, not a Prisma @@unique.
 // Status domains remain varchar + PostgreSQL CHECK constraints.

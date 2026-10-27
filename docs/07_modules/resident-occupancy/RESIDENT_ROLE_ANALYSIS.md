@@ -1,9 +1,9 @@
 # Phân tích role Cư dân (Resident)
 
-**Ngày:** 2026-10-21  
-**Trạng thái:** CURRENT — phân tích và kế hoạch triển khai theo module; chưa phải khóa nghiệm thu toàn role.  
+**Ngày cập nhật:** 2026-10-27
+**Trạng thái:** CURRENT — module 5 (đặt lịch dịch vụ) implemented; V1.11 database validation passed; user review pending; toàn role chưa khóa nghiệm thu.
 **Phạm vi:** Đối chiếu toàn bộ `docs/01_REQUIREMENTS.md` với API, trạng thái dự án và source hiện tại để chia nhỏ công việc role Cư dân.  
-**Nguồn chuẩn đã đọc:** `docs/01_REQUIREMENTS.md` (toàn bộ §§1–21 và mục điểm chưa xác định), `docs/04_API_SPEC.md` (§§2, 5.1–5.14, 10–14 và endpoint/permission matrix), `docs/DATABASE_CHANGELOG.md`, `docs/00_CURRENT_STATE.md`, `docs/DOCUMENT_CATALOG.md`, `frontend/AGENTS.md`; schema V1.8 và báo cáo Resident/Occupancy hiện hành được dùng để đối chiếu implementation. Khi tài liệu bất đồng, Requirement/API là authority nghiệp vụ/API; trạng thái vật lý được lấy từ Current State/Database Changelog.
+**Nguồn chuẩn đã đọc:** `docs/01_REQUIREMENTS.md` (toàn bộ §§1–21 và mục điểm chưa xác định), `docs/04_API_SPEC.md` (§§2, 5.1–5.14, 10–14 và endpoint/permission matrix), `docs/DATABASE_CHANGELOG.md`, `docs/00_CURRENT_STATE.md`, `docs/DOCUMENT_CATALOG.md`, `frontend/AGENTS.md`; baseline V1.11 cùng các baseline predecessor và báo cáo Resident/Occupancy hiện hành được dùng để đối chiếu implementation. Khi tài liệu bất đồng, Requirement/API là authority nghiệp vụ/API; trạng thái vật lý được lấy từ Current State/Database Changelog.
 
 ## 1. Tổng quan role
 
@@ -20,7 +20,7 @@ Resident không có quyền quản trị Owner, Property, Room, tài khoản ng�
 | Property/Room/Occupancy | Đọc ngữ cảnh nơi ở an toàn và lịch sử của mình | Không đọc hồ sơ cư dân khác hay quản lý Property/Room |
 | Contract/tài liệu | Đọc hợp đồng được liên kết, metadata và tài liệu được phép | Không tạo/sửa/activate/renew/terminate hợp đồng |
 | Invoice/Zalo log/payment | Đọc hóa đơn, lịch sử gửi và giao dịch của mình; bắt đầu payment theo điều kiện | Không sửa/finalize/gửi hóa đơn; chỉ hóa đơn unpaid đã finalized mới thanh toán; không refund |
-| Tiện ích/dịch vụ | Đọc thông tin liên quan; quyền tự phục vụ chưa được định nghĩa đầy đủ | Fixed/Flexible contract Admin-only; chưa có request/use API Resident rõ ràng |
+| Tiện ích/dịch vụ | Xem Flexible Service, đặt suất BOOKING và xem/hủy lịch của chính mình | Không tạo/sửa dịch vụ, giá hoặc lịch Admin; không đặt ngoài Property/Occupancy của mình; đăng ký gói SUBSCRIPTION còn deferred |
 | Vehicle/Parking | Đọc và tạo/sửa phương tiện của mình; đọc/đăng ký/kết thúc assignment của mình theo contract | Không cấu hình khu/slot hay gán xe cho người khác |
 | Complaint | Tạo và đọc complaint của mình; thêm note/reopen theo điều kiện contract | Không đổi trạng thái xử lý hoặc xem complaint người khác |
 | Notifications/preferences | Đọc/cập nhật thông báo và tùy chọn của mình | Không có email/push trong V1 |
@@ -36,7 +36,7 @@ Resident không có quyền quản trị Owner, Property, Room, tài khoản ng�
 | Trang Cư dân (`/tenant`) | Hồ sơ summary, nơi ở/Occupancy, hợp đồng và tài liệu | Có UI gọi `/me/rental`, `/me/contracts` và document APIs; authenticated Resident browser E2E chưa được xác nhận trong báo cáo hiện hành |
 | Hồ sơ/liên hệ cá nhân | Xem/cập nhật thông tin được phép; đổi avatar khi có transport | Chưa có `/me/profile` route; avatar upload chưa có transport contract |
 | Hóa đơn/thanh toán | Danh sách/chi tiết hóa đơn, lịch sử thanh toán, checkout | API có các endpoint Resident trong contract; cần đối chiếu/hoàn thiện UI riêng |
-| Tiện ích/dịch vụ | Xem và yêu cầu sử dụng dịch vụ có sẵn | Resident service request flow/API chưa được mô tả đủ; không tự dựng booking/subscription |
+| Tiện ích/dịch vụ (`/tenant/amenities`) | Catalog/giá, ngày còn suất, gửi yêu cầu, xem trạng thái; gói tháng/năm hiển thị thời hạn/giờ | Catalog và booking request/approval đã có trên V1.11; automated/database checks passed. Authenticated browser review còn chờ; đăng ký gói chưa có |
 | Xe và bãi xe | Xe, khu/slot khả dụng, assignment và lịch sử của mình | API Resident được liệt kê; cần xác minh UI/endpoints thực thi và rule khi cạnh tranh slot |
 | Khiếu nại | Tạo, theo dõi trạng thái/lịch sử, note/reopen | API Resident được liệt kê; UI cần xác minh |
 | Thông báo/cài đặt | Inbox, đánh dấu đã đọc, notification preferences | API được liệt kê; UI cần xác minh |
@@ -55,19 +55,19 @@ Tất cả path dưới đây tương đối với `/api/v1`; authorization luô
 | Rental | `GET /me/rental` | Backend route/repository và UI `/tenant` hiện có; Resident session/browser closure còn thiếu trong báo cáo Resident/Occupancy |
 | Contracts | `GET /me/contracts`, `GET /contracts/{id}`, `GET /contracts/{id}/documents`, `GET /contract-documents/{id}` | Backend/API và một phần UI hợp đồng/tài liệu hiện có; Resident authenticated E2E chưa đóng |
 | Invoices/payments | `GET /invoices`, `GET /invoices/{id}`, `GET /invoices/{id}/zalo-send-logs`, `POST /invoices/{id}/payment-sessions`, `POST /payment-sessions/{id}/attempts`, `GET /payment-sessions/{id}`, `GET /invoices/{id}/payments` | Contract đã định nghĩa; Resident UI/runtime phụ thuộc payment provider và cần xác minh theo source hiện hành |
-| Service | `GET /me/services` chỉ đọc danh mục Flexible đang hoạt động/giá hiện hành theo nơi cư trú đang hoạt động; chưa có API Resident yêu cầu, đặt lịch, sử dụng hoặc tạo charge | Catalog UI đã có; lịch/booking và luồng sử dụng vẫn cần nguồn lịch, dữ liệu và contract được Admin chốt |
+| Service | `GET /me/services`, `GET /me/services/{id}/availability?date=`, `POST /me/services/{id}/bookings`, `GET /me/service-bookings`, `POST /me/service-bookings/{id}/cancel`, `GET /properties/{id}/service-bookings`, `POST /properties/{id}/service-bookings/{booking_id}/decision` | Catalog/bookings dùng cấu hình Admin; booking chờ Admin duyệt, snapshot giá/lịch lúc gửi; duyệt tạo charge READY cho hóa đơn hợp đồng thường. Payment chưa làm; đăng ký gói còn deferred |
 | Parking | `GET /properties/{id}/parking-areas`, `GET /parking-areas/{id}/slots`, `GET /me/vehicles`, `POST /me/vehicles`, `PATCH /vehicles/{id}`, `GET /parking-assignments`, `POST /me/parking-assignments`, `POST /parking-assignments/{id}/end` | API Spec liệt kê quyền Resident; cần đối chiếu route implementation/UI từng bước trước khi chọn module |
 | Complaints | `POST /complaints`, `GET /me/complaints`, `GET /complaints/{id}`, `POST /complaints/{id}/notes`, `POST /complaints/{id}/reopen` | API Spec liệt kê; SLA target còn mở; phải dùng Complaint category cho “Báo cáo nhà trọ” |
 | Notifications | `GET /notifications`, `PATCH /notifications/{id}/read`, `POST /notifications/read-all`, `GET /notification-preferences`, `PATCH /notification-preferences` | API Spec liệt kê; delivery chỉ in-app, không email/push |
 
-`GET /me/services` chỉ phục vụ việc xem catalog và giá hiện hành; không suy rộng endpoint này thành booking, đăng ký sử dụng, charge hoặc thanh toán. Các endpoint tiện ích ngoài catalog, payment và profile/avatar transport phải có contract được duyệt trước khi làm. API Spec §13 còn nêu các blocker cross-domain; cần kiểm tra lại chính xác implementation khi giao từng module.
+Resident API không nhận Owner/Resident/Property ID do client chọn. Mỗi yêu cầu chiếm một suất; `PENDING` và `APPROVED` đều giữ chỗ. API kiểm tra lại lịch, giá và hợp đồng khi gửi/duyệt. Chỉ Admin duyệt mới tạo charge `READY`; charge đi theo kỳ hóa đơn hợp đồng thường. Gửi yêu cầu chưa phải hóa đơn, không thanh toán hay chốt hóa đơn. Gói tháng/năm hiện chỉ hiển thị ngày/giờ và thời hạn; chưa có đăng ký gói.
 
 ## 5. User flow
 
 1. Admin mời Resident trong Owner scope. Hệ thống xác minh recipient binding, token một lần và hạn 24 giờ; Resident tự đặt mật khẩu, sau đó đăng nhập bằng phone (email login tương thích theo contract). Không trả token/password cho Admin; reset là luồng riêng, token 30 phút, thành công thu hồi session và không auto-login.
 2. Sau đăng nhập, frontend lấy role/profile từ `/auth/me` và điều hướng Resident sang `/tenant`. Mọi `me` endpoint tự suy ra Resident từ session; truy cập tài nguyên người khác phải bị từ chối/che bằng 404 theo API.
 3. Resident xem phòng, lượt cư trú hiện tại/lịch sử và hợp đồng/tài liệu của mình.
-4. Resident mở `/tenant/amenities` để xem các mục `FLEXIBLE_SERVICE` đang hoạt động, mô tả/đơn vị và giá hiện hành theo Property gắn với Occupancy đang hoạt động. Trang chỉ xem catalog, không đặt lịch hay đăng ký sử dụng.
+4. Resident mở `/tenant/amenities` để xem `FLEXIBLE_SERVICE` đang hoạt động, cấu hình và giá hiện hành theo Property mình cư trú. Với `BOOKING`, Resident chọn ngày/giờ còn chỗ và gửi yêu cầu có báo giá; yêu cầu chờ Admin duyệt và giữ một chỗ. Resident xem trạng thái/ghi chú, hủy khi còn `PENDING`; duyệt tạo charge cho kỳ hóa đơn hợp đồng thường, không thanh toán ngay. Với `SUBSCRIPTION`, Resident xem thời hạn/ngày/giờ; đăng ký gói chưa có trong module này.
 5. Resident xem hóa đơn; chỉ hóa đơn unpaid đã finalize mới có thể mở payment session. Theo dõi attempt/callback và trạng thái thanh toán từ backend; hai lần thất bại trong một phiên kết thúc phiên nhưng có thể mở phiên mới.
 6. Resident có thể quản lý xe/đăng ký slot theo quyền và điều kiện hợp đồng/sức chứa; lịch sử assignment phải được giữ.
 7. Resident gửi Complaint gắn nơi ở hợp lệ, theo dõi lịch sử, và chỉ thực hiện note/reopen theo quy tắc trạng thái.
@@ -83,8 +83,10 @@ Ngày 2026-10-23, chủ dự án chọn triển khai theo từng module và dừ
 | 1 | Tổng quan/hồ sơ cư dân | Thông tin liên hệ, trạng thái cư trú và hợp đồng từ dữ liệu hiện có | UI nền đã có; không thêm chức năng sửa hồ sơ chưa có API |
 | 2 | Trung tâm hóa đơn | Đếm theo trạng thái, lọc, phân trang và xem chi tiết an toàn | Đã triển khai và được người dùng xem; không thêm nút thanh toán khi checkout chưa sẵn sàng |
 | 3 | Thông báo/cài đặt in-app | Inbox self-scope, lọc chưa đọc, read/read-all và lưu preference | Đã triển khai; chờ review. Chỉ hiển thị notification đã tồn tại; producer/trigger mapping chưa đầy đủ |
-| 4 | Tiện ích/dịch vụ | Xem catalog Flexible do Admin tạo, mô tả/đơn vị/giá hiện hành; đăng ký và lịch đặt chỗ để sau | Catalog UI và read-only `GET /me/services` đã triển khai riêng. Chờ review. Lịch/booking/đăng ký/use/charge API chưa làm; phụ thuộc nguồn dữ liệu/luồng Admin được chốt |
-| 5 | Thanh toán | Checkout hóa đơn hoặc khoản phí, attempt và provider return | Chưa code. Chỉ tiếp tục khi provider/runtime readiness được xác nhận; không mô phỏng kết quả thanh toán |
+| 4 | Catalog tiện ích | Xem Flexible Service, mô tả/đơn vị/giá hiện hành | Catalog và `GET /me/services` đã có; phần lịch được mở rộng trong module 5 |
+| 5 | Đặt lịch dịch vụ phát sinh | Chọn ngày/slot còn sức chứa; Admin duyệt/từ chối; xem/hủy yêu cầu đang chờ | Resident UI/API và Admin queue/decision code đã có; yêu cầu chờ duyệt, chỉ duyệt mới tạo charge READY. V1.11 migration, clean install, preservation 42/42, CORE 89/89, booking 17/17 và fixture 171/171 đã PASS; authenticated browser review còn chờ |
+| 6 | Đăng ký gói dịch vụ | Đăng ký gói tháng/năm; dùng trong ngày/khung giờ đã cấu hình, không đặt từng lượt | Chưa code; cần chốt ngày bắt đầu, duyệt/trạng thái, phí và quy tắc sức chứa đồng thời |
+| 7 | Thanh toán | Checkout hóa đơn hoặc khoản phí, attempt và provider return | Chưa code. Chỉ tiếp tục khi provider/runtime readiness được xác nhận; không mô phỏng kết quả thanh toán |
 | — | Khiếu nại/phản hồi | Tạo và theo dõi yêu cầu của cư dân | Tạm hoãn theo quyết định của người dùng cho tới khi Admin có nơi tiếp nhận/xử lý |
 | — | Auth/enrollment/reset | Đăng nhập, lời mời, quên/reset và đổi password | Nền local/dev đã có; production delivery/runtime còn gate riêng |
 
@@ -97,7 +99,7 @@ Ngày 2026-10-23, chủ dự án chọn triển khai theo từng module và dừ
 - `GET /me/services` chỉ cho Resident đọc catalog Flexible đang hoạt động và giá hiện hành. API Spec chưa định nghĩa cách Resident đăng ký/sử dụng dịch vụ, lấy lịch trống hoặc xác nhận hoàn tất; Requirement §13 cũng để cancellation/refund chi tiết mở. Không suy diễn thành subscription/booking.
 - Một số quyền endpoint liệt kê trong API Spec có thể chưa được mount hoặc chưa có UI. Cần đánh dấu “chưa xác minh” cho đến khi source/API runtime được đối chiếu ở module tương ứng.
 - Resident/Occupancy report hiện trạng thái PARTIAL/NO LOCK vì chưa xác nhận Resident authenticated E2E và ghi nhận các profile/self-service gaps; trạng thái hiện tại mới hơn xác nhận enrollment/reset đã có local/dev, nên không dùng câu blocker lịch sử như mô tả toàn bộ hiện tại.
-- `docs/01_REQUIREMENTS.md` có header/schema alignment cũ V1.6; `docs/00_CURRENT_STATE.md` và `docs/DATABASE_CHANGELOG.md` xác định physical baseline hiện là Database V1.8. Task này không thay đổi schema.
+- `docs/01_REQUIREMENTS.md` có header/schema alignment cũ V1.6; `docs/00_CURRENT_STATE.md` và `docs/DATABASE_CHANGELOG.md` xác định physical baseline hiện là Database V1.11 trên `Goctro_dev_v18`; V1.8/V1.9/V1.10 là các predecessor bất biến. `Goctro_test3` vẫn là V1.10 riêng.
 - Chưa có yêu cầu về accessibility, thiết kế mobile cụ thể, hay notification trigger mapping riêng cho Resident; áp dụng UI system hiện có và không invent business behavior.
 
 ## 8. Scope của module đầu tiên — lịch sử 2026-10-21
@@ -129,3 +131,9 @@ Source hiện chỉ có scheduler tạo notification chốt kỳ cho tài khoả
 Đã thêm trang `/tenant/amenities` và mục Tiện ích trên menu Resident. Trang nhóm theo khu trọ liên kết với Occupancy đang hoạt động; chỉ hiển thị catalog `FLEXIBLE_SERVICE` đang hoạt động, mô tả, đơn vị và giá có hiệu lực hiện tại. Cư dân có thể mở/thu gọn chi tiết. API `GET /me/services` tự lấy Owner/Resident từ session, chỉ đọc và không nhận `property_id` do client gửi. Không thêm schema/migration, UI Admin, lịch trống, booking, đăng ký/use, charge, payment hoặc AI.
 
 Đối chiếu API/Requirement trước khi code; lịch/đặt chỗ và luồng sử dụng còn chờ phía Admin chốt nguồn dữ liệu và contract. Frontend/backend typecheck PASS; trang và thao tác mở chi tiết được xác nhận trên browser desktop đã đăng nhập, console không có lỗi. Automated tests, mobile viewport và production build không chạy. **Trạng thái: module catalog UI/API đã làm; chờ người dùng review.**
+
+## 13. Kết quả module 5 — Đặt lịch dịch vụ — 2026-10-27
+
+Resident chọn ngày và slot còn chỗ, gửi yêu cầu chờ Admin duyệt, xem trạng thái/phí dự kiến và hủy khi còn chờ xử lý. Admin xem hàng chờ theo khu trọ, duyệt hoặc từ chối. Chỉ duyệt mới tạo khoản charge READY cho kỳ hóa đơn hợp đồng bình thường; đăng ký không lập hóa đơn cuối cùng hoặc thu tiền. Không có thanh toán hoặc đăng ký gói trong module này.
+
+Database V1.11 đã áp dụng cho đúng `Goctro_dev_v18` sau backup đã xác minh; catalog 43 bảng khớp, 42 bảng cũ giữ nguyên fingerprints, CORE và booking-schema validators đã được chạy rollback-only. Prisma validate, backend/frontend typecheck/build và service/setup regression checks là cổng bàn giao. Automated feature tests và authenticated Resident/Admin browser walkthrough được nêu riêng trong implementation report; người dùng review `/tenant/amenities` và hàng chờ Admin là bước kế tiếp.

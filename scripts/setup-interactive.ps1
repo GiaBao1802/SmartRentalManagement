@@ -27,7 +27,8 @@ function Cache([string]$action,[string]$kind) {
   return $value
 }
 function DatabaseCommand([string]$command) {
-  $lines = & node scripts/database-v19.mjs $command --database $script:db
+  $databaseTool = if ($command -eq 'migrate-v18') { 'scripts/database-v19.mjs' } else { 'scripts/database-v111.mjs' }
+  $lines = & node $databaseTool $command --database $script:db
   $script:dbExit = $LASTEXITCODE
   $script:dbText = $lines -join "`n"
   $lines | ForEach-Object { Write-Host $_ }
@@ -183,7 +184,7 @@ try {
       2 { if (-not $matchesDefault) { throw 'Database của cấu hình hiện tại chưa tồn tại. Cần xử lý cấu hình hiện tại; không tự chuyển sang bộ mặc định hoặc tạo database trong chế độ cập nhật.' }; throw 'Chưa hoàn tất cài đặt, hãy chọn Cài đặt lần đầu. Chế độ cập nhật không tạo database.' }
       3 { throw 'PostgreSQL từ chối xác thực/quyền; kiểm tra role và mật khẩu PostgreSQL. Không tạo/seed thay thế.' }
       4 { throw 'Không kết nối được PostgreSQL; kiểm tra host/cổng và dịch vụ hiện có. Công cụ không tự bật/tắt PostgreSQL.' }
-      5 { throw 'Schema không tương thích V1.9 hoặc V1.8. Xem khác biệt phía trên; review/backup trước khi migration. Bootstrap không phải upgrade.' }
+      5 { throw 'Schema không tương thích V1.11, V1.10, V1.9 hoặc V1.8. Xem khác biệt phía trên; review/backup trước khi migration. Bootstrap không phải upgrade.' }
       6 { throw 'Instance hoặc phiên bản PostgreSQL không khớp target local PostgreSQL 18.6+.' }
       default { throw 'Không kiểm tra được database; dừng các bước phụ thuộc.' }
     }
@@ -192,33 +193,53 @@ try {
     if (-not $match.Success) { throw 'Không đọc được trạng thái database.' }
     $dataState = $match.Groups[1].Value
   }
+  if ($dataState -in @('v18_populated','v18_empty','v19_populated','v19_empty','v110_populated','v110_empty','v110_booking_branch_populated','v110_booking_branch_empty')) {
+    if (-not (Yes 'Đã tạo và kiểm tra backup khôi phục được; cho phép nâng database lên V1.11 trên target đã xác nhận')) { throw 'Chưa xác nhận backup và migration; database được giữ nguyên.' }
+  }
   if ($dataState -in @('v18_populated','v18_empty')) {
-    if (-not (Yes 'Đã tạo và kiểm tra backup khôi phục được; cho phép migration V1.8 lên V1.9 trên database đã xác nhận')) { throw 'Chưa xác nhận backup và migration; database được giữ nguyên.' }
     $wasPopulated = $dataState -eq 'v18_populated'
     $step = 'Migration database V1.8 lên V1.9'; DatabaseCommand 'migrate-v18'
     if ($dbExit -ne 0) { throw 'Migration V1.8→V1.9 thất bại; transaction đã rollback nếu bắt đầu. Database không được seed/reset.' }
     $completed.Add('Migration V1.8 → V1.9'); $dataState = if ($wasPopulated) { 'v19_populated' } else { 'v19_empty' }
   }
-  if ($mode -eq '2' -and $dataState -ne 'v19_populated' -and $dataState -ne 'v19_empty') { throw 'Chế độ cập nhật cần schema V1.9 hoặc V1.8 đã được nâng cấp; không bootstrap hoặc seed tự động.' }
+  if ($dataState -in @('v19_populated','v19_empty')) {
+    $wasPopulated = $dataState -eq 'v19_populated'
+    $step = 'Migration database V1.9 lên V1.10'; DatabaseCommand 'migrate-v19'
+    if ($dbExit -ne 0) { throw 'Migration V1.9→V1.10 thất bại; transaction đã rollback nếu bắt đầu. Database giữ nguyên baseline hiện tại, không seed/reset.' }
+    $completed.Add('Migration V1.9 → V1.10'); $dataState = if ($wasPopulated) { 'v110_populated' } else { 'v110_empty' }
+  }
+  if ($dataState -in @('v110_populated','v110_empty')) {
+    $wasPopulated = $dataState -eq 'v110_populated'
+    $step = 'Migration database V1.10 lên V1.11'; DatabaseCommand 'migrate-v110'
+    if ($dbExit -ne 0) { throw 'Migration V1.10→V1.11 thất bại; transaction đã rollback nếu bắt đầu. Database giữ nguyên baseline hiện tại, không seed/reset.' }
+    $completed.Add('Migration V1.10 → V1.11'); $dataState = if ($wasPopulated) { 'v111_populated' } else { 'v111_empty' }
+  }
+  if ($dataState -in @('v110_booking_branch_populated','v110_booking_branch_empty')) {
+    $wasPopulated = $dataState -eq 'v110_booking_branch_populated'
+    $step = 'Phục hồi nhánh booking local lên V1.11'; DatabaseCommand 'migrate-v110-booking-branch'
+    if ($dbExit -ne 0) { throw 'Phục hồi nhánh local→V1.11 thất bại; transaction đã rollback nếu bắt đầu. Database giữ nguyên baseline hiện tại, không seed/reset.' }
+    $completed.Add('Phục hồi nhánh local → V1.11'); $dataState = if ($wasPopulated) { 'v111_populated' } else { 'v111_empty' }
+  }
+  if ($mode -eq '2' -and $dataState -ne 'v111_populated' -and $dataState -ne 'v111_empty') { throw 'Chế độ cập nhật cần schema V1.11; setup không bootstrap hoặc seed database hiện có.' }
   $seededNow = $false
   if ($mode -eq '1') {
     if ($dataState -eq 'empty_schema') {
-      if (-not (Yes 'Schema đang trống. Bootstrap V1.9')) { throw 'Chưa xác nhận bootstrap.' }
-      $step = 'Bootstrap V1.9'; DatabaseCommand 'bootstrap'
+      if (-not (Yes 'Schema đang trống. Bootstrap V1.11')) { throw 'Chưa xác nhận bootstrap.' }
+      $step = 'Bootstrap V1.11'; DatabaseCommand 'bootstrap'
       if ($dbExit -ne 0) { throw 'Bootstrap thất bại; chưa chạy seed/provision/startup.' }
-      $completed.Add('Bootstrap V1.9'); $dataState = 'v19_empty'
+      $completed.Add('Bootstrap V1.11'); $dataState = 'v111_empty'
     }
-    if ($dataState -eq 'v19_empty' -and (Yes 'Seed dữ liệu mẫu vào schema V1.9 đang trống')) {
+    if ($dataState -eq 'v111_empty' -and (Yes 'Seed dữ liệu mẫu vào schema V1.11 đang trống')) {
       $step = 'Seed mẫu'; DatabaseCommand 'seed'
       if ($dbExit -ne 0) { throw 'Seed thất bại. Bootstrap có thể đã hoàn thành; kiểm tra nguyên nhân rồi chạy lại Cài đặt lần đầu. Guard sẽ kiểm tra lại schema/bảng trống, không bootstrap lại.' }
-      $completed.Add('Seed mẫu'); $seededNow = $true; $dataState = 'v19_populated'
-    } elseif ($dataState -eq 'v19_populated') { Write-Host 'Database đã có dữ liệu; bỏ qua bootstrap và seed.' }
+      $completed.Add('Seed mẫu'); $seededNow = $true; $dataState = 'v111_populated'
+    } elseif ($dataState -eq 'v111_populated') { Write-Host 'Database đã có dữ liệu; bỏ qua bootstrap và seed.' }
     if ($seededNow) {
       $step = 'Thiết lập credential demo'
       & npm.cmd run dev:provision-credentials --workspace=@goctro/backend -- --mode INITIAL --database $db --confirm-target $target
       if ($LASTEXITCODE -ne 0) { throw 'Seed đã thành công nhưng mật khẩu web chưa thiết lập. Giữ dữ liệu; dùng công cụ provision riêng theo hướng dẫn, RESET cần xác nhận rõ; không seed lại.' }
       $demoSet = $true; $completed.Add('Thiết lập hai credential demo'); Cache 'invalidate' 'runtime' | Out-Null
-    } elseif ($dataState -eq 'v19_populated') {
+    } elseif ($dataState -eq 'v111_populated') {
       Write-Host 'Sử dụng mật khẩu hiện có. Không provision hoặc RESET khi chạy lại setup.'
     }
   }
@@ -238,7 +259,7 @@ try {
   Cache 'record' 'runtime' | Out-Null; $completed.Add('API health, DB health và frontend sẵn sàng')
   Write-Host 'Hoàn tất setup.' -ForegroundColor Green
   if ($demoSet) { Write-Host 'Mật khẩu demo local/dev vừa được thiết lập: Goctro123456789' }
-  elseif ($dataState -eq 'v19_empty') { Write-Host 'Chưa seed mẫu; chưa thiết lập tài khoản/credential demo.' }
+  elseif ($dataState -eq 'v111_empty') { Write-Host 'Chưa seed mẫu; chưa thiết lập tài khoản/credential demo.' }
   else { Write-Host 'Sử dụng mật khẩu hiện có; setup không đổi credential.' }
   Write-Host 'Đăng nhập: http://localhost:3000/login'
   Write-Host 'Admin: admin.one@example.test | Resident: resident.one@example.test'

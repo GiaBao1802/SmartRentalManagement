@@ -2,15 +2,19 @@
 
 ## Last Updated
 
-2026-10-26
+2026-10-27
+
+### Resident Flexible Service bookings — Database V1.11, 2026-10-27
+
+The Resident request flow and the Admin approval queue are implemented for configured Flexible Services in `BOOKING` mode. Pending requests reserve capacity but create no charge; Admin approval saves one READY charge at the quoted price for normal Contract billing, without creating, finalizing or paying an Invoice. V1.11 is additive to the team's unchanged V1.10 auth-session baseline. The local `Goctro_dev_v18` target was protected by a verified backup and is now at V1.11; the separate `Goctro_test3` target remains V1.10 and was not accessed by this module. PostgreSQL clean install, standard V1.10 upgrade, local catalog and rollback-only validators passed; automated and migration evidence is in the [V1.11 implementation report](07_modules/resident-occupancy/RESIDENT_FLEXIBLE_SERVICE_BOOKING_IMPLEMENTATION_REPORT.md). Authenticated user review of `/tenant/amenities` and the Admin booking queue is the next task.
 
 ## Project Status
 
-### Database V1.10 / AWS source preparation — 2026-10-27
+### Database V1.10 auth sessions / AWS source preparation — 2026-10-27
 
 GitHub `main` already contained the team's Database V1.9 for Admin Flexible Service configuration. A separate unpushed auth-session candidate had also used the V1.9 name on this machine. The two changes are now combined in `database/baselines/v1.10/` without rewriting the team's V1.9. The configured local `Goctro_test3` was backed up, rehearsed and promoted to V1.10: 42 tables, CORE 89/89 PASS, old-row fingerprints unchanged. Clean V1.10, canonical V1.9→V1.10 and local auth-first→V1.10 paths passed on disposable databases. Backend typecheck/build, Auth 20/20, Accounts 19/19, PostgreSQL session integration 1/1 passed. See [promotion report](10_operations/LOCAL_DATABASE_V1_10_PROMOTION_2026_10_27.md) and [AWS preparation](10_operations/AWS_DATABASE_V1_10_PREPARATION.md). AWS still has no project database or web server; Git contains structure/code, not local data. The Admin Flexible Service browser review remains pending.
 
-The approved [Superadmin requirements](07_modules/superadmin/SUPERADMIN_REQUIREMENTS_SPEC.md), [gap review](07_modules/superadmin/SUPERADMIN_SCHEMA_API_GAP_REPORT.md), [identity/report/audit design](07_modules/superadmin/SUPERADMIN_IDENTITY_REPORT_AUDIT_DESIGN.md), [screen/API draft](07_modules/superadmin/SUPERADMIN_SCREEN_API_DESIGN.md), [data-change draft](07_modules/superadmin/SUPERADMIN_DATABASE_CHANGE_DESIGN.md) and [duplicate-contact snapshot](07_modules/superadmin/SUPERADMIN_DUPLICATE_CONTACT_REVIEW.md) are documented. Superadmin is not implemented in API/source/database V1.10; these design documents do not authorize its migration. Real email delivery is deferred for the demo.
+The approved [Superadmin requirements](07_modules/superadmin/SUPERADMIN_REQUIREMENTS_SPEC.md), [gap review](07_modules/superadmin/SUPERADMIN_SCHEMA_API_GAP_REPORT.md), [identity/report/audit design](07_modules/superadmin/SUPERADMIN_IDENTITY_REPORT_AUDIT_DESIGN.md), [screen/API draft](07_modules/superadmin/SUPERADMIN_SCREEN_API_DESIGN.md), [data-change draft](07_modules/superadmin/SUPERADMIN_DATABASE_CHANGE_DESIGN.md) and [duplicate-contact snapshot](07_modules/superadmin/SUPERADMIN_DUPLICATE_CONTACT_REVIEW.md) are documented. Superadmin is not implemented in API/source/database V1.11; these design documents do not authorize its migration. Real email delivery is deferred for the demo.
 
 ### Admin — Tiện ích phát sinh đặt lịch/gói đăng ký — 2026-10-26
 
@@ -69,10 +73,9 @@ Service Pass 2 implemented Owner-scoped Electricity/Water tariff configuration A
 
 ## Current Physical Database
 
-- `Goctro_test3`, PostgreSQL 18.6 on localhost:5432, Database V1.10, 42 public tables, **LOCKED LOCAL/DEV on this machine**.
-- Local auth-first branch was merged with the team's V1.9 Flexible schema by a guarded, additive V1.10 migration after verified backup. CORE 89/89 and old-row fingerprint preservation passed; no seed was run on the populated target.
-- V1.9 remains the immutable historical predecessor in Git. The separately reported `Goctro_dev_v18` target does not exist on the PostgreSQL instance checked for this task.
-- See [V1.10 local promotion](10_operations/LOCAL_DATABASE_V1_10_PROMOTION_2026_10_27.md), [V1.9 Admin service implementation report](07_modules/service/FLEXIBLE_SERVICE_SCHEDULING_ADMIN_IMPLEMENTATION_REPORT.md), and [Database Changelog](DATABASE_CHANGELOG.md).
+- `Goctro_dev_v18`, PostgreSQL 18.6 on localhost:5432, Database V1.11, 43 public tables, **LOCKED LOCAL/DEV on this machine**. A verified backup exists; booking data was preserved and no seed ran on the populated target.
+- `Goctro_test3` is a separate Database V1.10 target with 42 public tables; this Resident booking task did not connect to or change it.
+- V1.11 adds the booking table to V1.10. Setup upgrades V1.8→V1.9→V1.10→V1.11 after confirming a verified backup and exact catalog preflight. See [V1.11 setup](10_operations/DATABASE_V1_11_SETUP.md), [V1.11 implementation report](07_modules/resident-occupancy/RESIDENT_FLEXIBLE_SERVICE_BOOKING_IMPLEMENTATION_REPORT.md), [V1.10 local promotion](10_operations/LOCAL_DATABASE_V1_10_PROMOTION_2026_10_27.md), and [Database Changelog](DATABASE_CHANGELOG.md).
 
 ### Local database setup tooling — 2026-10-16
 
@@ -86,7 +89,7 @@ Latest Auth browser/UI pass (2026-10-19): Admin invitation → human accept → 
 
 ## Active Module
 
-**Resident module 4 — Utilities catalog UI/API, awaiting user review.** `/tenant/amenities` displays the active Flexible Service catalog and current prices for active Resident Occupancies; scheduling/booking/use/charges/payments are deferred. See [Resident role analysis](07_modules/resident-occupancy/RESIDENT_ROLE_ANALYSIS.md). Legacy-to-current Phase2 browser handoff/production adapter gates remain separate and open.
+**Resident module 5 — Flexible Service requests, awaiting user review.** `/tenant/amenities` lists active services, shows date-specific open slots and quoted prices for `BOOKING` services, submits requests and displays request status. Pending requests can be cancelled. Admin reviews pending requests from the Flexible Service page; approval creates a READY charge for ordinary Contract billing, and rejection releases the slot. Subscription package enrollment, Payment, check-in and authenticated browser review are not included. See the [Resident role analysis](07_modules/resident-occupancy/RESIDENT_ROLE_ANALYSIS.md) and [implementation report](07_modules/resident-occupancy/RESIDENT_FLEXIBLE_SERVICE_BOOKING_IMPLEMENTATION_REPORT.md).
 
 ### Legacy-to-current migration — Phase 1 completed, 2026-10-16
 
@@ -98,9 +101,9 @@ Phase 1 inventoried legacy consumers and removed only four unused frontend workf
 
 - **Billing / Invoice:** prior finalize route/PostgreSQL and authenticated Invoice browser evidence remains valid. Scheduler unit tests **8/8 PASS**; PostgreSQL V1.8 CORE **78/78**, fixture **171/171**; Invoice suite **157 PASS / 0 FAIL / 3 SKIP**, Auth **20/20 PASS**, frontend API/UI **57/57 PASS**, and frontend typecheck/production build PASS. Pass 3 browser verified Billing readiness and a successful itemized finalize with Rent, Electricity, Water, Fixed Service, Flexible Service, and Parking lines. PostgreSQL verifies charge rollback, out-of-period exclusion, and READY→INVOICED transactionality. The browser verified billed status after reload. Exact workspace narrow viewport and post-finalize filters remain incomplete. Billing stays **PARTIAL** because Parking management and final overall closure remain.
 - **Service / Utilities / Paid Services:** **PARTIAL — APIs, PostgreSQL integration and core authenticated Admin browser smoke PASS; IA realignment implemented; exact responsive viewport unverified.** Sidebar exposes one “Dịch vụ & Tiện ích” entry; its workspace navigation contains four tabs: Điện & nước, Dịch vụ cố định, Tiện ích phát sinh and Parking. `/admin/services` redirects to `/admin/services/utilities`; the sidebar remains a single entry. Admin `/admin/viewings` is labeled “Lịch tiện ích” and renders a deferred-feature screen; the prior viewing-request workflow source is preserved but is not called by the page. Fixed/Flexible pricing and Billing integration remain intact. Flexible charge creation stays in backend and the direct Admin operational screen is no longer a primary navigation action. Approved future direction is Resident request/use → scheduling when needed → confirmed completion → backend charge → Billing; Resident scheduling is not implemented here. Prior Pass 3 evidence remains: CORE **78/78**, fixture **171/171**, Service **14/14**, Invoice **157 PASS / 0 FAIL / 3 SKIP**, Auth **20/20**, frontend API/UI **57/57**, frontend typecheck/build PASS; browser verified billing and service lifecycle. IA unit/type/build validation is tracked in the latest realignment report. `Goctro_test3` was not used; Parking operational management remains next.
-- **Resident / Occupancy:** PARTIAL, not locked. Admin lifecycle evidence exists; Resident-authenticated portal verification and a supported onboarding path remain incomplete. Provisioning/setup/reset now pass local/dev API/PostgreSQL verification. Self-service profile/avatar and full Resident portal browser closure remain open.
+- **Resident / Occupancy:** PARTIAL, not locked. The catalog/booking UI and APIs now include date-specific booking, pending cancellation and Admin approval/charge handoff under V1.11. Authenticated Resident/Admin browser walkthrough and mobile review remain open. Payment, package enrollment, check-in and other self-service work remain separate.
 - **Contract:** PARTIAL, not locked. Admin HTTP lifecycle evidence exists; Resident privacy/session and full browser closure remain unverified. Contract document binary storage is blocked by unconfigured storage.
-- **Complaints, Payment, Amenities, Parking, CT01, Notifications, and Dashboard/Reports:** no complete V1 application flow established by current project evidence. Complaints are explicitly deferred to a later version and their Admin route renders a lock screen; the old workflow source and backend are retained.
+- **Amenities/booking:** scoped `BOOKING` request and Admin approval flow is implemented, but user review and authenticated browser walkthrough remain open. Package enrollment and payment are not included. **Complaints, Parking, CT01, and Dashboard/Reports:** no complete V1 flow is established by current project evidence. Complaints are deferred and their Admin route renders a lock screen.
 
 ## Latest Milestone
 
@@ -118,7 +121,7 @@ Workspace code and PostgreSQL read-model integration pass on V1.8 rehearsal. Aut
 
 ## Locked Decisions
 
-- Follow Database V1.10 physical artifacts as the current local/development schema baseline on `Goctro_test3`; do not make ad hoc schema changes.
+- Follow Database V1.11 physical artifacts as the current local/development schema baseline on `Goctro_dev_v18`; `Goctro_test3` remains a separate V1.10 target. Do not make ad hoc schema changes.
 - Billing business decisions and the existing finalize endpoint are recorded in the canonical Requirement and API Spec; production route wiring, disposable V1.8 PostgreSQL runtime verification, and Admin browser workflow review are complete. This establishes local operational closure only, not production deployment readiness.
 - Contract API §5.7 is separately locked; that does not lock the whole Contract module.
 - A future database change requires an approved business-rule change, a new version/migration, and runtime validation before promotion.
@@ -133,7 +136,7 @@ Workspace code and PostgreSQL read-model integration pass on V1.8 rehearsal. Aut
 
 1. [Requirement](01_REQUIREMENTS.md) — business rules.
 2. [API Spec](04_API_SPEC.md) — API contract.
-3. [Database Changelog](DATABASE_CHANGELOG.md) and [Database V1.10 artifacts](../database/baselines/v1.10/README.md) — current local physical database truth.
+3. [Database Changelog](DATABASE_CHANGELOG.md) and [Database V1.11 artifacts](../database/baselines/v1.11/README.md) — current local physical database truth.
 4. This file — current project checkpoint, not business authority.
 5. [Document Catalog](DOCUMENT_CATALOG.md) — document index/status.
 6. Reports — evidence and history.
@@ -142,6 +145,7 @@ Workspace code and PostgreSQL read-model integration pass on V1.8 rehearsal. Aut
 ## Latest Important Reports
 
 - [Tiện ích phát sinh Admin — đặt lịch/gói đăng ký](07_modules/service/FLEXIBLE_SERVICE_SCHEDULING_ADMIN_IMPLEMENTATION_REPORT.md) — CURRENT implementation; database V1.9 applied and validated on Goctro_dev_v18; user browser review pending.
+- [Resident Flexible Service booking](07_modules/resident-occupancy/RESIDENT_FLEXIBLE_SERVICE_BOOKING_IMPLEMENTATION_REPORT.md) — V1.11 Resident request, Admin decision and normal Billing charge handoff; authenticated user review is next.
 - [Database V1.9 setup and migration](10_operations/DATABASE_V1_9_SETUP.md) — CURRENT; clean install, populated migration rehearsal, backup, target fingerprints, and 85/85 validator evidence.
 - [Database V1.8 recurring Parking migration implementation](07_modules/invoice-zalo/DATABASE_V1_8_RECURRING_PARKING_MIGRATION_IMPLEMENTATION_REPORT.md) — HISTORICAL locked predecessor/promotion evidence; V1.9 supersedes its baseline status. Its fail-closed note predates later production wiring.
 - [Billing V1.8 Invoice finalize route PostgreSQL integration closure](07_modules/invoice-zalo/BILLING_V1_8_INVOICE_FINALIZE_ROUTE_POSTGRESQL_INTEGRATION_CLOSURE_REPORT.md) — CURRENT; disposable V1.8 install/validators, authenticated HTTP route, itemized persistence, concurrency, fail-closed and rollback checks pass; rehearsal deleted.
@@ -179,7 +183,7 @@ Workspace code and PostgreSQL read-model integration pass on V1.8 rehearsal. Aut
 
 ## Exact Next Task
 
-**Deploy the demo from the verified GitHub `main` V1.10 source to one Lightsail 8 GB machine in `ap-southeast-2`.** First recheck the project, credit and exact pushed commit; install PostgreSQL, create a new empty database from V1.10 `schema.sql`, run CORE validation, then configure the web and Ollama. The Admin Flexible Service browser review and Resident work remain separate and pending; this database promotion does not approve those flows.
+**Run `setup.bat` after pulling `main`, then review the Resident booking flow on the local app.** Sign in as a Resident, check `/tenant/amenities` for available dates/slots, submit one request and confirm it appears in the Admin Flexible Service approval queue; then approve or reject it and confirm the Resident status/notification and READY charge in ordinary Contract Billing. Do not start the next module until the user has reviewed this flow.
 ## Resume Checklist
 
 1. Read repository-wide [AGENTS.md](../AGENTS.md), [Documentation Rules](DOCUMENTATION_RULES.md), this checkpoint, and the [Document Catalog](DOCUMENT_CATALOG.md).

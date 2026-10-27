@@ -93,7 +93,7 @@ test('legacy migration exits nonzero without reading connection configuration', 
   assert.match(result.stderr, /db:bootstrap/);
   assert.doesNotMatch(result.stderr, /not-used/);
 });
-test('Compose and npm commands use the new V1.8 path and separate PG18 volume', async () => {
+test('Compose and npm commands use the current V1.11 setup path and separate PG18 volume', async () => {
   const root = fileURLToPath(new URL('../', import.meta.url));
   const compose = await readFile(path.join(root, 'docker-compose.yml'), 'utf8');
   assert.match(compose, /image: postgres:18\.6/);
@@ -101,11 +101,18 @@ test('Compose and npm commands use the new V1.8 path and separate PG18 volume', 
   assert.doesNotMatch(compose, /postgres_data:|postgres:17/);
   for (const manifest of ['package.json', 'backend/package.json']) {
     const scripts = JSON.parse(await readFile(path.join(root, manifest), 'utf8')).scripts;
-    assert.match(scripts['db:seed'], /database-v18\.mjs seed$/);
-    assert.match(scripts['db:migrate'], /block-legacy-migrate$/);
+    assert.match(scripts['db:seed'], /database-v111\.mjs seed$/);
+    assert.match(scripts['db:migrate'], /database-v111\.mjs migrate-v110$/);
+    assert.match(scripts['db:migrate:v19'], /database-v111\.mjs migrate-v19$/);
     assert.match(scripts['db:generate'], /schema\.prisma|workspace=@goctro\/backend/);
   }
-  assert.match(JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8')).scripts['db:state'], /database-v18\.mjs state$/);
+  const scripts = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8')).scripts;
+  assert.match(scripts['db:state'], /database-v111\.mjs state$/);
+  assert.match(scripts['db:inspect'], /database-v111\.mjs inspect$/);
+  const setup = await readFile(path.join(root, 'scripts/setup-interactive.ps1'), 'utf8');
+  assert.match(setup, /database-v111\.mjs/);
+  assert.match(setup, /Migration V1\.10→V1\.11/);
+  assert.match(setup, /migrate-v110-booking-branch/);
 });
 
 test('Windows setup menu exits without installing packages or writing config', { skip: process.platform !== 'win32' }, async () => {

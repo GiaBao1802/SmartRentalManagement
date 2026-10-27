@@ -22,10 +22,18 @@ class TestAuthRepository implements AuthRepository {
   async findCurrentAccount(accountId: bigint): Promise<CurrentAccountRecord | null> { const row = [admin, otherAdmin, resident].find((entry) => entry.accountId === accountId); if (!row) return null; const { passwordHash: _passwordHash, ...safe } = row; return safe; }
 }
 const auth: AuthDependencies = { config, repository: new TestAuthRepository(), sessions: new InMemorySessionStore() };
-const calls: Array<{ method: string; ownerId: bigint; propertyId: bigint; input?: any }> = [];
+const calls: Array<{ method: string; ownerId: bigint; propertyId?: bigint; input?: any; residentId?: bigint; accountId?: bigint; serviceId?: bigint; bookingId?: bigint; date?: string; startTime?: string; decision?: string }> = [];
 const sampleItem = { propertyPricingItemId: 5n, kind: "FIXED_SERVICE", code: "WIFI", name: "WiFi", description: null, unit: "kỳ", status: "active", createdAt: new Date("2026-10-01T00:00:00Z"), priceVersions: [{ propertyPriceVersionId: 7n, versionNo: 1, effectiveFrom: new Date("2026-10-01T00:00:00Z"), unitPrice: 50000n, sourceName: null, sourceReference: null, reason: null, publishedAt: new Date("2026-10-01T00:00:00Z") }] };
+const bookingRow = { booking_id: 900n, service_name_snapshot: "Spa", property_name: "Property A", service_date: "2099-11-03", slot_start: "09:00", slot_end: "10:00", slot_duration_minutes: 60, status: "PENDING", charge_amount: 100000n, unit_snapshot: "lượt", cancelled_at: null, decision_at: null, decision_note: null, created_at: new Date("2099-11-01T00:00:00Z"), invoice_no: null, invoice_status: null, can_cancel: true, can_approve: true, resident_name: "Resident", room_code: "A101", contract_no: "HD-001" };
 const repository = {
   async listItems(ownerId: bigint, propertyId: bigint, kind?: string) { calls.push({ method: "listItems", ownerId, propertyId }); return ownerId === 101n && propertyId === 50n ? { property: { propertyId, name: "Property A" }, items: kind ? [{ ...sampleItem, kind }] : [sampleItem] } : null; },
+  async listResidentServices(ownerId: bigint, residentId: bigint) { calls.push({ method: "listResidentServices", ownerId, residentId }); return [{ property: { propertyId: 50n, name: "Property A" }, services: [{ ...sampleItem, kind: "FLEXIBLE_SERVICE", unit: "lượt", flexibleServiceConfiguration: { service_mode: "BOOKING", open_monday: true, open_tuesday: true, open_wednesday: true, open_thursday: true, open_friday: true, open_saturday: false, open_sunday: false, opens_at: "09:00", closes_at: "17:00", slot_duration_minutes: 60, capacity_per_slot: 2, package_duration_count: null, package_duration_unit: null } }] }]; },
+  async listResidentServiceAvailability(ownerId: bigint, residentId: bigint, serviceId: bigint, serviceDate: string) { calls.push({ method: "availability", ownerId, residentId, serviceId, date: serviceDate }); return ownerId === 101n && residentId === 201n && serviceId === 5n ? { serviceId, serviceDate, unit: "lượt", unitPrice: 100000n, priceEffectiveFrom: "2099-01-01", slots: [{ start_time: "09:00", end_time: "10:00", remaining_capacity: 1 }] } : null; },
+  async bookResidentService(ownerId: bigint, residentId: bigint, accountId: bigint, serviceId: bigint, input: any) { calls.push({ method: "book", ownerId, residentId, accountId, serviceId, date: input.serviceDate, startTime: input.startTime }); return ownerId === 101n && residentId === 201n && serviceId === 5n ? { booking: { ...bookingRow, booking_id: 900n, service_date: input.serviceDate, slot_start: input.startTime, status: "PENDING" }, created: true } : null; },
+  async listResidentServiceBookings(ownerId: bigint, residentId: bigint) { calls.push({ method: "residentBookings", ownerId, residentId }); return [bookingRow]; },
+  async cancelResidentServiceBooking(ownerId: bigint, residentId: bigint, accountId: bigint, bookingId: bigint) { calls.push({ method: "cancel", ownerId, residentId, accountId, bookingId }); return ownerId === 101n && residentId === 201n && bookingId === 900n ? { ...bookingRow, status: "CANCELLED", can_cancel: false } : null; },
+  async listAdminServiceBookings(ownerId: bigint, propertyId: bigint) { calls.push({ method: "pendingBookings", ownerId, propertyId }); return ownerId === 101n && propertyId === 50n ? [bookingRow] : null; },
+  async decideAdminServiceBooking(ownerId: bigint, propertyId: bigint, bookingId: bigint, accountId: bigint, input: any) { calls.push({ method: "decision", ownerId, propertyId, bookingId, accountId, decision: input.decision }); return ownerId === 101n && propertyId === 50n && bookingId === 900n ? { booking: { ...bookingRow, status: input.decision === "APPROVE" ? "APPROVED" : "REJECTED" } } : null; },
   async createItem(ownerId: bigint, propertyId: bigint, input: any) { calls.push({ method: "createItem", ownerId, propertyId, input }); return ownerId === 101n && propertyId === 50n ? { ...sampleItem, ...input, priceVersions: [] } : null; },
   async retireItem(ownerId: bigint, propertyId: bigint, itemId: bigint, kind: string) { calls.push({ method: "retireItem", ownerId, propertyId }); return ownerId === 101n && propertyId === 50n && itemId === 5n ? { ...sampleItem, kind, status: "retired", priceVersions: [] } : null; },
   async publishPrice(ownerId: bigint, propertyId: bigint, itemId: bigint, actorId: bigint, kind: string, input: any) { calls.push({ method: "publishPrice", ownerId, propertyId, input }); return ownerId === 101n && propertyId === 50n && itemId === 5n ? { ...sampleItem.priceVersions[0], ...input, kind } : null; },
@@ -48,4 +56,47 @@ test("manual charge APIs stay retired; catalog still rejects client Owner author
   }
   const authority = await call(admin, "/api/v1/properties/50/pricing-items", { method: "POST", body: { kind: "FIXED_SERVICE", code: "X", name: "X", unit: "kỳ", owner_id: "202" } });
   assert.equal(authority.response.status, 400);
+});
+
+test("Resident booking endpoints derive identity, return availability, and keep requests pending", async () => {
+  const catalog = await call(resident, "/api/v1/me/services");
+  assert.equal(catalog.response.status, 200);
+  assert.equal(catalog.body.data[0].services[0].service_configuration.booking.capacity_per_slot, 2);
+  assert.deepEqual(calls.at(-1), { method: "listResidentServices", ownerId: 101n, residentId: 201n });
+
+  const availability = await call(resident, "/api/v1/me/services/5/availability?date=2099-11-03");
+  assert.equal(availability.response.status, 200);
+  assert.equal(availability.body.data.slots[0].remaining_capacity, 1);
+  assert.equal(calls.at(-1)?.residentId, 201n);
+
+  const created = await call(resident, "/api/v1/me/services/5/bookings", { method: "POST", body: { service_date: "2099-11-03", start_time: "09:00" } });
+  assert.equal(created.response.status, 201);
+  assert.equal(created.body.data.status, "PENDING");
+  assert.equal(created.body.data.amount, "100000");
+  assert.deepEqual(calls.at(-1), { method: "book", ownerId: 101n, residentId: 201n, accountId: 13n, serviceId: 5n, date: "2099-11-03", startTime: "09:00" });
+  assert.equal((await call(admin, "/api/v1/me/services/5/availability?date=2099-11-03")).response.status, 403);
+  assert.equal((await call(resident, "/api/v1/me/services/5/bookings", { method: "POST", body: { service_date: "2099-11-03", start_time: "09:00", owner_id: "202" } })).response.status, 400);
+});
+
+test("Resident history/cancel and Admin approval endpoints enforce role and Owner scope", async () => {
+  const history = await call(resident, "/api/v1/me/service-bookings");
+  assert.equal(history.response.status, 200);
+  assert.equal(history.body.data[0].booking_id, "900");
+  const cancelled = await call(resident, "/api/v1/me/service-bookings/900/cancel", { method: "POST", body: {} });
+  assert.equal(cancelled.response.status, 200);
+  assert.equal(cancelled.body.data.status, "CANCELLED");
+
+  assert.equal((await call(resident, "/api/v1/properties/50/service-bookings?status=PENDING")).response.status, 403);
+  const queue = await call(admin, "/api/v1/properties/50/service-bookings?status=PENDING");
+  assert.equal(queue.response.status, 200);
+  assert.equal(queue.body.data[0].resident_name, "Resident");
+  assert.deepEqual(calls.at(-1), { method: "pendingBookings", ownerId: 101n, propertyId: 50n });
+  assert.equal((await call(otherAdmin, "/api/v1/properties/50/service-bookings?status=PENDING")).response.status, 404);
+
+  const decided = await call(admin, "/api/v1/properties/50/service-bookings/900/decision", { method: "POST", body: { decision: "APPROVE" } });
+  assert.equal(decided.response.status, 200);
+  assert.equal(decided.body.data.status, "APPROVED");
+  assert.equal(calls.at(-1)?.accountId, 11n);
+  assert.equal(calls.at(-1)?.decision, "APPROVE");
+  assert.equal((await call(admin, "/api/v1/properties/50/service-bookings/900/decision", { method: "POST", body: { decision: "PAY" } })).response.status, 400);
 });

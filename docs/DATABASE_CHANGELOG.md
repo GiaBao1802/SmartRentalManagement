@@ -353,9 +353,19 @@ Production Invoice finalization: still fail-closed / not wired
 Payment: not started
 ```
 
-## Database V1.9 — Admin Flexible Service schedules and packages (current local/development baseline)
+## Database V1.11 — Resident Flexible Service booking requests (locked local/development baseline)
 
-- **Business decision:** APPROVED 2026-10-26. **Physical implementation:** PASS and locked on local `Goctro_dev_v18`, PostgreSQL 18.6 at `localhost:5432`. V1.9 has 41 public tables; V1.8 remains the immutable 40-table predecessor.
+- **Business decision:** APPROVED 2026-10-27. Resident submits a `PENDING` request that snapshots service, Resident/Room/Contract, slot/duration, unit and the published price effective on the service date. Both `PENDING` and `APPROVED` hold capacity. Only an Admin decision before the slot may create a charge; rejection/cancellation while pending creates no charge and releases capacity.
+- **Schema delta:** additive table `resident_service_bookings` with scoped Owner/Property/Resident/Room/Contract/service/configuration/quoted price/decision actor/approved charge references, request state checks, active-slot uniqueness and capacity lookup indexes, and a trigger that disallows subscription-mode booking rows. V1.8/V1.9/V1.10 artifacts remain immutable; no package enrollment or Payment schema is added.
+- **Billing behavior:** Admin approval creates one `READY` Flexible Service charge at the saved quote and booked slot start. Existing Billing carries it into the ordinary Contract Invoice period. Request/approval does not itself create/finalize/send an Invoice or collect payment.
+- **Implementation:** V1.11 clean-install schema and seed, V1.10→V1.11 migration, guarded local branch recovery, setup helper, Resident/Admin booking APIs/UIs and V1.11 validators are implemented. Typecheck, tests and final catalog/runtime evidence are recorded in the implementation report.
+- **Local target apply:** `localhost:5432/Goctro_dev_v18`, PostgreSQL 18.6. Before migration the exact V1.9 plus booking branch was verified; a custom-format backup was verified before applying the narrow recovery migration that adds only the missing upstream V1.10 `auth_sessions` objects. All 42 existing tables and the empty booking table were preserved. No seed ran. `Goctro_test3` remains the separate, unchanged V1.10 target.
+- **Verification:** Clean PostgreSQL 18.6 V1.11 bootstrap, synthetic seed and catalog inspect passed with 43 public tables. Rollback-only validators passed CORE **89/89**, booking **17/17**, and synthetic fixture **171/171**. A populated V1.10→V1.11 disposable rehearsal preserved row counts and content fingerprints on **42/42** existing tables; the new booking table was empty. Local V1.11 catalog inspect and CORE **89/89** plus booking **17/17** validators passed. Setup regression **18/18**, service/route tests **15 passed / 0 failed / 1 existing PostgreSQL skip**, frontend/backend typechecks, and Prisma validation passed. Authenticated Resident/Admin browser review remains pending.
+- **Current physical baseline:** V1.11 is locked local/development on `Goctro_dev_v18`; V1.10 remains a separate baseline on `Goctro_test3`. See [`DATABASE_V1_11_SETUP.md`](10_operations/DATABASE_V1_11_SETUP.md), V1.11 artifacts in `database/baselines/v1.11/`, and the [Resident booking implementation report](07_modules/resident-occupancy/RESIDENT_FLEXIBLE_SERVICE_BOOKING_IMPLEMENTATION_REPORT.md).
+
+## Database V1.9 — Admin Flexible Service schedules and packages (historical locked predecessor to V1.10)
+
+- **Business decision:** APPROVED 2026-10-26. **Physical implementation:** PASS and locked on local `Goctro_dev_v18`, PostgreSQL 18.6 at `localhost:5432`, until V1.10 was promoted on 2026-10-27. V1.9 has 41 public tables; V1.8 remains the immutable 40-table predecessor.
 - **Scope:** add one Owner/Property-scoped `property_flexible_service_configurations` row per newly configured Flexible Service. `BOOKING` stores selected weekdays, a shared daily opening window, visit duration and concurrent capacity. `SUBSCRIPTION` stores selected weekdays, a shared daily opening window and a month/year package duration. `Fixed Service`, Electricity/Water, Parking and existing financial rows remain unchanged. Resident booking, enrollment, payment and package attendance limits are not included.
 - **Integrity:** the new table has an Owner/Property/kind-scoped composite FK to `property_pricing_items`, a composite relation key for Prisma, mode-specific CHECK constraints, a valid opening-window check, and at least one open weekday. Configuration is created atomically with a new Flexible item. Mode changes are rejected after first configuration. Old price history is not relabeled; V1.8 Flexible items remain unconfigured unless an Admin explicitly configures a zero-price-history item.
 - **Migration:** `database/baselines/v1.9/migrations/V1_8_to_V1_9_flexible_service_modes.sql`; guarded, additive and transactional. It does not update or delete existing catalog, price, charge, invoice, parking, occupancy or Resident records. The setup tool recognizes only the exact V1.8 catalog and refuses `Goctro_test3`.
@@ -363,7 +373,7 @@ Payment: not started
 - **Populated migration rehearsal:** V1.8→V1.9 PASS; counts and row SHA-256 matched on all 40 existing tables; V1.9 CORE validator **85/85 PASS**. The new table begins empty and the migration infers no legacy service modes.
 - **Local target apply:** exact preflight `localhost:5432/Goctro_dev_v18`, PostgreSQL 18.6 and V1.8 catalog PASS. Custom-format backup `database/generated/backups/Goctro_dev_v18_pre_v1_9_20261026_retry.dump`: 265,487 bytes, `pg_restore --list` PASS with 481 entries, SHA-256 `790C7D1E86FF80809142A2A4F569F6F951DBFE9E7B900643E7479CABA77A8CBB`. After migration, inspect/state and runtime validator 85/85 PASS; all 40 original tables' row counts and SHA-256 match. V1.9 table count is 41; configuration rows on the populated target are 0.
 - **Prisma and application checks:** Prisma validation, backend TypeScript and frontend TypeScript PASS. Feature tests, UI browser walkthrough and production build were not run; user review of the Admin page remains pending.
-- **Current lock rule:** V1.9 is the current locked local/development physical baseline. Any future schema change must follow the approved version/migration process. `Goctro_test3` was not connected or changed in this migration task.
+- **Lock rule at V1.9 promotion:** V1.9 was the locked local/development physical baseline until V1.10 was promoted on 2026-10-27. Any future schema change must follow the approved version/migration process. `Goctro_test3` was not connected or changed in the V1.9 migration task.
 
 ```yaml
 Database V1.9 clean schema + seed: PASS
@@ -375,6 +385,6 @@ Prisma validate: PASS
 Backend/frontend typecheck: PASS
 Feature tests and Admin browser walkthrough: NOT RUN; user review pending
 Database V1.8: historical locked predecessor
-Database V1.9: LOCK (current local/development baseline)
+Database V1.9: historical locked predecessor (superseded by V1.10)
 Resident bookings, package enrollment and payments: deferred
 ```

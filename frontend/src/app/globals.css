@@ -2162,6 +2162,40 @@ body:has(.explore-results.is-expanded) .cloudy-2d--explorer { visibility: hidden
 .resident-amenity-detail-button > span { display: grid; width: 22px; height: 22px; place-items: center; border: 1px solid #0e5a4f20; border-radius: 7px; background: #f7faf7; font-size: 14px; }
 .resident-amenity-detail-button:hover { color: #08443c; }
 .resident-amenity-property-empty { display: flex; min-height: 72px; align-items: center; padding: 13px 15px; border: 1px dashed #d5e1d8; border-radius: 11px; background: #fafcf9; color: var(--color-text-secondary); font-size: 10px; line-height: 1.6; }
+.resident-amenity-bookings { display: grid; gap: 13px; padding: 19px; border: 1px solid var(--color-border); border-radius: 17px; background: #fff; box-shadow: 0 5px 20px #0b2b2a05; }
+.resident-amenity-bookings-empty { padding: 19px; border: 1px dashed #d5e1d8; border-radius: 12px; background: #fafcf9; color: var(--color-text-secondary); font-size: 11px; line-height: 1.6; }
+.resident-amenity-booking-list { display: grid; gap: 8px; }
+.resident-amenity-booking-item { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 12px; border: 1px solid #e5ece6; border-radius: 12px; background: linear-gradient(100deg, #fbfdfa, #fff); }
+.resident-amenity-booking-item.is-cancelled { background: #fafafa; }
+.resident-amenity-booking-item-icon { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 11px; background: #edf4ef; color: var(--color-brand-green); }
+.resident-amenity-booking-item-main { display: grid; min-width: 0; gap: 4px; }
+.resident-amenity-booking-item-main strong { color: var(--color-text-primary); font-size: 11px; overflow-wrap: anywhere; }
+.resident-amenity-booking-item-main span { color: var(--color-text-secondary); font-size: 9px; line-height: 1.55; }
+.resident-amenity-booking-status { padding: 6px 9px; border: 1px solid #c9e5d2; border-radius: 999px; background: #eff9f1; color: #267043; font-size: 8px; font-weight: 750; white-space: nowrap; }
+.resident-amenity-booking-status.is-cancelled { border-color: #e5e7e5; background: #f4f5f4; color: #68726d; }
+.resident-amenity-booking-status.is-pending { border-color: #f1d38c; background: #fff8e8; color: #79570f; }
+.resident-amenity-booking-status.is-rejected { border-color: #e8c6bf; background: #fff4f0; color: #8c4030; }
+.resident-amenity-booking-quote { margin: 0; padding: 9px 10px; border: 1px solid #f2dfa9; border-radius: 9px; background: #fffaf0; color: #705311; font-size: 9px; line-height: 1.6; }
+.resident-amenity-booking-quote strong { color: #45360e; }
+.resident-amenity-cancel-button { min-height: 31px; padding: 6px 10px; border: 1px solid #e7c4ba; border-radius: 9px; background: #fffaf8; color: #8d3f2d; font: inherit; font-size: 9px; font-weight: 700; cursor: pointer; }
+.resident-amenity-cancel-button:hover:not(:disabled) { border-color: #c58170; background: #fff2ee; }
+.resident-amenity-cancel-button:disabled { cursor: wait; opacity: .65; }
+.resident-amenity-booking-panel { display: grid; gap: 11px; margin-top: 12px; padding: 13px; border: 1px solid #dce9df; border-radius: 12px; background: linear-gradient(145deg, #f8fbf8, #fffdf7); }
+.resident-amenity-booking-panel h4 { margin: 0; color: var(--color-brand-green); font-size: 11px; }
+.resident-amenity-booking-panel > p { margin: 0; color: var(--color-text-secondary); font-size: 9px; line-height: 1.65; }
+.resident-amenity-booking-controls, .resident-amenity-booking-slot-row { display: flex; align-items: end; gap: 9px; }
+.resident-amenity-booking-controls label, .resident-amenity-booking-slot-row label { display: grid; min-width: 0; flex: 1; gap: 5px; color: #546c61; font-size: 8px; font-weight: 700; }
+.resident-amenity-booking-controls input, .resident-amenity-booking-slot-row select { box-sizing: border-box; width: 100%; min-height: 37px; padding: 8px 10px; border: 1px solid #d6e2d8; border-radius: 9px; background: #fff; color: var(--color-text-primary); font: inherit; font-size: 10px; }
+.resident-amenity-booking-controls input:focus-visible, .resident-amenity-booking-slot-row select:focus-visible { outline: 2px solid #ffb02099; outline-offset: 1px; border-color: var(--color-brand-green); }
+.resident-amenity-booking-controls .resident-secondary-button, .resident-amenity-book-button { min-height: 37px; padding: 8px 12px; border: 1px solid #0e5a4f; border-radius: 9px; background: #fff; color: var(--color-brand-green); font: inherit; font-size: 9px; font-weight: 750; white-space: nowrap; cursor: pointer; }
+.resident-amenity-booking-controls .resident-secondary-button:hover:not(:disabled) { background: #edf5ef; }
+.resident-amenity-book-button { border-color: var(--color-brand-green); background: var(--color-brand-green); color: #fff; }
+.resident-amenity-book-button:hover:not(:disabled) { background: #08483f; }
+.resident-amenity-booking-controls button:disabled, .resident-amenity-book-button:disabled { cursor: not-allowed; opacity: .55; }
+.resident-amenity-booking-slot-row { align-items: end; }
+.resident-amenity-booking-error { margin: 0; color: #963c2e !important; }
+.resident-amenity-booking-empty { margin: 0; padding: 10px 11px; border-radius: 9px; background: #fff7e7; color: #79591b !important; }
+.resident-amenity-booking-footnote { padding-top: 9px; border-top: 1px solid #e8eee8; }
 .resident-amenity-state { display: flex; min-height: 170px; align-items: center; justify-content: center; gap: 15px; padding: 22px 18px; border: 1px dashed #cfdcd2; border-radius: 14px; background: #fafcf9; }
 .resident-amenity-state-icon { display: grid; width: 47px; height: 47px; flex: 0 0 47px; place-items: center; border-radius: 15px; background: #edf4ef; color: var(--color-brand-green); }
 .resident-amenity-state h3 { margin: 0 0 5px; color: var(--color-text-primary); font-size: 12px; }
@@ -2197,6 +2231,13 @@ body:has(.explore-results.is-expanded) .cloudy-2d--explorer { visibility: hidden
   .resident-amenity-property-mark { width: 34px; height: 34px; flex-basis: 34px; border-radius: 10px; }
   .resident-amenity-property-heading h3 { font-size: 12px; }
   .resident-amenity-property-heading > span { font-size: 8px; }
+  .resident-amenity-bookings { padding: 14px; border-radius: 14px; }
+  .resident-amenity-booking-item { grid-template-columns: 34px minmax(0, 1fr) auto; gap: 9px; padding: 10px; }
+  .resident-amenity-booking-item-icon { width: 32px; height: 32px; }
+  .resident-amenity-booking-status { grid-column: 2; justify-self: start; }
+  .resident-amenity-cancel-button { grid-column: 3; grid-row: 1 / span 2; }
+  .resident-amenity-booking-controls, .resident-amenity-booking-slot-row { align-items: stretch; flex-direction: column; }
+  .resident-amenity-booking-controls .resident-secondary-button, .resident-amenity-book-button { width: 100%; }
   .resident-amenity-grid { grid-template-columns: 1fr; gap: 9px; }
   .resident-amenity-card { padding: 14px; }
   .resident-amenity-card-description { min-height: 0; }

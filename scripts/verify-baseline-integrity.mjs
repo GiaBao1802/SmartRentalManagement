@@ -10,7 +10,7 @@ const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 // No database client, environment file or connection configuration is loaded.
 export async function verifyBaselineArtifacts() {
   let failed = false;
-  for (const version of ['1.8', '1.9']) {
+  for (const version of ['1.8', '1.9', '1.10', '1.11']) {
     const relativeDirectory = `database/baselines/v${version}/`;
     const manifest = JSON.parse(await readFile(path.join(root, relativeDirectory, 'PROVENANCE.json'), 'utf8'));
     if (manifest.version !== version) throw new Error(`Phiên bản baseline không phải V${version}.`);

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react
 import AdminShell from "../../components/admin-shell";
 import { ApiError } from "../../../lib/api/errors";
 import { propertyApi, type Property } from "../../../lib/api/propertyApi";
-import { propertyServiceApi, type FlexibleServiceConfiguration, type FlexibleServiceConfigurationInput, type PropertyPricingItem, type ServicePriceVersion } from "../../../lib/api/propertyServiceApi";
+import { propertyServiceApi, type AdminServiceBooking, type FlexibleServiceConfiguration, type FlexibleServiceConfigurationInput, type PropertyPricingItem, type ServicePriceVersion } from "../../../lib/api/propertyServiceApi";
 import ServiceWorkspaceNav from "./service-workspace-nav";
 
 const weekdayOptions = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
@@ -67,6 +67,10 @@ export default function FlexibleServiceCatalog() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [propertyId, setPropertyId] = useState("");
   const [items, setItems] = useState<PropertyPricingItem[]>([]);
+  const [pendingBookings, setPendingBookings] = useState<AdminServiceBooking[]>([]);
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingError, setBookingError] = useState("");
+  const [decisionId, setDecisionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -86,6 +90,15 @@ export default function FlexibleServiceCatalog() {
     finally { setLoading(false); }
   }, [propertyId]);
 
+  const loadPendingBookings = useCallback(async () => {
+    if (!propertyId) { setPendingBookings([]); return; }
+    setBookingLoading(true);
+    setBookingError("");
+    try { setPendingBookings(await propertyServiceApi.pendingBookings(propertyId)); }
+    catch (reason) { setBookingError(errorMessage(reason)); }
+    finally { setBookingLoading(false); }
+  }, [propertyId]);
+
   useEffect(() => {
     void allProperties()
       .then((rows) => {
@@ -98,6 +111,7 @@ export default function FlexibleServiceCatalog() {
   }, []);
 
   useEffect(() => { void loadItems(); }, [loadItems]);
+  useEffect(() => { void loadPendingBookings(); }, [loadPendingBookings]);
 
   const selectedProperty = useMemo(() => properties.find((row) => row.property_id === propertyId), [properties, propertyId]);
 
@@ -180,6 +194,20 @@ export default function FlexibleServiceCatalog() {
     finally { setSaving(false); }
   }
 
+  async function decideBooking(booking: AdminServiceBooking, decision: "APPROVE" | "REJECT") {
+    if (!propertyId || decisionId) return;
+    if (decision === "APPROVE" && !window.confirm(`Duyệt lịch ${booking.service_name} vào ${booking.service_date} lúc ${booking.start_time}? Phí ${booking.amount === null ? "chưa xác định" : money(booking.amount)} sẽ được ghi nhận vào luồng hóa đơn hợp đồng sau khi duyệt.`)) return;
+    const reason = decision === "REJECT" ? window.prompt("Lý do từ chối (không bắt buộc):") : undefined;
+    if (decision === "REJECT" && reason === null) return;
+    setDecisionId(booking.booking_id); setBookingError(""); setNotice("");
+    try {
+      await propertyServiceApi.decideBooking(propertyId, booking.booking_id, decision, reason || undefined);
+      setNotice(decision === "APPROVE" ? "Đã duyệt lịch và ghi nhận khoản phí cho hóa đơn hợp đồng." : "Đã từ chối yêu cầu và trả lại chỗ trống.");
+      await loadPendingBookings();
+    } catch (error) { setBookingError(errorMessage(error)); }
+    finally { setDecisionId(null); }
+  }
+
   function updatePriceDraft(itemId: string, field: "effective_from" | "unit_price" | "source_name", value: string) {
     setPriceDrafts((current) => ({
       ...current,
@@ -224,7 +252,7 @@ export default function FlexibleServiceCatalog() {
           <label>Thời lượng mỗi lượt (phút) *<input required type="number" min="1" max="1440" step="1" value={configDraft.slot_duration_minutes} disabled={saving} onChange={(event) => setConfigDraft((value) => ({ ...value, slot_duration_minutes: event.target.value }))} /></label>
           <label>Sức chứa mỗi lượt (người) *<input required type="number" min="1" step="1" value={configDraft.capacity_per_slot} disabled={saving} onChange={(event) => setConfigDraft((value) => ({ ...value, capacity_per_slot: event.target.value }))} /></label>
         </div>
-        <p className="utility-note">Sức chứa giới hạn số người trong cùng khung giờ. Khi Resident được triển khai, hệ thống sẽ chỉ xác nhận lượt còn chỗ.</p>
+        <p className="utility-note">Sức chứa giới hạn số người trong cùng khung giờ. Yêu cầu chờ duyệt vẫn giữ chỗ; khi duyệt, phí theo giá đã báo sẽ vào hóa đơn hợp đồng.</p>
       </div> : <div className="flex-service-mode-detail">
         <h3>Thời hạn gói</h3>
         <div className="utility-form-grid">
@@ -261,6 +289,28 @@ export default function FlexibleServiceCatalog() {
           </div></td>
         </tr>;
       })}</tbody></table></div>}
+    </section>
+
+    <section className="admin-card utility-section" aria-labelledby="resident-service-bookings-title">
+      <div className="utility-section-heading">
+        <div><h2 id="resident-service-bookings-title">Lịch đặt chờ duyệt</h2><p>Duyệt lịch sẽ ghi nhận khoản phí theo giá đã báo lúc cư dân đăng ký; hóa đơn hợp đồng được lập theo kỳ như bình thường. Chưa có thao tác thanh toán tại đây.</p></div>
+        <span className="chip warning">{pendingBookings.length} yêu cầu</span>
+      </div>
+      {bookingError && <p className="notice" role="alert">{bookingError}</p>}
+      {bookingLoading ? <p className="utility-empty" role="status">Đang tải yêu cầu đặt lịch…</p>
+        : pendingBookings.length === 0 ? <p className="utility-empty">Chưa có lịch nào cần duyệt tại khu vực này.</p>
+          : <div className="table-wrap"><table className="service-table flexible-service-table"><thead><tr><th>Dịch vụ</th><th>Cư dân / nơi ở</th><th>Ngày và giờ</th><th>Phí dự kiến</th><th>Quyết định</th></tr></thead><tbody>
+            {pendingBookings.map((booking) => <tr key={booking.booking_id}>
+              <td><strong>{booking.service_name}</strong><small>Gửi lúc {booking.created_at ? new Date(booking.created_at).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }) : "—"}</small></td>
+              <td><strong>{booking.resident_name ?? "Cư dân"}</strong><small>{booking.room_code ? `Phòng ${booking.room_code} · ` : ""}{booking.contract_no ?? "Hợp đồng không rõ"}</small></td>
+              <td><strong>{priceDate(booking.service_date)} · {booking.start_time}–{booking.end_time}</strong><small>{booking.duration_minutes} phút</small></td>
+              <td><strong>{booking.amount === null ? "Chưa có giá" : `${money(booking.amount)} / ${booking.unit ?? "lượt"}`}</strong><small>Ghi nhận phí khi duyệt</small></td>
+              <td><div className="service-row-actions">
+                <button className="button primary" type="button" disabled={decisionId !== null || !booking.can_approve} title={booking.can_approve ? "Duyệt và ghi phí vào luồng hóa đơn" : "Khung giờ đã bắt đầu"} onClick={() => void decideBooking(booking, "APPROVE")}>{decisionId === booking.booking_id ? "Đang xử lý…" : "Duyệt"}</button>
+                <button className="button danger-button" type="button" disabled={decisionId !== null} onClick={() => void decideBooking(booking, "REJECT")}>Từ chối</button>
+              </div></td>
+            </tr>)}
+          </tbody></table></div>}
     </section>
 
     {configTarget && items.find((item) => item.pricing_item_id === configTarget) && (() => {
