@@ -18,6 +18,6 @@ Residents submit one-person requests against Admin-configured `BOOKING` slots. `
 
 ## Upgrade order
 
-For existing databases, use the guarded setup tool: V1.8 → V1.9 → V1.10 (auth sessions) → V1.11 (Resident bookings). Confirm a verified backup before allowing migration. Do not use Prisma `db push` or reset. The setup tool never seeds a populated database and refuses the `Goctro_test3` migration target.
+For existing databases, use the guarded setup tool: V1.8 → V1.9 → V1.10 (auth sessions) → V1.11 (Resident bookings). Confirm a verified backup before allowing migration. Do not use Prisma `db push` or reset. The setup tool never seeds a populated database and refuses migrations on the named `Goctro_test3` target. That target was subsequently upgraded by the owner-authorized canonical SQL migration described below; it no longer needs an upgrade.
 
-V1.10 remains the team's immutable auth-session baseline and stays at 42 tables on `Goctro_test3`. V1.11 is applied to the authorized local development target `Goctro_dev_v18`; it does not contain local records or credentials in Git.
+V1.10 remains the team's immutable 42-table auth-session predecessor. The populated `Goctro_test3` database was later backed up and upgraded with the canonical V1.10→V1.11 migration under explicit owner authorization. It is now the configured local application target at V1.11 with 43 tables; `Goctro_dev_v18` remains a separate V1.11 safety copy. See [Database Changelog](../../../docs/DATABASE_CHANGELOG.md) for target-specific evidence. Git contains no local records or credentials.

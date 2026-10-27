@@ -1,6 +1,6 @@
 # Góc Trọ / SmartRentalManagement
 
-Monorepo Next.js/React frontend, Express/TypeScript API, Prisma 6.12 và PostgreSQL. Node.js 24.11+, npm 11.6+. Database **V1.11** là baseline Resident đặt lịch tiện ích trên `Goctro_dev_v18`: PostgreSQL **18.6**, **43 public tables**. V1.11 giữ phiên đăng nhập bền vững V1.10 và thêm yêu cầu đặt lịch tiện ích. `Goctro_test3` là target riêng đang giữ V1.10. AWS chưa triển khai. Trạng thái module và phần còn lại nằm trong [Current State](docs/00_CURRENT_STATE.md).
+Monorepo Next.js/React frontend, Express/TypeScript API, Prisma 6.12 và PostgreSQL. Node.js 24.11+, npm 11.6+. Database **V1.11** là baseline Resident đặt lịch tiện ích: PostgreSQL **18.6**, **43 public tables**. V1.11 giữ phiên đăng nhập bền vững V1.10 và thêm yêu cầu đặt lịch tiện ích. `Goctro_test3` là database V1.11 đang được ứng dụng trên máy này sử dụng; `Goctro_dev_v18` là bản sao V1.11 dự phòng. AWS chưa triển khai. Trạng thái module và phần còn lại nằm trong [Current State](docs/00_CURRENT_STATE.md).
 
 ## Clone và điểm bắt đầu bàn giao
 
@@ -80,7 +80,7 @@ Thay `REPLACE_WITH_NEW_EMPTY_DB`, role `goctro` và `<URL_ENCODED_LOCAL_PASSWORD
 
 ## B. Database đã có dữ liệu
 
-Xác định instance/version/schema, sao lưu và xác minh `pg_restore --list` trước. `db:state -- --database NAME` chỉ đọc và nhận biết V1.8–V1.11; `npm run db:migrate -- --database NAME` nâng V1.10→V1.11 khi catalog khớp chính xác. Setup menu tự áp các bước phiên bản còn thiếu theo thứ tự. Các lệnh không seed/reset dữ liệu hiện có, migration chạy transaction và `Goctro_test3` bị chặn khỏi nâng V1.11. Không dùng SQL clean-install làm migration và không gắn PG17 volume vào PG18. Hướng dẫn cụ thể tại [Database V1.11 setup](docs/10_operations/DATABASE_V1_11_SETUP.md).
+Xác định instance/version/schema, sao lưu và xác minh `pg_restore --list` trước. `db:state -- --database NAME` chỉ đọc và nhận biết V1.8–V1.11; `npm run db:migrate -- --database NAME` nâng V1.10→V1.11 khi catalog khớp chính xác. Setup menu tự áp các bước phiên bản còn thiếu theo thứ tự. Các lệnh không seed/reset dữ liệu hiện có, migration chạy transaction và công cụ setup vẫn chặn migration trên target tên `Goctro_test3`. Target này đã được nâng riêng lên V1.11 bằng migration chuẩn sau khi chủ dự án xác nhận và sao lưu, nên không cần nâng lại. Không dùng SQL clean-install làm migration và không gắn PG17 volume vào PG18. Hướng dẫn cụ thể tại [Database V1.11 setup](docs/10_operations/DATABASE_V1_11_SETUP.md).
 
 ## Kiểm chứng tooling
 
