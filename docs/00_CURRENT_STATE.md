@@ -6,7 +6,11 @@
 
 ### Goctro_test3 V1.11 promotion — 2026-10-27
 
-At the owner's request, the populated `Goctro_test3` database was backed up and upgraded directly from the exact V1.10 catalog with the canonical V1.10→V1.11 migration and its protected-target session authorization. It now has 43 public tables and is the application's configured local database. CORE 89/89 and booking 17/17 passed; all 42 old tables matched the pre-upgrade copy by row count and content. `Goctro_dev_v18` remains a separate V1.11 safety copy. Backup and migration evidence is recorded in [Database Changelog](DATABASE_CHANGELOG.md). The next task remains authenticated Resident/Admin booking review.
+At the owner's request, the populated `Goctro_test3` database was backed up and upgraded directly from the exact V1.10 catalog with the canonical V1.10→V1.11 migration and its protected-target session authorization. It now has 43 public tables and is the application's configured local database. CORE 89/89 and booking 17/17 passed; all 42 old tables matched the pre-upgrade copy by row count and content. `Goctro_dev_v18` remains a separate V1.11 safety copy. Backup and migration evidence is recorded in [Database Changelog](DATABASE_CHANGELOG.md). That promotion's next task was booking review; the current Exact Next Task below supersedes it.
+
+### Resident invoice demo payment and feedback — V1.12 applied locally; authenticated review pending (2026-10-27)
+
+Resident invoice source presents a non-scannable QR mock and records explicit demo success/failure (`provider=demo`); success marks a finalized unpaid Invoice paid and notifies the Owner Admin. The Admin top-right bell filters Invoice/feedback notifications and read state. Resident Notifications includes a feedback form saved as a Complaint with initial history. Branding is unchanged. Frontend/backend typechecks pass. `backend/.env` points to `Goctro_dev_v18`; exact-catalog V1.11→V1.12 migration passed there after a verified backup, and read-only state/inspect both pass V1.12. `Goctro_test3` is absent on that PostgreSQL instance; this corrects the older target assumption. No seed/reset or service restart was run. Authenticated app review remains pending. See the [implementation report](07_modules/invoice-zalo/RESIDENT_DEMO_PAYMENT_FEEDBACK_IMPLEMENTATION_REPORT.md).
 
 ### Resident Flexible Service bookings — Database V1.11, 2026-10-27
 
@@ -77,9 +81,9 @@ Service Pass 2 implemented Owner-scoped Electricity/Water tariff configuration A
 
 ## Current Physical Database
 
-- `Goctro_test3`, PostgreSQL 18.6 on localhost:5432, Database V1.11, 43 public tables, **configured local application target**. Verified backup and old-row preservation; no seed ran.
-- `Goctro_dev_v18` remains a separate V1.11 safety copy, not the configured application target.
-- V1.11 adds the booking table to V1.10. Setup upgrades V1.8→V1.9→V1.10→V1.11 after confirming a verified backup and exact catalog preflight. See [V1.11 setup](10_operations/DATABASE_V1_11_SETUP.md), [V1.11 implementation report](07_modules/resident-occupancy/RESIDENT_FLEXIBLE_SERVICE_BOOKING_IMPLEMENTATION_REPORT.md), [V1.10 local promotion](10_operations/LOCAL_DATABASE_V1_10_PROMOTION_2026_10_27.md), and [Database Changelog](DATABASE_CHANGELOG.md).
+- `Goctro_dev_v18`, PostgreSQL 18.6 on localhost:5432, populated Database V1.12, is the database named in the current `backend/.env`. The verified pre-migration V1.11 dump is `.local/backups/Goctro_dev_v18_pre_V1_12_20261027.dump`; migration and exact-catalog inspection passed.
+- `Goctro_test3` is absent on this PostgreSQL instance. Earlier checkpoint entries describing it as the configured target are historical and superseded by the current environment/database inspection.
+- V1.11 adds the booking table to V1.10; V1.12 adds only `demo` to the payment provider check. Guarded setup requires a verified backup for protected targets. See [V1.12 setup](10_operations/DATABASE_V1_12_SETUP.md), [V1.11 setup](10_operations/DATABASE_V1_11_SETUP.md), and [Database Changelog](DATABASE_CHANGELOG.md).
 
 ### Local database setup tooling — 2026-10-16
 
@@ -93,7 +97,7 @@ Latest Auth browser/UI pass (2026-10-19): Admin invitation → human accept → 
 
 ## Active Module
 
-**Resident module 5 — Flexible Service requests, awaiting user review.** `/tenant/amenities` lists active services, shows date-specific open slots and quoted prices for `BOOKING` services, submits requests and displays request status. Pending requests can be cancelled. Admin reviews pending requests from the Flexible Service page; approval creates a READY charge for ordinary Contract billing, and rejection releases the slot. Subscription package enrollment, Payment, check-in and authenticated browser review are not included. See the [Resident role analysis](07_modules/resident-occupancy/RESIDENT_ROLE_ANALYSIS.md) and [implementation report](07_modules/resident-occupancy/RESIDENT_FLEXIBLE_SERVICE_BOOKING_IMPLEMENTATION_REPORT.md).
+**Resident Invoice demo payment and feedback — implementation complete, authenticated review pending.** `/tenant/invoices` supports presentation-only success/failure attempts on finalized invoices; V1.12 accepts the isolated `demo` transaction provider. `/tenant/notifications` accepts Resident feedback; Admin has the top-right notification bell. No real money or provider integration is involved. See the [implementation report](07_modules/invoice-zalo/RESIDENT_DEMO_PAYMENT_FEEDBACK_IMPLEMENTATION_REPORT.md).
 
 ### Legacy-to-current migration — Phase 1 completed, 2026-10-16
 
@@ -121,11 +125,11 @@ Desktop now reserves a fixed right-side map viewport with left-side inspector/fi
 
 ## Remaining Limitations
 
-Workspace code and PostgreSQL read-model integration pass on V1.8 rehearsal. Authenticated browser evidence covers readiness, meter save/reload, and successful itemized finalization. Service Pass 3 API/PostgreSQL and core Admin browser gates pass; exact viewport override and unrelated Billing workspace filters remain incomplete. `Goctro_test3` received no Pass 3 test data. Parking management is the remaining Service gap. Production Zalo delivery/recipient, Payment and Resident Invoice UX remain separate gaps. Frontend production build passes when Windows filesystem access is available; a sandbox-only SWC access denial was resolved by the permitted retry. Backend typecheck/build currently retain 115 diagnostics after Phase 2 Accounts changes; see the fresh comparison in the migration plan.
+Workspace code and PostgreSQL read-model integration pass on V1.8 rehearsal. Authenticated browser evidence covers readiness, meter save/reload, and successful itemized finalization. Service Pass 3 API/PostgreSQL and core Admin browser gates pass; exact viewport override and unrelated Billing workspace filters remain incomplete. `Goctro_test3` received no Pass 3 test data. Parking management is the remaining Service gap. Production Zalo delivery and real payment-provider support remain separate; demo payment/feedback is applied on local V1.12 and awaits authenticated review. Frontend production build passes when Windows filesystem access is available; a sandbox-only SWC access denial was resolved by the permitted retry. Backend typecheck/build currently retain 115 diagnostics after Phase 2 Accounts changes; see the fresh comparison in the migration plan.
 
 ## Locked Decisions
 
-- Follow Database V1.11 physical artifacts as the current local/development schema baseline on `Goctro_test3`; `Goctro_dev_v18` is a separate V1.11 safety copy. Do not make ad hoc schema changes.
+- Follow Database V1.12 physical artifacts as the current local baseline on the database named in `backend/.env` (`Goctro_dev_v18`). The pre-migration V1.11 database was preserved in a verified custom-format backup. Do not make ad hoc schema changes.
 - Billing business decisions and the existing finalize endpoint are recorded in the canonical Requirement and API Spec; production route wiring, disposable V1.8 PostgreSQL runtime verification, and Admin browser workflow review are complete. This establishes local operational closure only, not production deployment readiness.
 - Contract API §5.7 is separately locked; that does not lock the whole Contract module.
 - A future database change requires an approved business-rule change, a new version/migration, and runtime validation before promotion.
@@ -133,14 +137,14 @@ Workspace code and PostgreSQL read-model integration pass on V1.8 rehearsal. Aut
 ## Frozen / Deferred Work
 
 - Production Resident provisioning/verified delivery/durable reset-session infrastructure remain gated. Local/dev invitation/accept/reset and the scoped Resident login portal have actual runtime/browser evidence; do not infer other Resident self-service domains are complete.
-- Payment remains deferred and requires its own approved, scoped implementation task.
+- Real MoMo/ZaloPay payment remains deferred. The non-production demo payment path is applied on local V1.12; authenticated review is pending.
 - Do not infer completion of legacy Admin pages for Accounts, Amenities, Parking, Complaints, or other database-only domains.
 
 ## Canonical Sources
 
 1. [Requirement](01_REQUIREMENTS.md) — business rules.
 2. [API Spec](04_API_SPEC.md) — API contract.
-3. [Database Changelog](DATABASE_CHANGELOG.md) and [Database V1.11 artifacts](../database/baselines/v1.11/README.md) — current local physical database truth.
+3. [Database Changelog](DATABASE_CHANGELOG.md) and [Database V1.12 artifacts](../database/baselines/v1.12/README.md) — current local physical database truth.
 4. This file — current project checkpoint, not business authority.
 5. [Document Catalog](DOCUMENT_CATALOG.md) — document index/status.
 6. Reports — evidence and history.
@@ -187,7 +191,7 @@ Workspace code and PostgreSQL read-model integration pass on V1.8 rehearsal. Aut
 
 ## Exact Next Task
 
-**Run `setup.bat` after pulling `main`, then review the Resident booking flow on the local app.** Sign in as a Resident, check `/tenant/amenities` for available dates/slots, submit one request and confirm it appears in the Admin Flexible Service approval queue; then approve or reject it and confirm the Resident status/notification and READY charge in ordinary Contract Billing. Do not start the next module until the user has reviewed this flow.
+**Review the V1.12 demo payment flow in the authenticated local app.** Reload the app against the current `backend/.env` target, then verify simulated success and `Test` failure, Resident history, Admin bell filters/read state, and Resident feedback. Do not claim real payment integration or begin another module before this review.
 ## Resume Checklist
 
 1. Read repository-wide [AGENTS.md](../AGENTS.md), [Documentation Rules](DOCUMENTATION_RULES.md), this checkpoint, and the [Document Catalog](DOCUMENT_CATALOG.md).

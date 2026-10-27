@@ -366,7 +366,8 @@ Bãi xe là nghiệp vụ riêng với tiện ích thông thường.
 
 ### 21.5 Thanh toán và thông báo
 
-- MoMo và ZaloPay là hai provider thanh toán được hỗ trợ trong V1; transaction lưu provider, mã giao dịch/tham chiếu từ provider, trạng thái, số tiền, thời điểm tạo/thanh toán và lỗi provider nếu có.
+- Thanh toán thật trong V1 chỉ dùng MoMo/ZaloPay; transaction thật lưu provider, mã giao dịch/tham chiếu từ provider, trạng thái, số tiền, thời điểm tạo/thanh toán và lỗi provider nếu có.
+- **APPROVED (2026-10-27 — demo presentation only):** Môi trường demo có thể hiển thị QR minh họa không thể quét và ghi một transaction provider=`demo`, tách rõ khỏi MoMo/ZaloPay. Resident có thể chọn kết quả mô phỏng thành công hoặc thất bại (lý do mặc định: không đủ số dư); thành công đánh dấu Invoice đã thanh toán và tạo mã/thời điểm giao dịch demo, thất bại giữ Invoice unpaid. API demo bị tắt ở production; không gọi ngân hàng/ví, không chuyển tiền và không giả mạo callback provider. Admin nhận notification in-app về Invoice demo đã thanh toán.
 - V1 từ chối thanh toán một phần và không có trạng thái `partial_paid`.
 - Chỉ transaction thành công với số tiền đủ bằng số tiền còn phải trả mới làm hóa đơn chuyển sang đã thanh toán.
 - Mỗi lần thử thanh toán được ghi thành transaction riêng; thử lại sau giao dịch lỗi không ghi đè lịch sử cũ.
@@ -377,6 +378,7 @@ Bãi xe là nghiệp vụ riêng với tiện ích thông thường.
 - Payment session/attempt chỉ được tạo cho invoice `unpaid` đã finalized; draft, paid và chưa finalized bị từ chối. Callback phải xác minh/idempotent và kiểm tra lại trạng thái trong transaction.
 - Nếu hóa đơn đã gửi được cập nhật hợp lệ, hệ thống gửi lại phiên bản hiện hành; log các lần gửi trước và sau vẫn được giữ và phân biệt.
 - Thông báo ngoài hóa đơn hiển thị trong ứng dụng; V1 không cần email/push.
+- Resident có thể gửi phản hồi theo hồ sơ lưu trú hiện hành; phản hồi được lưu thành Complaint category, giữ lịch sử khởi tạo và tạo notification in-app cho Admin cùng Owner. Đây là kênh tiếp nhận phản hồi, không tự tạo thêm workflow phân công.
 
 ### 21.6 Tiện ích và bãi xe
 

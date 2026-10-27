@@ -14,6 +14,10 @@ export const errorHandler: ErrorRequestHandler = (error: unknown, request, respo
   }
 
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error.code === "P2004" && JSON.stringify(error.meta ?? {}).includes("payment_transactions_provider_check")) {
+      sendJson(response, 409, { error: { code: "DATABASE_VERSION_REQUIRED", message: "Database hiện chưa hỗ trợ thanh toán demo. Cần nâng database lên V1.12 sau khi xác minh backup.", details: {}, request_id: request.requestId } });
+      return;
+    }
     if (error.code === "P2002") {
       sendJson(response, 409, { error: { code: "CONFLICT", message: "Dữ liệu đã tồn tại.", details: {}, request_id: request.requestId } });
       return;

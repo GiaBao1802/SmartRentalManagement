@@ -10,7 +10,7 @@
 |---|---|---|---|
 | `README.md` | Navigation | CURRENT | Entry point for this documentation tree. |
 | `../AGENTS.md` | Repository-wide agent working rules | CURRENT | Governance/instructions only; not business Source of Truth. Frontend work also follows `frontend/AGENTS.md`. |
-| `00_CURRENT_STATE.md` | Project Checkpoint / Navigation | CURRENT | Current project checkpoint only; not canonical business authority. Configured Goctro_test3 is V1.11; authenticated Resident booking review is next. |
+| `00_CURRENT_STATE.md` | Project Checkpoint / Navigation | CURRENT | Current project checkpoint only; not canonical business authority. Physical database is V1.12 on the configured local target; authenticated app review is the exact next task. |
 | `DOCUMENTATION_RULES.md` | Governance | CURRENT | Placement, report/history rules, Source of Truth order, task-start/end workflow, and conflict handling. |
 | `07_modules/superadmin/SUPERADMIN_REQUIREMENTS_SPEC.md` | Superadmin / platform administration | CURRENT — REQUIREMENTS APPROVED; NOT IMPLEMENTED | Approved role, Owner lifecycle, platform reports, audit and boundaries; no Superadmin source or schema implementation. |
 | `07_modules/superadmin/SUPERADMIN_SCHEMA_API_GAP_REPORT.md` | Superadmin / schema and API gap analysis | REFERENCE — REVIEW ONLY | Snapshot against V1.8, before the V1.9/V1.10 database changes; identified gaps remain subject to fresh review. |
@@ -20,13 +20,14 @@
 | `07_modules/superadmin/SUPERADMIN_DUPLICATE_CONTACT_REVIEW.md` | Superadmin / duplicate contact audit | REFERENCE — READ-ONLY SNAPSHOT | Earlier read-only Goctro_test3 contact audit; repeat before any Superadmin migration. |
 | `07_modules/auth/AUTH_PERSISTENT_SESSION_IMPLEMENTATION_REPORT.md` | Auth / PostgreSQL sessions | CURRENT — CODE + V1.10 LOCAL PASS | Auth session code and migration lineage; local V1.10 promotion and PostgreSQL integration passed. AWS not deployed. |
 | `10_operations/LOCAL_DATABASE_V1_10_PROMOTION_2026_10_27.md` | Database / V1.10 local promotion | HISTORICAL — PASS | Verified backup, two upgrade paths, CORE 89/89, unchanged old rows at the V1.10 promotion; superseded physically by V1.11. |
-| `10_operations/DATABASE_V1_11_SETUP.md` | Database / V1.11 clean install and upgrades | CURRENT — CLEAN INSTALL, UPGRADE REHEARSAL AND LOCAL APPLY PASS | V1.11 clean install/seed/inspect, V1.10 additive upgrade, 42-table fingerprint preservation, local recovery path and rollback-only validators. |
+| `10_operations/DATABASE_V1_11_SETUP.md` | Database / V1.11 clean install and upgrades | HISTORICAL — V1.12 CURRENT | V1.11 clean install/seed/inspect, V1.10 additive upgrade, 42-table fingerprint preservation, local recovery path and rollback-only validators. Historical evidence; use V1.12 for the current physical baseline. |
+| `10_operations/DATABASE_V1_12_SETUP.md` | Database / demo payment setup | CURRENT — V1.12 APPLIED LOCALLY; APP REVIEW PENDING | Verified backup and exact-catalog migration on the database configured by backend/.env; authenticated UI flow remains pending. |
 | `10_operations/DATABASE_V1_10_SETUP.md` | Database / V1.10 setup notes | SUPERSEDED — V1.11 | Retained as historical setup notes; use `DATABASE_V1_11_SETUP.md` for current setup and migration instructions. |
-| `10_operations/AWS_DATABASE_V1_10_PREPARATION.md` | AWS / demo database plan | HISTORICAL SNAPSHOT — V1.10; NO AWS DATABASE | One Lightsail 8 GB machine for web, PostgreSQL and Ollama. Update this plan to V1.11 before AWS deployment. |
+| `10_operations/AWS_DATABASE_V1_10_PREPARATION.md` | AWS / demo database plan | HISTORICAL SNAPSHOT — V1.10; NO AWS DATABASE | One Lightsail 8 GB machine for web, PostgreSQL and Ollama. Update this plan to V1.12 before AWS deployment. |
 | `DOCUMENT_CATALOG.md` | Catalog | CURRENT | This inventory. |
 | `01_REQUIREMENTS.md` | Product requirements | CURRENT — CANONICAL | Business requirements authority for SmartRentalManagement. Historical source provenance is retained in the dependency copies and reports. |
 | `04_API_SPEC.md` | API contract | CURRENT — CANONICAL | `/api/v1` contract authority for SmartRentalManagement. Historical source provenance is retained where applicable. |
-| `DATABASE_CHANGELOG.md` | Database changelog | CURRENT — CANONICAL | Version history and physical-baseline authority; configured Goctro_test3 and safety copy Goctro_dev_v18 are V1.11. |
+| `DATABASE_CHANGELOG.md` | Database changelog | CURRENT — CANONICAL | Physical baseline is V1.12 on configured `Goctro_dev_v18`; V1.11 remains its immutable predecessor. |
 | `11_project-reports/SOURCE_OF_TRUTH_CURRENT_STATE_GOVERNANCE_FINALIZATION_REPORT.md` | Project governance / Current State workflow | CURRENT | Records evidence checked, stale API baseline metadata reconciled, authority order, workflow, catalog, and checkpoint finalization. |
 | `11_project-reports/AGENTS_MD_PROJECT_WORKFLOW_SETUP_REPORT.md` | Project governance / Root agent instructions | CURRENT | Records creation of repository-wide workflow instructions and their documentation integration. |
 | `11_project-reports/ADMIN_SAAS_UI_UX_REDESIGN_REPORT.md` | Cross-domain / Admin UI, navigation and responsive visual foundation | REFERENCE — PRE-VISUAL-QA SNAPSHOT | Records the shared SaaS styling/navigation baseline before the page-specific visual QA and logo correction in `ADMIN_SAAS_UI_UX_VISUAL_QA_AND_CLEANUP_REPORT.md`. |
@@ -123,6 +124,7 @@
 | `07_modules/resident-occupancy/RESIDENT_OCCUPANCY_FINAL_BUSINESS_GAP_RECHECK_E2E_CLOSURE_REPORT.md` | Resident / Occupancy | CURRENT — PARTIAL | Admin authenticated API/browser lifecycle, V1.5 table baseline, regression tests and remaining Resident-auth/list-label gaps. Full module is not locked. |
 | `07_modules/resident-occupancy/RESIDENT_ROLE_ANALYSIS.md` | Resident role | CURRENT — MODULE 5 IMPLEMENTED; USER REVIEW PENDING | Requirements-to-source analysis, permissions, screens/APIs, user flow and staged module status. Module 5 adds Resident booking requests, date/slot availability, cancellation and Admin approval/charge handoff. Subscription enrollment and Payment remain deferred. |
 | `07_modules/resident-occupancy/RESIDENT_FLEXIBLE_SERVICE_BOOKING_IMPLEMENTATION_REPORT.md` | Resident / Flexible Service bookings | CURRENT — IMPLEMENTED; AUTOMATED AND DATABASE CHECKS PASS | V1.11 schema and upgrades, Resident/Admin booking flow, billing handoff, tests, migration fingerprint evidence and browser-review limits. |
+| `07_modules/invoice-zalo/RESIDENT_DEMO_PAYMENT_FEEDBACK_IMPLEMENTATION_REPORT.md` | Resident Invoice demo payment, Admin notifications, Resident feedback | CURRENT — V1.12 APPLIED LOCALLY; AUTOMATED CHECKS PASS; APP REVIEW PENDING | Non-production demo payment, notification filters/read state, feedback intake and authenticated review limits. |
 | `07_modules/resident-occupancy/DATABASE_CHANGE_REQUEST_RESIDENT_SERVICE_BOOKINGS.md` | Database / Resident service bookings | CURRENT — APPROVED CHANGE | Approved V1.11 schema design and booking lifecycle; not a standalone migration command. |
 | `07_modules/resident-occupancy/RESIDENT_ACCOUNT_PROVISIONING_SELF_SERVICE_FOUNDATION_REPORT.md` | Resident / Account / Self-service | HISTORICAL | Earlier blocked audit; the user later approved Zalo delivery, DEV-only retrieval, 24-hour TTL and profile fields. The current implementation stop is documented in the report below. |
 | `07_modules/resident-occupancy/RESIDENT_ACCOUNT_PROVISIONING_SELF_SERVICE_IMPLEMENTATION_REPORT.md` | Resident / Account / Self-service | HISTORICAL — RESUME DEFERRED | Records the implementation stop before Database V1.6. Its schema blocker is resolved by V1.6; provisioning/self-service remains unimplemented and is deferred while Billing/Invoice is the next domain. |
@@ -149,7 +151,7 @@
 
 - Product requirements: `01_REQUIREMENTS.md`
 - API contract: `04_API_SPEC.md`
-- Current configured physical database verified on this machine is `Goctro_test3`, Database V1.11 in `database/baselines/v1.11/` (PostgreSQL 18.6, 43 public tables). `Goctro_dev_v18` is a separate V1.11 safety copy. Changelog and Current State establish the local baseline.
+- Current backend-configured physical database verified on this machine is `Goctro_dev_v18`, Database V1.12 in `database/baselines/v1.12/` (PostgreSQL 18.6, populated). The pre-migration V1.11 state is preserved in a verified custom-format backup. `Goctro_test3` is absent on this instance.
 - Current Prisma mapping for this application: `../database/schema.prisma`
 
 The former sibling paths are retained only as historical provenance in the relevant copies and reports; they are not current authority.

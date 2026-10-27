@@ -7,6 +7,7 @@ import { useAuth } from "./auth-provider";
 import { displayName } from "../../lib/api/authApi";
 import { ADMIN_NAV_GROUPS } from "./admin-navigation";
 import BrandLogo from "./brand-logo";
+import AdminNotificationBell from "./admin-notification-bell";
 
 export default function AdminShell({ children, active }: { children: ReactNode; active: string }) {
   const router = useRouter();
@@ -57,7 +58,7 @@ export default function AdminShell({ children, active }: { children: ReactNode; 
         <div className="admin-header-inner">
           <button className="admin-menu-toggle" type="button" aria-label={mobileNavOpen ? "Đóng menu" : "Mở menu"} aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen((open) => !open)}><span /><span /><span /></button>
           <div className="admin-header-context"><span className="admin-context-label">GÓC TRỌ <span aria-hidden="true">/</span> QUẢN TRỊ</span><strong>{[...ADMIN_NAV_GROUPS.flatMap((group) => group.items)].find((item) => item.href === active)?.label ?? "Không gian quản lý"}</strong></div>
-          <div className="admin-user"><span className="avatar" aria-hidden="true">{initials}</span><span className="admin-user-name">{name}<small>Chủ trọ</small></span><button className="logout-button" type="button" disabled={logoutPending} onClick={() => { if (logoutPending) return; setLogoutPending(true); setLogoutError(""); void logout().catch(() => setLogoutError("Không thể kết thúc phiên với máy chủ. Hãy thử lại.")).finally(() => setLogoutPending(false)); }}>{logoutPending ? "Đang đăng xuất…" : "Đăng xuất"}</button></div>
+          <div className="admin-user"><AdminNotificationBell /><span className="avatar" aria-hidden="true">{initials}</span><span className="admin-user-name">{name}<small>Chủ trọ</small></span><button className="logout-button" type="button" disabled={logoutPending} onClick={() => { if (logoutPending) return; setLogoutPending(true); setLogoutError(""); void logout().catch(() => setLogoutError("Không thể kết thúc phiên với máy chủ. Hãy thử lại.")).finally(() => setLogoutPending(false)); }}>{logoutPending ? "Đang đăng xuất…" : "Đăng xuất"}</button></div>
         </div>
       </header>
       {logoutError && <p className="notice admin-global-notice" role="alert">{logoutError}</p>}

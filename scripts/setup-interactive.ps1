@@ -28,8 +28,10 @@ function Cache([string]$action,[string]$kind) {
 }
 function DatabaseCommand([string]$command) {
   $databaseTool = if ($command -eq 'migrate-v18') { 'scripts/database-v19.mjs' } else { 'scripts/database-v111.mjs' }
+  if ($command -eq 'migrate-v112' -and $script:db -in @('Goctro_test3','Goctro_dev_v18')) { $env:GOCTRO_V112_BACKUP_VERIFIED = $script:db }
   $lines = & node $databaseTool $command --database $script:db
   $script:dbExit = $LASTEXITCODE
+  if ($command -eq 'migrate-v112') { Remove-Item Env:GOCTRO_V112_BACKUP_VERIFIED -ErrorAction SilentlyContinue }
   $script:dbText = $lines -join "`n"
   $lines | ForEach-Object { Write-Host $_ }
 }
@@ -193,8 +195,8 @@ try {
     if (-not $match.Success) { throw 'Không đọc được trạng thái database.' }
     $dataState = $match.Groups[1].Value
   }
-  if ($dataState -in @('v18_populated','v18_empty','v19_populated','v19_empty','v110_populated','v110_empty','v110_booking_branch_populated','v110_booking_branch_empty')) {
-    if (-not (Yes 'Đã tạo và kiểm tra backup khôi phục được; cho phép nâng database lên V1.11 trên target đã xác nhận')) { throw 'Chưa xác nhận backup và migration; database được giữ nguyên.' }
+  if ($dataState -in @('v18_populated','v18_empty','v19_populated','v19_empty','v110_populated','v110_empty','v110_booking_branch_populated','v110_booking_branch_empty','v111_populated','v111_empty')) {
+    if (-not (Yes 'Đã tạo và kiểm tra backup khôi phục được; cho phép nâng database lên baseline hiện hành V1.12 trên target đã xác nhận')) { throw 'Chưa xác nhận backup và migration; database được giữ nguyên.' }
   }
   if ($dataState -in @('v18_populated','v18_empty')) {
     $wasPopulated = $dataState -eq 'v18_populated'
@@ -220,11 +222,17 @@ try {
     if ($dbExit -ne 0) { throw 'Phục hồi nhánh local→V1.11 thất bại; transaction đã rollback nếu bắt đầu. Database giữ nguyên baseline hiện tại, không seed/reset.' }
     $completed.Add('Phục hồi nhánh local → V1.11'); $dataState = if ($wasPopulated) { 'v111_populated' } else { 'v111_empty' }
   }
-  if ($mode -eq '2' -and $dataState -ne 'v111_populated' -and $dataState -ne 'v111_empty') { throw 'Chế độ cập nhật cần schema V1.11; setup không bootstrap hoặc seed database hiện có.' }
+  if ($dataState -in @('v111_populated','v111_empty')) {
+    $wasPopulated = $dataState -eq 'v111_populated'
+    $step = 'Migration database V1.11 lên V1.12'; DatabaseCommand 'migrate-v112'
+    if ($dbExit -ne 0) { throw 'Migration V1.11→V1.12 thất bại; transaction đã rollback nếu bắt đầu. Database giữ nguyên baseline hiện tại, không seed/reset.' }
+    $completed.Add('Migration V1.11 → V1.12'); $dataState = if ($wasPopulated) { 'v112_populated' } else { 'v112_empty' }
+  }
+  if ($mode -eq '2' -and $dataState -ne 'v112_populated' -and $dataState -ne 'v112_empty') { throw 'Chế độ cập nhật cần schema V1.12; setup không bootstrap hoặc seed database hiện có.' }
   $seededNow = $false
   if ($mode -eq '1') {
     if ($dataState -eq 'empty_schema') {
-      if (-not (Yes 'Schema đang trống. Bootstrap V1.11')) { throw 'Chưa xác nhận bootstrap.' }
+      if (-not (Yes 'Schema đang trống. Bootstrap V1.11 trước khi nâng lên V1.12')) { throw 'Chưa xác nhận bootstrap.' }
       $step = 'Bootstrap V1.11'; DatabaseCommand 'bootstrap'
       if ($dbExit -ne 0) { throw 'Bootstrap thất bại; chưa chạy seed/provision/startup.' }
       $completed.Add('Bootstrap V1.11'); $dataState = 'v111_empty'
@@ -243,6 +251,12 @@ try {
       Write-Host 'Sử dụng mật khẩu hiện có. Không provision hoặc RESET khi chạy lại setup.'
     }
   }
+  if ($dataState -in @('v111_populated','v111_empty')) {
+    $wasPopulated = $dataState -eq 'v111_populated'
+    $step = 'Migration database V1.11 lên V1.12'; DatabaseCommand 'migrate-v112'
+    if ($dbExit -ne 0) { throw 'Migration V1.11→V1.12 thất bại; transaction đã rollback nếu bắt đầu. Database giữ nguyên baseline hiện tại, không seed/reset.' }
+    $completed.Add('Migration V1.11 → V1.12'); $dataState = if ($wasPopulated) { 'v112_populated' } else { 'v112_empty' }
+  }
   $step = 'Generate Prisma'
   if ($dependenciesChanged -or (Cache 'check' 'prisma') -ne 'CURRENT') {
     & "$PSScriptRoot/dev-stop.ps1"
@@ -259,7 +273,7 @@ try {
   Cache 'record' 'runtime' | Out-Null; $completed.Add('API health, DB health và frontend sẵn sàng')
   Write-Host 'Hoàn tất setup.' -ForegroundColor Green
   if ($demoSet) { Write-Host 'Mật khẩu demo local/dev vừa được thiết lập: Goctro123456789' }
-  elseif ($dataState -eq 'v111_empty') { Write-Host 'Chưa seed mẫu; chưa thiết lập tài khoản/credential demo.' }
+  elseif ($dataState -eq 'v112_empty') { Write-Host 'Chưa seed mẫu; chưa thiết lập tài khoản/credential demo.' }
   else { Write-Host 'Sử dụng mật khẩu hiện có; setup không đổi credential.' }
   Write-Host 'Đăng nhập: http://localhost:3000/login'
   Write-Host 'Admin: admin.one@example.test | Resident: resident.one@example.test'

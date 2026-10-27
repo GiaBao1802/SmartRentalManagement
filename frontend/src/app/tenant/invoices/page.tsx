@@ -6,8 +6,9 @@ import { useAuth } from "../../components/auth-provider";
 import { displayName } from "../../../lib/api/authApi";
 import { ApiError } from "../../../lib/api/errors";
 import { invoiceApi, type InvoiceDetailResponse, type InvoiceResource, type InvoiceStatus } from "../../../lib/api/invoiceApi";
+import { demoPaymentApi, type DemoPayment } from "../../../lib/api/demoPaymentApi";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 const pageSize = 12;
 const filters: Array<{ value: InvoiceStatus | "all"; label: string }> = [
@@ -45,7 +46,60 @@ function invoiceRoom(invoice: InvoiceResource) {
   return [property, room ? `Phòng ${room}` : null].filter(Boolean).join(" · ") || "Thông tin nơi ở chưa có";
 }
 
-function InvoiceDetails({ invoice }: { invoice: InvoiceDetailResponse }) {
+function DemoQr({ invoiceNo }: { invoiceNo: string }) {
+  const cells: ReactNode[] = [];
+  for (let y = 0; y < 21; y++) for (let x = 0; x < 21; x++) {
+    const finder = (ox: number, oy: number) => x >= ox && x < ox + 7 && y >= oy && y < oy + 7
+      ? x === ox || x === ox + 6 || y === oy || y === oy + 6 || (x >= ox + 2 && x <= ox + 4 && y >= oy + 2 && y <= oy + 4)
+      : null;
+    const fixed = finder(0, 0) ?? finder(14, 0) ?? finder(0, 14);
+    const seed = invoiceNo.charCodeAt((x + y * 3) % invoiceNo.length) || 11;
+    if (fixed ?? ((x * 7 + y * 11 + seed) % 5 < 2)) cells.push(<rect key={`${x}-${y}`} x={x + 2} y={y + 2} width="1" height="1" rx=".12" />);
+  }
+  return <svg className="resident-demo-qr" viewBox="0 0 25 25" role="img" aria-label="Mã QR minh họa cho thanh toán demo"><rect width="25" height="25" rx="1.5" fill="white" /><g fill="#0b2b2a">{cells}</g></svg>;
+}
+
+function DemoPaymentPanel({ invoice, onPaid }: { invoice: InvoiceDetailResponse; onPaid: (payment: DemoPayment) => void }) {
+  const [open, setOpen] = useState(false);
+  const [history, setHistory] = useState<DemoPayment[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [historyError, setHistoryError] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    let current = true;
+    void demoPaymentApi.list(invoice.invoice_id).then((rows) => { if (current) setHistory(rows); }).catch(() => { if (current) setHistoryError("Chưa tải được lịch sử demo."); });
+    return () => { current = false; };
+  }, [invoice.invoice_id, open]);
+
+  async function simulate(outcome: "success" | "failed") {
+    if (busy) return;
+    setBusy(true); setError(""); setSuccess("");
+    try {
+      const payment = await demoPaymentApi.simulate(invoice.invoice_id, outcome);
+      setHistory((current) => [payment, ...current]);
+      if (outcome === "success") { setSuccess("Thanh toán demo thành công. Hóa đơn đã chuyển sang Đã thanh toán."); onPaid(payment); }
+      else setError(payment.failure_reason ?? "Thanh toán demo thất bại. Hóa đơn vẫn chưa thanh toán; bạn có thể thử lại.");
+    } catch (reason) { setError(errorMessage(reason)); }
+    finally { setBusy(false); }
+  }
+
+  return <section className="resident-demo-payment" aria-label="Thanh toán demo">
+    <div className="resident-demo-payment-heading"><div><span className="resident-eyebrow">DÙNG CHO BUỔI THUYẾT TRÌNH</span><h3>{invoice.status === "paid" ? "Lịch sử thanh toán demo" : "Thanh toán hóa đơn"}</h3><p>Chỉ mô phỏng, không kết nối ngân hàng hoặc chuyển tiền.</p></div><button className="resident-primary-button" type="button" onClick={() => setOpen((value) => !value)}>{open ? "Đóng" : invoice.status === "paid" ? "Xem lịch sử demo" : "Thanh toán"}</button></div>
+    {open && <div className="resident-demo-checkout">
+      <div className="resident-demo-qr-wrap"><DemoQr invoiceNo={invoice.invoice_no} /><span>MÃ QR MINH HỌA</span></div>
+      <div className="resident-demo-checkout-copy"><p>Hóa đơn <strong>{invoice.invoice_no}</strong></p><p>Số tiền <strong>{money(invoice.total_amount)}</strong></p><p className="resident-demo-warning">Mã QR không thể quét để chuyển tiền. Hãy chọn một kết quả mô phỏng:</p>
+        {error && <p className="resident-demo-message is-error" role="alert">{error}</p>}{success && <p className="resident-demo-message is-success" role="status">{success}</p>}
+        {invoice.status === "unpaid" && <div className="resident-demo-actions"><button className="resident-primary-button" type="button" disabled={busy} onClick={() => void simulate("success")}>{busy ? "Đang xử lý…" : "Thanh toán thành công (demo)"}</button><button className="resident-secondary-button" type="button" aria-label="Test mô phỏng thanh toán thất bại" title="Mô phỏng thất bại do không đủ số dư" disabled={busy} onClick={() => void simulate("failed")}>Test</button></div>}
+      </div>
+      <div className="resident-demo-history"><h4>Lịch sử giao dịch demo</h4>{historyError && <p role="alert">{historyError}</p>}{history.length === 0 && !historyError && <p>Chưa có lần thử thanh toán.</p>}{history.map((item) => <article key={item.transaction_id}><div><strong>{item.outcome === "success" ? "Thành công" : "Thất bại"}</strong><small>{item.transaction_code} · {new Date(item.created_at).toLocaleString("vi-VN")}</small>{item.failure_reason && <small>{item.failure_reason}</small>}</div><b>{money(item.amount)}</b></article>)}</div>
+    </div>}
+  </section>;
+}
+
+function InvoiceDetails({ invoice, onPaid }: { invoice: InvoiceDetailResponse; onPaid: (payment: DemoPayment) => void }) {
   const rows = [
     ["Tiền thuê", invoice.rent_amount],
     ["Điện", invoice.electricity_amount],
@@ -69,6 +123,7 @@ function InvoiceDetails({ invoice }: { invoice: InvoiceDetailResponse }) {
       {rows.map(([label, amount]) => <div key={label}><span>{label}</span><strong>{money(amount)}</strong></div>)}
       <div className="is-total"><span>Tổng cộng</span><strong>{money(invoice.total_amount)}</strong></div>
     </div>
+    {invoice.finalized_at && invoice.status !== "draft" && <DemoPaymentPanel invoice={invoice} onPaid={onPaid} />}
   </section>;
 }
 
@@ -215,7 +270,17 @@ export default function ResidentInvoicesPage() {
               {expanded && <div id={`invoice-detail-${invoice.invoice_id}`} className="resident-invoice-expanded">
                 {detailLoadingId === invoice.invoice_id && <p className="resident-empty-copy" role="status">Đang tải chi tiết…</p>}
                 {detailErrors[invoice.invoice_id] && <p className="notice resident-inline-notice" role="alert">{detailErrors[invoice.invoice_id]} <button type="button" onClick={() => void loadDetails(invoice.invoice_id)}>Thử lại</button></p>}
-                {detail && <InvoiceDetails invoice={detail} />}
+                {detail && <InvoiceDetails invoice={detail} onPaid={(payment) => {
+                  setCounts((current) => ({ ...current, unpaid: Math.max(0, (current.unpaid ?? 0) - 1), paid: (current.paid ?? 0) + 1 }));
+                  if (filter === "unpaid") {
+                    setRows((current) => current.filter((item) => item.invoice_id !== invoice.invoice_id));
+                    setMeta((current) => ({ ...current, total_items: Math.max(0, current.total_items - 1), total_pages: Math.ceil(Math.max(0, current.total_items - 1) / pageSize) }));
+                    setSelectedId(null);
+                  } else {
+                    setRows((current) => current.map((item) => item.invoice_id === invoice.invoice_id ? { ...item, status: "paid", is_overdue: false, payment_summary: { ...item.payment_summary, attempt_count: item.payment_summary.attempt_count + 1, successful_amount: (BigInt(item.payment_summary.successful_amount) + BigInt(payment.amount)).toString(), latest_status: "success" } } : item));
+                    void loadDetails(invoice.invoice_id);
+                  }
+                }} />}
               </div>}
             </article>;
           })}

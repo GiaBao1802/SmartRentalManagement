@@ -17,6 +17,7 @@ import {
 } from './database-v19.mjs';
 
 export const baselineDirectory = fileURLToPath(new URL('../database/baselines/v1.11/', import.meta.url));
+const v112Directory = fileURLToPath(new URL('../database/baselines/v1.12/', import.meta.url));
 const v110Directory = fileURLToPath(new URL('../database/baselines/v1.10/', import.meta.url));
 const v19Directory = fileURLToPath(new URL('../database/baselines/v1.9/', import.meta.url));
 const v18Directory = fileURLToPath(new URL('../database/baselines/v1.8/', import.meta.url));
@@ -76,8 +77,9 @@ async function applyDatabase(client, mode, current) {
   }
 }
 
-async function applyMigration(client, database, expected, next, migrationPath, version, afterCheck = null) {
-  if (database === 'Goctro_test3') throw new SetupError('Schema migration is blocked for Goctro_test3; this task uses Goctro_dev_v18.', 'target');
+async function applyMigration(client, database, expected, next, migrationPath, version, afterCheck = null, allowProtectedTarget = false) {
+  if (database === 'Goctro_test3' && !allowProtectedTarget) throw new SetupError('Schema migration is blocked for Goctro_test3 without the dedicated backup-confirmed upgrade path.', 'target');
+  if (version === 'V1.12' && ['Goctro_test3', 'Goctro_dev_v18'].includes(database) && !allowProtectedTarget) throw new SetupError(`V1.12 migration is blocked for ${database} without the dedicated backup-confirmed upgrade path.`, 'target');
   await client.query('BEGIN');
   try {
     await client.query("SET LOCAL search_path=public,pg_catalog; SET LOCAL lock_timeout='10s'; SET LOCAL statement_timeout='120s'");
@@ -85,7 +87,7 @@ async function applyMigration(client, database, expected, next, migrationPath, v
     await assertPublicOnly(client);
     const actual = await readCatalog(client);
     if (!expected(actual, database)) throw new SetupError('Database catalog does not exactly match the authorized migration predecessor; nothing changed.', 'schema');
-    if (database === 'Goctro_dev_v18') await client.query('SELECT set_config(\'goctro.allow_locked_db_migration\',$1,true)', [version]);
+    if (database === 'Goctro_dev_v18' || (database === 'Goctro_test3' && allowProtectedTarget)) await client.query('SELECT set_config(\'goctro.allow_locked_db_migration\',$1,true)', [version]);
     const sql = await readFile(migrationPath, 'utf8');
     await client.query(unwrapTransaction(sql));
     const after = await readCatalog(client);
@@ -133,28 +135,43 @@ export async function recoverLocalBookingBranchToV1_11(client, database, current
   );
 }
 
+export async function migrateV1_11ToV1_12(client, database, previous, next, allowProtectedTarget = false) {
+  return applyMigration(
+    client,
+    database,
+    (actual) => catalogsMatch(actual, previous.catalog),
+    next,
+    path.join(v112Directory, 'migrations/V1_11_to_V1_12_demo_payment.sql'),
+    'V1.12',
+    null,
+    allowProtectedTarget,
+  );
+}
+
 export async function runCommand(args, env = process.env) {
   const [mode, flag, database, ...extra] = args;
   if (mode === 'block-legacy-migrate') {
-    throw new SetupError('db:migrate legacy is blocked: database/migrations is LEGACY/demo history. Use the versioned V1.8→V1.9→V1.10→V1.11 setup path after verifying a backup.');
+    throw new SetupError('db:migrate legacy is blocked: database/migrations is LEGACY/demo history. Use the versioned setup path through V1.12 after verifying a backup.');
   }
-  const allowed = ['bootstrap', 'seed', 'inspect', 'state', 'migrate-v19', 'migrate-v110', 'migrate-v110-booking-branch'];
+  const allowed = ['bootstrap', 'seed', 'inspect', 'state', 'migrate-v19', 'migrate-v110', 'migrate-v110-booking-branch', 'migrate-v112'];
   if (!allowed.includes(mode) || flag !== '--database' || extra.length) {
-    throw new SetupError('Usage: database-v111.mjs bootstrap|seed|inspect|state|migrate-v19|migrate-v110|migrate-v110-booking-branch --database NAME');
+    throw new SetupError('Usage: database-v111.mjs bootstrap|seed|inspect|state|migrate-v19|migrate-v110|migrate-v110-booking-branch|migrate-v112 --database NAME');
   }
   const target = parseTarget(env.GOCTRO_SETUP_DATABASE_URL, database);
   const current = await loadBaseline(baselineDirectory, '1.11');
+  const v112 = await loadBaseline(v112Directory, '1.12');
   const v110 = await loadBaseline(v110Directory, '1.10');
   const v19 = await loadBaseline(v19Directory, '1.9');
   const v18 = await loadBaseline(v18Directory, '1.8');
   const baselines = [
+    { key: 'v112', baseline: v112 },
     { key: 'v111', baseline: current },
     { key: 'v110', baseline: v110 },
     { key: 'v110_booking_branch', baseline: { ...current, catalog: without(current.catalog, 'auth_sessions') } },
     { key: 'v19', baseline: v19 },
     { key: 'v18', baseline: v18 },
   ];
-  const client = new pg.Client({ connectionString: target.connectionString, connectionTimeoutMillis: 5000, application_name: 'goctro-v111-setup' });
+  const client = new pg.Client({ connectionString: target.connectionString, connectionTimeoutMillis: 5000, application_name: 'goctro-v112-setup' });
   try {
     await client.connect();
     const { rows: [server] } = await client.query("SELECT current_database() AS database,host(inet_server_addr()) AS address,inet_server_port() AS port,current_setting('server_version_num')::int AS version");
@@ -167,8 +184,8 @@ export async function runCommand(args, env = process.env) {
       const actual = await readCatalog(client);
       const match = baselines.find((entry) => catalogsMatch(actual, entry.baseline.catalog)
         && (entry.key !== 'v110_booking_branch' || target.database === 'Goctro_dev_v18'));
-      if (!match) throw new SetupError('Schema differs from reviewed V1.11/V1.10/V1.9/V1.8 catalogs; no write was attempted.', 'schema');
-      const label = { v111: 'V1.11', v110: 'V1.10', v110_booking_branch: 'local V1.10 booking-first recovery branch', v19: 'V1.9', v18: 'V1.8' }[match.key];
+      if (!match) throw new SetupError('Schema differs from reviewed V1.12/V1.11/V1.10/V1.9/V1.8 catalogs; no write was attempted.', 'schema');
+      const label = { v112: 'V1.12', v111: 'V1.11', v110: 'V1.10', v110_booking_branch: 'local V1.10 booking-first recovery branch', v19: 'V1.9', v18: 'V1.8' }[match.key];
       console.log(`Database ${label} inspect: PASS; database=${target.database}; host=${target.host}; port=${target.port}. Chỉ đọc.`);
       await client.query('ROLLBACK');
     } else if (mode === 'state') {
@@ -187,6 +204,12 @@ export async function runCommand(args, env = process.env) {
     } else if (mode === 'migrate-v110-booking-branch') {
       await recoverLocalBookingBranchToV1_11(client, target.database, current);
       console.log(`Database local booking-first→V1.11 recovery: PASS; database=${target.database}; host=${target.host}; port=${target.port}; tables=43. Added missing auth_sessions only.`);
+    } else if (mode === 'migrate-v112') {
+      const protectedTarget = ['Goctro_test3', 'Goctro_dev_v18'].includes(target.database);
+      const allowProtectedTarget = protectedTarget && env.GOCTRO_V112_BACKUP_VERIFIED === target.database;
+      if (protectedTarget && !allowProtectedTarget) throw new SetupError(`V1.12 migration requires a verified backup confirmation for ${target.database}.`, 'target');
+      await migrateV1_11ToV1_12(client, target.database, current, v112, allowProtectedTarget);
+      console.log(`Database V1.11→V1.12 migration: PASS; database=${target.database}; host=${target.host}; port=${target.port}. Added the demo-only provider value; credentials hidden.`);
     } else {
       await applyDatabase(client, mode, current);
       console.log(`Database V1.11 ${mode}: PASS; database=${target.database}; host=${target.host}; port=${target.port}; tables=43. Credentials hidden.`);
@@ -202,7 +225,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       missing: 'Database chưa tồn tại.',
       auth: 'PostgreSQL từ chối xác thực hoặc quyền truy cập.',
       connection: 'Không kết nối được PostgreSQL; kiểm tra host/cổng/dịch vụ.',
-      schema: 'Schema không khớp baseline V1.11/V1.10/V1.9/V1.8; không dùng bootstrap làm upgrade.',
+      schema: 'Schema không khớp baseline V1.12/V1.11/V1.10/V1.9/V1.8; không dùng bootstrap làm upgrade.',
       target: 'Instance/target hoặc phiên bản PostgreSQL không khớp target local PostgreSQL 18.6+.',
       unknown: 'Không hoàn thành được kiểm tra/cài đặt database; xem mã lỗi và hướng dẫn vận hành.',
     }[kind] || 'Target không hợp lệ.';

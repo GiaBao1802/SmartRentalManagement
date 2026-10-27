@@ -1,6 +1,6 @@
 # Database V1.11 — Resident service booking setup
 
-**Status:** Locked local/development baseline V1.11 on configured `Goctro_test3`; `Goctro_dev_v18` remains a separate V1.11 safety copy. V1.10 artifacts remain unchanged.
+**Status:** Historical V1.11 setup record. The current backend-configured local target is V1.12; see [Database V1.12 setup](DATABASE_V1_12_SETUP.md). V1.11 artifacts remain the immutable predecessor.
 
 ## Existing installation
 

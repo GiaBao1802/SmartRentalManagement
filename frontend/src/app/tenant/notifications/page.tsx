@@ -6,8 +6,9 @@ import { useAuth } from "../../components/auth-provider";
 import { displayName } from "../../../lib/api/authApi";
 import { ApiError } from "../../../lib/api/errors";
 import { notificationApi, type NotificationPreferencePatch, type NotificationPreferences, type ResidentNotification } from "../../../lib/api/notificationApi";
+import { demoPaymentApi } from "../../../lib/api/demoPaymentApi";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 const pageSize = 10;
 type InboxFilter = "all" | "unread";
@@ -41,6 +42,8 @@ function typeLabel(type: string) {
     service_booking_approved: "Yêu cầu tiện ích đã được duyệt",
     service_booking_rejected: "Yêu cầu tiện ích chưa được duyệt",
     service_booking_cancelled: "Lịch tiện ích đã hủy",
+    invoice_demo_payment: "Thanh toán hóa đơn",
+    resident_feedback: "Phản hồi cư dân",
   };
   return labels[type] ?? type.replaceAll("_", " ");
 }
@@ -78,6 +81,11 @@ export default function ResidentNotificationsPage() {
   const [preferencesSaved, setPreferencesSaved] = useState(false);
   const [logoutPending, setLogoutPending] = useState(false);
   const [logoutError, setLogoutError] = useState("");
+  const [feedbackCategory, setFeedbackCategory] = useState("Góp ý dịch vụ");
+  const [feedbackContent, setFeedbackContent] = useState("");
+  const [feedbackPending, setFeedbackPending] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [feedbackError, setFeedbackError] = useState("");
 
   useEffect(() => {
     if (status === "unauthenticated") router.replace("/login?next=%2Ftenant%2Fnotifications");
@@ -199,6 +207,19 @@ export default function ResidentNotificationsPage() {
     finally { setPreferencesSaving(false); }
   }
 
+  async function submitFeedback(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (feedbackPending) return;
+    setFeedbackPending(true); setFeedbackError(""); setFeedbackMessage("");
+    try {
+      await demoPaymentApi.sendFeedback(feedbackCategory, feedbackContent);
+      setFeedbackContent("");
+      setFeedbackMessage("Đã gửi phản hồi đến chủ trọ. Phản hồi được lưu trong hệ thống.");
+      setRetry((value) => value + 1);
+    } catch (reason) { setFeedbackError(message(reason)); }
+    finally { setFeedbackPending(false); }
+  }
+
   if (status === "loading" || (status === "authenticated" && user?.account.role === "resident" && loading && rows.length === 0 && !error)) {
     return <main className="tenant-page resident-state-page"><div className="resident-state-card"><span className="resident-state-symbol"><NoticeBell /></span><span className="resident-eyebrow">CỔNG CƯ DÂN</span><h1>Đang tải thông báo</h1><p>Vui lòng chờ trong giây lát.</p><span className="resident-progress" aria-label="Đang tải" /></div></main>;
   }
@@ -218,7 +239,7 @@ export default function ResidentNotificationsPage() {
     </header>
     <div className="tenant-content resident-layout resident-notice-layout">
       <section className="resident-notice-hero" aria-labelledby="resident-notice-title">
-        <div><span className="resident-eyebrow">CẬP NHẬT TỪ GÓC TRỌ <span aria-hidden="true">·</span> LUÔN TRONG TẦM TAY</span><h1 id="resident-notice-title">Thông báo</h1><p>Nơi xem lại những cập nhật liên quan đến hồ sơ cư trú và hóa đơn của bạn.</p></div>
+        <div><span className="resident-eyebrow">CẬP NHẬT TỪ GÓC TRỌ <span aria-hidden="true">·</span> LUÔN TRONG TẦM TAY</span><h1 id="resident-notice-title">Thông báo</h1><p>Nơi xem cập nhật về cư trú, hóa đơn và phản hồi của bạn.</p></div>
         <div className="resident-notice-hero-art" aria-hidden="true"><span className="resident-notice-art-halo" /><span className="resident-notice-art-icon"><NoticeBell /></span><i className="resident-notice-art-dot dot-one" /><i className="resident-notice-art-dot dot-two" /><i className="resident-notice-art-dot dot-three" /></div>
       </section>
 
@@ -265,6 +286,17 @@ export default function ResidentNotificationsPage() {
           <p className="resident-notice-settings-note">Cài đặt được lưu theo tài khoản; luồng gửi từng nhóm cần được tích hợp tương ứng. V1 không gửi email hoặc thông báo đẩy.</p>
         </aside>
       </div>
+
+      <section className="resident-panel resident-feedback-panel" aria-labelledby="resident-feedback-title">
+        <div className="resident-notice-panel-heading"><div><span className="resident-eyebrow">KẾT NỐI VỚI CHỦ TRỌ</span><h2 id="resident-feedback-title">Gửi phản hồi</h2></div></div>
+        <p className="resident-notice-settings-intro">Góp ý hoặc báo vấn đề liên quan đến nơi ở. Chủ trọ sẽ nhận thông báo trong khu vực quản trị.</p>
+        {feedbackError && <p className="resident-notice-feedback is-error" role="alert">{feedbackError}</p>}{feedbackMessage && <p className="resident-notice-feedback" role="status">{feedbackMessage}</p>}
+        <form className="resident-feedback-form" onSubmit={(event) => void submitFeedback(event)}>
+          <label>Loại phản hồi<select value={feedbackCategory} onChange={(event) => setFeedbackCategory(event.target.value)}><option>Góp ý dịch vụ</option><option>Vấn đề nơi ở</option><option>Hóa đơn</option><option>Khác</option></select></label>
+          <label>Nội dung<textarea value={feedbackContent} minLength={5} maxLength={5000} required rows={4} onChange={(event) => setFeedbackContent(event.target.value)} placeholder="Bạn muốn góp ý hoặc báo vấn đề gì?" /></label>
+          <button className="resident-primary-button" type="submit" disabled={feedbackPending || feedbackContent.trim().length < 5}>{feedbackPending ? "Đang gửi…" : "Gửi phản hồi"}</button>
+        </form>
+      </section>
 
       <footer className="resident-footer"><span className="resident-footer-mark"><NoticeBell small /></span><span>Góc Trọ <b>·</b> Cổng cư dân</span><span className="resident-footer-caption">Một góc yên tâm.</span></footer>
     </div>
