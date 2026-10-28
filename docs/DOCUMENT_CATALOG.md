@@ -2,7 +2,7 @@
 
 ## Intro scroll performance — 2026-10-28
 
-[Intro scroll correction](07_modules/public-marketplace/INTRO_SCROLL_PERFORMANCE_FIX_20261028.md) — CURRENT. Native wheel input, independent hover transforms, once-only reveal/clip animations, and removal of the animated noise overlay/gallery-label blur in both static intro copies. Syntax, mirror integrity and desktop browser checks pass; FPS/mobile remain unmeasured. Business/API/database and primary Exact Next Task unchanged.
+[Intro scroll and startup correction](07_modules/public-marketplace/INTRO_SCROLL_PERFORMANCE_FIX_20261028.md) — CURRENT. Native wheel input, independent hover transforms, once-only reveal/clip animations, removal of the animated noise overlay/gallery-label blur, and startup sequencing so the hero canvas waits for the loader in both static intro copies. JavaScript syntax, mirror integrity and diff checks pass; startup smoothness, FPS and mobile behavior remain unmeasured. Business/API/database and primary Exact Next Task unchanged.
 
 ## Neon shared database setup — 2026-10-28
 

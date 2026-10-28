@@ -55,9 +55,12 @@ function Remove-LocalDatabaseLink {
 
 function Get-ListenerPids([int] $Port) {
   try {
-    return ,@((Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction Stop | Select-Object -ExpandProperty OwningProcess -Unique))
+    $pids = @(Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction Stop |
+      Select-Object -ExpandProperty OwningProcess -Unique |
+      ForEach-Object { [int]$_ })
+    return $pids
   } catch {
-    if ($_.Exception.Message -match 'No MSFT_NetTCPConnection objects found|No matching MSFT_NetTCPConnection') { return ,@() }
+    if ($_.Exception.Message -match 'No MSFT_NetTCPConnection objects found|No matching MSFT_NetTCPConnection') { return @() }
     throw "Không xác minh được process đang giữ cổng $Port; dừng để tránh kill nhầm process."
   }
 }

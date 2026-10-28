@@ -37,3 +37,9 @@ No business rule, API contract, schema, environment or database changed. The mai
 The user subsequently authorized publishing the intro adjustments. The reviewed runtime scope also includes the existing header/footer logo styling, hero spacing and scroll-hint positioning/fade, and asynchronous decoding on gallery/project/lightbox images. Both static copies remain identical. No text, image source, API, permission or database behavior was changed by this handoff.
 
 The publish set is six static files (`index.html`, `assets/css/app.css`, `assets/js/app.js` under each intro copy), this report, and its Current State/Catalog entries. Seven unrelated Admin/Resident source/test edits are excluded and preserved locally. Remote `main` was two commits ahead at `0e40970`; those Cloudy changes are retained when integrating this scoped commit. A local ignored backup captures all pre-handoff edits before Git operations. This records the reviewed scope; push completion is verified separately against the remote commit ID.
+
+## Startup canvas sequencing follow-up — 2026-10-28
+
+The hero particle canvas previously started its continuous `requestAnimationFrame` loop while the full-screen loader was still drawing its own canvas. The two effects could compete for rendering time on slower devices during the initial transition. The hero loop now waits until the loader hides, then resumes; direct entry without an active loader still starts the hero animation normally. The change is mirrored in `frontend/public/intro/` and `goctro-potadot-preview/`.
+
+Both JavaScript copies pass `node --check`, their hashes match, and `git diff --check` passes. Startup smoothness was not measured in a browser and no FPS/frame-time trace was captured; the change reduces overlapping canvas work but is not a quantified performance guarantee. No content, business/API/database behavior changed.

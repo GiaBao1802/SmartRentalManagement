@@ -1,8 +1,8 @@
 # Góc Trọ — Current State
 
-### Scoped intro scroll correction — 2026-10-28
+### Scoped intro scroll and startup correction — 2026-10-28
 
-The static intro and preview now use native wheel input, separate CSS hover properties from GSAP transforms, and run reveal/clip effects once without reversing on upward scroll. The animated noise overlay and gallery-label backdrop blur are disabled. Syntax/mirror checks and desktop browser scroll/anchor checks pass; FPS and mobile behavior were not measured. No business/API/database changes; the Active Module and primary Exact Next Task remain unchanged. See [intro scroll evidence](07_modules/public-marketplace/INTRO_SCROLL_PERFORMANCE_FIX_20261028.md).
+The static intro and preview use native wheel input, separate CSS hover properties from GSAP transforms, run reveal/clip effects once without reversing on upward scroll, and pause the hero particle canvas until the full-screen loader finishes so both canvases do not render concurrently at startup. The animated noise overlay and gallery-label backdrop blur are disabled. JavaScript syntax, mirror and diff checks pass; desktop scroll/anchor checks cover the earlier scroll fix. Startup visual smoothness, FPS and mobile behavior have not been measured. No business/API/database changes; the Active Module and primary Exact Next Task remain unchanged. See [intro scroll evidence](07_modules/public-marketplace/INTRO_SCROLL_PERFORMANCE_FIX_20261028.md).
 
 ### Neon shared database setup — 2026-10-28
 
