@@ -6,7 +6,7 @@ Neon project `goctro-shared-dev` (`patient-scene-93926977`), default `production
 
 ### Guest Cloudy public database read — 2026-10-28
 
-After explicit guest confirmation, local development Cloudy queries the existing public rooms API using structured filters; no generated SQL or database writes. Adapter validation now checks room fields and stable pagination before rendering results; wording does not imply shared test data is real customer inventory. Fresh read-only check against the current 100-listing local API returned a match for Đồng Nai, below 4,000,000 VND and capacity 2. Amenities require clarification because the public API has no structured amenity data. 24 focused TypeScript tests and frontend typecheck pass. Production AI remains deferred; primary Exact Next Task below is unchanged. See the [Cloudy integration report](07_modules/public-marketplace/CLOUDY_LOCAL_AI_INTEGRATION_REPORT.md).
+After explicit guest confirmation, local development Cloudy queries the existing public rooms API using structured filters; no generated SQL or database writes. Adapter validation checks room fields and stable pagination before rendering results. Fresh read-only DB check found a matching Đồng Nai listing under 4,000,000 VND for capacity two. Live Qwen regression fixed abbreviated “TP. Hồ Chí Minh” parsing with price/area ranges; a continuation also preserved existing filters while adding capacity. 17 Python tests pass; 24 TypeScript tests and frontend typecheck passed in the preceding validation change. Production AI remains deferred; primary Exact Next Task below is unchanged. See the [Cloudy integration report](07_modules/public-marketplace/CLOUDY_LOCAL_AI_INTEGRATION_REPORT.md).
 
 ### Resident Parking and V1.15 — applied locally 2026-10-28
 
@@ -259,7 +259,7 @@ Workspace code and PostgreSQL read-model integration pass on V1.8 rehearsal. Aut
 
 ## Exact Next Task
 
-**After `tv999ht@gmail.com` accepts the pending Neon invitation, grant Editor access only to `goctro-shared-dev`, then have them run setup option 5 and verify the shared demo login and room list.** Keep real customer data out of this shared demo dataset until it is separately reviewed and authorized.
+**After `tv999ht@gmail.com` and `Lamsonhung1999@gmail.com` accept their pending Neon invitations, grant each Editor access only to `goctro-shared-dev`, then have each run setup option 5 and verify the shared demo login and room list.** Keep real customer data out of this shared demo dataset until separately reviewed and authorized.
 ## Resume Checklist
 
 1. Read repository-wide [AGENTS.md](../AGENTS.md), [Documentation Rules](DOCUMENTATION_RULES.md), this checkpoint, and the [Document Catalog](DOCUMENT_CATALOG.md).

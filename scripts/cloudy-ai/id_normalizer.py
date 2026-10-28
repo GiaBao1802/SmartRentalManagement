@@ -64,7 +64,7 @@ def normalize(question,raw):
      if k!=field:raise ValueError('Đơn vị không khớp trường')
      filters[field].append({'op':operator,'value':v})
    elif field=='location':
-    if filters['location'] is not None or not re.fullmatch(r'[\w\s]+',q) or re.search(r'\b(?:hoac|va|khong|tru|gan|duoi|tren)\b',t):raise ValueError('Cần một địa điểm rõ ràng')
+    if filters['location'] is not None or not re.fullmatch(r'[\w\s.]+',q) or re.search(r'\b(?:hoac|va|khong|tru|gan|duoi|tren)\b',t):raise ValueError('Cần một địa điểm rõ ràng')
     if re.search(r'\d\s*(?:trieu|tr|k|dong|vnd|m2|met vuong|nguoi)\b',t):raise ValueError('Địa điểm không được là giá, diện tích hoặc số người')
     # Require a location marker immediately before the quoted name.
     marker=re.search(r'\b(?:ở|o|tại|tai|khu vực|khu vuc)\s*$',question[:m.start()],re.IGNORECASE)

@@ -16,7 +16,7 @@ def candidates(question):
  for i,w in enumerate(words):
   for end in words[i:i+12]:
    a,b=w.start(),end.end()
-   while b>a and question[b-1] in ',;?!':b-=1
+   while b>a and question[b-1] in '.,;?!':b-=1
    quote=question[a:b]
    if not re.search(starts,parser.normalized(quote)):continue
    for field in ['price','area','occupants','amenity']:
@@ -34,7 +34,7 @@ def candidates(question):
   tail=question[a:b]
   boundary=re.search(r'[,;?!]|\s+(?:có|co|cho|giá|gia|rộng|rong|diện tích|dien tich|và|va|ngân sách|ngan sach|budget|tối đa|toi da|dưới|duoi|trên|tren|không|khong|nhé|nhe|nha)\b',tail,re.I)
   if boundary:b=a+boundary.start()
-  while b>a and question[b-1].isspace():b-=1
+  while b>a and question[b-1] in ' \t\r\n.,;?!':b-=1
   if b>a and not any(a<x['end'] and b>x['start'] for x in chosen):chosen.append({'field':'location','quote':question[a:b],'start':a,'end':b})
  return [dict(id=f'C{i+1}',**x) for i,x in enumerate(sorted(chosen,key=lambda x:x['start']))]
 
