@@ -53,8 +53,31 @@ function Remove-LocalDatabaseLink {
   }
 }
 
+function Assert-LatestMainBranch {
+  if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
+    throw 'Option 5 chỉ chạy từ nhánh Git main mới nhất. Cài Git, lấy code từ main rồi chạy lại.'
+  }
+  $gitBranch = (& git branch --show-current 2>$null | Out-String).Trim()
+  if ($LASTEXITCODE -ne 0 -or $gitBranch -cne 'main') {
+    throw "Option 5 chỉ chạy trên nhánh Git main. Nhánh hiện tại='$gitBranch'. Hãy giữ/lưu công việc rồi chạy: git switch main; git pull --ff-only origin main"
+  }
+
+  & git fetch --quiet origin main
+  if ($LASTEXITCODE -ne 0) {
+    throw 'Không kiểm tra được origin/main. Hãy kiểm tra mạng/quyền Git, chạy git fetch origin main rồi thử lại.'
+  }
+  $localHead = (& git rev-parse HEAD 2>$null | Out-String).Trim()
+  $remoteMain = (& git rev-parse FETCH_HEAD 2>$null | Out-String).Trim()
+  if ($LASTEXITCODE -ne 0 -or -not $localHead -or -not $remoteMain -or $localHead -cne $remoteMain) {
+    throw 'Nhánh main trên máy chưa đúng commit mới nhất của origin/main. Giữ/lưu thay đổi trước, rồi chạy git pull --ff-only origin main và thử lại.'
+  }
+  Write-Host 'Git: main khớp origin/main mới nhất.'
+}
+
 try {
   Write-Host 'Neon shared Postgres — project goctro-shared-dev / branch production'
+  Write-Host 'Mã ứng dụng phải chạy từ nhánh Git main mới nhất; database dùng nhánh Neon production.'
+  Assert-LatestMainBranch
   Write-Host 'Cảnh báo: đây là database cloud dùng chung. Mọi người trong nhóm có thể nhìn thấy thay đổi của nhau.' -ForegroundColor Yellow
   Write-Host 'Database dùng chung hiện có schema V1.15 và bộ dữ liệu demo tổng hợp; mọi thay đổi ứng dụng sẽ được cả nhóm nhìn thấy.'
   Write-Host 'Setup chỉ kiểm tra kết nối/schema; không seed, import, reset hoặc migrate database cloud.'

@@ -66,7 +66,7 @@ try {
   Write-Host '2. Cập nhật và khởi động (hãy tự git pull trước)'
   Write-Host '3. Thoát'
   Write-Host '4. Trợ lý chủ trọ: thu tiền, điện nước (dữ liệu giả lập)'
-  Write-Host '5. Dùng database chung Neon (cloud)'
+  Write-Host '5. Dùng database chung Neon (cloud; yêu cầu Git main mới nhất)'
   $mode = (Read-Host 'Chọn 1, 2, 3, 4 hoặc 5').Trim()
   if ($mode -eq '3') { exit 0 }
   if ($mode -eq '4') {

@@ -43,7 +43,7 @@ git clone --branch main https://github.com/GiaBao1802/SmartRentalManagement.git
 cd SmartRentalManagement
 ```
 
-Lựa chọn Neon số 5 có trên nhánh `main`. Sau mỗi lần cập nhật, chạy `git pull origin main` để lấy hướng dẫn và mã mới nhất.
+Lựa chọn Neon số 5 chỉ chạy trên nhánh `main` đúng với `origin/main` mới nhất. Setup kiểm tra điều này và dừng nếu đang ở nhánh khác hoặc code cũ; nó không tự chuyển nhánh, nên hãy lưu công việc trước rồi cập nhật `main`.
 
 ## 4. Chuẩn bị máy Windows
 
@@ -61,10 +61,11 @@ Tài liệu Neon CLI hiện hành: [neon.com/cli](https://neon.com/cli). Trên P
 
 1. Trong thư mục gốc repository, bấm đúp `setup.bat` (hoặc chạy `./setup.bat` trong PowerShell).
 2. Chọn `5. Dùng database chung Neon (cloud)`.
-3. Khi setup mở trình duyệt đăng nhập Neon, đăng nhập bằng đúng tài khoản đã nhận lời mời và được cấp quyền project. Chấp thuận màn hình OAuth nếu được hỏi, sau đó quay lại cửa sổ setup.
-4. Khi được hỏi xác nhận dùng database cloud, gõ chính xác `DUNG`.
-5. Chờ setup cài dependency nếu cần, kéo cấu hình Postgres về file cục bộ bị Git bỏ qua, rồi kiểm tra kết nối/schema. Không copy connection string vào chat, GitHub, hoặc file được commit.
-6. Khi setup hỏi chạy ứng dụng, gõ `CHAY` để khởi động; nếu chưa muốn chạy, nhấn Enter. Nếu frontend/backend đã chạy ở cổng 3000/4000, dừng phiên đó trước.
+3. Nếu setup báo sai nhánh hoặc `main` cũ, giữ/lưu công việc đang làm, rồi chạy `git switch main` và `git pull --ff-only origin main`; sau đó mở lại setup. Không dùng option 5 từ nhánh `dev` hoặc `codex/*`.
+4. Khi setup mở trình duyệt đăng nhập Neon, đăng nhập bằng đúng tài khoản đã nhận lời mời và được cấp quyền project. Chấp thuận màn hình OAuth nếu được hỏi, sau đó quay lại cửa sổ setup.
+5. Khi được hỏi xác nhận dùng database cloud, gõ chính xác `DUNG`.
+6. Chờ setup cài dependency nếu cần, kéo cấu hình Postgres về file cục bộ bị Git bỏ qua, rồi kiểm tra kết nối/schema. Không copy connection string vào chat, GitHub, hoặc file được commit.
+7. Khi setup hỏi chạy ứng dụng, gõ `CHAY` để khởi động; nếu chưa muốn chạy, nhấn Enter. Nếu frontend/backend đã chạy ở cổng 3000/4000, dừng phiên đó trước.
 
 Setup có thể yêu cầu đăng nhập Neon CLI lần đầu. Nếu trình duyệt mở, hoàn tất đăng nhập rồi quay lại terminal và đợi setup tiếp tục. Không nhập mật khẩu Neon vào terminal hoặc gửi cho người khác.
 
