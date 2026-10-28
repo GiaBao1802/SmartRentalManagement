@@ -56,7 +56,8 @@ function Remove-LocalDatabaseLink {
 try {
   Write-Host 'Neon shared Postgres — project goctro-shared-dev / branch production'
   Write-Host 'Cảnh báo: đây là database cloud dùng chung. Mọi người trong nhóm có thể nhìn thấy thay đổi của nhau.' -ForegroundColor Yellow
-  Write-Host 'Hiện database có schema V1.15 nhưng chưa có bộ dữ liệu thật; mục này không tự seed/import.'
+  Write-Host 'Database dùng chung hiện có schema V1.15 và bộ dữ liệu demo tổng hợp; mọi thay đổi ứng dụng sẽ được cả nhóm nhìn thấy.'
+  Write-Host 'Setup chỉ kiểm tra kết nối/schema; không seed, import, reset hoặc migrate database cloud.'
   $confirm = (Read-Host 'Nhập DUNG để tiếp tục').Trim()
   if ($confirm -cne 'DUNG') { throw 'Đã hủy trước khi lấy cấu hình hoặc kết nối database.' }
 

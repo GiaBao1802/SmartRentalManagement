@@ -4,7 +4,7 @@
 
 [Neon setup runbook](10_operations/NEON_SHARED_DATABASE_SETUP.md) — CURRENT, V1.15 plus shared synthetic dataset: 100 varied room descriptions, property facilities, vehicles and Parking inventory. Setup menu option 5 links each developer to the shared branch, pulls ignored local env values, verifies the catalog read-only, and can start the app; it does not migrate/seed/reset the cloud database. Two Collaborator invitations are pending acceptance; grant project-only Editor access before setup.
 
-[Neon teammate onboarding](10_operations/NEON_TEAMMATE_ONBOARDING.md) — CURRENT. Step-by-step Windows instructions for a new Neon user: register with the invited email, accept the org invite, receive project-level Editor, pull the setup branch, and run option 5 safely.
+[Neon teammate onboarding](10_operations/NEON_TEAMMATE_ONBOARDING.md) — CURRENT. Step-by-step Windows instructions for a new Neon user: register with the invited email, accept the org invite, receive project-level Editor, pull `main`, and run option 5 safely.
 
 ## V1.15 local database integration — 2026-10-28
 
