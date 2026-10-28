@@ -8,7 +8,7 @@ test("confirmed DB search maps filters to public API and renders real rows",asyn
  let requested!:URL;
  const result=await searchPublicDatabaseRooms(context,new AbortController().signal,(async input=>{requested=new URL(String(input));return Response.json({data:[room],meta:{total_items:1,total_pages:1,page:1,page_size:100}});}) as typeof fetch,"http://localhost:4000/api/v1");
  assert.equal(requested.pathname,"/api/v1/public/rooms");assert.equal(requested.searchParams.get("province"),null);assert.equal(requested.searchParams.get("price_max"),"3999999");assert.equal(requested.searchParams.get("capacity_min"),"2");
- assert.equal(result.status,"preview");assert.match(result.text,/1 phòng đang công khai/);assert.match(result.text,/C102/);assert.equal(result.source,"public_database");
+ assert.equal(result.status,"preview");assert.match(result.text,/1 phòng đang công khai/);assert.match(result.text,/C102/);assert.match(result.text,/\[\[room:202\]\]/);assert.equal(result.source,"public_database");
 });
 test("location matching ignores Vietnamese accents and filter order is stable",async()=>{
  const noAccent={...context,location:"Da Nang"};
@@ -30,6 +30,10 @@ test("rejects non-loopback base and refuses incomplete overlarge scans",async()=
 });
 test("rejects malformed public room fields rather than rendering invalid values",async()=>{
  const malformed={...room,default_rent:"not-a-number"};
+ await assert.rejects(searchPublicDatabaseRooms(context,new AbortController().signal,(async()=>Response.json({data:[malformed],meta:{total_items:1,total_pages:1,page:1,page_size:100}})) as typeof fetch,"http://localhost:4000/api/v1"),/Invalid public database response/);
+});
+test("rejects room IDs that cannot safely map to the public detail route",async()=>{
+ const malformed={...room,room_id:"../../admin"};
  await assert.rejects(searchPublicDatabaseRooms(context,new AbortController().signal,(async()=>Response.json({data:[malformed],meta:{total_items:1,total_pages:1,page:1,page_size:100}})) as typeof fetch,"http://localhost:4000/api/v1"),/Invalid public database response/);
 });
 test("rejects pagination metadata that changes during a scan",async()=>{

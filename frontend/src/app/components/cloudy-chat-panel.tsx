@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from "react";
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { CLOUDY_CHAT_MAX_LENGTH, createLocalCloudyChatService, normalizeCloudyChatInput, type CloudyChatMessage, type CloudyChatService } from "./cloudy-chat-service";
 
 import { CloudyOwnerAdvisor } from "./cloudy-owner-advisor";
 import type { FilterMode } from "../../lib/cloudy-filter-context";
+import { parseCloudyRoomLinks } from "../../lib/cloudy-room-links";
 
 const ASSET_ROOT = "/mascot/cloudy-2d";
 
@@ -19,6 +20,14 @@ function CloudyPortrait() {
     <img className="cloudy-2d__layer cloudy-2d__nose" src={`${ASSET_ROOT}/cloud-nose.png`} alt="" />
     <img className="cloudy-2d__layer cloudy-2d__mouth-idle" src={`${ASSET_ROOT}/cloud-mouth-idle.png`} alt="" />
   </span>;
+}
+
+function CloudyMessageText({ text, allowRoomLinks }: { text: string; allowRoomLinks: boolean }) {
+  return <>{parseCloudyRoomLinks(text, allowRoomLinks).map((segment, index) => {
+    return segment.roomId
+      ? <a key={index} href={`/rooms/${segment.roomId}`}>{segment.text} <span aria-hidden="true">→</span></a>
+      : <Fragment key={index}>{segment.text}</Fragment>;
+  })}</>;
 }
 
 function safeInsets() {
@@ -277,7 +286,7 @@ function CloudyChatPanel({ ownerMode, mascotRef, onClose, preview, messages, dra
         </div>
         {messages.map((message) => <div className={`cloudy-chat__message-row cloudy-chat__message-row--${message.role}`} key={message.id}>
           {message.role === "cloudy" && <CloudyPortrait />}
-          <p className="cloudy-chat__message"><span className="sr-only">{message.role === "user" ? "Bạn: " : "Cloudy: "}</span>{message.role === "user" && <small className="cloudy-chat__mode-label">{message.confirmation ? "Xác nhận" : message.filterMode === "continue" ? "Lọc tiếp" : "Lọc mới"} · </small>}{message.text}</p>
+          <p className="cloudy-chat__message"><span className="sr-only">{message.role === "user" ? "Bạn: " : "Cloudy: "}</span>{message.role === "user" && <small className="cloudy-chat__mode-label">{message.confirmation ? "Xác nhận" : message.filterMode === "continue" ? "Lọc tiếp" : "Lọc mới"} · </small>}<CloudyMessageText text={message.text} allowRoomLinks={message.role === "cloudy"} /></p>
         </div>)}
         {status === "pending" && <div className="cloudy-chat__message-row cloudy-chat__message-row--cloudy"><CloudyPortrait /><p className="cloudy-chat__message cloudy-chat__message--pending">Cloudy đang trả lời…</p></div>}
         {error && <div className="cloudy-chat__error"><p>{error.text}</p><button type="button" onClick={() => { onRetry(); inputRef.current?.focus(); }} disabled={status === "pending"}>Thử lại</button></div>}

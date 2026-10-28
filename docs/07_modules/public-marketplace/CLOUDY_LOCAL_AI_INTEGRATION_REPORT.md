@@ -20,6 +20,12 @@ Unseen live-model checks exposed that the location candidate parser treated the 
 
 Verification: 17/17 Python tests PASS. Live Qwen3 1.7B now returns `awaiting_confirmation` with location TP. Hồ Chí Minh, price 2–3 million and area 20–30 m². A live continuation “thêm cho 2 người” correctly preserves Đồng Nai and the under-4-million price condition while adding capacity two. This is a small targeted evaluation, not a broad accuracy score. No DB writes, API/schema changes or computer-use actions.
 
+## Clickable room detail links — 2026-10-28
+
+Each Cloudy result now includes a “Xem chi tiết phòng” link to the existing public detail route `/rooms/{room_id}`. The adapter accepts numeric room IDs only, emits a dedicated internal marker, and the chat UI linkifies that marker only in assistant messages; user-entered text and arbitrary URLs remain plain text. The existing public detail screen loads the current room data and contact form.
+
+Focused Cloudy tests and frontend typecheck pass. The link route and API are unchanged; no database or business writes.
+
 ## Delivered
 
 The user requested integration into the existing mascot. Development now connects Cloudy to a Next route and a repository-contained Python worker using local Ollama Qwen3 1.7B. The model returns intent/candidate decisions as JSON; deterministic guards validate and filter the 300-room synthetic catalog. The frontend receives plain text, a synthetic-source flag, model name and result status. It never generates or executes SQL.

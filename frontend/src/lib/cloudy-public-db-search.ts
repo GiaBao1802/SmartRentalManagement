@@ -7,7 +7,7 @@ function isLiveRoom(value: unknown): value is LiveRoom {
   if (!value || typeof value !== "object") return false;
   const room = value as Partial<LiveRoom>;
   const property = room.property;
-  return typeof room.room_id === "string" && room.room_id.length > 0
+  return typeof room.room_id === "string" && /^\d+$/.test(room.room_id)
     && typeof room.room_code === "string" && room.room_code.length > 0
     && !!property && typeof property === "object"
     && typeof property.name === "string" && typeof property.province === "string" && typeof property.address === "string"
@@ -69,10 +69,10 @@ export async function searchPublicDatabaseRooms(context: FilterContext, signal: 
   }
   const needle = context.location ? normalize(context.location) : null;
   const matches = rows.filter(room => !needle || normalize(`${room.property.province} ${room.property.address}`).includes(needle));
-  const cards = matches.slice(0, 5).map(room => ({ name: room.room_code, property: room.property.name, province: room.property.province, rent: Number(room.default_rent), area: Number(room.area_m2), capacity: room.default_capacity }));
+  const cards = matches.slice(0, 5).map(room => ({ id: room.room_id, name: room.room_code, property: room.property.name, province: room.property.province, rent: Number(room.default_rent), area: Number(room.area_m2), capacity: room.default_capacity }));
   const summary = contextSummary(context);
   const text = matches.length
-    ? `Mình tìm thấy ${matches.length} phòng đang công khai trong dữ liệu hiện tại. Đây là tối đa 5 phòng, xếp theo giá thuê tăng dần:\n\n${cards.map(c => `• ${c.property} · Phòng ${c.name} — ${c.province}\n${c.rent.toLocaleString("vi-VN")} đ/cả phòng/tháng · ${c.area} m² · tối đa ${c.capacity} người`).join("\n\n")}\n\nGiá chưa gồm điện nước/phí. Kết quả là tin đang công khai lúc tra cứu, chưa phải xác nhận đặt phòng.\n\nĐã xác nhận: ${summary}`
+    ? `Mình tìm thấy ${matches.length} phòng đang công khai trong dữ liệu hiện tại. Đây là tối đa 5 phòng, xếp theo giá thuê tăng dần:\n\n${cards.map(c => `• ${c.property} · Phòng ${c.name} — ${c.province}\n${c.rent.toLocaleString("vi-VN")} đ/cả phòng/tháng · ${c.area} m² · tối đa ${c.capacity} người\n[[room:${c.id}]]`).join("\n\n")}\n\nGiá chưa gồm điện nước/phí. Kết quả là tin đang công khai lúc tra cứu, chưa phải xác nhận đặt phòng.\n\nĐã xác nhận: ${summary}`
     : `Hiện không có phòng đang công khai khớp toàn bộ điều kiện trên database. Mình chưa tự nới điều kiện.\n\nĐã xác nhận: ${summary}`;
   return { text, source: "public_database" as const, model: "qwen3:1.7b" as const, status: matches.length ? "preview" as const : "no_matches" as const, context };
 }

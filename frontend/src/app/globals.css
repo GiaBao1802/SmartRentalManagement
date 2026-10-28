@@ -2145,6 +2145,7 @@ tbody tr:hover td { background: #fffcf8; }
 .cloudy-chat__message-row--cloudy { justify-content: flex-start; }
 .cloudy-chat__message-row--user { justify-content: flex-end; }
 .cloudy-chat__message { max-width: 78%; margin: 0; padding: 11px 13px; border-radius: 15px 15px 15px 4px; background: #edf5fc; color: #294756; font-size: 13px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.cloudy-chat__message a { color: #0e5a4f; font-weight: 700; text-underline-offset: 2px; }
 .cloudy-chat__message-row--user .cloudy-chat__message { border-radius: 15px 15px 4px 15px; background: #0e5a4f; color: #fff; }
 .cloudy-chat__message--pending { color: #5a7580; }
 .cloudy-chat__error { margin: 10px 0 0 auto; max-width: 78%; padding: 10px 12px; border-radius: 12px; background: #fff3ec; color: #813c22; font-size: 12px; }

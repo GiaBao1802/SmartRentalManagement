@@ -6,7 +6,7 @@ Neon project `goctro-shared-dev` (`patient-scene-93926977`), default `production
 
 ### Guest Cloudy public database read — 2026-10-28
 
-After explicit guest confirmation, local development Cloudy queries the existing public rooms API using structured filters; no generated SQL or database writes. Adapter validation checks room fields and stable pagination before rendering results. Fresh read-only DB check found a matching Đồng Nai listing under 4,000,000 VND for capacity two. Live Qwen regression fixed abbreviated “TP. Hồ Chí Minh” parsing with price/area ranges; a continuation also preserved existing filters while adding capacity. 17 Python tests pass; 24 TypeScript tests and frontend typecheck passed in the preceding validation change. Production AI remains deferred; primary Exact Next Task below is unchanged. See the [Cloudy integration report](07_modules/public-marketplace/CLOUDY_LOCAL_AI_INTEGRATION_REPORT.md).
+After explicit guest confirmation, local development Cloudy queries the existing public rooms API using structured filters; no generated SQL or database writes. Adapter validates room fields and stable pagination, and each result now links to its existing public detail page using the room ID. Live Qwen regression covers abbreviated “TP. Hồ Chí Minh” with price/area ranges and filter continuation. Production AI remains deferred; primary Exact Next Task below is unchanged. See the [Cloudy integration report](07_modules/public-marketplace/CLOUDY_LOCAL_AI_INTEGRATION_REPORT.md).
 
 ### Resident Parking and V1.15 — applied locally 2026-10-28
 
