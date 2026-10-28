@@ -1,16 +1,27 @@
 """One JSON request on stdin, one public demo response on stdout. No persistence."""
 import json,sys
+import re
 import id_v3
+from id_normalizer import normalized
 from conversation import understand,describe,valid_context
 from room_catalog_lab import load_catalog,retrieve
 
-def clarification_text():
+def clarification_text(message='',parsed=None):
+ terms=(parsed or {}).get('unrecognizedTerms',[])
+ request=normalized(message)
+ if re.search(r'\b(?:re|gia re|re hon|gia mem)\b',request):
+  return 'Mình hiểu bạn muốn tìm phòng giá rẻ nhưng chưa rõ mức giá tối đa. Bạn cho mình ngân sách tối đa mỗi tháng nhé, ví dụ dưới 4 triệu; mình sẽ chờ bạn cập nhật rồi mới tìm.'
+ if re.search(r'\b(?:gan|cach)\b',request) and re.search(r'\b(?:truong|dai hoc|cong ty|cho lam|noi lam viec)\b',request):
+  return 'Mình chưa lọc được khoảng cách đến trường hoặc nơi làm việc từ dữ liệu tin đăng. Bạn có thể cho mình tỉnh/thành hoặc khu vực có trong địa chỉ phòng; mình sẽ chờ bạn cập nhật rồi mới tìm.'
+ if terms:
+  term=re.sub(r'\s+',' ',str(terms[0])).strip()[:80]
+  if term:return f'Mình chưa hiểu cụm “{term}” trong yêu cầu. Bạn vui lòng giải thích hoặc cập nhật cụm đó; mình sẽ chờ và chưa tiếp tục tìm phòng.'
  return 'Mình chưa hiểu từ/cụm từ trong yêu cầu của bạn. Bạn vui lòng giải thích hoặc cập nhật lại giúp mình nhé; mình sẽ chờ bạn làm rõ và chưa tiếp tục tìm phòng.'
 
-def render(result):
+def render(result,message=''):
  prefix='PHÒNG GIẢ LẬP · Không phải tin cho thuê thật.\n'
  if result['status']=='needs_clarification':
-  return prefix+clarification_text()
+  return prefix+clarification_text(message,result)
  if result['status']=='no_matches':
   return prefix+'Không có phòng trong bộ mẫu đáp ứng tất cả điều kiện. Mình chưa tự nới điều kiện. Bạn có thể gửi lại yêu cầu với mức giá hoặc khu vực khác.'
  lines=[prefix+f"Có {result['totalMatches']} phòng phù hợp. Dưới đây là tối đa 5 phòng, sắp theo giá thuê tăng dần:"]
@@ -25,7 +36,7 @@ def respond(message,extract=id_v3.extract,mode='new',context=None):
  if mode not in ['new','continue']:raise ValueError('Invalid mode')
  data,_=load_catalog();parsed=understand(message.strip(),mode,context,extract);result=retrieve(data,parsed)
  accepted=result.get('filters') if result['status']!='needs_clarification' else None
- text=render(result)
+ text=render(result,message.strip())
  if accepted is not None:text+='\n\n'+describe(accepted)
  return {'text':text,'synthetic':True,'model':'qwen3:1.7b','status':result['status'],'context':accepted}
 
@@ -40,7 +51,7 @@ def handle_request(body,extract=id_v3.extract):
  parsed=understand(message.strip(),mode,body.get('context'),extract)
  filters=parsed.get('filters')
  if parsed.get('status')!='ready' or not valid_context(filters):
-  return {'text':clarification_text(),'source':'public_database','model':'qwen3:1.7b','status':'needs_clarification','context':None}
+  return {'text':clarification_text(message,parsed),'source':'public_database','model':'qwen3:1.7b','status':'needs_clarification','context':None}
   # No catalog loading or retrieval before the guest explicitly confirms.
  if 'unspecified_amenity' in filters['amenities']:
   return {'text':'Mình chưa hiểu từ “tiện ích” ở đây là tiện ích nào. Bạn vui lòng cập nhật cụ thể; mình sẽ chờ bạn làm rõ và chưa tiếp tục tìm phòng.','source':'public_database','model':'qwen3:1.7b','status':'needs_clarification','context':None}

@@ -2,9 +2,15 @@ import unittest
 
 import id_lab
 import id_v3
+from id_normalizer import normalize
 
 
 class LocationCandidateTests(unittest.TestCase):
+    def test_normalizer_preserves_exact_unrecognized_phrases_for_clarification(self):
+        result = normalize('Phòng sạch sẽ ở gần trường đại học', {'intent': 'search_rooms', 'spans': []})
+        self.assertEqual(result['status'], 'needs_clarification')
+        self.assertEqual(result['unrecognizedTerms'], ['sạch sẽ', 'gần trường đại học'])
+
     def test_city_abbreviation_period_is_preserved_inside_location(self):
         question = 'Tìm trọ tại TP. Hồ Chí Minh giá từ 2 đến 3 triệu, diện tích từ 20 đến 30 mét vuông'
         candidates = id_lab.candidates(question)

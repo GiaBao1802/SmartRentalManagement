@@ -92,12 +92,25 @@ def normalize(question,raw):
     filters['amenities'].append(labels[t])
    else:raise ValueError('Điều kiện chưa hỗ trợ')
   except (ValueError,TypeError,KeyError) as e:issues.append(str(e))
- rest=normalized(''.join(' ' if covered[i] else c for i,c in enumerate(question)))
+ raw_rest=''.join(' ' if covered[i] else c for i,c in enumerate(question))
+ rest=normalized(raw_rest)
  rest=re.sub(r'\bkhong\s*\?\s*$',' ',rest)
  # Only conversational glue may remain. Operators, numbers and unknown content block.
- allowed=set('minh toi em e anh chi ban tim kiem thue phong tro can muon co cho giup nho voi va nha nhe a nao gi duoc xin dang'.split())
+ allowed=set('minh toi em e anh chi ban tim kiem thue phong tro can muon co cho giup nho voi va o nha nhe a nao gi duoc xin dang'.split())
  unknown=[w for w in re.findall(r'\w+',rest) if w not in allowed]
  if unknown:issues.append('Chưa xử lý hết câu: '+' '.join(dict.fromkeys(unknown)))
+ # Keep exact unsupported snippets for a useful guest-facing clarification.
+ unrecognized=[];active=None
+ for token in re.finditer(r'\w+',raw_rest):
+  if normalized(token.group()) in allowed:
+   if active:unrecognized.append(raw_rest[active[0]:active[1]].strip())
+   active=None;continue
+  if active and raw_rest[active[1]:token.start()].isspace():active=(active[0],token.end())
+  else:
+   if active:unrecognized.append(raw_rest[active[0]:active[1]].strip())
+   active=(token.start(),token.end())
+ if active:unrecognized.append(raw_rest[active[0]:active[1]].strip())
+ unrecognized=list(dict.fromkeys(x for x in unrecognized if x))
  for field in ['price','area']:
   terms=filters[field]
   for lo in [x for x in terms if x['op'] in ['gt','gte','eq']]:
@@ -105,7 +118,7 @@ def normalize(question,raw):
     if lo['value']>hi['value'] or (lo['value']==hi['value'] and (lo['op']=='gt' or hi['op']=='lt')):issues.append('Giới hạn mâu thuẫn')
  if filters['price'] and any(normalized(s.get('quote','')) in ['khong gioi han tien thue','gia bao nhieu cung duoc'] for s in raw['spans']):issues.append('Vừa giới hạn vừa không giới hạn giá')
  filters['amenities']=sorted(set(filters['amenities']))
- return {'status':'needs_clarification' if issues else 'ready','questions':list(dict.fromkeys(issues)),('draftFilters' if issues else 'filters'):filters}
+ return {'status':'needs_clarification' if issues else 'ready','questions':list(dict.fromkeys(issues)),'unrecognizedTerms':unrecognized,('draftFilters' if issues else 'filters'):filters}
 
 if __name__=='__main__':
  sys.stdout.reconfigure(encoding='utf-8')

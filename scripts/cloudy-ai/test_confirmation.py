@@ -16,9 +16,8 @@ class ConfirmationTests(unittest.TestCase):
   with patch('worker.load_catalog',side_effect=AssertionError('must not load')):
    result=handle_request({'message':'rẻ hơn'},lambda _: {'status':'needs_clarification','questions':['Cần mức giá.']})
   self.assertIsNone(result['context']);self.assertEqual(result['status'],'needs_clarification')
-  self.assertIn('chưa hiểu từ/cụm từ',result['text'])
-  self.assertIn('chờ bạn làm rõ',result['text'])
-  self.assertIn('chưa tiếp tục tìm phòng',result['text'])
+  self.assertIn('ngân sách tối đa mỗi tháng',result['text'])
+  self.assertIn('chờ bạn cập nhật',result['text'])
  def test_invalid_confirm_rejected(self):
   for body in [{'action':'confirm'},{'action':'confirm','context':{}},{'action':'confirm','context':FILTERS,'message':'khác'}]:
    with self.assertRaises((ValueError,KeyError)):handle_request(body)

@@ -29,5 +29,16 @@ class WorkerTests(unittest.TestCase):
   self.assertEqual(result['status'],'needs_clarification');self.assertIsNone(result['context'])
   self.assertIn('chưa hiểu từ “tiện ích”',result['text'])
   self.assertIn('chờ bạn làm rõ',result['text'])
+ def test_vague_price_asks_for_maximum_budget(self):
+  result=handle_request({'message':'phòng rẻ'},lambda _:{'status':'needs_clarification','questions':['Chưa xử lý hết câu: re'],'unrecognizedTerms':['rẻ']})
+  self.assertIn('ngân sách tối đa mỗi tháng',result['text'])
+  self.assertIn('ví dụ dưới 4 triệu',result['text'])
+ def test_unsupported_nearby_search_explains_supported_location_input(self):
+  result=handle_request({'message':'phòng gần trường đại học'},lambda _:{'status':'needs_clarification','questions':['Chưa xử lý hết câu: gan truong dai hoc'],'unrecognizedTerms':['gần trường đại học']})
+  self.assertIn('chưa lọc được khoảng cách đến trường',result['text'])
+  self.assertIn('tỉnh/thành hoặc khu vực',result['text'])
+ def test_unrecognized_term_is_echoed_in_clarification(self):
+  result=handle_request({'message':'phòng sạch sẽ'},lambda _:{'status':'needs_clarification','questions':['Chưa xử lý hết câu'],'unrecognizedTerms':['sạch sẽ']})
+  self.assertIn('cụm “sạch sẽ”',result['text'])
 
 if __name__=='__main__':unittest.main()

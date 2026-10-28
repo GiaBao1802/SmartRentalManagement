@@ -24,12 +24,15 @@ def understand(message,mode,context,extract):
   merged=copy.deepcopy(context);field=removals[command];merged[field]=copy.deepcopy(EMPTY[field])
   return {'status':'ready','filters':merged}
  # Strip only leading conversational update markers; the parser still checks all remaining words.
+ additive=bool(re.match(r'^(?:thêm|them)\s+',normalized(message.strip())))
  delta=re.sub(r'^(?:(?:thêm|them|đổi sang|doi sang|đổi thành|doi thanh|đổi|doi|chuyển sang|chuyen sang|giữ nguyên,?|giu nguyen,?)\s+)+','',message.strip(),flags=re.I)
  parsed=extract('Tìm phòng '+delta)
  if parsed.get('status')!='ready':return parsed
  merged=copy.deepcopy(context)
  for field,value in parsed['filters'].items():
-  if value is not None and value!=[]:merged[field]=value
+  if value is not None and value!=[]:
+   if field=='amenities' and additive:merged[field]=sorted(set(merged[field]+value))
+   else:merged[field]=value
  return {**parsed,'filters':merged}
 
 def describe(f):
