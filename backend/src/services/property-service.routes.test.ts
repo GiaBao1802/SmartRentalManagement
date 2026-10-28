@@ -26,6 +26,8 @@ const calls: Array<{ method: string; ownerId: bigint; propertyId?: bigint; input
 const sampleItem = { propertyPricingItemId: 5n, kind: "FIXED_SERVICE", code: "WIFI", name: "WiFi", description: null, unit: "kỳ", status: "active", createdAt: new Date("2026-10-01T00:00:00Z"), priceVersions: [{ propertyPriceVersionId: 7n, versionNo: 1, effectiveFrom: new Date("2026-10-01T00:00:00Z"), unitPrice: 50000n, sourceName: null, sourceReference: null, reason: null, publishedAt: new Date("2026-10-01T00:00:00Z") }] };
 const bookingRow = { booking_id: 900n, service_name_snapshot: "Spa", property_name: "Property A", service_date: "2099-11-03", slot_start: "09:00", slot_end: "10:00", slot_duration_minutes: 60, status: "PENDING", charge_amount: 100000n, unit_snapshot: "lượt", cancelled_at: null, decision_at: null, decision_note: null, created_at: new Date("2099-11-01T00:00:00Z"), invoice_no: null, invoice_status: null, can_cancel: true, can_approve: true, resident_name: "Resident", room_code: "A101", contract_no: "HD-001" };
 const repository = {
+  async listFacilities(ownerId: bigint, propertyId: bigint) { calls.push({ method: "listFacilities", ownerId, propertyId }); return ownerId === 101n && propertyId === 50n ? { property: { propertyId, name: "Property A" }, items: [{ propertyFacilityId: 71n, name: "Hồ bơi", description: null, location: "Sân sau", active: true, createdAt: new Date("2026-10-28T00:00:00Z") }] } : null; },
+  async createFacility(ownerId: bigint, propertyId: bigint, input: any) { calls.push({ method: "createFacility", ownerId, propertyId, input }); return ownerId === 101n && propertyId === 50n ? { propertyFacilityId: 72n, ...input, active: true, createdAt: new Date("2026-10-28T00:00:00Z") } : null; },
   async listItems(ownerId: bigint, propertyId: bigint, kind?: string) { calls.push({ method: "listItems", ownerId, propertyId }); return ownerId === 101n && propertyId === 50n ? { property: { propertyId, name: "Property A" }, items: kind ? [{ ...sampleItem, kind }] : [sampleItem] } : null; },
   async listResidentServices(ownerId: bigint, residentId: bigint) { calls.push({ method: "listResidentServices", ownerId, residentId }); return [{ property: { propertyId: 50n, name: "Property A" }, services: [{ ...sampleItem, kind: "FLEXIBLE_SERVICE", unit: "lượt", flexibleServiceConfiguration: { service_mode: "BOOKING", open_monday: true, open_tuesday: true, open_wednesday: true, open_thursday: true, open_friday: true, open_saturday: false, open_sunday: false, opens_at: "09:00", closes_at: "17:00", slot_duration_minutes: 60, capacity_per_slot: 2, package_duration_count: null, package_duration_unit: null } }] }]; },
   async listResidentServiceAvailability(ownerId: bigint, residentId: bigint, serviceId: bigint, serviceDate: string) { calls.push({ method: "availability", ownerId, residentId, serviceId, date: serviceDate }); return ownerId === 101n && residentId === 201n && serviceId === 5n ? { serviceId, serviceDate, unit: "lượt", unitPrice: 100000n, priceEffectiveFrom: "2099-01-01", slots: [{ start_time: "09:00", end_time: "10:00", remaining_capacity: 1 }] } : null; },
@@ -46,6 +48,23 @@ before(async () => { await Promise.all([install(admin), install(otherAdmin), ins
 after(async () => { await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve())); });
 
 test("service catalog is Owner scoped and returns published version history", async () => { calls.length = 0; const own = await call(admin, "/api/v1/properties/50/pricing-items?kind=FIXED_SERVICE"); assert.equal(own.response.status, 200); assert.equal(own.body.data.items[0].price_versions[0].unit_price, "50000"); assert.equal(calls.at(-1)?.ownerId, 101n); const foreign = await call(otherAdmin, "/api/v1/properties/50/pricing-items"); assert.equal(foreign.response.status, 404); assert.equal(calls.at(-1)?.ownerId, 202n); });
+test("free shared Facilities are Admin-only, Owner scoped and never accept client Owner authority", async () => {
+  calls.length = 0;
+  const listed = await call(admin, "/api/v1/properties/50/facilities");
+  assert.equal(listed.response.status, 200);
+  assert.equal(listed.body.data.items[0].facility_id, "71");
+  assert.equal(calls.at(-1)?.ownerId, 101n);
+  assert.equal((await call(otherAdmin, "/api/v1/properties/50/facilities")).response.status, 404);
+  assert.equal((await call(resident, "/api/v1/properties/50/facilities")).response.status, 403);
+  assert.equal((await call(admin, "/api/v1/properties/50/facilities?active=false")).response.status, 400);
+
+  const created = await call(admin, "/api/v1/properties/50/facilities", { method: "POST", body: { name: "Hồ bơi", location: "Sân sau" } });
+  assert.equal(created.response.status, 201);
+  assert.equal(created.body.data.facility_id, "72");
+  assert.equal(calls.at(-1)?.ownerId, 101n);
+  assert.deepEqual(calls.at(-1)?.input, { name: "Hồ bơi", description: null, location: "Sân sau" });
+  assert.equal((await call(admin, "/api/v1/properties/50/facilities", { method: "POST", body: { name: "Hồ bơi", owner_id: "202" } })).response.status, 400);
+});
 test("residents cannot manage services; Admin create derives Owner from the session", async () => { assert.equal((await call(resident, "/api/v1/properties/50/pricing-items")).response.status, 403); const created = await call(admin, "/api/v1/properties/50/pricing-items", { method: "POST", body: { kind: "FIXED_SERVICE", code: "WIFI", name: "WiFi", unit: "kỳ" } }); assert.equal(created.response.status, 201); assert.equal(calls.at(-1)?.ownerId, 101n); });
 test("publish and retire routes validate business fields and use versioned statuses", async () => { const price = await call(admin, "/api/v1/properties/50/pricing-items/5/price-versions?kind=FIXED_SERVICE", { method: "POST", body: { effective_from: "2026-11-01", unit_price: "50000" } }); assert.equal(price.response.status, 201); assert.equal(price.body.data.unit_price, "50000"); const invalid = await call(admin, "/api/v1/properties/50/pricing-items/5/price-versions?kind=FLEXIBLE_SERVICE", { method: "POST", body: { effective_from: "2026-11-01", unit_price: "-1" } }); assert.equal(invalid.response.status, 400); const retired = await call(admin, "/api/v1/properties/50/pricing-items/5/retire?kind=FIXED_SERVICE", { method: "POST", body: {} }); assert.equal(retired.body.data.status, "retired"); });
 test("manual charge APIs stay retired; catalog still rejects client Owner authority", async () => {
