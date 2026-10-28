@@ -10,7 +10,24 @@ import {makeCsrfToken} from "../middleware/csrf.js";
 import {errorHandler} from "../middleware/error-handler.js";
 import {createV1Router} from "../auth/v1.router.js";
 import {meterInput} from "./meter.repository.js";
-import {normalizeMeterImage,ocrCandidate} from "./assistant.routes.js";
+import {isInvoiceLocationQuestion,isServiceCatalogQuestion,needsAmenityChoice,normalizeMeterImage,ocrCandidate,residentAssistantReply} from "./assistant.routes.js";
+
+test("Cloudy recognizes invoice location questions in Vietnamese",()=>{
+  for(const message of ["hóa đơn ở địa điểm nào","hóa đơn này thuộc phòng nào","hóa đơn ở đâu"]){assert.equal(isInvoiceLocationQuestion(message),true,message);}
+  assert.equal(isInvoiceLocationQuestion("Tôi muốn gửi chỉ số điện nước"),false);
+});
+test("Cloudy clarifies broad amenity requests and routes amenity browsing",()=>{
+  assert.equal(needsAmenityChoice("Tôi muốn thêm tiện ích"),true);
+  assert.equal(needsAmenityChoice("Tôi muốn bổ sung thêm dịch vụ"),true);
+  assert.equal(needsAmenityChoice("Tôi muốn thêm tủ lạnh"),false);
+  assert.equal(isServiceCatalogQuestion("Tôi muốn xem tiện ích"),true);
+  assert.match(residentAssistantReply("amenity_choice"),/xem\/đặt tiện ích/i);
+  assert.match(residentAssistantReply("amenity_choice"),/bổ sung thiết bị/i);
+});
+test("Cloudy clearly asks for clarification instead of guessing when it does not understand",()=>{
+  assert.match(residentAssistantReply("help"),/chưa hiểu/i);
+  assert.match(residentAssistantReply("help"),/nói rõ hơn/i);
+});
 
 test("meter input rejects client scope, negative/excess precision and arbitrary image URLs",async()=>{
   const input={invoice_id:"1",utility:"WATER",reading:"10.125",image:""};
@@ -46,6 +63,15 @@ test("HTTP auth, CSRF, role, session revocation and server-derived scope",async(
     assert.equal((await fetch(`${base}/meter-submissions`,{headers:r.headers})).status,403);
     assert.equal((await fetch(`${base}/me/meter-targets`,{headers:r.headers})).status,200);
     assert.deepEqual(calls.pop(),[10n,20n]);
+    const invoiceQuestion=await fetch(`${base}/me/assistant/chat`,{method:"POST",headers:r.headers,body:JSON.stringify({message:"hóa đơn ở địa điểm nào"})});
+    assert.equal(invoiceQuestion.status,200);
+    assert.equal((await invoiceQuestion.json() as any).data.intent,"invoice");
+    const amenityQuestion=await fetch(`${base}/me/assistant/chat`,{method:"POST",headers:r.headers,body:JSON.stringify({message:"Tôi muốn thêm tiện ích"})});
+    assert.equal(amenityQuestion.status,200);
+    assert.equal((await amenityQuestion.json() as any).data.intent,"amenity_choice");
+    const amenityList=await fetch(`${base}/me/assistant/chat`,{method:"POST",headers:r.headers,body:JSON.stringify({message:"Tôi muốn xem tiện ích"})});
+    assert.equal(amenityList.status,200);
+    assert.equal((await amenityList.json() as any).data.intent,"services");
     assert.equal((await fetch(`${base}/meter-submissions`,{headers:a.headers})).status,200);
     assert.deepEqual(calls.pop(),[10n]);
     assert.equal((await fetch(`${base}/me/meter-submissions`,{method:"POST",headers:{Cookie:r.headers.Cookie,"Content-Type":"application/json"},body:"{}"})).status,403);

@@ -30,6 +30,7 @@
     "db:migrate:v113": "node scripts/database-v111.mjs migrate-v113",
     "db:migrate:v114": "node scripts/database-v111.mjs migrate-v114",
     "db:migrate:v115": "node scripts/database-v111.mjs migrate-v115",
+    "db:migrate:v116": "node scripts/database-v111.mjs migrate-v116",
     "db:migrate:v18": "node scripts/database-v19.mjs migrate-v18",
     "db:seed": "node scripts/database-v111.mjs seed",
     "demo:advisor": "node scripts/owner-advisor-demo/server.mjs",

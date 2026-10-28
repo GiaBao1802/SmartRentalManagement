@@ -24,7 +24,7 @@ test("public Room list preserves V1 data/meta and routes backend covers through 
   globalThis.fetch = (async (input: RequestInfo | URL) => {
     requestUrl = String(input);
     return Response.json({
-      data: [{ room_id: "248", room_code: "KH", property: { name: "DEV-SMOKE-PROP-01", province: "Đồng Nai", address: "DEV-SMOKE-PROP-01, Đồng Nai" }, default_rent: "1", area_m2: "1.00", default_capacity: 1, status: "available", public_description: null, cover_image: { image_id: "22", url: "/api/v1/public/room-images/22" } }],
+      data: [{ room_id: "248", room_code: "KH", property: { name: "DEV-SMOKE-PROP-01", province: "Đồng Nai", address: "DEV-SMOKE-PROP-01, Đồng Nai" }, default_rent: "1", area_m2: "1.00", default_capacity: 1, status: "available", public_description: null, amenities: ["air_conditioning"], cover_image: { image_id: "22", url: "/api/v1/public/room-images/22" } }],
       meta: { page: 1, page_size: 20, total_items: 5, total_pages: 1 },
     });
   }) as typeof fetch;
@@ -41,8 +41,8 @@ test("public Room list preserves V1 data/meta and routes backend covers through 
 });
 
 test("public Room list serializes only canonical filters and uses backend pagination", async () => {
-  const query = serializePublicRoomFilters({ province: " Đồng Nai ", address: " Đường Mẫu ", location: "Biên Hòa", price_min: "1000000", price_max: "5000000", area_min: "20", area_max: "40", capacity_min: "2", sort: "price_asc", page: 3, page_size: 12, property_name: "must not send" } as never);
-  assert.deepEqual([...query.entries()], [["page", "3"], ["page_size", "12"], ["province", "Đồng Nai"], ["address", "Đường Mẫu"], ["location", "Biên Hòa"], ["price_min", "1000000"], ["price_max", "5000000"], ["area_min", "20"], ["area_max", "40"], ["capacity_min", "2"], ["sort", "price_asc"]]);
+  const query = serializePublicRoomFilters({ province: " Đồng Nai ", address: " Đường Mẫu ", location: "Biên Hòa", price_min: "1000000", price_max: "5000000", area_min: "20", area_max: "40", capacity_min: "2", amenities: ["parking", "air_conditioning", "parking"], sort: "price_asc", page: 3, page_size: 12, property_name: "must not send" } as never);
+  assert.deepEqual([...query.entries()], [["page", "3"], ["page_size", "12"], ["province", "Đồng Nai"], ["address", "Đường Mẫu"], ["location", "Biên Hòa"], ["price_min", "1000000"], ["price_max", "5000000"], ["area_min", "20"], ["area_max", "40"], ["capacity_min", "2"], ["sort", "price_asc"], ["amenities", "air_conditioning,parking"]]);
   let url = "";
   globalThis.fetch = (async (input: RequestInfo | URL) => { url = String(input); return Response.json({ data: [], meta: { page: 3, page_size: 12, total_items: 0, total_pages: 0 } }); }) as typeof fetch;
   const response = await listPublicRooms({ page: 3, page_size: 12, province: "Đồng Nai", sort: "price_asc" });
@@ -57,7 +57,7 @@ test("Cloudy all-results location handoff scans bounded API pages and paginates 
   const row = (id: number, province: string, address: string) => ({
     room_id: String(id), room_code: `R${id}`, property: { name: `Property ${id}`, province, address },
     default_rent: "3000000", area_m2: "24.00", default_capacity: 2, status: "available" as const,
-    public_description: null, cover_image: null,
+    public_description: null, amenities: [], cover_image: null,
   });
   globalThis.fetch = (async (input: RequestInfo | URL) => {
     const url = new URL(String(input)); calls.push(url);
@@ -74,16 +74,18 @@ test("Cloudy all-results location handoff scans bounded API pages and paginates 
   assert.equal(calls.length, 2);
   assert.equal(calls[0]?.searchParams.has("location"), false);
   assert.equal(calls[0]?.searchParams.get("price_max"), "3999999");
+  assert.equal(calls[0]?.searchParams.get("amenities"), null);
   assert.equal(calls[0]?.searchParams.get("page_size"), "100");
 });
 
 test("public Room detail uses a string route ID and detail DTO", async () => {
   let url = "";
-  globalThis.fetch = (async (input: RequestInfo | URL) => { url = String(input); return Response.json({ data: { room_id: "9007199254740993", room_code: "A/1", property: { name: "Khu", province: "Đồng Nai", address: "Đường A" }, default_rent: "4500000", area_m2: "20.00", default_capacity: 2, status: "available", public_description: null, cover_image: null, images: [{ image_id: "8", url: "/api/v1/public/room-images/8", is_cover: true, sort_order: 0 }] } }); }) as typeof fetch;
+  globalThis.fetch = (async (input: RequestInfo | URL) => { url = String(input); return Response.json({ data: { room_id: "9007199254740993", room_code: "A/1", property: { name: "Khu", province: "Đồng Nai", address: "Đường A" }, default_rent: "4500000", area_m2: "20.00", default_capacity: 2, status: "available", public_description: null, amenities: ["parking"], cover_image: null, images: [{ image_id: "8", url: "/api/v1/public/room-images/8", is_cover: true, sort_order: 0 }] } }); }) as typeof fetch;
   const detail = await getPublicRoom("9007199254740993");
   assert.equal(url, "http://localhost:4000/api/v1/public/rooms/9007199254740993");
   assert.equal(detail.room_id, "9007199254740993");
   assert.equal(detail.images[0]?.sort_order, 0);
+  assert.deepEqual(detail.amenities, ["parking"]);
 });
 
 test("guest Contact Request bootstraps CSRF and posts canonical fields without authentication", async () => {

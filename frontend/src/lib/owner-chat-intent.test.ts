@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {proposeOwnerScope,ownerConfirmation,parseOwnerClarificationReply,namesDifferentOwnerTask} from './owner-chat-intent';
+import {proposeOwnerScope,ownerConfirmation,parseOwnerClarificationReply,namesDifferentOwnerTask,ownerUnknownIntentMessage} from './owner-chat-intent';
 const catalog={tasks:{unpaid:'Hóa đơn chưa thanh toán',requests:'Yêu cầu từ người thuê'},asOf:'2026-10-28',periods:['2026-10','2026-09'],rooms:['K1-P01','K2-P02']};
 test('explicit task and scope are restated for confirmation, never marked confirmed',()=>{
  const p=proposeOwnerScope('Chưa đóng tiền tháng 10 phòng K1-P01','unpaid',catalog);
@@ -32,4 +32,15 @@ test('a different supported task starts a new interpretation but the current tas
  assert.equal(namesDifferentOwnerTask('xem tiền điện tháng 10','unpaid'),true);
  assert.equal(namesDifferentOwnerTask('xem phòng nào chưa đóng tiền tháng 10','unpaid'),false);
  assert.equal(namesDifferentOwnerTask('kiểm tra yêu cầu từ người thuê','utilities'),true);
+ assert.equal(namesDifferentOwnerTask('thống kê cư dân đang ở','unpaid'),true);
+ assert.match(ownerConfirmation({task:'residents',period:'2026-10',room:''},catalog),/thống kê cư dân hiện tại/);
+});
+test('unknown owner questions name the unrecognized request and say it is awaiting an update',()=>{
+ const message=ownerUnknownIntentMessage('Tạo chỗ sạc xe điện tháng sau',catalog);
+ assert.match(message,/chưa hiểu yêu cầu “Tạo chỗ sạc xe điện tháng sau”/);
+ assert.match(message,/đang chờ cập nhật/);
+ assert.match(message,/Hóa đơn chưa thanh toán/);
+ const clipped=ownerUnknownIntentMessage('x'.repeat(140),catalog);
+ assert.ok(clipped.includes('“'+'x'.repeat(120)+'”'));
+ assert.ok(!clipped.includes('x'.repeat(121)));
 });

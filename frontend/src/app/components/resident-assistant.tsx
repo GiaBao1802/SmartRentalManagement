@@ -11,6 +11,13 @@ export type MeterRequest={submission_id:string;invoice_id:string;room_code:strin
 const label=(s:string)=>({PENDING:"Chờ chủ trọ duyệt",APPROVED:"Đã duyệt",REJECTED:"Đã từ chối"}[s]??s);
 const period=(t:{period_start:string;period_end:string})=>`${t.period_start.slice(0,10)} → ${t.period_end.slice(0,10)}`;
 const today=()=>new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Ho_Chi_Minh",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+function invoiceLocationReply(targets:Target[]) {
+  if(!targets.length)return "Mình hiểu bạn đang hỏi hóa đơn thuộc địa điểm nào. Hiện chưa có hóa đơn nháp hợp lệ gắn với phòng bạn đang thuê. Bạn xác nhận sẽ kiểm tra lại với chủ trọ nhé?";
+  const rows=targets.map(t=>`${t.property_name} – phòng ${t.room_code}, kỳ ${period(t)}`);
+  if(rows.length===1)return `Mình hiểu bạn hỏi hóa đơn ở địa điểm nào: hiện có hóa đơn tại ${rows[0]}. Bạn xác nhận muốn chọn đúng kỳ này để gửi chỉ số chứ? Mình chưa gửi gì cho chủ trọ.`;
+  const listed=rows.slice(0,4).map((row,i)=>`${i+1}) ${row}`).join("; ");
+  return `Mình tìm thấy ${rows.length} kỳ hóa đơn thuộc phòng/khu trọ bạn đang ở: ${listed}${rows.length>4?`; còn ${rows.length-4} kỳ khác trong danh sách bên dưới`:""}. Bạn chọn đúng địa điểm và kỳ cần hỏi nhé; mình chưa gửi chỉ số.`;
+}
 
 export function ResidentAssistant({onClose}:{onClose:()=>void}) {
   const {status,user}=useAuth();
@@ -19,6 +26,7 @@ export function ResidentAssistant({onClose}:{onClose:()=>void}) {
 }
 function ResidentAssistantContent({onClose}:{onClose:()=>void}) {
   const [tab,setTab]=useState<"services"|"meter"|"requests"|"help">("help");
+  const [amenityChoice,setAmenityChoice]=useState(false);
   const [requestContent,setRequestContent]=useState("");
   const [text,setText]=useState("");
   const [reply,setReply]=useState("Mình giúp bạn đặt tiện ích, gửi ảnh điện/nước hoặc khiếu nại và yêu cầu bổ sung thiết bị cho phòng.");
@@ -57,10 +65,11 @@ function ResidentAssistantContent({onClose}:{onClose:()=>void}) {
   }}>
     <header><div><small>TRỢ LÝ KHÁCH THUÊ</small><h2 id="resident-assistant-title">Cloudy giúp bạn</h2></div><button type="button" onClick={onClose} aria-label="Đóng Cloudy">×</button></header>
     <p>{reply}</p>
-    <form onSubmit={e=>{e.preventDefault();void run(async()=>{const r=await apiRequest<{intent:typeof tab;text:string}>("/me/assistant/chat",{method:"POST",body:JSON.stringify({message:text})});setReply(r.text);setTab(r.intent);if(r.intent==="requests")setRequestContent(text);setText("");});}}>
+    {tab==="help"&&<form onSubmit={e=>{e.preventDefault();void run(async()=>{const r=await apiRequest<{intent:"services"|"requests"|"amenity_choice"|"meter"|"invoice"|"help";text:string}>("/me/assistant/chat",{method:"POST",body:JSON.stringify({message:text})});setReply(r.intent==="invoice"?invoiceLocationReply(targets):r.text);setAmenityChoice(r.intent==="amenity_choice");setTab(r.intent==="invoice"?"meter":r.intent==="amenity_choice"?"help":r.intent);if(r.intent==="requests")setRequestContent(text);setText("");});}}>
       <label>Bạn cần hỗ trợ gì?<input value={text} maxLength={500} disabled={busy} onChange={e=>setText(e.target.value)} placeholder="Ví dụ: tôi muốn đăng ký hồ bơi"/></label><button disabled={busy||!text.trim()}>Gửi</button>
-    </form>
-    <nav aria-label="Chọn hỗ trợ"><button disabled={busy} aria-pressed={tab==="services"} onClick={()=>setTab("services")}>Đặt tiện ích</button><button disabled={busy} aria-pressed={tab==="meter"} onClick={()=>setTab("meter")}>Gửi chỉ số điện/nước</button><button disabled={busy} aria-pressed={tab==="requests"} onClick={()=>setTab("requests")}>Khiếu nại / yêu cầu</button></nav>
+    </form>}
+    {amenityChoice&&tab==="help"&&<div className="resident-assistant-fields" aria-label="Chọn việc cần làm với tiện ích"><button type="button" disabled={busy} onClick={()=>{setAmenityChoice(false);setTab("services");setReply("Đây là tiện ích đang áp dụng cho phòng thuê. Chọn tiện ích để xem lịch hoặc gửi yêu cầu đặt; chủ trọ sẽ duyệt.");}}>Xem / đặt tiện ích đang có</button><button type="button" disabled={busy} onClick={()=>{setAmenityChoice(false);setRequestContent("Tôi muốn đề nghị bổ sung thiết bị cho phòng.");setTab("requests");setReply("Bạn chọn thiết bị cần bổ sung và phòng đang ở. Yêu cầu sẽ chờ chủ trọ duyệt; phòng chỉ cập nhật khi chủ trọ xác nhận đã thêm.");}}>Đề nghị bổ sung thiết bị</button></div>}
+    <nav aria-label="Chọn hỗ trợ"><button type="button" disabled={busy} aria-pressed={tab==="services"} onClick={()=>{setTab("services");setReply("Chọn tiện ích và khung giờ còn chỗ để gửi yêu cầu đặt. Chủ trọ sẽ duyệt lịch của bạn.");}}>Đặt tiện ích</button><button type="button" disabled={busy} aria-pressed={tab==="meter"} onClick={()=>{setTab("meter");setReply("Bạn đang gửi chỉ số điện/nước. Chọn phòng và kỳ hóa đơn, chụp ảnh đồng hồ rồi đối chiếu chỉ số trước khi gửi chủ trọ duyệt.");}}>Gửi chỉ số điện/nước</button><button type="button" disabled={busy} aria-pressed={tab==="requests"} onClick={()=>{setTab("requests");setReply("Gửi khiếu nại hoặc yêu cầu cho phòng đang ở. Chủ trọ sẽ tiếp nhận và phản hồi.");}}>Khiếu nại / yêu cầu</button>{tab!=="help"&&<button type="button" disabled={busy} onClick={()=>{setTab("help");setReply("Mình giúp bạn đặt tiện ích, gửi ảnh điện/nước hoặc khiếu nại và yêu cầu bổ sung thiết bị cho phòng.");}}>Hỏi Cloudy</button>}</nav>
     {tab==="requests"&&<ResidentRoomRequests initialContent={requestContent}/>}
     {tab==="services"&&<div className="resident-assistant-fields">
       <label>Tiện ích<select value={serviceId} disabled={busy} onChange={e=>{setServiceId(e.target.value);resetSlot();}}><option value="">Chọn tiện ích</option>{groups.map(g=><optgroup key={g.property_id} label={g.property_name}>{g.services.map(s=><option key={s.service_id} value={s.service_id}>{s.name}</option>)}</optgroup>)}</select></label>

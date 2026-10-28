@@ -1,0 +1,11 @@
+{
+  "version": "1.16",
+  "predecessor": "database/baselines/v1.15",
+  "status": "APPLIED_TO_NEON_SHARED_DEV_LOCAL_REHEARSED_NOT_APPLIED",
+  "sha256": {
+    "schema.sql": "2416e2cea4546a55d03c775246c71dd5800a2a028360a7cccbd913693326e7cf",
+    "seed.sql": "914a3a80fe262e3e81ca9cca71ac47338c69131ae27b4c87f8d0d3c7e343ad26",
+    "expected-catalog.json": "56d4398ace71ec39d00e4b97096defcc8a6a7c3800142eda0404eaedea317e4e",
+    "migrations/V1_15_to_V1_16_marketplace_amenities.sql": "fc453fe55074c9d9e37a4392372d998813be72da2ebc3ebdc693e8d97e053113"
+  }
+}

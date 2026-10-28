@@ -1083,6 +1083,8 @@ tbody tr:hover td { background: #fffcf8; }
 .invoice-detail-link .subtext { color: var(--color-text-secondary); font-size: 11px; font-weight: 500; }
 .invoice-status-cell { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
 .invoice-overdue-chip { border-color: #f0b2a8; background: #fff0ed; color: #a83222; }
+.invoice-due-chip { border-color: #c9d9e5; background: #f1f7fa; color: #315366; }
+.invoice-detail-status { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; }
 .invoice-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 14px; color: var(--color-text-secondary); font-size: 12px; }
 .invoice-pagination nav { display: flex; align-items: center; gap: 8px; }
 .invoice-pagination .button { min-height: 34px; }

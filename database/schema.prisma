@@ -74,6 +74,7 @@ model Room {
   isActive          Boolean  @default(true) @map("is_active")
   isPublic          Boolean  @default(false) @map("is_public")
   publicDescription String?  @map("public_description") @db.Text
+  marketplaceAmenities String[] @default([]) @map("marketplace_amenities")
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
 

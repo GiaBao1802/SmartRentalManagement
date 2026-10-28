@@ -42,7 +42,7 @@ export function serializePublicRoom(row: any, detail: boolean) {
     room_id: row.roomId.toString(), room_code: row.roomCode,
     property: { name: row.property.name, province: row.property.province, address: row.property.address },
     default_rent: row.defaultRent.toString(), area_m2: row.areaM2.toFixed(2), default_capacity: row.defaultCapacity,
-    status: "available", public_description: row.publicDescription,
+    status: "available", public_description: row.publicDescription, amenities: row.marketplaceAmenities ?? [],
     cover_image: cover ? { image_id: cover.image_id, url: cover.url } : null,
     ...(detail ? { images } : {}),
   };

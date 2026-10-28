@@ -29,6 +29,20 @@ function safeInsets() {
   return insets;
 }
 
+function accountCloudyHue(accountId: string | null) {
+  if (!accountId) return undefined;
+  const numericId = Number(accountId);
+  if (Number.isSafeInteger(numericId) && numericId > 0) {
+    return `${((numericId - 1) * 137.508) % 360}deg`;
+  }
+  let hash = 2166136261;
+  for (let index = 0; index < accountId.length; index += 1) {
+    hash ^= accountId.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `${(hash >>> 0) % 360}deg`;
+}
+
 function clampPosition(position: Position, element: HTMLElement): Position {
   const safe = safeInsets();
   const width = element.offsetWidth;
@@ -53,6 +67,7 @@ export function Cloudy2D() {
   const visible = isAllowedRoute(pathname, status === "authenticated");
   const isExplorer = pathname === "/" || pathname === "/rooms";
   const accountId = status === "authenticated" ? user?.account.account_id ?? null : null;
+  const cloudyHue = accountCloudyHue(accountId);
   const role = status === "authenticated" ? user?.account.role : null;
   const suggestionScope: CloudySuggestionScope | null = pathname === "/admin" || pathname.startsWith("/admin/")
     ? role === "admin" ? "admin" : null
@@ -453,7 +468,7 @@ export function Cloudy2D() {
 
   return <>
     <div ref={rootRef} className={`cloudy-2d${isExplorer ? " cloudy-2d--explorer" : ""}`} role="group" aria-label="Cloudy, linh vật đám mây">
-      <img className="cloudy-2d__layer" src={`${ASSET_ROOT}/cloud-body.png`} width="1254" height="1254" alt="" draggable={false} />
+      <img className="cloudy-2d__layer" src={`${ASSET_ROOT}/cloud-body.png`} width="1254" height="1254" alt="" draggable={false} style={cloudyHue ? { filter: `hue-rotate(${cloudyHue}) saturate(1.35)` } : undefined} />
       <span ref={eyesRef} className="cloudy-2d__eye-pair" aria-hidden="true">
         <img className={`cloudy-2d__layer cloudy-2d__eye cloudy-2d__eye--left cloudy-2d__eyes${eyesClosed ? " is-closed" : ""}`} src={`${ASSET_ROOT}/cloud-eyes-open.png`} width="1254" height="1254" alt="" draggable={false} />
         <img className={`cloudy-2d__layer cloudy-2d__eye cloudy-2d__eye--right cloudy-2d__eyes${eyesClosed ? " is-closed" : ""}`} src={`${ASSET_ROOT}/cloud-eyes-open.png`} width="1254" height="1254" alt="" draggable={false} />

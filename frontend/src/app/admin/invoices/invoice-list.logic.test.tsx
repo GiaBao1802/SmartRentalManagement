@@ -40,7 +40,7 @@ test("business choices map only selected internal IDs to server-side invoice fil
 
 test("lookup options use business labels while retaining opaque IDs internally", () => {
   assert.deepEqual(propertyOption({ property_id: "88", owner_id: "1", property_code: "P-01", name: "Nhà Bình An", province: "Đồng Nai", address: "12 đường Mẫu", manager_name: null, status: "active", created_at: "", updated_at: "" }), { id: "88", label: "Nhà Bình An", description: "12 đường Mẫu · Đồng Nai" });
-  assert.deepEqual(roomOption({ room_id: "99", owner_id: "1", property_id: "88", room_code: "A-101", default_rent: "0", area_m2: "0", default_capacity: 1, is_active: true, is_public: false, public_description: null, status: "available", occupancy_count: 0, contract_capacity: null, current_contract: null }), { id: "99", label: "A-101", description: "Phòng" });
+  assert.deepEqual(roomOption({ room_id: "99", owner_id: "1", property_id: "88", room_code: "A-101", default_rent: "0", area_m2: "0", default_capacity: 1, is_active: true, is_public: false, public_description: null, marketplace_amenities: [], status: "available", occupancy_count: 0, contract_capacity: null, current_contract: null }), { id: "99", label: "A-101", description: "Phòng" });
 });
 
 test("invoice resident labels never expose a raw internal ID", () => {

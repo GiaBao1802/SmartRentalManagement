@@ -20,6 +20,11 @@ test("mock failure can be retried without duplicating the request", async () => 
   assert.match(await service.send("/mock-error", [], new AbortController().signal), /^MÔ PHỎNG:/);
 });
 
+test("local chat displays the server failure reason instead of blaming Ollama", async () => {
+  const service = createLocalCloudyChatService((async () => Response.json({ error: "PUBLIC_API_UNAVAILABLE", message: "Không kết nối được API phòng công khai hoặc database." }, { status: 503 })) as typeof fetch);
+  await assert.rejects(service.send("tìm phòng", [], signal()), /API phòng công khai hoặc database/);
+});
+
 test("aborting a pending mock response prevents a late reply", async () => {
   const service = createMockCloudyChatService(1000);
   const controller = new AbortController();

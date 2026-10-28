@@ -17,6 +17,7 @@ function fixture(){const calls:string[]=[];const fetchImpl:typeof fetch=async(in
 test('live adapter follows all invoice pages, excludes drafts from debt and uses backend snapshot totals',async()=>{
  const {client,calls}=fixture();const catalog=await client.catalog();assert.equal(catalog.synthetic,false);assert.equal(catalog.rooms.length,1);
  const response=await client.answer({task:'unpaid',period:'2026-10',room:''});assert.equal(response.cards.length,1);assert.equal(response.cards[0].total,1234567.89);assert.ok(calls.some(p=>p.includes('page=2')));
+ assert.equal(response.cards[0].status,'Chưa thanh toán · Quá hạn');assert.match(response.summary,/1 quá hạn, 0 đến hạn hôm nay, 0 còn hạn/);assert.match(response.summary,/Bản nháp và hóa đơn đã thanh toán không nằm trong danh sách/);
  const utilities=await client.answer({task:'utilities',period:'2026-10',room:''});assert.match(utilities.cards[0].details.join(' '),/không dựng thêm bậc giá/);assert.equal(utilities.cards[1].total,null);
 });
 test('missing and requests use canonical read endpoints, unknown room fails closed',async()=>{
@@ -24,6 +25,23 @@ test('missing and requests use canonical read endpoints, unknown room fails clos
  const r=await client.answer({task:'requests',period:'2026-10',room:'Khu A / P101 [11]'});assert.equal(r.cards.length,2);assert.deepEqual(r.cards.map(c=>c.href),['/admin/requests','/admin/services/flexible']);
  await assert.rejects(client.answer({task:'unpaid',period:'2026-10',room:'foreign'}),{status:404});
  const broken=createLiveAdvisor('gt_session=test',async()=>new Response('',{status:403}));await assert.rejects(broken.catalog(),{status:403});
+});
+test('resident statistics aggregate every resident page without returning personal details',async()=>{
+ const calls:string[]=[];
+ const fetchImpl:typeof fetch=async(input,init)=>{
+  const url=new URL(String(input));calls.push(url.pathname+url.search);const path=url.pathname.replace('/api/v1','');
+  if(path==='/properties')return Response.json({data:[{property_id:'1',name:'Khu A'}],meta:{total_pages:1}});
+  if(path==='/properties/1/rooms')return Response.json({data:[{room_id:'11',room_code:'P101'},{room_id:'12',room_code:'P102'}],meta:{total_pages:1}});
+  if(path==='/residents'){
+   const first=url.searchParams.get('page')==='1';
+   return Response.json({data:first?[{resident_id:'1',full_name:'Private Name 1',residence_status:'living',residence_registration_status:'not_completed',room_residents:[{room_id:'11',status:'active'}]},{resident_id:'2',full_name:'Private Name 2',residence_status:'living',residence_registration_status:'temporary_resident',room_residents:[{room_id:'12',status:'active'}]}]:[{resident_id:'3',full_name:'Private Name 3',residence_status:'left',residence_registration_status:'temporary_absence',room_residents:[]}],meta:{total_pages:2}});
+  }
+  throw new Error('Unexpected endpoint '+path);
+ };
+ const client=createLiveAdvisor('gt_session=test',fetchImpl);
+ const all=await client.answer({task:'residents',period:'2026-10',room:''});
+ assert.match(all.summary,/2 cư dân đang ở, 1 hồ sơ đã rời đi/);assert.match(all.summary,/1 người chưa hoàn tất đăng ký/);assert.equal(JSON.stringify(all).includes('Private Name'),false);assert.ok(calls.some(path=>path.includes('page=2')));
+ const room=await client.answer({task:'residents',period:'2026-10',room:'Khu A / P101 [11]'});assert.match(room.summary,/1 cư dân đang ở/);assert.match(room.summary,/1 người chưa hoàn tất/);
 });
 test('live room-code duplicates require explicit clarification',()=>{
  const base={tasks:{unpaid:'Chưa đóng'},periods:['2026-10'],asOf:'2026-10-28',rooms:['Khu A / P101 [11]']};

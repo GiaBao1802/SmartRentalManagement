@@ -23,6 +23,6 @@ class ConfirmationTests(unittest.TestCase):
   with patch('worker.load_catalog',side_effect=AssertionError('must not load')):
    result=handle_request({'message':'bỏ giới hạn giá','mode':'continue','context':FILTERS})
   self.assertEqual(result['status'],'awaiting_confirmation');self.assertEqual(result['context']['price'],[])
- def test_machine_feature_not_in_public_contract_is_rejected(self):
+ def test_structured_machine_feature_is_proposed_before_public_query(self):
   result=handle_request({'message':'phòng có máy lạnh'},lambda _: {'status':'ready','filters':{**FILTERS,'amenities':['air_conditioning']}})
-  self.assertEqual(result['status'],'needs_clarification');self.assertIsNone(result['context'])
+  self.assertEqual(result['status'],'awaiting_confirmation');self.assertEqual(result['context']['amenities'],['air_conditioning'])

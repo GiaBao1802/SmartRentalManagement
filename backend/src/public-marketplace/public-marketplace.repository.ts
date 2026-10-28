@@ -37,6 +37,7 @@ export class PrismaPublicMarketplaceRepository implements ContactRequestReposito
       ...((query.price_min === undefined && query.price_max === undefined) ? {} : { defaultRent: { ...(query.price_min === undefined ? {} : { gte: query.price_min }), ...(query.price_max === undefined ? {} : { lte: query.price_max }) } }),
       ...((query.area_min === undefined && query.area_max === undefined) ? {} : { areaM2: { ...(query.area_min === undefined ? {} : { gte: query.area_min }), ...(query.area_max === undefined ? {} : { lte: query.area_max }) } }),
       ...(query.capacity_min === undefined ? {} : { defaultCapacity: { gte: query.capacity_min } }),
+      ...(query.amenities === undefined ? {} : { marketplaceAmenities: { hasEvery: query.amenities } }),
     };
     const orderBy: Prisma.RoomOrderByWithRelationInput[] = query.sort === "price_asc" ? [{ defaultRent: "asc" }, { roomId: "asc" }]
       : query.sort === "price_desc" ? [{ defaultRent: "desc" }, { roomId: "asc" }]
@@ -47,7 +48,7 @@ export class PrismaPublicMarketplaceRepository implements ContactRequestReposito
       this.prisma.room.findMany({
         where, orderBy, skip: (query.page - 1) * query.page_size, take: query.page_size,
         select: {
-          roomId: true, roomCode: true, defaultRent: true, areaM2: true, defaultCapacity: true, publicDescription: true, createdAt: true,
+          roomId: true, roomCode: true, defaultRent: true, areaM2: true, defaultCapacity: true, publicDescription: true, marketplaceAmenities: true, createdAt: true,
           property: { select: publicPropertySelect },
           images: { where: { isCover: true }, orderBy: [{ sortOrder: "asc" }, { roomImageId: "asc" }], take: 1, select: publicImageSelect },
         },
@@ -61,7 +62,7 @@ export class PrismaPublicMarketplaceRepository implements ContactRequestReposito
     return this.prisma.room.findFirst({
       where: { roomId, ...publicAvailableRoomWhere() },
       select: {
-        roomId: true, roomCode: true, defaultRent: true, areaM2: true, defaultCapacity: true, publicDescription: true,
+        roomId: true, roomCode: true, defaultRent: true, areaM2: true, defaultCapacity: true, publicDescription: true, marketplaceAmenities: true,
         property: { select: publicPropertySelect },
         images: { orderBy: [{ sortOrder: "asc" }, { roomImageId: "asc" }], select: publicImageSelect },
       },

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { RoomFilters } from "./room-filters";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { PublicRoomCard } from "../public-room-card";
+import { useAuth } from "../components/auth-provider";
 import { useDialogFocus } from "../../lib/ui/dialog-accessibility";
 import { listPublicRooms, serializePublicRoomFilters, type PublicRoomFilters, type PublicRoomListItem, type PublicRoomListResponse } from "../../lib/api/publicRoomApi";
 import { demoOverview, demoResults, emptyFilters, overview, rooms, type Geography, type Overview } from "./explorer-data";
@@ -17,6 +18,7 @@ const money = (value: string) => new Intl.NumberFormat("vi-VN").format(Number(va
 const normalize = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").toLowerCase();
 
 export default function Explorer({ initialFilters }: { initialFilters?: PublicRoomFilters } = {}) {
+  const { status: authStatus, user } = useAuth();
   const [geo, setGeo] = useState<Geography | null>(null), [mapError, setMapError] = useState("");
   const [data, setData] = useState<Overview | null>(null), [error, setError] = useState("");
   const [mock, setMock] = useState(false), [retry, setRetry] = useState(0), [loading, setLoading] = useState(true);
@@ -127,8 +129,8 @@ export default function Explorer({ initialFilters }: { initialFilters?: PublicRo
         {search && <div className="explore-search-results" aria-label="Gợi ý tỉnh thành">{matches.length ? provinceButtons() : <p>Không tìm thấy tỉnh/thành.</p>}</div>}
       </form>
       <div className="explore-header-actions"><button aria-expanded={listOpen} onClick={toggleList}><span>Danh sách</span></button></div>
-      <nav aria-label="Điều hướng public"><a className="explore-about-link" href="/" onClick={() => { try { sessionStorage.removeItem('pd-trans'); } catch(e){} }}>Giới thiệu Góc Trọ</a><Link className="explore-resident-link" href="/login?next=%2Ftenant">Đăng nhập cư dân</Link></nav>
-      <Link className="explore-login" href="/login">Đăng nhập admin</Link>
+      <nav aria-label="Điều hướng public"><Link className="explore-about-link" href="/landing" onClick={() => { try { sessionStorage.removeItem('pd-trans'); } catch(e){} }}>Giới thiệu Góc Trọ</Link>{authStatus === "unauthenticated" && <Link className="explore-resident-link" href="/login?next=%2Ftenant">Đăng nhập cư dân</Link>}{authStatus === "authenticated" && user?.account.role === "resident" && <Link className="explore-resident-link" href="/tenant">Cổng khách thuê</Link>}</nav>
+      {authStatus === "unauthenticated" ? <Link className="explore-login" href="/login">Đăng nhập admin</Link> : authStatus === "authenticated" && user?.account.role === "admin" ? <Link className="explore-login" href="/admin/properties">Quản lý nhà trọ</Link> : null}
       <span className={`explore-mode ${mock ? "is-demo" : ""}`}><i />{mock ? "Dữ liệu minh họa" : loading ? "Đang tải tin…" : data ? "Tin đang đăng" : "Chưa tải được tin"}</span>
     </header>
     <section ref={scene} className="explore-scene" aria-label="Không gian khám phá Việt Nam">

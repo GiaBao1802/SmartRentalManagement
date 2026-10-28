@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { resolvePublicRoomImageUrl, type PublicRoomListItem } from "../lib/api/publicRoomApi";
+import { marketplaceAmenityLabels } from "../lib/api/roomApi";
 
 const money = (value: string) => {
   try { return `${new Intl.NumberFormat("vi-VN").format(BigInt(value))} đ`; }
@@ -17,6 +18,7 @@ export function PublicRoomCard({ room }: { room: PublicRoomListItem }) {
     <div className="room-info"><span className="room-location">{room.property.province}</span><h3>{room.property.name} · Phòng {room.room_code}</h3><p>{room.property.address}</p>
       {room.public_description && <p>{room.public_description}</p>}
       <div className="room-tags"><span>{room.area_m2 ? `${room.area_m2} m²` : "Diện tích liên hệ"}</span><span>Tối đa {room.default_capacity} người</span></div>
+      {room.amenities.length > 0 && <div className="room-tags" aria-label="Tiện ích đã xác nhận">{room.amenities.map(code => <span key={code}>{marketplaceAmenityLabels[code] ?? code}</span>)}</div>}
       <div className="room-listing-bottom"><strong>{money(room.default_rent)}<small>/ tháng</small></strong><a href={`/rooms/${encodeURIComponent(room.room_id)}`}>Xem chi tiết <span aria-hidden="true">→</span></a></div>
     </div>
   </article>;

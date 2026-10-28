@@ -39,5 +39,5 @@ export async function interpret(question,{fetchImpl=fetch,signal}={}){
  if(!response.ok)throw new Error('AI chưa sẵn sàng. Hãy chọn mục tư vấn thủ công.');
  const data=await response.json();const parsed=JSON.parse(data.message?.content);
  if(data.done_reason!=='stop'||Object.keys(parsed).join()!=='task'||![...Object.keys(tasks),'clarify'].includes(parsed.task))throw new Error('AI trả kết quả chưa hợp lệ. Hãy chọn thủ công.');
- return {task:parsed.task,model:'qwen3:1.7b',reviewRequired:true,message:parsed.task==='clarify'?'Chỉ hỗ trợ tra cứu thu tiền, điện nước và dữ liệu còn thiếu. Không thực hiện thay đổi.':'Kiểm tra mục tư vấn, chọn kỳ và phòng bên dưới trước khi xem dữ liệu. Câu hỏi chưa tự xác định kỳ hoặc phòng.'};
+ return {task:parsed.task,model:'qwen3:1.7b',reviewRequired:true,message:parsed.task==='clarify'?`Mình chưa hiểu yêu cầu “${question.trim().replace(/\s+/g,' ').slice(0,120)}”. Cách hỏi hoặc chức năng này chưa được cập nhật; mình đang chờ cập nhật. Hiện chỉ hỗ trợ tra cứu thu tiền, điện nước, dữ liệu còn thiếu và việc cần xử lý.`:'Kiểm tra mục tư vấn, chọn kỳ và phòng bên dưới trước khi xem dữ liệu. Câu hỏi chưa tự xác định kỳ hoặc phòng.'};
 }

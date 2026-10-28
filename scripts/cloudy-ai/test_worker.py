@@ -13,14 +13,19 @@ class WorkerTests(unittest.TestCase):
  def test_input_validation(self):
   for q in ['',None,'x'*501]:
    with self.assertRaises(ValueError):respond(q)
- def test_recognized_amenities_explain_public_data_limit_without_searching(self):
+ def test_recognized_amenities_are_proposed_for_explicit_live_api_confirmation(self):
   filters={'price':[{'op':'lt','value':4000000}],'area':[{'op':'gte','value':20}],'location':'Đồng Nai','occupants':None,'amenities':['parking','air_conditioning']}
   result=handle_request({'message':'có bãi xe và máy lạnh','mode':'new'},lambda _:{'status':'ready','filters':filters})
-  self.assertEqual(result['status'],'needs_clarification')
-  self.assertIsNone(result['context'])
+  self.assertEqual(result['status'],'awaiting_confirmation')
+  self.assertEqual(result['context'],filters)
   self.assertIn('khu vực Đồng Nai',result['text'])
   self.assertIn('diện tích ≥ 20 m²',result['text'])
-  self.assertIn('bãi gửi xe, máy lạnh/điều hòa',result['text'])
-  self.assertIn('diện tích và sức chứa',result['text'])
+  self.assertIn('bãi gửi xe',result['text'])
+  self.assertIn('máy lạnh',result['text'])
+ def test_unspecified_amenity_asks_for_detail(self):
+  filters={'price':[],'area':[],'location':None,'occupants':None,'amenities':['unspecified_amenity']}
+  result=handle_request({'message':'phòng có tiện ích'},lambda _:{'status':'ready','filters':filters})
+  self.assertEqual(result['status'],'needs_clarification');self.assertIsNone(result['context'])
+  self.assertIn('tiện ích cụ thể nào',result['text'])
 
 if __name__=='__main__':unittest.main()

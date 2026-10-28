@@ -30,6 +30,13 @@ test("Cloudy limits concurrent inference and releases busy flag after failure", 
   assert.equal((await handleCloudyChat(request(),async()=>({...reply,status:"awaiting_confirmation",context:{price:[],area:[],location:null,occupants:null,amenities:[]}}),"development")).status,200);
 });
 
+test("Cloudy reports public API failure separately from local AI failure", async () => {
+ const context={price:[],area:[],location:null,occupants:null,amenities:[]};
+ const response=await handleCloudyChat(request({action:"confirm",context}),async()=>reply,"development",async()=>{throw new Error("database unavailable");});
+ assert.equal(response.status,503);
+ assert.deepEqual(await response.json(),{error:"PUBLIC_API_UNAVAILABLE",message:"Không kết nối được API phòng công khai hoặc database. Hãy kiểm tra backend rồi thử lại."});
+});
+
 test("continue requires validated context; new rejects old context", async () => {
  const context={price:[{op:"lt",value:4000000}],area:[],location:"Bến Nắng",occupants:null,amenities:[]};
  for(const body of [{message:"thêm máy lạnh",mode:"continue"},{message:"phòng",mode:"new",context},{message:"phòng",mode:"invalid"},{message:"phòng",mode:"continue",context:{...context,occupants:-1}}]) assert.equal((await handleCloudyChat(request(body),async()=>reply,"development")).status,400);

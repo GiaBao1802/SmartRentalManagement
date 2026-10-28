@@ -2,6 +2,16 @@ import { apiRequest } from "./apiClient";
 import type { PageMeta } from "./propertyApi";
 
 export type RoomStatus = "available" | "occupied" | "inactive";
+export const marketplaceAmenityOptions = [
+  { code: "air_conditioning", label: "Máy lạnh" }, { code: "parking", label: "Bãi gửi xe" },
+  { code: "wifi", label: "Wi-Fi" }, { code: "elevator", label: "Thang máy" },
+  { code: "washing_machine", label: "Máy giặt" }, { code: "refrigerator", label: "Tủ lạnh" },
+  { code: "water_heater", label: "Máy nước nóng" }, { code: "private_kitchen", label: "Bếp riêng" },
+  { code: "private_bathroom", label: "Nhà vệ sinh riêng" }, { code: "balcony", label: "Ban công" },
+  { code: "cats_allowed", label: "Cho nuôi mèo" }, { code: "dogs_allowed", label: "Cho nuôi chó" },
+] as const;
+export type MarketplaceAmenity = typeof marketplaceAmenityOptions[number]["code"];
+export const marketplaceAmenityLabels: Record<string, string> = Object.fromEntries(marketplaceAmenityOptions.map(({ code, label }) => [code, label]));
 export type Room = {
   room_id: string;
   owner_id: string;
@@ -13,6 +23,7 @@ export type Room = {
   is_active: boolean;
   is_public: boolean;
   public_description: string | null;
+  marketplace_amenities: MarketplaceAmenity[];
   status: RoomStatus;
   occupancy_count: number;
   contract_capacity: number | null;
@@ -28,6 +39,7 @@ export type RoomInput = {
   is_active: boolean;
   is_public: boolean;
   public_description?: string | null;
+  marketplace_amenities?: MarketplaceAmenity[];
 };
 export type RoomPatch = Partial<RoomInput>;
 

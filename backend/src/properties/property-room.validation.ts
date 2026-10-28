@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { validationError } from "../middleware/api-error.js";
+import { parseMarketplaceAmenities } from "../public-marketplace/marketplace-amenities.js";
 
 export type PageQuery = { page: number; page_size: number };
 const isRecord = (value: unknown): value is Record<string, unknown> => Boolean(value && typeof value === "object" && !Array.isArray(value));
@@ -74,7 +75,7 @@ export function validatePropertyPatch(value: unknown): Prisma.PropertyUpdateInpu
 }
 
 export function validateRoomCreate(value: unknown): Omit<Prisma.RoomUncheckedCreateInput, "ownerId" | "propertyId" | "roomId"> {
-  const input = body(value, ["room_code", "default_rent", "area_m2", "default_capacity", "is_active", "is_public", "public_description", "status"]);
+  const input = body(value, ["room_code", "default_rent", "area_m2", "default_capacity", "is_active", "is_public", "public_description", "marketplace_amenities", "status"]);
   const isActive = input.is_active === undefined ? true : input.is_active;
   const isPublic = input.is_public === undefined ? false : input.is_public;
   if (typeof isActive !== "boolean" || typeof isPublic !== "boolean") throw validationError("is_active và is_public phải là boolean.");
@@ -87,11 +88,12 @@ export function validateRoomCreate(value: unknown): Omit<Prisma.RoomUncheckedCre
     roomCode: stringField(input, "room_code", 40, true)!, defaultRent: money(input.default_rent, "default_rent"),
     areaM2: area(input.area_m2), defaultCapacity: positiveInteger(input.default_capacity, "default_capacity", 1, 1_000_000),
     isActive, isPublic, publicDescription: typeof description === "string" ? description : null, status,
+    marketplaceAmenities: input.marketplace_amenities === undefined ? [] : parseMarketplaceAmenities(input.marketplace_amenities),
   };
 }
 
 export function validateRoomPatch(value: unknown): Prisma.RoomUpdateInput {
-  const input = body(value, ["room_code", "default_rent", "area_m2", "default_capacity", "is_active", "is_public", "public_description", "status"]);
+  const input = body(value, ["room_code", "default_rent", "area_m2", "default_capacity", "is_active", "is_public", "public_description", "marketplace_amenities", "status"]);
   const data: Prisma.RoomUpdateInput = {};
   if ("room_code" in input) data.roomCode = stringField(input, "room_code", 40, true)!;
   if ("default_rent" in input) data.defaultRent = money(input.default_rent, "default_rent");
@@ -103,6 +105,7 @@ export function validateRoomPatch(value: unknown): Prisma.RoomUpdateInput {
     if (input.public_description !== null && (typeof input.public_description !== "string" || input.public_description.length > 10000)) throw validationError("public_description không hợp lệ.");
     data.publicDescription = input.public_description;
   }
+  if ("marketplace_amenities" in input) data.marketplaceAmenities = parseMarketplaceAmenities(input.marketplace_amenities);
   if ("status" in input) {
     const status = stringField(input, "status", 20, true)!;
     if (status === "occupied") throw validationError("occupied là trạng thái dẫn xuất, không thể gửi từ client.");

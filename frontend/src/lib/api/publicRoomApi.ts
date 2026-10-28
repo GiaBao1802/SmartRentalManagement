@@ -11,6 +11,7 @@ export type PublicRoomListItem = {
   default_capacity: number;
   status: "available";
   public_description: string | null;
+  amenities: string[];
   cover_image: { image_id: string; url: string } | null;
 };
 export type PublicRoomDetail = Omit<PublicRoomListItem, "cover_image"> & {
@@ -28,6 +29,7 @@ export type PublicRoomFilters = {
   area_min?: string;
   area_max?: string;
   capacity_min?: string;
+  amenities?: string[];
   sort?: "newest" | "price_asc" | "price_desc" | "area_asc" | "area_desc";
   page?: number;
   page_size?: number;
@@ -72,6 +74,7 @@ export function serializePublicRoomFilters(filters: PublicRoomFilters): URLSearc
     const value = filters[key];
     if (typeof value === "string" && value.trim()) query.set(key, value.trim());
   }
+  if (filters.amenities?.length) query.set("amenities", [...new Set(filters.amenities)].sort().join(","));
   return query;
 }
 

@@ -7,7 +7,7 @@ import { useParams } from "next/navigation";
 import AdminShell from "../../../../components/admin-shell";
 import { ApiError } from "../../../../../lib/api/errors";
 import { propertyApi, type Property } from "../../../../../lib/api/propertyApi";
-import { roomApi, type Room, type RoomInput, type RoomListStatus, type RoomPatch, type RoomStatus } from "../../../../../lib/api/roomApi";
+import { marketplaceAmenityOptions, roomApi, type MarketplaceAmenity, type Room, type RoomInput, type RoomListStatus, type RoomPatch, type RoomStatus } from "../../../../../lib/api/roomApi";
 import { keepDialogFocus, useDialogFocus } from "../../../../../lib/ui/dialog-accessibility";
 import ResidentRoomPanel from "./resident-room-panel";
 import RoomImageGallery from "./room-image-gallery";
@@ -16,7 +16,7 @@ import { roomImageApi, type BulkRoomImageResult } from "../../../../../lib/api/r
 import { attachImagesToCreatedRooms, createRoomWithImages, createRoomsSequentially } from "../../../../../lib/api/roomImageWorkflow";
 import { formatAdminDate, formatAdminMoney, formatAdminStatus } from "../../../../../lib/ui/admin-presentation";
 
-const blankForm = { room_code: "", default_rent: "", area_m2: "", default_capacity: "1", is_active: true, is_public: false, public_description: "" };
+const blankForm = { room_code: "", default_rent: "", area_m2: "", default_capacity: "1", is_active: true, is_public: false, public_description: "", marketplace_amenities: [] as MarketplaceAmenity[] };
 const money = (value: string) => formatAdminMoney(value);
 type CreateMode = "single" | "bulk";
 type BulkFailure = { roomCode: string; message: string };
@@ -49,6 +49,7 @@ function roomInputFromForm(form: typeof blankForm, roomCode: string): RoomInput 
     is_active: form.is_active,
     is_public: form.is_public,
     ...(form.public_description.trim() ? { public_description: form.public_description.trim() } : {}),
+    marketplace_amenities: form.marketplace_amenities,
   };
 }
 function validateRoomFields(form: typeof blankForm) {
@@ -173,6 +174,7 @@ export default function PropertyRoomsPage() {
       is_active: room.is_active,
       is_public: room.is_public,
       public_description: room.public_description ?? "",
+      marketplace_amenities: room.marketplace_amenities ?? [],
     } : { ...blankForm, default_rent: "" });
     setOpen(true);
   }
@@ -211,7 +213,7 @@ export default function PropertyRoomsPage() {
         const failures = outcomes.filter((outcome) => !outcome.ok);
         if (failures.length) {
           setEditing(created);
-          setForm({ room_code: created.room_code, default_rent: created.default_rent, area_m2: created.area_m2, default_capacity: String(created.default_capacity), is_active: created.is_active, is_public: created.is_public, public_description: created.public_description ?? "" });
+          setForm({ room_code: created.room_code, default_rent: created.default_rent, area_m2: created.area_m2, default_capacity: String(created.default_capacity), is_active: created.is_active, is_public: created.is_public, public_description: created.public_description ?? "", marketplace_amenities: created.marketplace_amenities ?? [] });
           setSingleImages([]);
           setSingleImageResults(outcomes);
           await Promise.all([load(), loadRoomCounts()]);
@@ -230,6 +232,7 @@ export default function PropertyRoomsPage() {
         if (form.is_public !== editing.is_public) patch.is_public = form.is_public;
         const description = form.public_description.trim() || null;
         if (description !== editing.public_description) patch.public_description = description;
+        if (JSON.stringify([...form.marketplace_amenities].sort()) !== JSON.stringify([...(editing.marketplace_amenities ?? [])].sort())) patch.marketplace_amenities = form.marketplace_amenities;
         if (Object.keys(patch).length) await roomApi.update(editing.room_id, patch);
         setNotice(Object.keys(patch).length ? "Đã cập nhật phòng." : "Không có thay đổi cần lưu.");
       }
@@ -373,7 +376,10 @@ export default function PropertyRoomsPage() {
         <label className="property-room-check"><input type="checkbox" disabled={saving} checked={form.is_public} onChange={(event) => setForm({ ...form, is_public: event.target.checked })} /><span><strong>Đăng phòng công khai</strong><small>Cho phép hiển thị theo điều kiện API.</small></span></label>
         <label className="property-room-field property-room-field-wide">Mô tả công khai{!editing && createMode === "bulk" ? " mặc định" : ""}<textarea maxLength={10000} disabled={saving} value={form.public_description} onChange={(event) => setForm({ ...form, public_description: event.target.value })} /></label>
       </div></fieldset>
-      {editing && <RoomEquipment roomId={editing.room_id} />}
+      <fieldset className="property-room-fieldset"><legend>Tiện ích công khai</legend><div className="property-room-form-grid">
+        {marketplaceAmenityOptions.map(({ code, label }) => <label className="property-room-check" key={code}><input type="checkbox" disabled={saving} checked={form.marketplace_amenities.includes(code)} onChange={(event) => setForm({ ...form, marketplace_amenities: event.target.checked ? [...form.marketplace_amenities, code] : form.marketplace_amenities.filter((amenity) => amenity !== code) })} /><span><strong>{label}</strong><small>Chỉ chọn khi đã xác nhận cho tin phòng.</small></span></label>)}
+        <p className="property-room-field-hint property-room-field-wide">Lựa chọn này được lưu riêng và dùng để lọc phòng công khai; không tự suy ra từ mô tả.</p>
+      </div></fieldset>      {editing && <RoomEquipment roomId={editing.room_id} />}
       {editing && <RoomImageGallery propertyId={propertyId} roomId={editing.room_id} roomCode={editing.room_code} />}
       {!editing && createMode === "single" && <><RoomImagePicker files={singleImages} disabled={saving} onChange={(files) => { setSingleImages(files); setImagePickerError(""); }} onError={setImagePickerError} />{imagePickerError && <p className="room-image-error" role="alert">{imagePickerError}</p>}</>}
       {!editing && createMode === "bulk" && <><div className="room-bulk-image-note"><strong>Ảnh dùng chung ban đầu</strong><p>Các ảnh này sẽ được áp dụng chung cho các phòng tạo thành công.</p><small>Sau khi tạo, mỗi phòng có gallery riêng. Chỉnh sửa một phòng không làm thay đổi phòng khác.</small></div><RoomImagePicker files={singleImages} disabled={saving || Boolean(bulkResult)} onChange={(files) => { setSingleImages(files); setImagePickerError(""); }} onError={setImagePickerError} />{imagePickerError && <p className="room-image-error" role="alert">{imagePickerError}</p>}</>}
