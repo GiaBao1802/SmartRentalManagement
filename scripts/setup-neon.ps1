@@ -53,6 +53,30 @@ function Remove-LocalDatabaseLink {
   }
 }
 
+function Get-ListenerPids([int] $Port) {
+  try {
+    return ,@((Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction Stop | Select-Object -ExpandProperty OwningProcess -Unique))
+  } catch {
+    if ($_.Exception.Message -match 'No MSFT_NetTCPConnection objects found|No matching MSFT_NetTCPConnection') { return ,@() }
+    throw "Không xác minh được process đang giữ cổng $Port; dừng để tránh kill nhầm process."
+  }
+}
+
+function Stop-ExistingProjectServers {
+  Write-Host 'Đang dừng frontend/backend cũ đã xác minh thuộc Góc Trọ...'
+  & (Join-Path $PSScriptRoot 'dev-stop.ps1')
+  if ($LASTEXITCODE -ne 0) { throw 'Không dừng được server Góc Trọ cũ; chưa khởi động phiên mới.' }
+
+  foreach ($port in @(3000, 4000)) {
+    $pids = @(Get-ListenerPids $port)
+    if ($pids.Count -gt 0) {
+      $owners = ($pids -join ', ')
+      throw "Cổng $port vẫn được giữ bởi PID $owners. Các process này không xác minh thuộc Góc Trọ nên được giữ nguyên; hãy đóng đúng ứng dụng đang dùng cổng rồi chạy lại option 5."
+    }
+  }
+  Write-Host 'Cổng 3000 và 4000 đã sẵn sàng.'
+}
+
 function Assert-LatestMainBranch {
   if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
     throw 'Option 5 chỉ chạy từ nhánh Git main mới nhất. Cài Git, lấy code từ main rồi chạy lại.'
@@ -143,9 +167,9 @@ try {
   if ($LASTEXITCODE -ne 0) { throw 'Không kết nối hoặc schema cloud chưa sẵn sàng. Không chạy migration/seed/reset.' }
   Remove-LocalDatabaseLink
 
-  Write-Host 'Nếu app đang chạy ở cổng 3000 hoặc 4000, hãy dừng phiên đó trước khi tiếp tục.' -ForegroundColor Yellow
   $start = (Read-Host 'Nhập CHAY để khởi động app bằng database chung').Trim()
   if ($start -cne 'CHAY') { Write-Host 'Đã kiểm tra Neon và gỡ liên kết DB local khỏi backend/.env. Khi sẵn sàng, chạy: npm run dev:neon'; exit 0 }
+  Stop-ExistingProjectServers
   Write-Host 'Đang khởi động frontend + backend trên Neon. Nhấn Ctrl+C để dừng.'
   & npm.cmd run dev:neon
   if ($LASTEXITCODE -ne 0) { throw 'Ứng dụng không khởi động thành công; kiểm tra lỗi cổng hoặc log phía trên.' }

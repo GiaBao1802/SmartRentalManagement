@@ -65,7 +65,7 @@ Tài liệu Neon CLI hiện hành: [neon.com/cli](https://neon.com/cli). Trên P
 4. Khi setup mở trình duyệt đăng nhập Neon, đăng nhập bằng đúng tài khoản đã nhận lời mời và được cấp quyền project. Chấp thuận màn hình OAuth nếu được hỏi, sau đó quay lại cửa sổ setup.
 5. Khi được hỏi xác nhận dùng database cloud, gõ chính xác `DUNG`.
 6. Chờ setup cài dependency nếu cần, kéo cấu hình Postgres về file cục bộ bị Git bỏ qua, rồi kiểm tra kết nối/schema. Không copy connection string vào chat, GitHub, hoặc file được commit.
-7. Khi setup hỏi chạy ứng dụng, gõ `CHAY` để khởi động; nếu chưa muốn chạy, nhấn Enter. Nếu frontend/backend đã chạy ở cổng 3000/4000, dừng phiên đó trước.
+7. Khi setup hỏi chạy ứng dụng, gõ `CHAY` để khởi động; nếu chưa muốn chạy, nhấn Enter. Sau `CHAY`, option 5 tự dừng frontend/backend cũ đã xác minh thuộc Góc Trọ và kiểm tra cổng 3000/4000. Nếu cổng vẫn do process không xác minh được giữ, setup báo PID và dừng để tránh kill nhầm ứng dụng khác.
 
 Setup có thể yêu cầu đăng nhập Neon CLI lần đầu. Nếu trình duyệt mở, hoàn tất đăng nhập rồi quay lại terminal và đợi setup tiếp tục. Không nhập mật khẩu Neon vào terminal hoặc gửi cho người khác.
 
