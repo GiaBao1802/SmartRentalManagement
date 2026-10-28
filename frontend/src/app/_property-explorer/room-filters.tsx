@@ -24,8 +24,10 @@ export function RoomFilters({ filters, onApply, allowProvince }: {
     min="0" step="0.01" maxLength={19} value={draft[key] ?? ""}
     onChange={e => setDraft({ ...draft, [key]: e.target.value })} placeholder="Bất kỳ" /></label>;
   return <form className="explore-inline-filters" aria-label="Lọc danh sách phòng" onSubmit={apply}>
-    {allowProvince && <label>Tỉnh/thành<input maxLength={120} value={draft.province ?? ""} onChange={e => setDraft({ ...draft, province: e.target.value })} placeholder="Toàn quốc" /></label>}
-    <label>Địa chỉ / khu vực<input maxLength={200} value={draft.address ?? ""} onChange={e => setDraft({ ...draft, address: e.target.value })} placeholder="Đường, phường hoặc khu vực" /></label>
+    {allowProvince && draft.location !== undefined ? <label>Tỉnh/thành hoặc khu vực<input maxLength={100} value={draft.location ?? ""} onChange={e => setDraft({ ...draft, location: e.target.value })} placeholder="Ví dụ: Đồng Nai, Biên Hòa" /></label> : <>
+      {allowProvince && <label>Tỉnh/thành<input maxLength={120} value={draft.province ?? ""} onChange={e => setDraft({ ...draft, province: e.target.value })} placeholder="Toàn quốc" /></label>}
+      <label>Địa chỉ / khu vực<input maxLength={200} value={draft.address ?? ""} onChange={e => setDraft({ ...draft, address: e.target.value })} placeholder="Đường, phường hoặc khu vực" /></label>
+    </>}
     {field("price_min", "Giá từ (đ/tháng)")}{field("price_max", "Giá đến (đ/tháng)")}
     {field("area_min", "Diện tích từ (m²)")}{field("area_max", "Diện tích đến (m²)")}
     <label>Sức chứa tối thiểu<select value={draft.capacity_min ?? ""} onChange={e => setDraft({ ...draft, capacity_min: e.target.value })}><option value="">Bất kỳ</option>{[1, 2, 3, 4].map(n => <option key={n} value={n}>{n} người</option>)}</select></label>

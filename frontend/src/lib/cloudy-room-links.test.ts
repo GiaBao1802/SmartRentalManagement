@@ -17,3 +17,12 @@ test("does not linkify user text or nonnumeric route markers", () => {
     { text: "[[room:../../admin]]" },
   ]);
 });
+
+test("creates a same-site all-results link with only bounded public search filters", () => {
+  const encoded = encodeURIComponent("location=Biên Hòa&price_max=3999999&page=1&page_size=12&sort=price_asc");
+  assert.deepEqual(parseCloudyRoomLinks(`[[results:${encoded}]]`, true), [
+    { text: "Xem toàn bộ kết quả phòng", href: "/rooms?location=Bi%C3%AAn+H%C3%B2a&price_max=3999999&page=1&page_size=12&sort=price_asc" },
+  ]);
+  const externalLike = encodeURIComponent("https://evil.example/");
+  assert.equal(parseCloudyRoomLinks(`[[results:${externalLike}]]`, true)[0]?.href, undefined);
+});

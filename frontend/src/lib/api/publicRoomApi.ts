@@ -21,6 +21,8 @@ export type PublicRoomListResponse = { data: PublicRoomListItem[]; meta: PageMet
 export type PublicRoomFilters = {
   province?: string;
   address?: string;
+  /** Local `/rooms` handoff filter; matched against province/address after a bounded public API scan. */
+  location?: string;
   price_min?: string;
   price_max?: string;
   area_min?: string;
@@ -60,7 +62,7 @@ export type AdminContactRequestFilters = { page?: number; page_size?: number; pr
 const apiBaseUrl = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api/v1").replace(/\/$/, "");
 const apiBase = new URL(apiBaseUrl);
 const apiBasePath = apiBase.pathname.replace(/\/$/, "");
-const publicRoomFilterKeys = ["province", "address", "price_min", "price_max", "area_min", "area_max", "capacity_min", "sort"] as const;
+const publicRoomFilterKeys = ["province", "address", "location", "price_min", "price_max", "area_min", "area_max", "capacity_min", "sort"] as const;
 
 export function serializePublicRoomFilters(filters: PublicRoomFilters): URLSearchParams {
   const query = new URLSearchParams();
@@ -88,7 +90,34 @@ export function resolvePublicRoomImageUrl(path: string | null | undefined): stri
 }
 
 export function listPublicRooms(filters: PublicRoomFilters = {}) {
-  return apiRequest<PublicRoomListResponse>(`/public/rooms?${serializePublicRoomFilters(filters)}`, { authRequired: false });
+  const location = filters.location?.trim();
+  const apiFilters = { ...filters };
+  delete apiFilters.location;
+  if (!location) return apiRequest<PublicRoomListResponse>(`/public/rooms?${serializePublicRoomFilters(apiFilters)}`, { authRequired: false });
+  return listPublicRoomsAtLocation(apiFilters, location);
+}
+
+const normalizeRoomLocation = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[đĐ]/g, "d").toLocaleLowerCase("vi").replace(/\s+/g, " ").trim();
+
+async function listPublicRoomsAtLocation(filters: PublicRoomFilters, location: string): Promise<PublicRoomListResponse> {
+  const scanPageSize = 100;
+  const first = await apiRequest<PublicRoomListResponse>(`/public/rooms?${serializePublicRoomFilters({ ...filters, page: 1, page_size: scanPageSize })}`, { authRequired: false });
+  if (first.meta.page !== 1 || first.meta.page_size !== scanPageSize || first.meta.total_pages !== Math.ceil(first.meta.total_items / scanPageSize)) throw new Error("Dữ liệu phân trang phòng công khai không hợp lệ.");
+  if (first.meta.total_pages > 10) throw new Error("CLOUDY_RESULT_LIMIT");
+  const rows = [...first.data];
+  for (let page = 2; page <= first.meta.total_pages; page++) {
+    const response = await apiRequest<PublicRoomListResponse>(`/public/rooms?${serializePublicRoomFilters({ ...filters, page, page_size: scanPageSize })}`, { authRequired: false });
+    if (response.meta.page !== page || response.meta.page_size !== scanPageSize || response.meta.total_items !== first.meta.total_items || response.meta.total_pages !== first.meta.total_pages) throw new Error("Danh sách phòng công khai đã thay đổi trong lúc tải.");
+    rows.push(...response.data);
+  }
+  const needle = normalizeRoomLocation(location);
+  const matches = rows.filter(room => normalizeRoomLocation(`${room.property.province} ${room.property.address}`).includes(needle));
+  const page = filters.page ?? 1;
+  const pageSize = filters.page_size ?? 20;
+  return {
+    data: matches.slice((page - 1) * pageSize, page * pageSize),
+    meta: { page, page_size: pageSize, total_items: matches.length, total_pages: Math.ceil(matches.length / pageSize) },
+  };
 }
 
 export function getPublicRoom(roomId: string) {

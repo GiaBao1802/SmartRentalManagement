@@ -68,7 +68,7 @@ export default function Explorer({ initialFilters }: { initialFilters?: PublicRo
     if (!hasResultsScope || !data) { setResultsLoading(false); return; }
     let active = true; setResultsLoading(true);
     Promise.resolve().then(() => mock ? demoResults(selected, filters) : selected ? rooms(selected, filters) : listPublicRooms(filters)).then(r => { if (active) setResults(r); })
-      .catch(() => { if (active) setResultError("Không tải được danh sách phòng. Vui lòng thử lại."); }).finally(() => { if (active) setResultsLoading(false); });
+      .catch(error => { if (active) setResultError(error instanceof Error && error.message === "CLOUDY_RESULT_LIMIT" ? "Có quá nhiều kết quả để tải cùng lúc. Hãy thu hẹp khu vực, giá hoặc diện tích rồi thử lại." : "Không tải được danh sách phòng. Vui lòng thử lại."); }).finally(() => { if (active) setResultsLoading(false); });
     return () => { active = false; };
   }, [selected, filters, mock, data, retry, hasResultsScope]);
   useEffect(() => { if (preview) dialog.current?.showModal(); else dialog.current?.close(); }, [preview]);
@@ -112,7 +112,7 @@ export default function Explorer({ initialFilters }: { initialFilters?: PublicRo
   const stat = data?.provinces.find(p => p.code === selected);
   const all = data?.provinces ?? geo?.features.map(f => f.properties) ?? [];
   const matches = all.filter(p => normalize(p.name).includes(normalize(search)));
-  const provinceName = all.find(p => p.code === selected)?.name ?? (incomingSearch ? filters.province || "Toàn quốc" : "Chọn một tỉnh/thành");
+  const provinceName = all.find(p => p.code === selected)?.name ?? (incomingSearch ? filters.location || filters.province || "Toàn quốc" : "Chọn một tỉnh/thành");
   const total = data?.provinces.reduce((sum, p) => sum + p.public_rooms, 0);
   const properties = data?.provinces.reduce((sum, p) => sum + p.public_properties, 0);
   const filteredEmpty = incomingSearch || !!stat?.public_rooms;

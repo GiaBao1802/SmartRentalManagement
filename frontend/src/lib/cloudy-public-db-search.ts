@@ -71,8 +71,11 @@ export async function searchPublicDatabaseRooms(context: FilterContext, signal: 
   const matches = rows.filter(room => !needle || normalize(`${room.property.province} ${room.property.address}`).includes(needle));
   const cards = matches.slice(0, 5).map(room => ({ id: room.room_id, name: room.room_code, property: room.property.name, province: room.property.province, rent: Number(room.default_rent), area: Number(room.area_m2), capacity: room.default_capacity }));
   const summary = contextSummary(context);
+  const resultQuery = new URLSearchParams(query);
+  resultQuery.set("page", "1"); resultQuery.set("page_size", "12");
+  if (context.location) resultQuery.set("location", context.location);
   const text = matches.length
-    ? `Mình tìm thấy ${matches.length} phòng đang công khai trong dữ liệu hiện tại. Đây là tối đa 5 phòng, xếp theo giá thuê tăng dần:\n\n${cards.map(c => `• ${c.property} · Phòng ${c.name} — ${c.province}\n${c.rent.toLocaleString("vi-VN")} đ/cả phòng/tháng · ${c.area} m² · tối đa ${c.capacity} người\n[[room:${c.id}]]`).join("\n\n")}\n\nGiá chưa gồm điện nước/phí. Kết quả là tin đang công khai lúc tra cứu, chưa phải xác nhận đặt phòng.\n\nĐã xác nhận: ${summary}`
+    ? `Mình tìm thấy ${matches.length} phòng đang công khai trong dữ liệu hiện tại. Đây là tối đa 5 phòng, xếp theo giá thuê tăng dần:\n\n${cards.map(c => `• ${c.property} · Phòng ${c.name} — ${c.province}\n${c.rent.toLocaleString("vi-VN")} đ/cả phòng/tháng · ${c.area} m² · tối đa ${c.capacity} người\n[[room:${c.id}]]`).join("\n\n")}\n\n[[results:${encodeURIComponent(resultQuery.toString())}]]\n\nGiá chưa gồm điện nước/phí. Kết quả là tin đang công khai lúc tra cứu, chưa phải xác nhận đặt phòng.\n\nĐã xác nhận: ${summary}`
     : `Hiện không có phòng đang công khai khớp toàn bộ điều kiện trên database. Mình chưa tự nới điều kiện.\n\nĐã xác nhận: ${summary}`;
   return { text, source: "public_database" as const, model: "qwen3:1.7b" as const, status: matches.length ? "preview" as const : "no_matches" as const, context };
 }

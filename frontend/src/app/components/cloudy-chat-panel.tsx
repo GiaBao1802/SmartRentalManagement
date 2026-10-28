@@ -24,8 +24,8 @@ function CloudyPortrait() {
 
 function CloudyMessageText({ text, allowRoomLinks }: { text: string; allowRoomLinks: boolean }) {
   return <>{parseCloudyRoomLinks(text, allowRoomLinks).map((segment, index) => {
-    return segment.roomId
-      ? <a key={index} href={`/rooms/${segment.roomId}`}>{segment.text} <span aria-hidden="true">→</span></a>
+    return segment.href || segment.roomId
+      ? <a key={index} href={segment.href ?? `/rooms/${segment.roomId}`}>{segment.text} <span aria-hidden="true">→</span></a>
       : <Fragment key={index}>{segment.text}</Fragment>;
   })}</>;
 }

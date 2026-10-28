@@ -9,6 +9,7 @@ test("confirmed DB search maps filters to public API and renders real rows",asyn
  const result=await searchPublicDatabaseRooms(context,new AbortController().signal,(async input=>{requested=new URL(String(input));return Response.json({data:[room],meta:{total_items:1,total_pages:1,page:1,page_size:100}});}) as typeof fetch,"http://localhost:4000/api/v1");
  assert.equal(requested.pathname,"/api/v1/public/rooms");assert.equal(requested.searchParams.get("province"),null);assert.equal(requested.searchParams.get("price_max"),"3999999");assert.equal(requested.searchParams.get("capacity_min"),"2");
  assert.equal(result.status,"preview");assert.match(result.text,/1 phòng đang công khai/);assert.match(result.text,/C102/);assert.match(result.text,/\[\[room:202\]\]/);assert.equal(result.source,"public_database");
+ assert.match(result.text,/\[\[results:/);
 });
 test("location matching ignores Vietnamese accents and filter order is stable",async()=>{
  const noAccent={...context,location:"Da Nang"};

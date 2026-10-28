@@ -21,6 +21,7 @@ export default async function PublicRoomsPage({ searchParams }: { searchParams: 
   const initialFilters: PublicRoomFilters = {
     province: first(query.province)?.slice(0, 120),
     address: first(query.address)?.slice(0, 200),
+    location: first(query.location)?.slice(0, 100),
     price_min: first(query.price_min)?.slice(0, 19),
     price_max: first(query.price_max)?.slice(0, 19),
     area_min: first(query.area_min)?.slice(0, 12),

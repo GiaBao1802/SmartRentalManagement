@@ -41,14 +41,40 @@ test("public Room list preserves V1 data/meta and routes backend covers through 
 });
 
 test("public Room list serializes only canonical filters and uses backend pagination", async () => {
-  const query = serializePublicRoomFilters({ province: " Đồng Nai ", address: " Đường Mẫu ", price_min: "1000000", price_max: "5000000", area_min: "20", area_max: "40", capacity_min: "2", sort: "price_asc", page: 3, page_size: 12, property_name: "must not send" } as never);
-  assert.deepEqual([...query.entries()], [["page", "3"], ["page_size", "12"], ["province", "Đồng Nai"], ["address", "Đường Mẫu"], ["price_min", "1000000"], ["price_max", "5000000"], ["area_min", "20"], ["area_max", "40"], ["capacity_min", "2"], ["sort", "price_asc"]]);
+  const query = serializePublicRoomFilters({ province: " Đồng Nai ", address: " Đường Mẫu ", location: "Biên Hòa", price_min: "1000000", price_max: "5000000", area_min: "20", area_max: "40", capacity_min: "2", sort: "price_asc", page: 3, page_size: 12, property_name: "must not send" } as never);
+  assert.deepEqual([...query.entries()], [["page", "3"], ["page_size", "12"], ["province", "Đồng Nai"], ["address", "Đường Mẫu"], ["location", "Biên Hòa"], ["price_min", "1000000"], ["price_max", "5000000"], ["area_min", "20"], ["area_max", "40"], ["capacity_min", "2"], ["sort", "price_asc"]]);
   let url = "";
   globalThis.fetch = (async (input: RequestInfo | URL) => { url = String(input); return Response.json({ data: [], meta: { page: 3, page_size: 12, total_items: 0, total_pages: 0 } }); }) as typeof fetch;
   const response = await listPublicRooms({ page: 3, page_size: 12, province: "Đồng Nai", sort: "price_asc" });
   assert.equal(new URL(url).pathname, "/api/v1/public/rooms");
   assert.equal(new URL(url).searchParams.get("sort"), "price_asc");
+  assert.equal(new URL(url).searchParams.has("location"), false, "location is a bounded client-side handoff filter, not a backend API parameter");
   assert.equal(response.meta.page, 3);
+});
+
+test("Cloudy all-results location handoff scans bounded API pages and paginates every match", async () => {
+  const calls: URL[] = [];
+  const row = (id: number, province: string, address: string) => ({
+    room_id: String(id), room_code: `R${id}`, property: { name: `Property ${id}`, province, address },
+    default_rent: "3000000", area_m2: "24.00", default_capacity: 2, status: "available" as const,
+    public_description: null, cover_image: null,
+  });
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = new URL(String(input)); calls.push(url);
+    const page = Number(url.searchParams.get("page"));
+    const data = page === 1
+      ? [row(1, "Đồng Nai", "Biên Hòa"), ...Array.from({ length: 99 }, (_, i) => row(i + 2, "TP. Hồ Chí Minh", "Quận 1"))]
+      : [row(101, "Đồng Nai", "Long Thành")];
+    return Response.json({ data, meta: { page, page_size: 100, total_items: 101, total_pages: 2 } });
+  }) as typeof fetch;
+
+  const result = await listPublicRooms({ location: "Dong Nai", price_max: "3999999", sort: "price_asc", page: 2, page_size: 1 });
+  assert.deepEqual(result.data.map(room => room.room_id), ["101"]);
+  assert.deepEqual(result.meta, { page: 2, page_size: 1, total_items: 2, total_pages: 2 });
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0]?.searchParams.has("location"), false);
+  assert.equal(calls[0]?.searchParams.get("price_max"), "3999999");
+  assert.equal(calls[0]?.searchParams.get("page_size"), "100");
 });
 
 test("public Room detail uses a string route ID and detail DTO", async () => {

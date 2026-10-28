@@ -26,6 +26,10 @@ Each Cloudy result now includes a “Xem chi tiết phòng” link to the existi
 
 Focused Cloudy tests and frontend typecheck pass. The link route and API are unchanged; no database or business writes.
 
+## Full matching-results handoff — 2026-10-28
+
+The preview now has a separate “Xem toàn bộ kết quả phòng” link. It carries the confirmed location, rent, area and capacity filters to `/rooms`; the existing list screen loads the matching public API pages, applies Cloudy's accent-insensitive province/address match, and provides regular pagination. The first assistant reply may still show five examples, while the full list can page through up to 1,000 candidate public rows; larger searches ask the guest to narrow the filters. Live local DB verification returned 26 matches and three 12-room pages for Đồng Nai, under 4,000,000 VND and capacity two. No new backend route or database change is needed.
+
 ## Delivered
 
 The user requested integration into the existing mascot. Development now connects Cloudy to a Next route and a repository-contained Python worker using local Ollama Qwen3 1.7B. The model returns intent/candidate decisions as JSON; deterministic guards validate and filter the 300-room synthetic catalog. The frontend receives plain text, a synthetic-source flag, model name and result status. It never generates or executes SQL.
