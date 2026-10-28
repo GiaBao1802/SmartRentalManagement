@@ -4,6 +4,8 @@
 
 [Intro scroll and startup correction](07_modules/public-marketplace/INTRO_SCROLL_PERFORMANCE_FIX_20261028.md) — CURRENT. Native wheel input, independent hover transforms, once-only reveal/clip animations, removal of the animated noise overlay/gallery-label blur, and startup sequencing so the hero canvas waits for the loader in both static intro copies. JavaScript syntax, mirror integrity and diff checks pass; startup smoothness, FPS and mobile behavior remain unmeasured. Business/API/database and primary Exact Next Task unchanged.
 
+Navigation follow-up: section-aware desktop/mobile active state, one small green pointer dot, mobile anchor ordering, and middle-of-page reload initialization correction. Desktop interaction/direct-link and 390×844 mobile menu checks pass; FPS remains unmeasured. Evidence is appended to the same report.
+
 ## Neon shared database setup — 2026-10-28
 
 [Neon setup runbook](10_operations/NEON_SHARED_DATABASE_SETUP.md) — CURRENT, V1.15 plus shared synthetic dataset: 100 varied rooms, 10 demo resident accounts linked to active contracts/occupancies, property facilities, vehicles and Parking inventory. Ten rooms are occupied and 90 are publicly available. Setup menu option 5 requires latest Git `main`, links each developer to Neon `production`, pulls ignored local env values, verifies the catalog read-only, and can start the app; it does not migrate/seed/reset cloud data. It stops only verified Góc Trọ dev processes before startup and preserves unrelated port owners. tv999ht@gmail.com has project Editor; Lamsonhung1999@gmail.com is still pending.

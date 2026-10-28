@@ -43,3 +43,23 @@ The publish set is six static files (`index.html`, `assets/css/app.css`, `assets
 The hero particle canvas previously started its continuous `requestAnimationFrame` loop while the full-screen loader was still drawing its own canvas. The two effects could compete for rendering time on slower devices during the initial transition. The hero loop now waits until the loader hides, then resumes; direct entry without an active loader still starts the hero animation normally. The change is mirrored in `frontend/public/intro/` and `goctro-potadot-preview/`.
 
 Both JavaScript copies pass `node --check`, their hashes match, and `git diff --check` passes. Startup smoothness was not measured in a browser and no FPS/frame-time trace was captured; the change reduces overlapping canvas work but is not a quantified performance guarantee. No content, business/API/database behavior changed.
+
+## Navigation and pointer follow-up — 2026-10-28
+
+The user reported that the green active-menu dot stayed on Home while the hover pill moved elsewhere, and requested removal of the large “Đổi dạng” cursor. The old implementation cached the initial active link and never updated `aria-current` from clicks or scrolling.
+
+- Added mirrored `intro-interactions.js` modules. One selected section now controls the desktop pill, green dot, and mobile `aria-current="location"`. Scroll tracking uses cached section positions with requestAnimationFrame batching; resize/font/layout changes refresh the positions.
+- Clicks select the destination immediately while anchor scrolling completes. Wheel/touch/scroll-key input releases that temporary destination lock. Hover/focus no longer moves the selected pill away from its dot.
+- The header stays visible while its controls have keyboard focus. Mobile anchors resume Lenis before requesting a scroll, then close the menu.
+- Removed creation of the large cursor/label and colored trailing dots. Only one 8px green pointer dot remains; the hero no longer advertises a “Đổi dạng” cursor label. Hero particle interaction is retained.
+- A reload at an existing middle-of-page scroll position exposed a ScrollTrigger initialization error caused by removing once-only triggers during construction. Reveal effects now use an `is-revealed` guard and clip timelines retain explicit no-reverse toggle actions without deleting those triggers. The first-appearance-only behavior is preserved. Navigation/pointer initialize before decorative effects.
+
+Verification: desktop clicks for Home/Gallery/Features/Projects/Contact, Enter-key navigation, manual-scroll selection, 390×844 mobile menu closure/section navigation, and direct `#features` page load passed. A fresh direct-link tab recorded zero JavaScript errors, exactly one pill and one pointer dot, and no large cursor or trails. Initial masks/reveals remain visible after upward scrolling. Temporary viewport override was reset. Screenshots are ignored local evidence under `.local/intro-nav-fix/`.
+
+Both static copies pass JavaScript/CSS parsing and mirror checks; third-party bundled code is unchanged. Seven unrelated Admin/Resident files remain byte-identical to the pre-handoff backup. No backend/API/database/environment or primary Exact Next Task change. Browser evidence above records local validation before the authorized Git synchronization.
+
+## Navigation/startup synchronization — 2026-10-28
+
+The user authorized publishing the navigation/pointer changes and pulling the latest project. Upstream `c54b744` startup canvas sequencing and PowerShell port checks are retained. The loader completion listener is attached to `window`, matching the upstream event dispatch target, so the hero loop can resume after loading. No business/API/database migration or environment change is part of this synchronization.
+
+Combined-source verification: frontend typecheck, JavaScript/CSS parsing, four-file mirror checks, and syntax parsing of both upstream PowerShell files pass. The PowerShell scripts were not executed. A fresh browser load completed with one selected-menu pill, one small pointer dot and no large cursor/trails; clicking Features selected the correct item and settled its section at approximately 90px below the viewport top. No JavaScript errors were recorded. Canvas frame-time/FPS was not measured; an additional screenshot attempt was unavailable, so no visual frame-comparison claim is made. Seven excluded Admin/Resident files were restored byte for byte from the verified backup before publication.

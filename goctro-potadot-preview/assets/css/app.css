@@ -364,3 +364,15 @@ body::after {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
+
+/* Selected section drives both the pill and dot; hover never changes selection. */
+.nav-links a[aria-current="location"] { color: var(--green-ink); }
+.nav-links a[aria-current="location"]::after {
+  content: ""; position: absolute; left: 50%; bottom: 3px;
+  width: 5px; height: 5px; margin-left: -2.5px;
+  border-radius: 50%; background: var(--green);
+}
+.nav-links a:not([aria-current="location"]):hover { color: var(--green-ink); }
+.mobile-menu .mm-link[aria-current="location"] { color: var(--green); }
+/* Keep one small pointer dot, including when older cached markup is present. */
+.cursor, .trail { display: none !important; }
