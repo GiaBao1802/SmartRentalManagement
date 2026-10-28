@@ -2,7 +2,7 @@
 
 ## Neon shared database setup — 2026-10-28
 
-[Neon setup runbook](10_operations/NEON_SHARED_DATABASE_SETUP.md) — CURRENT, V1.15 plus shared synthetic 100-room dataset. Setup menu option 5 links each developer to the shared branch, pulls ignored local env values, verifies the catalog read-only, and can start the app; it does not migrate/seed/reset the cloud database. A Collaborator invite is pending acceptance; grant project-only Editor access before setup.
+[Neon setup runbook](10_operations/NEON_SHARED_DATABASE_SETUP.md) — CURRENT, V1.15 plus shared synthetic dataset: 100 varied room descriptions, property facilities, vehicles and Parking inventory. Setup menu option 5 links each developer to the shared branch, pulls ignored local env values, verifies the catalog read-only, and can start the app; it does not migrate/seed/reset the cloud database. A Collaborator invite is pending acceptance; grant project-only Editor access before setup.
 
 [Neon teammate onboarding](10_operations/NEON_TEAMMATE_ONBOARDING.md) — CURRENT. Step-by-step Windows instructions for a new Neon user: register with the invited email, accept the org invite, receive project-level Editor, pull the setup branch, and run option 5 safely.
 
@@ -78,7 +78,7 @@
 | `DOCUMENT_CATALOG.md` | Catalog | CURRENT | This inventory. |
 | `01_REQUIREMENTS.md` | Product requirements | CURRENT — CANONICAL | Business requirements authority for SmartRentalManagement. Historical source provenance is retained in the dependency copies and reports. |
 | `04_API_SPEC.md` | API contract | CURRENT — CANONICAL | `/api/v1` contract authority for SmartRentalManagement. Historical source provenance is retained where applicable. |
-| `DATABASE_CHANGELOG.md` | Database changelog | CURRENT — CANONICAL | Local `Goctro_dev_v18` has populated V1.15; Neon `production` has a separate schema-only V1.15 install with no seed or imported data. |
+| `DATABASE_CHANGELOG.md` | Database changelog | CURRENT — CANONICAL | Local `Goctro_dev_v18` has populated V1.15; Neon `production` has V1.15 plus the documented shared synthetic dataset. |
 | `../database/baselines/v1.15/` | Database / Resident Parking requests | PROMOTED_LOCAL — APPLIED AND VERIFIED | Adds slot vehicle type/offer configuration and Resident parking requests on the local V1.14 branch. Backup, restore rehearsal, exact catalog and unchanged predecessor fingerprints verified. |
 | `07_modules/parking/RESIDENT_PARKING_REQUESTS_IMPLEMENTATION_20261028.md` | Parking / Resident request and Admin approval | CURRENT SOURCE IMPLEMENTATION — V1.15 APPLIED; USER REVIEW PENDING | Owner-scoped API, Admin slot offers/approval queue, Resident area-first slot discovery and vehicle add/delete, request/history. Vehicle deletion preserves Parking request/assignment history. |
 | `11_project-reports/SOURCE_OF_TRUTH_CURRENT_STATE_GOVERNANCE_FINALIZATION_REPORT.md` | Project governance / Current State workflow | CURRENT | Records evidence checked, stale API baseline metadata reconciled, authority order, workflow, catalog, and checkpoint finalization. |
@@ -191,7 +191,7 @@
 | `08_audits/PRE_GIT_STEP_3_TRACKED_DELETION_REVIEW.md` | Cross-domain repository staging preparation | CURRENT — STEP 3 REVIEW | Confirms three documentation deletions are intentional moves with preserved replacements; no staging, restore, or deletion was performed. |
 | `08_audits/PRE_GIT_STEP_4_LEGACY_RETIREMENT_AUDIT.md` | Cross-domain repository cleanup / legacy retirement | REFERENCE — PRE-PHASE-1 SNAPSHOT | Preserves the earlier inventory before source removal. Current cleanup status, fresh diagnostic measurements and phased next steps are in LEGACY_TO_CURRENT_MIGRATION_PLAN.md; historical no-deletion claims apply only to the earlier audit. |
 | `10_operations/LOCAL_DEV_STARTUP_REPORT.md` | Local operations | REFERENCE | Windows local development startup procedure and diagnostics. |
-| `10_operations/NEON_SHARED_DATABASE_SETUP.md` | Shared cloud database operations | CURRENT — SCHEMA-ONLY V1.15; CONNECTION VERIFIED | Neon project/branch details, team setup, ignored environment workflow, safe schema-only install evidence, build/runtime checks, and remaining data-import/access steps. |
+| `10_operations/NEON_SHARED_DATABASE_SETUP.md` | Shared cloud database operations | CURRENT — V1.15 SYNTHETIC DATA; CONNECTION VERIFIED | Neon project/branch details, team setup, ignored environment workflow, synthetic dataset inventory, safe schema install evidence, build/runtime checks, and access steps. |
 | `10_operations/NEON_TEAMMATE_ONBOARDING.md` | Shared cloud database / teammate onboarding | CURRENT | Detailed signup, invitation, project permission, Git branch, Windows prerequisites, and option 5 steps for a teammate new to Neon. |
 | `10_operations/DATABASE_V1_8_SETUP.md` | Database operations / Windows menu setup | HISTORICAL — V1.8 PREDECESSOR | Preserves setup and PostgreSQL 18.6 V1.8 rehearsal evidence. Current local baseline and V1.8 migration instructions are in the V1.9 guide. |
 | `10_operations/DATABASE_V1_9_SETUP.md` | Database operations / V1.9 clean install and V1.8 upgrade | CURRENT — CLEAN INSTALL, POPULATED REHEARSAL AND LOCAL APPLY PASS | V1.9 clean schema+seed, V1.8 migration, backup verification, 40-table preservation fingerprints and runtime validator 85/85. Goctro_test3 was not touched. |
