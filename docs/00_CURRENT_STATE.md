@@ -1,5 +1,9 @@
 # Góc Trọ — Current State
 
+### Resident Parking and V1.15 — applied locally 2026-10-28
+
+Goctro_dev_v18 localhost:5433 upgraded from exact V1.14 to V1.15 after a verified 538-entry backup, successful restore/migration rehearsal, and unchanged fingerprints across all 46 predecessor tables. Read-only state and exact-catalog inspect pass. Parking requests, accepted vehicle type and slot entitlement fields are available. No seed/reset ran. Backup SHA-256: c63d31eaba270fb1d64d7b4c7b3462341aaa6ae723ae7128dda3673c41492a4b; full local evidence: `.local/setup-backups/parking-v115-evidence.json`. Authenticated Resident/Admin UI review remains pending. [Database record](DATABASE_CHANGELOG.md#database-v115--resident-parking-on-the-local-v114-branch-applied-locally-2026-10-28).
+
 ### Resident room requests and V1.14 — 2026-10-28
 
 Cloudy Resident supports complaints/equipment requests for a selected current Occupancy. Admin /admin/requests confirms actual equipment addition, atomically updating only that Room and Complaint history/notification. Local Goctro_dev_v18:5433 promoted exact V1.13→V1.14 after verified backup/restore; 46 tables and 44 predecessor table fingerprints unchanged. 10 HTTP/PostgreSQL tests, typechecks, CORE89/89 and booking17/17 PASS. Browser review pending. [Evidence](07_modules/resident-occupancy/RESIDENT_ROOM_REQUEST_IMPLEMENTATION_REPORT.md).
@@ -12,11 +16,11 @@ Resident login now selects a dedicated Cloudy flow: real BOOKING service request
 
 2026-10-28
 
-### Resident Parking integration — V1.15 rehearsed, target unchanged (2026-10-28)
+### Resident Parking integration — V1.15 history (2026-10-28)
 
-The pulled Parking branch and the user's meter/room-request branch both used V1.13 for different schemas. The user's promoted meter V1.13 and room-request V1.14 are retained as the local baseline. Parking source and original candidate are preserved, with additive DDL rebased to V1.14→V1.15. Disposable PostgreSQL rehearsal passed; the configured application database has not received V1.15. Review, verified backup and target migration remain pending.
+The pulled Parking branch and the user's meter/room-request branch both used V1.13 for different schemas. The user's promoted meter V1.13 and room-request V1.14 remain the local baseline; Parking was rebased to V1.15 and applied after verified backup/restore rehearsal. Original Parking V1.13 artifacts are preserved separately.
 
-Admin can define area/slot inventory, accepted vehicle type and FREE/PAID offer, review Resident requests, and approve/reject with a required reason for rejection. Residents can register a vehicle, find available compatible slots by area/location/code, submit a request, cancel it, and see request/assignment history. A successful request creates an account-scoped Parking notification for active Owner Admins, shown in the Admin bell with Invoice/feedback category and read-state filters. A pending request reserves one slot and Contract parking capacity for 24 hours. Approval creates the linked assignment; requests do not collect payment. Existing Property Parking pricing, invoice rules, and Góc Trọ brand tokens remain in use. A fresh V1.12 backup was verified and the guarded V1.12→V1.13 migration applied to `Goctro_dev_v18`; `state` and `inspect` pass, Prisma can query the new table, and backend DB health is HTTP 200. The exact expected-catalog artifact, V1.13 runtime validator, and authenticated Admin/Resident flow remain unverified, so baseline promotion and user review are still pending. See [Parking implementation report](07_modules/parking/RESIDENT_PARKING_REQUESTS_IMPLEMENTATION_20261028.md).
+Admin can define area/slot inventory, accepted vehicle type and FREE/PAID offer, review Resident requests, and approve/reject with a required reason for rejection. Residents can register a vehicle, find available compatible slots by area/location/code, submit a request, cancel it, and see request/assignment history. A successful request creates an account-scoped Parking notification for active Owner Admins, shown in the Admin bell with Invoice/feedback category and read-state filters. A pending request reserves one slot and Contract parking capacity for 24 hours. Approval creates the linked assignment; requests do not collect payment. Existing Property Parking pricing, invoice rules, and Góc Trọ brand tokens remain in use. Local Goctro_dev_v18 was upgraded V1.14→V1.15 after verified backup and rehearsal; exact-catalog inspect passes and all 46 predecessor table fingerprints are unchanged. Authenticated Admin/Resident review remains pending. See [Parking implementation report](07_modules/parking/RESIDENT_PARKING_REQUESTS_IMPLEMENTATION_20261028.md).
 
 ### Owner advisor demo replaces room recommendation — 2026-10-28
 
@@ -133,9 +137,9 @@ Service Pass 2 implemented Owner-scoped Electricity/Water tariff configuration A
 
 ## Current Physical Database
 
-- `Goctro_dev_v18`, PostgreSQL 18.6 on localhost:5432, populated Database V1.13, is the database named in the current `backend/.env`. The verified V1.12 pre-migration dump is `.local/backups/Goctro_dev_v18_pre_V1_13_20261028.dump`; exact-catalog-guarded migration, structural post-check, read-only state/inspect and Prisma request-table query passed. The V1.13 source baseline is still a candidate pending expected-catalog capture and its runtime validator.
+- `Goctro_dev_v18`, PostgreSQL 18.6 on localhost:5433, is populated at Database V1.15 and is the target named in `backend/.env`. A verified pre-V1.15 dump was checked, a disposable restore rehearsal passed, and the guarded V1.14→V1.15 migration passed exact-catalog verification; fingerprints for all 46 predecessor tables are unchanged. Baseline integrity and `db:validate` passed. Authenticated Parking UI review remains pending.
 - `Goctro_test3` is absent on this PostgreSQL instance. Earlier checkpoint entries describing it as the configured target are historical and superseded by the current environment/database inspection.
-- V1.11 adds Resident bookings to V1.10; V1.12 adds the `demo` payment provider; V1.13 adds Resident Parking requests. Guarded setup requires a verified backup for protected targets. See [V1.13 candidate](../database/baselines/v1.13/README.md), [V1.12 setup history](10_operations/DATABASE_V1_12_SETUP.md), and [Database Changelog](DATABASE_CHANGELOG.md).
+- V1.11 adds Resident bookings to V1.10; V1.12 adds the `demo` payment provider; V1.13 adds meter-photo submissions, V1.14 room/equipment requests, and V1.15 Parking requests. Guarded setup requires a verified backup for protected targets. See [V1.15 baseline](../database/baselines/v1.15/README.md), [V1.12 setup history](10_operations/DATABASE_V1_12_SETUP.md), and [Database Changelog](DATABASE_CHANGELOG.md).
 
 ### Local database setup tooling — 2026-10-16
 
@@ -149,7 +153,7 @@ Latest Auth browser/UI pass (2026-10-19): Admin invitation → human accept → 
 
 ## Active Module
 
-**Resident room and Parking requests — integration in progress.** Resident room/equipment requests and local V1.14 are preserved. The pulled Parking source flow is preserved; its V1.13 candidate conflicts with the already-promoted local meter V1.13, so Parking is being rebased as an additive V1.15 candidate on the local V1.14 baseline. Authenticated review and V1.15 promotion remain pending.
+**Resident room and Parking requests — local database upgraded; authenticated review pending.** Resident room/equipment requests remain on V1.14 and Parking is additive V1.15. The local target was upgraded after backup verification and rehearsal; old-table data fingerprints are unchanged. Authenticated Parking UI review is the next task.
 
 ### Legacy-to-current migration — Phase 1 completed, 2026-10-16
 
@@ -160,14 +164,14 @@ Phase 1 inventoried legacy consumers and removed only four unused frontend workf
 ## Module Status
 
 - **Billing / Invoice:** prior finalize route/PostgreSQL and authenticated Invoice browser evidence remains valid. Scheduler unit tests **8/8 PASS**; PostgreSQL V1.8 CORE **78/78**, fixture **171/171**; Invoice suite **157 PASS / 0 FAIL / 3 SKIP**, Auth **20/20 PASS**, frontend API/UI **57/57 PASS**, and frontend typecheck/production build PASS. Pass 3 browser verified Billing readiness and a successful itemized finalize with Rent, Electricity, Water, Fixed Service, Flexible Service, and Parking lines. PostgreSQL verifies charge rollback, out-of-period exclusion, and READY→INVOICED transactionality. The browser verified billed status after reload. Exact workspace narrow viewport and post-finalize filters remain incomplete. Billing stays **PARTIAL** pending authenticated review of Parking and final overall closure.
-- **Service / Utilities / Paid Services:** **PARTIAL — existing APIs, PostgreSQL integration and core authenticated Admin browser smoke PASS; Parking Resident/Admin source flow implemented and V1.13 applied locally, user review pending; exact responsive viewport unverified.** Sidebar exposes one “Dịch vụ & Tiện ích” entry; its workspace navigation contains four tabs: Điện & nước, Dịch vụ cố định, Tiện ích phát sinh and Parking. `/admin/services` redirects to `/admin/services/utilities`; the sidebar remains a single entry. Admin `/admin/viewings` is labeled “Lịch tiện ích” and renders a deferred-feature screen; the prior viewing-request workflow source is preserved but is not called by the page. Fixed/Flexible pricing and Billing integration remain intact. Flexible charge creation stays in backend and the direct Admin operational screen is no longer a primary navigation action. Approved future direction is Resident request/use → scheduling when needed → confirmed completion → backend charge → Billing; Resident scheduling is not implemented here. Prior Pass 3 evidence remains: CORE **78/78**, fixture **171/171**, Service **14/14**, Invoice **157 PASS / 0 FAIL / 3 SKIP**, Auth **20/20**, frontend API/UI **57/57**, frontend typecheck/build PASS; browser verified billing and service lifecycle. IA unit/type/build validation is tracked in the latest realignment report. `Goctro_test3` was not used for this Parking work.
+- **Service / Utilities / Paid Services:** **PARTIAL — existing APIs, PostgreSQL integration and core authenticated Admin browser smoke PASS; Parking Resident/Admin source flow implemented and V1.15 applied locally, user review pending; exact responsive viewport unverified.** Sidebar exposes one “Dịch vụ & Tiện ích” entry; its workspace navigation contains four tabs: Điện & nước, Dịch vụ cố định, Tiện ích phát sinh and Parking. `/admin/services` redirects to `/admin/services/utilities`; the sidebar remains a single entry. Admin `/admin/viewings` is labeled “Lịch tiện ích” and renders a deferred-feature screen; the prior viewing-request workflow source is preserved but is not called by the page. Fixed/Flexible pricing and Billing integration remain intact. Flexible charge creation stays in backend and the direct Admin operational screen is no longer a primary navigation action. Approved future direction is Resident request/use → scheduling when needed → confirmed completion → backend charge → Billing; Resident scheduling is not implemented here. Prior Pass 3 evidence remains: CORE **78/78**, fixture **171/171**, Service **14/14**, Invoice **157 PASS / 0 FAIL / 3 SKIP**, Auth **20/20**, frontend API/UI **57/57**, frontend typecheck/build PASS; browser verified billing and service lifecycle. IA unit/type/build validation is tracked in the latest realignment report. `Goctro_test3` was not used for this Parking work.
 - **Resident / Occupancy:** PARTIAL, not locked. The catalog/booking UI and APIs now include date-specific booking, pending cancellation and Admin approval/charge handoff under V1.11. Authenticated Resident/Admin browser walkthrough and mobile review remain open. Payment, package enrollment, check-in and other self-service work remain separate.
 - **Contract:** PARTIAL, not locked. Admin HTTP lifecycle evidence exists; Resident privacy/session and full browser closure remain unverified. Contract document binary storage is blocked by unconfigured storage.
-- **Amenities/booking:** scoped `BOOKING` request and Admin approval flow is implemented, but user review and authenticated browser walkthrough remain open. Package enrollment and payment are not included. **Parking:** Resident/Admin flow is implemented in source; V1.13 is applied locally, while authenticated review and candidate baseline validation remain pending. **Complaints, CT01, and Dashboard/Reports:** no complete V1 flow is established by current project evidence. Complaints are deferred and their Admin route renders a lock screen.
+- **Amenities/booking:** scoped `BOOKING` request and Admin approval flow is implemented, but user review and authenticated browser walkthrough remain open. Package enrollment and payment are not included. **Parking:** Resident/Admin flow is implemented in source; V1.15 is applied locally and validated, while authenticated review remains pending. **Complaints, CT01, and Dashboard/Reports:** no complete V1 flow is established by current project evidence. Complaints are deferred and their Admin route renders a lock screen.
 
 ## Latest Milestone
 
-2026-10-28: Resident Parking/Admin request-approval flow and removable unused vehicle registration are implemented. A verified backup preceded the guarded V1.12→V1.13 migration on local `Goctro_dev_v18`; structural inspection and backend database health pass. Authenticated user review and full V1.13 baseline promotion remain pending.
+2026-10-28: Resident Parking/Admin request-approval flow and removable unused vehicle registration are implemented. A verified backup and disposable restore rehearsal preceded the guarded V1.14→V1.15 migration on local `Goctro_dev_v18`; exact catalog and integrity checks pass. Authenticated user review remains pending.
 
 Earlier milestone — 2026-10-19: Phase2 core local/dev invitation/accept/login/reset now has actual browser and persisted-state evidence plus responsive Auth UI verification. Production and the explicitly unobserved browser negative cases remain PARTIAL. The following Billing/database milestone is retained as historical context.
 
@@ -179,11 +183,11 @@ Desktop now reserves a fixed right-side map viewport with left-side inspector/fi
 
 ## Remaining Limitations
 
-Workspace code and PostgreSQL read-model integration pass on V1.8 rehearsal. Authenticated browser evidence covers readiness, meter save/reload, and successful itemized finalization. Service Pass 3 API/PostgreSQL and core Admin browser gates pass; exact viewport override and unrelated Billing workspace filters remain incomplete. `Goctro_test3` received no Pass 3 test data. Parking management code is implemented and local V1.13 is applied; authenticated review and exact responsive viewport remain pending. Production Zalo delivery and real payment-provider support remain separate; demo payment/feedback is present on local V1.13 (including V1.12 demo-provider change) and awaits authenticated review. Frontend production build passes when Windows filesystem access is available; a sandbox-only SWC access denial was resolved by the permitted retry. Backend typecheck/build currently retain 115 diagnostics after Phase 2 Accounts changes; see the fresh comparison in the migration plan.
+Workspace code and PostgreSQL read-model integration pass on V1.8 rehearsal. Authenticated browser evidence covers readiness, meter save/reload, and successful itemized finalization. Service Pass 3 API/PostgreSQL and core Admin browser gates pass; exact viewport override and unrelated Billing workspace filters remain incomplete. `Goctro_test3` received no Pass 3 test data. Parking V1.15 is applied and exact-catalog validated; authenticated review and exact responsive viewport remain pending. Production Zalo delivery and real payment-provider support remain separate; demo payment/feedback is present through V1.12 and awaits authenticated review. Frontend production build passes when Windows filesystem access is available; a sandbox-only SWC access denial was resolved by the permitted retry. Backend typecheck/build currently retain 115 diagnostics after Phase 2 Accounts changes; see the fresh comparison in the migration plan.
 
 ## Locked Decisions
 
-- `Goctro_dev_v18` is physically V1.13 after a verified backup and guarded migration, but V1.13 remains a local candidate until exact expected-catalog and runtime validation pass. The source V1.12 baseline remains its immutable predecessor. Do not make ad hoc schema changes.
+- `Goctro_dev_v18` is physically V1.15 after a verified backup and guarded migration; exact catalog and baseline integrity validation pass. V1.8–V1.14 remain immutable predecessors. Do not make ad hoc schema changes.
 - Billing business decisions and the existing finalize endpoint are recorded in the canonical Requirement and API Spec; production route wiring, disposable V1.8 PostgreSQL runtime verification, and Admin browser workflow review are complete. This establishes local operational closure only, not production deployment readiness.
 - Contract API §5.7 is separately locked; that does not lock the whole Contract module.
 - A future database change requires an approved business-rule change, a new version/migration, and runtime validation before promotion.
@@ -191,14 +195,14 @@ Workspace code and PostgreSQL read-model integration pass on V1.8 rehearsal. Aut
 ## Frozen / Deferred Work
 
 - Production Resident provisioning/verified delivery/durable reset-session infrastructure remain gated. Local/dev invitation/accept/reset and the scoped Resident login portal have actual runtime/browser evidence; do not infer other Resident self-service domains are complete.
-- Real MoMo/ZaloPay payment remains deferred. The non-production demo payment path is included in local V1.13 through its V1.12 predecessor; authenticated review is pending.
-- Do not infer completion of other legacy Admin pages for Accounts, Amenities, Complaints, or database-only domains. Parking V1.13 is implemented locally and awaits authenticated review.
+- Real MoMo/ZaloPay payment remains deferred. The non-production demo payment path was added in V1.12; authenticated review is pending.
+- Do not infer completion of other legacy Admin pages for Accounts, Amenities, Complaints, or database-only domains. Parking V1.15 is implemented locally and awaits authenticated review.
 
 ## Canonical Sources
 
 1. [Requirement](01_REQUIREMENTS.md) — business rules.
 2. [API Spec](04_API_SPEC.md) — API contract.
-3. [Database Changelog](DATABASE_CHANGELOG.md) and [Database V1.13 candidate](../database/baselines/v1.13/README.md) — current local physical database truth and candidate promotion status.
+3. [Database Changelog](DATABASE_CHANGELOG.md) and [Database V1.15 baseline](../database/baselines/v1.15/README.md) — current local physical database truth and promotion evidence.
 4. This file — current project checkpoint, not business authority.
 5. [Document Catalog](DOCUMENT_CATALOG.md) — document index/status.
 6. Reports — evidence and history.
@@ -245,7 +249,7 @@ Workspace code and PostgreSQL read-model integration pass on V1.8 rehearsal. Aut
 
 ## Exact Next Task
 
-**Validate the merged Resident workflows on an isolated V1.15 database and in the authenticated app.** Review Parking request/approval and Resident equipment request/Owner confirmation before any local database promotion.
+**Review Resident Parking in the authenticated local app.** Confirm a Resident can load vehicles/areas/slots and submit or cancel a request; confirm Admin can review a pending request and view slot/vehicle details. Then recheck Resident equipment request and Owner confirmation.
 ## Resume Checklist
 
 1. Read repository-wide [AGENTS.md](../AGENTS.md), [Documentation Rules](DOCUMENTATION_RULES.md), this checkpoint, and the [Document Catalog](DOCUMENT_CATALOG.md).

@@ -1,6 +1,6 @@
 # Resident Parking requests and Admin approval — implementation report
 
-**Integration note (2026-10-28):** The V1.13 Parking candidate documented below came from the pulled branch and conflicts in version number with the user's already-promoted meter V1.13. Its original artifacts are preserved in `database/parallel-baselines/parking-v1.13/`. The local canonical chain retains meter V1.13 and room requests V1.14; Parking DDL is now a rehearsed V1.15 candidate. The local V1.14 application database has not received Parking DDL.
+**Integration and database status (2026-10-28):** The pulled Parking candidate used V1.13, which conflicts in version number with the user's already-promoted meter V1.13. Original artifacts are preserved in `database/parallel-baselines/parking-v1.13/`. Parking DDL was rebased and applied as V1.14→V1.15 on `Goctro_dev_v18:5433` after a verified 538-entry backup and successful restored-copy rehearsal. All 46 predecessor table row fingerprints remained unchanged; exact V1.15 catalog inspection passed. No seed/reset ran. Backup SHA-256: `c63d31eaba270fb1d64d7b4c7b3462341aaa6ae723ae7128dda3673c41492a4b`. Authenticated UI review remains pending.
 
 **Status: source implementation complete; Database V1.13 applied locally; authenticated user review pending.** This report records source implementation and local schema apply, not a completed authenticated UI flow or full baseline promotion.
 

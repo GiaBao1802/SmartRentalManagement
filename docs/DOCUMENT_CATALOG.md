@@ -2,11 +2,11 @@
 
 ## V1.15 local database integration — 2026-10-28
 
-[V1.15 candidate](../database/baselines/v1.15/README.md) — REHEARSED_NOT_APPLIED. Parking schema added to the user's promoted meter V1.13 and room-request V1.14 chain on a disposable PostgreSQL database only. [Pulled Parking V1.13 source](../database/parallel-baselines/parking-v1.13/INTEGRATION_NOTE.md) remains archived for provenance. Configured database and business data unchanged.
+[V1.15 database](../database/baselines/v1.15/README.md) — PROMOTED_LOCAL after verified backup restore, disposable rehearsal, and exact target catalog validation. All 46 predecessor table fingerprints unchanged. [Pulled Parking V1.13 source](../database/parallel-baselines/parking-v1.13/INTEGRATION_NOTE.md) remains archived for provenance. Authenticated UI review pending.
 
 ## Resident Parking request flow — 2026-10-28
 
-[Implementation report](07_modules/parking/RESIDENT_PARKING_REQUESTS_IMPLEMENTATION_20261028.md) — CURRENT SOURCE IMPLEMENTATION from the pulled branch. Its V1.13 candidate is archived under `database/parallel-baselines/parking-v1.13/`; the user's meter V1.13 and room-request V1.14 remain authoritative, with Parking rebased as a rehearsed V1.15 candidate. Authenticated user review and local V1.15 application remain pending.
+[Implementation report](07_modules/parking/RESIDENT_PARKING_REQUESTS_IMPLEMENTATION_20261028.md) — CURRENT SOURCE and local V1.15 implementation. The separate pulled V1.13 candidate is archived; the user's meter V1.13 and room-request V1.14 remain authoritative. Authenticated UI review pending.
 
 ## Resident room requests — 2026-10-28
 
@@ -55,7 +55,7 @@
 |---|---|---|---|
 | `README.md` | Navigation | CURRENT | Entry point for this documentation tree. |
 | `../AGENTS.md` | Repository-wide agent working rules | CURRENT | Governance/instructions only; not business Source of Truth. Frontend work also follows `frontend/AGENTS.md`. |
-| `00_CURRENT_STATE.md` | Project Checkpoint / Navigation | CURRENT | Current project checkpoint only; not canonical business authority. Local V1.13 migration and structural inspection passed; expected-catalog/runtime validation and authenticated Parking review remain the exact next task. |
+| `00_CURRENT_STATE.md` | Project Checkpoint / Navigation | CURRENT | Current project checkpoint only; not canonical business authority. Local V1.15 upgrade and exact-catalog validation passed; authenticated Parking review is the next task. |
 | `DOCUMENTATION_RULES.md` | Governance | CURRENT | Placement, report/history rules, Source of Truth order, task-start/end workflow, and conflict handling. |
 | `07_modules/superadmin/SUPERADMIN_REQUIREMENTS_SPEC.md` | Superadmin / platform administration | CURRENT — REQUIREMENTS APPROVED; NOT IMPLEMENTED | Approved role, Owner lifecycle, platform reports, audit and boundaries; no Superadmin source or schema implementation. |
 | `07_modules/superadmin/SUPERADMIN_SCHEMA_API_GAP_REPORT.md` | Superadmin / schema and API gap analysis | REFERENCE — REVIEW ONLY | Snapshot against V1.8, before the V1.9/V1.10 database changes; identified gaps remain subject to fresh review. |
@@ -72,9 +72,9 @@
 | `DOCUMENT_CATALOG.md` | Catalog | CURRENT | This inventory. |
 | `01_REQUIREMENTS.md` | Product requirements | CURRENT — CANONICAL | Business requirements authority for SmartRentalManagement. Historical source provenance is retained in the dependency copies and reports. |
 | `04_API_SPEC.md` | API contract | CURRENT — CANONICAL | `/api/v1` contract authority for SmartRentalManagement. Historical source provenance is retained where applicable. |
-| `DATABASE_CHANGELOG.md` | Database changelog | CURRENT — CANONICAL | `Goctro_dev_v18` has V1.13 physically applied; the candidate baseline still needs exact expected-catalog/runtime validation before promotion. |
-| `../database/baselines/v1.13/` | Database / Resident Parking requests | CANDIDATE — APPLIED LOCALLY; PROMOTION PENDING | Adds slot vehicle type/offer configuration and Resident parking requests. Local migration/state/inspect passed; exact expected catalog and V1.13 runtime validation remain pending. |
-| `07_modules/parking/RESIDENT_PARKING_REQUESTS_IMPLEMENTATION_20261028.md` | Parking / Resident request and Admin approval | CURRENT SOURCE IMPLEMENTATION — MIGRATION APPLIED; USER REVIEW PENDING | Owner-scoped API, Admin slot offers/approval queue, Resident area-first slot discovery and vehicle add/delete, request/history, plus additive V1.13 schema. Vehicle deletion preserves Parking request/assignment history. No commit or push. |
+| `DATABASE_CHANGELOG.md` | Database changelog | CURRENT — CANONICAL | `Goctro_dev_v18` has V1.15 physically applied and verified; authenticated Parking UI review remains pending. |
+| `../database/baselines/v1.15/` | Database / Resident Parking requests | PROMOTED_LOCAL — APPLIED AND VERIFIED | Adds slot vehicle type/offer configuration and Resident parking requests on the local V1.14 branch. Backup, restore rehearsal, exact catalog and unchanged predecessor fingerprints verified. |
+| `07_modules/parking/RESIDENT_PARKING_REQUESTS_IMPLEMENTATION_20261028.md` | Parking / Resident request and Admin approval | CURRENT SOURCE IMPLEMENTATION — V1.15 APPLIED; USER REVIEW PENDING | Owner-scoped API, Admin slot offers/approval queue, Resident area-first slot discovery and vehicle add/delete, request/history. Vehicle deletion preserves Parking request/assignment history. |
 | `11_project-reports/SOURCE_OF_TRUTH_CURRENT_STATE_GOVERNANCE_FINALIZATION_REPORT.md` | Project governance / Current State workflow | CURRENT | Records evidence checked, stale API baseline metadata reconciled, authority order, workflow, catalog, and checkpoint finalization. |
 | `11_project-reports/AGENTS_MD_PROJECT_WORKFLOW_SETUP_REPORT.md` | Project governance / Root agent instructions | CURRENT | Records creation of repository-wide workflow instructions and their documentation integration. |
 | `11_project-reports/ADMIN_SAAS_UI_UX_REDESIGN_REPORT.md` | Cross-domain / Admin UI, navigation and responsive visual foundation | REFERENCE — PRE-VISUAL-QA SNAPSHOT | Records the shared SaaS styling/navigation baseline before the page-specific visual QA and logo correction in `ADMIN_SAAS_UI_UX_VISUAL_QA_AND_CLEANUP_REPORT.md`. |

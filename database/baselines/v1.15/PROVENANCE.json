@@ -1,11 +1,14 @@
 {
   "version": "1.15",
   "predecessor": "database/baselines/v1.14",
-  "status": "REHEARSED_NOT_APPLIED",
+  "status": "PROMOTED_LOCAL",
   "sha256": {
     "schema.sql": "bcd137c398ea430c2182e11b9e094001f684cbba470bb9b6e23853db064112be",
     "seed.sql": "914a3a80fe262e3e81ca9cca71ac47338c69131ae27b4c87f8d0d3c7e343ad26",
     "expected-catalog.json": "fcfed40676c47e9b9832f52287b8c9ddb401879058bf08e7d50a6bf4d84ba6b6",
     "migrations/V1_14_to_V1_15_resident_parking_requests.sql": "35c3f5dc55fd2e22c9157d21af034034e60f7da25e85f20976e03e9494e8fc42"
-  }
+  },
+  "target": "Goctro_dev_v18 localhost:5433",
+  "appliedOn": "2026-10-28",
+  "evidence": ".local/setup-backups/parking-v115-evidence.json"
 }

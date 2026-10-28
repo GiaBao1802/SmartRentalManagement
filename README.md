@@ -1,6 +1,6 @@
 # Góc Trọ / SmartRentalManagement
 
-Monorepo Next.js/React frontend, Express/TypeScript API, Prisma 6.12 và PostgreSQL. Node.js 24.11+, npm 11.6+. Database local được cấu hình trong `backend/.env` là **V1.13** trên PostgreSQL **18.6**, database `Goctro_dev_v18`; migration từ V1.12 đã áp dụng sau backup xác minh. V1.13 hiện vẫn là ứng viên local, chờ chụp expected catalog và runtime validation trước khi promote baseline. V1.12 mở provider `demo`; không có thanh toán thật. AWS chưa triển khai. Trạng thái module và phần còn lại nằm trong [Current State](docs/00_CURRENT_STATE.md).
+Monorepo Next.js/React frontend, Express/TypeScript API, Prisma 6.12 và PostgreSQL. Node.js 24.11+, npm 11.6+. Database local được cấu hình trong `backend/.env` là **V1.15** trên PostgreSQL **18.6**, database `Goctro_dev_v18`; nâng từ V1.14 sau backup xác minh và rehearsal. Baseline integrity và `db:validate` đều pass. V1.12 mở provider `demo`; không có thanh toán thật. AWS chưa triển khai. Trạng thái module và phần còn lại nằm trong [Current State](docs/00_CURRENT_STATE.md).
 
 ## Clone và điểm bắt đầu bàn giao
 
@@ -16,7 +16,7 @@ git status --short --branch
 
 - `frontend/`: ứng dụng Next App Router hiện hành; `backend/src/server.ts`: API entrypoint, V1 endpoints dưới `/api/v1`.
 - `database/schema.prisma`: mapping ORM hiện hành. SQL vẫn enforce CHECKs/triggers/partial indexes Prisma không thể biểu diễn đầy đủ.
-- `database/baselines/v1.13/` và `v1.14/`: baseline local của chủ dự án cho ảnh chỉ số điện nước và yêu cầu thiết bị. `v1.15/` là bản gửi xe đã ghép trên V1.14, mới thử trên database tạm, chưa áp dụng vào database đang chạy. Bản Parking V1.13 kéo về được lưu tại `database/parallel-baselines/parking-v1.13/` để giữ lịch sử hai nhánh.
+- `database/baselines/v1.13/`, `v1.14/`, `v1.15/`: baseline local cho ảnh chỉ số điện nước, yêu cầu thiết bị và gửi xe; V1.15 đã được áp dụng, xác minh trên database local. Bản Parking V1.13 kéo về được lưu tại `database/parallel-baselines/parking-v1.13/` để giữ lịch sử hai nhánh.
 - `database/migrations/`, các `schema.*.prisma` snapshot và `database/seeds/seed.ts`: lịch sử legacy/demo, **không tương đương V1.13**. Giữ nguyên để tra cứu; không chạy các migration legacy. Lệnh `db:migrate` lịch sử nâng V1.10→V1.11; `setup.bat` dùng luồng versioned qua V1.13 sau xác nhận backup.
 - `legacy/`: chỉ còn wireframe, artwork/tham chiếu và JSON demo lịch sử; không còn ứng dụng hoặc launcher demo. Không dùng JSON này làm dữ liệu ứng dụng.
 - [Documentation](docs/README.md), [Database V1.15 candidate](database/baselines/v1.15/README.md), [Database V1.12 setup history](docs/10_operations/DATABASE_V1_12_SETUP.md).
@@ -35,7 +35,7 @@ Giữ Public Explorer → chi tiết phòng → liên hệ; Auth/Accounts/invita
 
 Trên Windows, mở **`setup.bat`** làm entry duy nhất (menu tiếng Việt):
 
-1. **Cài đặt lần đầu**: cố định **localhost:5432**, user **postgres**, database **Goctro_dev_v18**; chỉ nhập **mật khẩu PostgreSQL** bằng input ẩn nếu chưa có. Không hỏi/đổi host, cổng, user hoặc database. Kiểm tra Node 24.11+/npm 11.6+, cài project theo lockfile khi cần, tạo env còn thiếu và secret local ngẫu nhiên. PostgreSQL 18.6+ phải được cài/chạy sẵn. Xác nhận đúng target trước tạo DB/bootstrap/seed; kết nối sai thì dừng, không tự đổi cấu hình/dịch vụ.
+1. **Cài đặt lần đầu**: cố định **localhost:5433**, user **postgres**, database **Goctro_dev_v18**; chỉ nhập **mật khẩu PostgreSQL** bằng input ẩn nếu chưa có. Không hỏi/đổi host, cổng, user hoặc database. Kiểm tra Node 24.11+/npm 11.6+, cài project theo lockfile khi cần, tạo env còn thiếu và secret local ngẫu nhiên. PostgreSQL 18.6+ phải được cài/chạy sẵn. Xác nhận đúng target trước tạo DB/bootstrap/seed; kết nối sai thì dừng, không tự đổi cấu hình/dịch vụ.
 2. **Cập nhật và khởi động**: sau khi tự `git pull`, giữ database/env/credential. Setup nhận chuỗi baseline local V1.8–V1.15, yêu cầu xác nhận đã có backup khôi phục được rồi nâng theo thứ tự: V1.13 ảnh chỉ số, V1.14 yêu cầu thiết bị, V1.15 gửi xe. Không seed/reset dữ liệu hiện có. Database Parking V1.13 của nhánh khác không được tự động coi là baseline local V1.13. Dependency không đổi và đã kiểm tra đầy đủ thì bỏ qua `npm ci`; Prisma chỉ generate khi mapping/tooling đổi hoặc client thiếu. Process được xác minh thuộc project sẽ restart khi code/env đổi; process khác giữ nguyên.
 3. **Thoát**.
 

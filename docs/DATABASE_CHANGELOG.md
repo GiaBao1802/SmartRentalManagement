@@ -1,8 +1,10 @@
 # Góc Trọ V1 — Database changelog and audit
 
-## Database V1.15 — Parking integrated on the local V1.14 branch (rehearsed, not applied; 2026-10-28)
+## Database V1.15 — Resident Parking on the local V1.14 branch (applied locally 2026-10-28)
 
-The user's promoted meter V1.13 and room-request V1.14 baselines are retained byte-for-byte as the local authority. The pulled Parking branch independently used the number V1.13 for a different schema; its source artifacts are preserved under [`database/parallel-baselines/parking-v1.13/`](../database/parallel-baselines/parking-v1.13/). Its additive Parking DDL has been rebased as guarded V1.14→V1.15 in [`database/baselines/v1.15/`](../database/baselines/v1.15/). A disposable PostgreSQL rehearsal passed predecessor catalog, migration, clean-install catalog creation and seed. No configured application database was migrated or seeded. Parking requests require a verified backup and explicit V1.15 migration before use against the local database. The separate machine/database that received the pulled Parking V1.13 remains a divergent physical branch and is not automatically converted by this migration.
+The user's promoted meter V1.13 and room-request V1.14 baselines remain the local authority. The pulled Parking branch independently used V1.13 for a different schema; its artifacts remain under [`database/parallel-baselines/parking-v1.13/`](../database/parallel-baselines/parking-v1.13/). Parking is rebased as V1.14→V1.15 in [`database/baselines/v1.15/`](../database/baselines/v1.15/).
+
+Before upgrade, the configured `Goctro_dev_v18 localhost:5433` target matched exact V1.14. A 538-entry backup was restored to a disposable database; the full migration rehearsal and all 46 predecessor table row fingerprints passed unchanged. Backup SHA-256: `c63d31eaba270fb1d64d7b4c7b3462341aaa6ae723ae7128dda3673c41492a4b`. The guarded migration then applied atomically to the target; read-only state is `v115_populated` and inspect passes. No seed/reset ran. Detailed local evidence: `.local/setup-backups/parking-v115-evidence.json`. Authenticated UI review remains open.
 
 ## Database V1.14 — Room equipment requests (applied locally 2026-10-28)
 
@@ -14,11 +16,11 @@ Fresh inspection found configured Goctro_dev_v18 localhost:5433 at exact V1.8, s
 
 V1.13 adds resident_meter_submissions with scoped composite FKs, private JPEG evidence, decimal reading and approval audit. Backup SHA-256: a8581cdd96f9dd0407c6d6840449f55c9c051b7fc28174fc1ed0bca535a205d9. [Artifacts](../database/baselines/v1.13/README.md), [implementation and backup evidence](07_modules/resident-occupancy/RESIDENT_ASSISTANT_IMPLEMENTATION_REPORT.md). Prior baselines remain immutable.
 
-## Database V1.13 — Resident Parking requests (applied locally; baseline promotion pending; 2026-10-28)
+## Historical pulled Parking V1.13 candidate — superseded by local V1.15 integration (2026-10-28)
 
 V1.13 is an additive candidate to the last verified V1.12 baseline. It adds an optional accepted vehicle category and configured default entitlement to each Parking slot, plus durable Resident requests with status/review history, 24-hour expiry, Owner/Property/Contract/Resident/Vehicle/slot-consistent foreign keys, and unique pending holds per slot and Resident. Admin approval links exactly one Parking assignment. The existing Property pricing authority remains unchanged; no invoice or payment is created at request time. No business data is rewritten.
 
-The guarded migration is [`database/baselines/v1.13/migrations/V1_12_to_V1_13_resident_parking_requests.sql`](../database/baselines/v1.13/migrations/V1_12_to_V1_13_resident_parking_requests.sql). On 2026-10-28, the configured `Goctro_dev_v18` target (`localhost:5432`) was confirmed at populated V1.12, freshly backed up to `.local/backups/Goctro_dev_v18_pre_V1_13_20261028.dump` (292,404 bytes; 523 `pg_restore --list` entries; SHA-256 `0A88BCF1995A9C3B49A9582ECB301506C9915CDBF6A669C35CC71EF2A116C882`), and migrated with the exact-catalog guard. Migration returned PASS; read-only `state` returned `v113_populated` and `inspect` returned PASS. A read-only Prisma count of `parking_slot_requests` returned 0, and backend DB health returned HTTP 200. No seed/reset ran. The exact `expected-catalog.json`, V1.13-specific runtime validation, and authenticated Admin/Resident review remain pending, so the V1.13 source folder remains a local candidate pending baseline promotion. See the [Parking implementation report](07_modules/parking/RESIDENT_PARKING_REQUESTS_IMPLEMENTATION_20261028.md).
+This separate pulled branch assigned V1.13 to Parking, conflicting with meter V1.13. Its migration/artifacts and original local migration evidence are retained for provenance; it is not the current local database baseline. Parking was integrated as V1.15 on the V1.14 chain; see the V1.15 entry above.
 
 ## Database V1.12 — demo payment for presentation (applied locally 2026-10-27)
 
