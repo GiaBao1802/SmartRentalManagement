@@ -9,7 +9,8 @@ class WorkerTests(unittest.TestCase):
   self.assertEqual(result['model'],'qwen3:1.7b');self.assertTrue(result['synthetic'])
  def test_clarify_without_rooms(self):
   result=respond('phòng',lambda _:{'status':'needs_clarification','questions':['Thiếu số.']})
-  self.assertNotIn('SYN-R',result['text']);self.assertIn('Thiếu số.',result['text'])
+  self.assertNotIn('SYN-R',result['text']);self.assertIn('chưa hiểu từ/cụm từ',result['text'])
+  self.assertIn('chờ bạn làm rõ',result['text']);self.assertIn('chưa tiếp tục tìm phòng',result['text'])
  def test_input_validation(self):
   for q in ['',None,'x'*501]:
    with self.assertRaises(ValueError):respond(q)
@@ -26,6 +27,7 @@ class WorkerTests(unittest.TestCase):
   filters={'price':[],'area':[],'location':None,'occupants':None,'amenities':['unspecified_amenity']}
   result=handle_request({'message':'phòng có tiện ích'},lambda _:{'status':'ready','filters':filters})
   self.assertEqual(result['status'],'needs_clarification');self.assertIsNone(result['context'])
-  self.assertIn('tiện ích cụ thể nào',result['text'])
+  self.assertIn('chưa hiểu từ “tiện ích”',result['text'])
+  self.assertIn('chờ bạn làm rõ',result['text'])
 
 if __name__=='__main__':unittest.main()

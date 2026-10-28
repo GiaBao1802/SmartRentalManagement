@@ -4,10 +4,13 @@ import id_v3
 from conversation import understand,describe,valid_context
 from room_catalog_lab import load_catalog,retrieve
 
+def clarification_text():
+ return 'Mình chưa hiểu từ/cụm từ trong yêu cầu của bạn. Bạn vui lòng giải thích hoặc cập nhật lại giúp mình nhé; mình sẽ chờ bạn làm rõ và chưa tiếp tục tìm phòng.'
+
 def render(result):
  prefix='PHÒNG GIẢ LẬP · Không phải tin cho thuê thật.\n'
  if result['status']=='needs_clarification':
-  return prefix+'Mình chưa thể lọc đầy đủ yêu cầu này. '+ ' '.join(result.get('questions',[]))+'\nHãy gửi lại đủ điều kiện trong một câu, ví dụ: Phòng ở Bến Nắng dưới 4 triệu có máy lạnh.'
+  return prefix+clarification_text()
  if result['status']=='no_matches':
   return prefix+'Không có phòng trong bộ mẫu đáp ứng tất cả điều kiện. Mình chưa tự nới điều kiện. Bạn có thể gửi lại yêu cầu với mức giá hoặc khu vực khác.'
  lines=[prefix+f"Có {result['totalMatches']} phòng phù hợp. Dưới đây là tối đa 5 phòng, sắp theo giá thuê tăng dần:"]
@@ -37,10 +40,10 @@ def handle_request(body,extract=id_v3.extract):
  parsed=understand(message.strip(),mode,body.get('context'),extract)
  filters=parsed.get('filters')
  if parsed.get('status')!='ready' or not valid_context(filters):
-  return {'text':'Mình chưa hiểu đủ điều kiện để tìm trong tin phòng công khai. '+' '.join(parsed.get('questions',['Bạn hãy nói rõ khu vực, giá, diện tích hoặc số người.']))+'\nBạn có thể sửa yêu cầu rồi gửi lại.','source':'public_database','model':'qwen3:1.7b','status':'needs_clarification','context':None}
+  return {'text':clarification_text(),'source':'public_database','model':'qwen3:1.7b','status':'needs_clarification','context':None}
   # No catalog loading or retrieval before the guest explicitly confirms.
  if 'unspecified_amenity' in filters['amenities']:
-  return {'text':'Bạn muốn lọc tiện ích cụ thể nào (ví dụ máy lạnh, bãi gửi xe hoặc Wi-Fi)? Mình cần biết rõ để chỉ tìm phòng có dữ liệu xác nhận.','source':'public_database','model':'qwen3:1.7b','status':'needs_clarification','context':None}
+  return {'text':'Mình chưa hiểu từ “tiện ích” ở đây là tiện ích nào. Bạn vui lòng cập nhật cụ thể; mình sẽ chờ bạn làm rõ và chưa tiếp tục tìm phòng.','source':'public_database','model':'qwen3:1.7b','status':'needs_clarification','context':None}
  text='Mình hiểu nhu cầu của bạn như sau:\n'+describe(filters).replace('Đang lọc: ','')+'\n\nSau khi bạn xác nhận, mình sẽ tìm trong các tin phòng đang công khai trên database. Giá là tiền thuê cả phòng, chưa gồm điện nước/phí.\nĐúng ý bạn chưa? Chọn “Đúng rồi, tìm phòng” hoặc “Sửa yêu cầu”.'
  return {'text':text,'source':'public_database','model':'qwen3:1.7b','status':'awaiting_confirmation','context':filters}
 
