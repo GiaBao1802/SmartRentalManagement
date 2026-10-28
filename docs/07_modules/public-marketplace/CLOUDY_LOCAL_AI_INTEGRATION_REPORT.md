@@ -8,6 +8,12 @@ Per user request, guest confirmation now calls the existing public `GET /api/v1/
 
 Live read verification: the local public API reported two public rooms. Actual Qwen3 1.7B inference for “Tìm phòng ở Đà Nẵng dưới 4 triệu cho 2 người” returned `awaiting_confirmation` with the expected location, strict rent upper bound and capacity, without room records. Passing that context to the new Cloudy database adapter returned one match. No DB/API/backend schema writes, environment changes, or computer-use actions were made. Focused TypeScript tests: 22/22 passed; Python suite: 15/15 passed; frontend typecheck passed.
 
+## Response validation hardening — 2026-10-28
+
+The public API adapter now validates each room's display fields and pagination metadata, rejects inconsistent totals/page sizes during a multi-page scan, and refuses oversized scans before reading page data. This prevents malformed or shifting API responses from being rendered as plausible results. Result wording now says “dữ liệu hiện tại” rather than implying the records are real customer listings; the shared development database can contain synthetic public records.
+
+Verification: 24/24 focused TypeScript tests and frontend typecheck PASS. A fresh read against the current local API (100 public listings, Đồng Nai and TP. Hồ Chí Minh) returned a matching public result for Đồng Nai, below 4,000,000 VND and capacity two. No DB writes, API/schema changes or computer-use actions.
+
 ## Delivered
 
 The user requested integration into the existing mascot. Development now connects Cloudy to a Next route and a repository-contained Python worker using local Ollama Qwen3 1.7B. The model returns intent/candidate decisions as JSON; deterministic guards validate and filter the 300-room synthetic catalog. The frontend receives plain text, a synthetic-source flag, model name and result status. It never generates or executes SQL.

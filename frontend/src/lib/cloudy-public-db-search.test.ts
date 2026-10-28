@@ -28,3 +28,13 @@ test("rejects non-loopback base and refuses incomplete overlarge scans",async()=
  await assert.rejects(searchPublicDatabaseRooms(context,new AbortController().signal,fetch,"https://evil.example/api/v1"));
  await assert.rejects(searchPublicDatabaseRooms(context,new AbortController().signal,(async()=>Response.json({data:[],meta:{total_items:1001,total_pages:11,page:1,page_size:100}})) as typeof fetch,"http://localhost:4000/api/v1"));
 });
+test("rejects malformed public room fields rather than rendering invalid values",async()=>{
+ const malformed={...room,default_rent:"not-a-number"};
+ await assert.rejects(searchPublicDatabaseRooms(context,new AbortController().signal,(async()=>Response.json({data:[malformed],meta:{total_items:1,total_pages:1,page:1,page_size:100}})) as typeof fetch,"http://localhost:4000/api/v1"),/Invalid public database response/);
+});
+test("rejects pagination metadata that changes during a scan",async()=>{
+ let call=0;
+ const fetchPages=(async()=>{call++;const pageSize=call===1?100:50;return Response.json({data:[room],meta:{total_items:101,total_pages:Math.ceil(101/pageSize),page:call,page_size:pageSize}});}) as typeof fetch;
+ await assert.rejects(searchPublicDatabaseRooms(context,new AbortController().signal,fetchPages,"http://localhost:4000/api/v1"),/changed during pagination/);
+ assert.equal(call,2);
+});

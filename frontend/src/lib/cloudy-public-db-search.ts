@@ -3,6 +3,18 @@ export type LiveRoom = { room_id: string; room_code: string; property: { name: s
 type ListResponse = { data: LiveRoom[]; meta: { total_items: number; total_pages: number; page: number; page_size: number } };
 type Fetcher = typeof fetch;
 const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[đĐ]/g, "d").toLocaleLowerCase("vi").replace(/\s+/g, " ").trim();
+function isLiveRoom(value: unknown): value is LiveRoom {
+  if (!value || typeof value !== "object") return false;
+  const room = value as Partial<LiveRoom>;
+  const property = room.property;
+  return typeof room.room_id === "string" && room.room_id.length > 0
+    && typeof room.room_code === "string" && room.room_code.length > 0
+    && !!property && typeof property === "object"
+    && typeof property.name === "string" && typeof property.province === "string" && typeof property.address === "string"
+    && typeof room.default_rent === "string" && Number.isFinite(Number(room.default_rent)) && Number(room.default_rent) >= 0
+    && typeof room.area_m2 === "string" && Number.isFinite(Number(room.area_m2)) && Number(room.area_m2) > 0
+    && Number.isSafeInteger(room.default_capacity) && Number(room.default_capacity) > 0;
+}
 function bounds(terms: FilterContext["price"] | FilterContext["area"], scale: number) {
   let min: number | undefined; let max: number | undefined;
   for (const term of terms) {
@@ -37,14 +49,22 @@ export async function searchPublicDatabaseRooms(context: FilterContext, signal: 
   if (rent.min !== undefined) query.set("price_min", String(rent.min)); if (rent.max !== undefined) query.set("price_max", String(rent.max));
   if (area.min !== undefined) query.set("area_min", fmtArea(area.min)); if (area.max !== undefined) query.set("area_max", fmtArea(area.max));
   if (context.occupants !== null) query.set("capacity_min", String(context.occupants));
-  const firstUrl = new URL(`public/rooms?${query}`, base); const rows: LiveRoom[] = []; let total = 0;
+  const firstUrl = new URL(`public/rooms?${query}`, base); const rows: LiveRoom[] = []; let total = 0; let totalPages = 0; let pageSize = 0;
   for (let page = 1; page <= 10; page++) {
     const url = new URL(firstUrl); url.searchParams.set("page", String(page));
     const response = await fetchImpl(url, { method: "GET", headers: { Accept: "application/json" }, cache: "no-store", signal });
     if (!response.ok) throw new Error("Public database API unavailable");
     const body = await response.json() as ListResponse;
-    if (!body || !Array.isArray(body.data) || !body.meta || !Number.isSafeInteger(body.meta.total_items) || body.meta.total_items < 0 || body.meta.page !== page) throw new Error("Invalid public database response");
-    total = body.meta.total_items; rows.push(...body.data); if (rows.length >= total) break;
+    if (!body || !Array.isArray(body.data) || !body.meta || !Number.isSafeInteger(body.meta.total_items) || body.meta.total_items < 0
+      || !Number.isSafeInteger(body.meta.total_pages) || body.meta.total_pages < 0 || !Number.isSafeInteger(body.meta.page_size) || body.meta.page_size < 1
+      || body.meta.page !== page || body.data.length > body.meta.page_size || !body.data.every(isLiveRoom)
+      || body.meta.total_pages !== Math.ceil(body.meta.total_items / body.meta.page_size)) throw new Error("Invalid public database response");
+    if (page === 1) {
+      total = body.meta.total_items; totalPages = body.meta.total_pages; pageSize = body.meta.page_size;
+      if (totalPages > 10) throw new Error("Public result exceeds safe scan limit");
+    } else if (body.meta.total_items !== total || body.meta.total_pages !== totalPages || body.meta.page_size !== pageSize) throw new Error("Public result changed during pagination");
+    rows.push(...body.data);
+    if (page >= totalPages) break;
     if (page === 10) throw new Error("Public result exceeds safe scan limit");
   }
   const needle = context.location ? normalize(context.location) : null;
@@ -52,7 +72,7 @@ export async function searchPublicDatabaseRooms(context: FilterContext, signal: 
   const cards = matches.slice(0, 5).map(room => ({ name: room.room_code, property: room.property.name, province: room.property.province, rent: Number(room.default_rent), area: Number(room.area_m2), capacity: room.default_capacity }));
   const summary = contextSummary(context);
   const text = matches.length
-    ? `Mình tìm thấy ${matches.length} phòng đang công khai trên database thật. Đây là tối đa 5 phòng, xếp theo giá thuê tăng dần:\n\n${cards.map(c => `• ${c.property} · Phòng ${c.name} — ${c.province}\n${c.rent.toLocaleString("vi-VN")} đ/cả phòng/tháng · ${c.area} m² · tối đa ${c.capacity} người`).join("\n\n")}\n\nGiá chưa gồm điện nước/phí. Kết quả là tin đang công khai lúc tra cứu, chưa phải xác nhận đặt phòng.\n\nĐã xác nhận: ${summary}`
+    ? `Mình tìm thấy ${matches.length} phòng đang công khai trong dữ liệu hiện tại. Đây là tối đa 5 phòng, xếp theo giá thuê tăng dần:\n\n${cards.map(c => `• ${c.property} · Phòng ${c.name} — ${c.province}\n${c.rent.toLocaleString("vi-VN")} đ/cả phòng/tháng · ${c.area} m² · tối đa ${c.capacity} người`).join("\n\n")}\n\nGiá chưa gồm điện nước/phí. Kết quả là tin đang công khai lúc tra cứu, chưa phải xác nhận đặt phòng.\n\nĐã xác nhận: ${summary}`
     : `Hiện không có phòng đang công khai khớp toàn bộ điều kiện trên database. Mình chưa tự nới điều kiện.\n\nĐã xác nhận: ${summary}`;
   return { text, source: "public_database" as const, model: "qwen3:1.7b" as const, status: matches.length ? "preview" as const : "no_matches" as const, context };
 }

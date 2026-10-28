@@ -29,7 +29,7 @@
 
 ## Cloudy local AI integration — 2026-10-28
 
-[Integration report](07_modules/public-marketplace/CLOUDY_LOCAL_AI_INTEGRATION_REPORT.md) — CURRENT, development-only Qwen3 1.7B through the existing mascot. Guest confirmation now precedes read-only retrieval through the existing public rooms API (real local DB verified: one match for Đà Nẵng, under 4m VND, capacity 2; 22 focused TypeScript tests PASS). Rent, area, capacity and public province/address matching are supported; amenities require clarification. New/continue filtering and session isolation remain in place; production AI remains deferred. [Runbook](../scripts/cloudy-ai/README.md) — CURRENT. The [chat handoff](07_modules/public-marketplace/CLOUDY_CHAT_FRONTEND_HANDOFF.md) preserves historical mock evidence and links the active integration.
+[Integration report](07_modules/public-marketplace/CLOUDY_LOCAL_AI_INTEGRATION_REPORT.md) — CURRENT, development-only Qwen3 1.7B through the existing mascot. Guest confirmation precedes read-only retrieval through the existing public rooms API; latest current-API check found a matching public listing for Đồng Nai, under 4m VND, capacity 2 (24 focused TypeScript tests and frontend typecheck PASS). Response rows and pagination are validated before display. Rent, area, capacity and public province/address matching are supported; amenities require clarification. New/continue filtering and session isolation remain in place; production AI remains deferred. [Runbook](../scripts/cloudy-ai/README.md) — CURRENT. The [chat handoff](07_modules/public-marketplace/CLOUDY_CHAT_FRONTEND_HANDOFF.md) preserves historical mock evidence and links the active integration.
 
 ## JSON-only advisor launch — 2026-10-28
 
