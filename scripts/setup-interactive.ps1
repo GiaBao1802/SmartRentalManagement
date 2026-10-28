@@ -59,8 +59,15 @@ try {
   Write-Host '1. Cài đặt lần đầu'
   Write-Host '2. Cập nhật và khởi động (hãy tự git pull trước)'
   Write-Host '3. Thoát'
-  $mode = (Read-Host 'Chọn 1, 2 hoặc 3').Trim()
+  Write-Host '4. Demo AI 300 phòng JSON (không cần database)'
+  $mode = (Read-Host 'Chọn 1, 2, 3 hoặc 4').Trim()
   if ($mode -eq '3') { exit 0 }
+  if ($mode -eq '4') {
+    $step = 'Mở demo JSON'
+    & "$PSScriptRoot/start-json-demo.ps1"
+    if ($LASTEXITCODE -ne 0) { throw 'Demo JSON chưa khởi động được.' }
+    exit 0
+  }
   if ($mode -notin @('1','2')) { throw 'Lựa chọn không hợp lệ.' }
   $step = 'Kiểm tra Node/npm'
   if (-not (Get-Command node -ErrorAction SilentlyContinue) -or -not (Get-Command npm.cmd -ErrorAction SilentlyContinue)) { throw 'Cần cài Node.js 24.11+ kèm npm 11.6+, rồi mở lại setup.bat. Công cụ không tự cài phần mềm hệ thống.' }

@@ -27,7 +27,14 @@
     "db:migrate": "node scripts/database-v111.mjs migrate-v110",
     "db:migrate:v19": "node scripts/database-v111.mjs migrate-v19",
     "db:migrate:v18": "node scripts/database-v19.mjs migrate-v18",
-    "db:seed": "node scripts/database-v111.mjs seed"
+    "db:seed": "node scripts/database-v111.mjs seed",
+    "demo:advisor": "node scripts/room-advisor-demo/server.mjs",
+    "demo:advisor:dataset": "node scripts/room-advisor-demo/server-dataset.mjs",
+    "eval:advisor:dataset": "node scripts/room-advisor-demo/evaluate-dataset.mjs",
+    "eval:advisor": "node scripts/room-advisor-demo/evaluate-local.mjs",
+    "test:advisor": "node --test scripts/room-advisor-demo/demo.test.mjs scripts/room-advisor-demo/adversarial.test.mjs scripts/room-advisor-demo/client-lifecycle.test.mjs scripts/room-advisor-demo/flow.test.mjs scripts/room-advisor-demo/extraction.test.mjs scripts/room-advisor-demo/dataset.test.mjs",
+    "data:rooms:generate": "node scripts/room-dataset/generate.mjs",
+    "data:rooms:check": "node --test scripts/room-dataset/dataset.test.mjs"
   },
   "devDependencies": {
     "concurrently": "9.2.4"

@@ -261,6 +261,7 @@ Bãi xe là nghiệp vụ riêng với tiện ích thông thường.
 - Foxi được định hướng là trợ lý AI thật trong tương lai.
 - Foxi không thuộc phạm vi V1.
 - V1 không được xem luật/từ khóa, câu trả lời dựng sẵn hoặc dữ liệu mẫu trong demo là năng lực AI sản phẩm.
+- Ngoại lệ thử nghiệm local do người dùng yêu cầu ngày 2026-10-28: mascot Cloudy được gọi Qwen3 1.7B qua Ollama để tìm trong 300 phòng giả lập, chỉ ở development trên máy local. Mọi kết quả phải ghi rõ giả lập; không truy cập dữ liệu nghiệp vụ, không đặt phòng, không tự nới điều kiện. Đây chưa phải mở phạm vi AI sản phẩm V1. Xem [báo cáo tích hợp](07_modules/public-marketplace/CLOUDY_LOCAL_AI_INTEGRATION_REPORT.md).
 
 ## 18. Chức năng không thuộc V1
 

@@ -1,8 +1,10 @@
 # Cloudy chat frontend handoff
 
-Status: CURRENT — development UI mock only. Date: 2026-10-26.
+Status: CURRENT — development local AI integration. Updated: 2026-10-28.
 
-## Scope and evidence
+The user's requested local integration now uses `createLocalCloudyChatService` and `POST /api/cloudy/chat` with Qwen3 1.7B and 300 synthetic rooms. History remains UI memory only; every request sends only the current message. Production stays disabled. See the [integration report](CLOUDY_LOCAL_AI_INTEGRATION_REPORT.md) and [runbook](../../../scripts/cloudy-ai/README.md). The service signature and session-reset boundaries below remain unchanged; mock behavior and original verification below are historical evidence for 2026-10-26, not the current development adapter.
+
+## Original mock scope and evidence — historical, 2026-10-26
 
 The shared Cloudy 2D component keeps chat history only in React memory for the current Public, Admin, or Resident session. Closing and reopening on the same route group preserves it. Leaving the allowed route group, logging out, or changing account/role remounts a fresh chat session; pending work is aborted. The development UI supports text entry, a mock response, a deterministic `/mock-error` first-attempt failure for retry checks, and a 500-character limit. Production displays “Cloudy đang được hoàn thiện” and disables sending. No chat API, AI provider, storage, or database call was added.
 

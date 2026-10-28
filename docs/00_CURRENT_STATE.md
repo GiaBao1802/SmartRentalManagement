@@ -2,7 +2,11 @@
 
 ## Last Updated
 
-2026-10-27
+2026-10-28
+
+### Cloudy local AI integration — 2026-10-28
+
+At the user's request, the existing mascot now calls local Qwen3 1.7B in development and filters 300 synthetic rooms through guarded JSON. Public landing browser checks returned 14 matches for Bến Nắng below 4 million and 99 for AC at most 5 million; close/reopen/retry preserved the chat. Production remains disabled, and DB/dataset bytes are untouched. This supersedes earlier Cloudy mock-only statements for development. See [integration evidence](07_modules/public-marketplace/CLOUDY_LOCAL_AI_INTEGRATION_REPORT.md). Active Module and primary Exact Next Task remain unchanged; this AI demo's next check is authenticated Admin/Resident session reset.
 
 ### Goctro_test3 V1.11 promotion — 2026-10-27
 
@@ -17,6 +21,26 @@ Resident invoice source presents a non-scannable QR mock and records explicit de
 The Resident request flow and the Admin approval queue are implemented for configured Flexible Services in `BOOKING` mode. Pending requests reserve capacity but create no charge; Admin approval saves one READY charge at the quoted price for normal Contract billing, without creating, finalizing or paying an Invoice. V1.11 is additive to the team's unchanged V1.10 auth-session baseline. At this implementation snapshot, `Goctro_dev_v18` was V1.11 and `Goctro_test3` was still V1.10; the later promotion above supersedes that target status. PostgreSQL clean install, standard V1.10 upgrade, local catalog and rollback-only validators passed; automated and migration evidence is in the [V1.11 implementation report](07_modules/resident-occupancy/RESIDENT_FLEXIBLE_SERVICE_BOOKING_IMPLEMENTATION_REPORT.md). Authenticated user review of `/tenant/amenities` and the Admin booking queue is the next task.
 
 ## Project Status
+
+### JSON-only AI demo launch — 2026-10-28
+
+Setup menu option 4 launches the isolated 300-room JSON advisor backend at 127.0.0.1:4330 without database; main management modes 1/2 remain PostgreSQL-backed. GET /demo/status and /demo/rooms verified HTTP 200 with 300 synthetic rooms even with deliberately invalid process DATABASE_URL. Advisor 71/71 and dataset 6/6 PASS. No DB/env writes. See [JSON-only demo report](07_modules/public-marketplace/JSON_ONLY_DEMO_SETUP_20261028.md). Active Module/Exact Next Task unchanged.
+
+
+### Synthetic room AI dataset — 2026-10-26
+
+300 synthetic rooms / 60 properties / 12 themes and 1,200 grounded chat examples added under data/room-ai/v1. Property-disjoint train/validation/test; 6/6 integrity/semantic tests PASS. No model training, PostgreSQL import, Cloudy integration or V1/API change. See [dataset report](07_modules/public-marketplace/ROOM_AI_DATASET_300_V1.md). Active Module and Exact Next Task unchanged.
+
+
+### Local Windows runtime — 2026-10-25
+
+This checkout now runs PostgreSQL 18.6 / Goctro_dev_v18 on localhost:5433 with canonical V1.8 (40 tables), separate from unchanged PG17/goctro on 5432. Bootstrap/seed/catalog, API/DB health, login page and Admin/Resident email login PASS. Setup dependency/Prisma/runtime stamps recorded. See [local setup evidence](10_operations/LOCAL_POSTGRES18_SETUP_20261025.md). Primary Exact Next Task and project schema baseline unchanged.
+
+
+### Local room advisor demo / context audit — 2026-10-28
+
+User-authorized Qwen3 1.7B advisor reads 300 synthetic rooms at http://127.0.0.1:4329. Source-backed normalization now supports adjacent million-plus-thousand amounts; approximate/lower-bound money, people and minutes remain null for confirmation. Original evidence is preserved. 71/71 tests PASS. New four-case baseline 0/4 becomes 4/4 after guard fixes (13–22 seconds); this is tuned regression. Ten previous outputs replay without regression. Confirmation, filtering and batch room selection unchanged; no dataset/DB/V1/API/query/Cloudy changes. See [demo/context report](07_modules/public-marketplace/LOCAL_ROOM_ADVISOR_DEMO_REPORT.md). Demo next step: evaluate unseen abbreviated money and time-limit expressions; Active Module and primary Exact Next Task remain unchanged.
+
 
 ### Database V1.10 auth sessions / AWS source preparation — 2026-10-27
 

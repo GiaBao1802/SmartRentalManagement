@@ -1,0 +1,41 @@
+{
+  "rooms": 300,
+  "properties": 60,
+  "examples": 1200,
+  "themes": {
+    "sinh_vien": 25,
+    "tiet_kiem": 25,
+    "di_lam": 25,
+    "ca_dem": 25,
+    "gia_dinh": 25,
+    "thu_cung": 25,
+    "studio": 25,
+    "co_gac": 25,
+    "san_vuon": 25,
+    "lam_viec_tai_nha": 25,
+    "co_living": 25,
+    "tiep_can": 25
+  },
+  "access": {
+    "24h": 95,
+    "curfew": 70,
+    "notify_late": 70,
+    "unknown": 65
+  },
+  "availability": {
+    "maintenance": 30,
+    "available_later": 30,
+    "available": 210,
+    "occupied": 30
+  },
+  "splits": {
+    "train": 180,
+    "validation": 60,
+    "test": 60
+  },
+  "rent_range": [
+    1200000,
+    6700000
+  ],
+  "unknown_flood_history": 300
+}

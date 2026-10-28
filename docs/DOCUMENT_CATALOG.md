@@ -1,5 +1,29 @@
 # Document catalog
 
+## Cloudy local AI integration — 2026-10-28
+
+[Integration report](07_modules/public-marketplace/CLOUDY_LOCAL_AI_INTEGRATION_REPORT.md) — CURRENT, development-only Qwen3 1.7B on 300 synthetic rooms through the existing mascot. Supersedes earlier mock-only claims for development; production AI remains deferred. [Runbook](../scripts/cloudy-ai/README.md) — CURRENT. The [chat handoff](07_modules/public-marketplace/CLOUDY_CHAT_FRONTEND_HANDOFF.md) preserves historical mock evidence and links the active integration.
+
+## JSON-only advisor launch — 2026-10-28
+
+[JSON-only demo setup](07_modules/public-marketplace/JSON_ONLY_DEMO_SETUP_20261028.md) — CURRENT. Setup menu option 4 launches isolated 300-room JSON backend without PostgreSQL; HTTP status/catalog and focused suites pass. Management modes still use the canonical database.
+
+
+## Room AI dataset 300 — 2026-10-26
+
+[Dataset report](07_modules/public-marketplace/ROOM_AI_DATASET_300_V1.md) — CURRENT synthetic data v1, 300 rooms / 1,200 grounded QA, 6/6 checks PASS. Read-only local advisor adapter added on 2026-10-27; no training/DB/Cloudy integration. Dataset bytes and splits unchanged.
+
+
+## Local PostgreSQL 18 runtime — 2026-10-25
+
+[Local setup evidence](10_operations/LOCAL_POSTGRES18_SETUP_20261025.md) — CURRENT, isolated PG18.6:5433 / Goctro_dev_v18; V1.8 bootstrap/seed/catalog and HTTP login/health verified. Old PG17 database preserved; no schema promotion.
+
+
+## Local room advisor demo — 2026-10-28
+
+[Local room advisor demo / context audit](07_modules/public-marketplace/LOCAL_ROOM_ADVISOR_DEMO_REPORT.md) — CURRENT 300-room prototype. Adjacent million/thousand amounts supported; approximate and lower-bound numbers require confirmation. 71/71 tests; round-3 baseline 0/4 → tuned regression 4/4, ten old outputs replay correctly. Demo port 4329. No model/dataset/DB/V1/Cloudy changes. [Runbook](../scripts/room-advisor-demo/README.md).
+
+
 ## Current source baseline — 2026-10-27
 
 [Legacy-to-current migration plan §10](08_audits/LEGACY_TO_CURRENT_MIGRATION_PLAN.md#10-current-product-flow-baseline-and-source-cleanup--2026-10-19) — CURRENT / SOURCE CLEANUP COMPLETE; runtime validation scoped. User-approved current-flow baseline,20 removed files and16 modified files; old demo/unlinked/deferred/transitional implementations removed,410 guards and current V1/financial dependencies preserved. Earlier inventory/preservation statements in reports describe their original snapshot. Parking implementation exists in current source; runtime closure is not asserted.

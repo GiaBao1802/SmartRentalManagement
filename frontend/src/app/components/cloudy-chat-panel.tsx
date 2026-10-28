@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from "react";
 import { createPortal } from "react-dom";
-import { CLOUDY_CHAT_MAX_LENGTH, createMockCloudyChatService, normalizeCloudyChatInput, type CloudyChatMessage, type CloudyChatService } from "./cloudy-chat-service";
+import { CLOUDY_CHAT_MAX_LENGTH, createLocalCloudyChatService, normalizeCloudyChatInput, type CloudyChatMessage, type CloudyChatService } from "./cloudy-chat-service";
 
 const ASSET_ROOT = "/mascot/cloudy-2d";
 
@@ -34,7 +34,7 @@ type ChatError = { messageId: string; text: string } | null;
 export function CloudyChatSession({ open, mascotRef, onClose }: { open: boolean; mascotRef: RefObject<HTMLDivElement | null>; onClose: () => void }) {
   const preview = process.env.NODE_ENV === "development";
   const serviceRef = useRef<CloudyChatService | null>(null);
-  if (preview && !serviceRef.current) serviceRef.current = createMockCloudyChatService();
+  if (preview && !serviceRef.current) serviceRef.current = createLocalCloudyChatService();
   const [messages, setMessages] = useState<CloudyChatMessage[]>([]);
   const messagesRef = useRef<CloudyChatMessage[]>([]);
   const [draft, setDraft] = useState("");
@@ -77,10 +77,10 @@ export function CloudyChatSession({ open, mascotRef, onClose }: { open: boolean;
       setMessages(messagesRef.current);
       setStatus("idle");
       pendingRef.current = null;
-    }).catch(() => {
+    }).catch((cause: unknown) => {
       if (pendingRef.current !== request || controller.signal.aborted) return;
       setStatus("error");
-      setError({ messageId: message.id, text: "Không nhận được phản hồi mô phỏng. Hãy thử lại." });
+      setError({ messageId: message.id, text: cause instanceof Error ? cause.message : "Không nhận được phản hồi AI. Hãy thử lại." });
       pendingRef.current = null;
     });
   };
@@ -229,7 +229,7 @@ function CloudyChatPanel({ mascotRef, onClose, preview, messages, draft, onDraft
     <section id="cloudy-chat-panel" ref={panelRef} className="cloudy-chat" role="dialog" aria-labelledby="cloudy-chat-title" aria-describedby="cloudy-chat-preview-note">
       <header className="cloudy-chat__header">
         <CloudyPortrait />
-        <div className="cloudy-chat__heading"><h2 id="cloudy-chat-title">Cloudy</h2><span>{preview ? "Trò chuyện mô phỏng" : "Đang được hoàn thiện"}</span></div>
+        <div className="cloudy-chat__heading"><h2 id="cloudy-chat-title">Cloudy</h2><span>{preview ? "AI local · Phòng giả lập" : "Đang được hoàn thiện"}</span></div>
         <button ref={closeRef} className="cloudy-chat__close" type="button" onClick={onClose} aria-label="Đóng khung chat Cloudy">×</button>
       </header>
       <div ref={messagesRef} className="cloudy-chat__messages" role="log" aria-label="Tin nhắn Cloudy" aria-live="off" onScroll={(event) => {
@@ -238,7 +238,7 @@ function CloudyChatPanel({ mascotRef, onClose, preview, messages, draft, onDraft
       }}>
         <div className="cloudy-chat__message-row cloudy-chat__message-row--cloudy">
           <CloudyPortrait />
-          <p className="cloudy-chat__message">Xin chào! Mình là Cloudy. {preview ? "Đây là cuộc trò chuyện mô phỏng để xem thử giao diện." : "Khung trò chuyện đang được chuẩn bị."}</p>
+          <p className="cloudy-chat__message">Xin chào! Mình là Cloudy. {preview ? "Mình giúp tìm trong 300 phòng giả lập. Hãy gửi đủ điều kiện trong mỗi tin nhắn; mình chưa hiểu câu nối tiếp như ‘rẻ hơn nữa’. Ví dụ: Phòng ở Bến Nắng dưới 4 triệu có máy lạnh." : "Khung trò chuyện đang được chuẩn bị."}</p>
         </div>
         {messages.map((message) => <div className={`cloudy-chat__message-row cloudy-chat__message-row--${message.role}`} key={message.id}>
           {message.role === "cloudy" && <CloudyPortrait />}
@@ -249,7 +249,7 @@ function CloudyChatPanel({ mascotRef, onClose, preview, messages, draft, onDraft
       </div>
       <p className="cloudy-chat__status sr-only" role="status" aria-live="polite">{status === "pending" ? "Cloudy đang trả lời." : status === "error" ? "Phản hồi gặp lỗi. Có thể thử lại." : ""}</p>
       <form className="cloudy-chat__composer" onSubmit={handleSubmit}>
-        <p id="cloudy-chat-preview-note">{preview ? "Bản mô phỏng frontend · Không truy vấn dữ liệu nhà trọ hay AI." : "Cloudy đang được hoàn thiện. Chưa thể gửi tin nhắn."}</p>
+        <p id="cloudy-chat-preview-note">{preview ? "Qwen3 1.7B · 300 phòng giả lập, không phải tin thật. Mỗi tin nhắn là một yêu cầu riêng." : "Cloudy đang được hoàn thiện. Chưa thể gửi tin nhắn."}</p>
         <div className="cloudy-chat__composer-controls">
           <textarea ref={inputRef} aria-label="Tin nhắn cho Cloudy" aria-describedby={preview ? "cloudy-chat-preview-note cloudy-chat-limit" : "cloudy-chat-preview-note"} placeholder={preview ? "Nhập tin nhắn…" : "Trò chuyện chưa khả dụng"} rows={1} value={draft} maxLength={CLOUDY_CHAT_MAX_LENGTH} onChange={(event) => onDraftChange(event.target.value)} onKeyDown={handleInputKeyDown} disabled={!preview} />
           <button type="submit" disabled={!preview || status === "pending" || !normalizeCloudyChatInput(draft)} aria-label={preview ? "Gửi tin nhắn" : "Gửi tin nhắn chưa khả dụng"}>Gửi</button>

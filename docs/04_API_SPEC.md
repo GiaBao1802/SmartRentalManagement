@@ -1507,3 +1507,16 @@ These are not changes to Requirement or database; resolve them in backend implem
 
 
 
+
+## Local-only Cloudy AI demo — authorized 2026-10-28
+
+This is outside the production `/api/v1` business API. It does not enable product AI in V1.
+
+- `POST /api/cloudy/chat`: Next Node route, development only. Other modes return 404 before inference.
+- Requires loopback URL hostname (`localhost`, `127.0.0.1`, `[::1]`), matching Host and same Origin. No authenticated business records are accessed.
+- JSON body exactly `{ "message": "Tìm phòng ở Bến Nắng dưới 4 triệu" }`; trimmed nonempty message, maximum 500 JavaScript string units, body maximum 4096 bytes. History, model overrides and other keys are rejected.
+- HTTP 200: `{ "text": "...", "synthetic": true, "model": "qwen3:1.7b", "status": "preview" }`. Status may also be `no_matches` or `needs_clarification`. Text is plain text, labels synthetic data and lists at most five catalog results. It is not SQL or a production room schema.
+- Errors: 400 invalid body/message, 403 origin/host rejection, 413 oversized body, 415 unsupported content type, 429 another inference active in this Next process, 503 unavailable/invalid/timed-out worker. Error JSON contains `error` and may contain a safe `message`. All replies use `Cache-Control: no-store`.
+- No persistence, booking, automatic relaxation or conversation-context inference. Dataset is `data/room-ai/v1/rooms.json`; Ollama is fixed to local Qwen3 1.7B. Server deadline 110 seconds. Browser abort propagates to the Python process when received; this does not guarantee immediate cancellation inside Ollama.
+
+See [integration evidence](07_modules/public-marketplace/CLOUDY_LOCAL_AI_INTEGRATION_REPORT.md) for limits and verification.

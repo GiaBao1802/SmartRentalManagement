@@ -1,0 +1,10 @@
+{
+  "dataset_id": "goctro-room-ai-300-v1",
+  "sha256": {
+    "rooms.json": "596e19229232dc3e146b763674049bc74ba9e98e1a4a4daea7c3b959411825ce",
+    "train.jsonl": "c977981086a314f2ef48b822032648255094ca9a2ba5ffe2c37b2d52cba3346d",
+    "validation.jsonl": "7ec95b2fa0e6cf95a59128f7e3103f3bc15553e59d4fc058a96810b09a032bd5",
+    "test.jsonl": "91d83ad398b1cfb14cda7ccfd0911bf16d5fdccc592c9b6201e703de834cb261",
+    "stats.json": "f876521f0e125af7f69ec87a3581a23f03734e02819bc83f961ef73a1ba10bf9"
+  }
+}

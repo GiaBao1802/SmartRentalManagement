@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="vi">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Góc Trọ · Thử tìm một góc phù hợp</title><link rel="stylesheet" href="/style.css"><script type="module" src="/app.js"></script></head>
+<body>
+  <header class="topbar"><a class="brand" href="/" aria-label="Góc Trọ — trang demo"><span class="brand-mark" aria-hidden="true"><i></i></span><span>góc trọ<small>Một góc yên tâm.</small></span></a><span class="demo-badge"><span></span> PHÒNG THỬ NGHIỆM</span></header>
+  <main>
+    <section class="hero"><div><p class="eyebrow">TÌM PHÒNG THEO NHỊP SỐNG CỦA BẠN</p><h1>Một góc trọ,<br><em>hợp nhịp sống.</em></h1><p class="intro">Về khuya, thích nấu ăn hay muốn gần nơi làm?<br>Bắt đầu từ những điều quan trọng với bạn.</p></div><div class="hero-note"><span class="note-number">18</span><div>phòng mẫu để khám phá<small>Toàn bộ phòng, chi phí và đường đi đều giả lập.<br>Không phải tin cho thuê thực tế.</small></div></div></section>
+    <div class="workspace">
+      <aside class="preferences"><form id="preferences">
+        <div class="section-heading"><span class="step">01</span><div><h2>Bạn cần một nơi thế nào?</h2><p>Mô tả → kiểm tra tiêu chí → nhận gợi ý.</p></div></div>
+        <label for="note">Một chút về nhịp sống của bạn</label><textarea id="note" name="note" rows="3" maxlength="500" placeholder="Ví dụ: Mình về lúc 1 giờ sáng, thích tự nấu ăn, ngân sách 4 triệu."></textarea>
+        <p class="field-help">Qwen đọc mô tả để đề xuất tiêu chí. Bạn cần kiểm tra và xác nhận trước khi tìm phòng. Chỉ hỗ trợ 3 điểm đến mẫu bên dưới.</p><button type="button" id="extract">1. Nhờ AI đọc nhu cầu</button><p id="proposal-status" role="status">Chưa phân tích. Bạn cũng có thể tự điền các ô bên dưới.</p><ul id="evidence"></ul><h3>2. Kiểm tra và xác nhận tiêu chí</h3>
+        <div class="presets" aria-label="Tình huống mẫu"><button type="button" data-preset="night">☾ Về khuya</button><button type="button" data-preset="student">⌂ Tiết kiệm</button><button type="button" data-preset="pets">♧ Có thú cưng</button></div>
+        <label for="budget">Ngân sách tổng mỗi tháng <span>VND</span></label><input id="budget" name="budget" type="number" min="500000" max="20000000" step="50000" value="4000000" required><p class="field-help">Tổng cho cả phòng, không phải mỗi người. Gồm thuê + sinh hoạt giả định; chưa có tiền cọc. Khoản mẫu không tự tăng theo số người.</p>
+        <div class="field-row"><div><label for="destination">Điểm đến mẫu</label><select id="destination" name="destination" required><option value="" disabled>Chọn để xác nhận</option><option value="campus">Trường A</option><option value="office" selected>Văn phòng B</option><option value="tech">Khu công nghệ C</option></select></div><div><label for="mode">Phương tiện</label><select id="mode" name="mode" required><option value="" disabled>Chọn để xác nhận</option><option value="motorbike">Xe máy</option><option value="bus">Xe buýt</option></select></div></div>
+        <div class="field-row"><div><label for="maxMinutes">Tối đa phút đi lại</label><input id="maxMinutes" name="maxMinutes" type="number" min="5" max="120" value="30" required></div><div><label for="people">Số người ở</label><select id="people" name="people" required><option value="" disabled>Chọn để xác nhận</option><option value="1">1 người</option><option value="2">2 người</option><option value="3">3 người</option><option value="4">4 người</option><option value="5">5 người</option></select></div></div>
+        <fieldset><legend>Điều kiện bắt buộc</legend><div class="checks"><label><input type="checkbox" name="late" checked> Ra vào 24 giờ</label><label><input type="checkbox" name="required" value="cooking" checked> Được nấu ăn</label><label><input type="checkbox" name="required" value="parking" checked> Có chỗ để xe</label><label><input type="checkbox" name="required" value="pets"> Nuôi thú cưng</label><label><input type="checkbox" name="required" value="ac"> Có máy lạnh</label></div></fieldset>
+        <label for="priority">Ưu tiên khi nhiều phòng cùng phù hợp</label><select id="priority" name="priority" required><option value="" disabled>Chọn để xác nhận</option><option value="commute">Đi lại ít thời gian nhất</option><option value="budget">Tổng chi phí thấp nhất</option><option value="space">Diện tích rộng nhất</option></select>
+        <label><input id="confirmed" type="checkbox" required> Tôi đã kiểm tra tất cả tiêu chí, kể cả các ô AI chưa xác định.</label><button class="primary" type="submit" id="find">3. Xác nhận và nhờ AI chọn phòng <span aria-hidden="true">↗</span></button>
+        <p class="privacy">Chạy trên máy của bạn · Không lưu nội dung tư vấn</p>
+      </form></aside>
+      <section class="results" aria-labelledby="results-title">
+        <div class="results-head"><div><p class="eyebrow">MỘT VÀI LỰA CHỌN DÀNH CHO BẠN</p><h2 id="results-title">Góc nào hợp với bạn?</h2></div><span class="result-count" id="result-count">Chưa tìm</span></div>
+        <div class="advice-panel"><div class="advice-icon" aria-hidden="true">✦</div><div class="advice-copy"><h3>Lý do rõ ràng, lựa chọn dễ hơn.</h3><p id="status" role="status" aria-live="polite">Xác nhận tiêu chí bên trái để xem những phòng phù hợp.</p><small id="ai-source">Code lọc điều kiện bắt buộc. Qwen so sánh các phòng đạt điều kiện và chọn tối đa 3 phòng.</small></div></div>
+        <div id="cards"><div class="empty-start"><div class="window-art" aria-hidden="true"><i></i><i></i><i></i><i></i></div><h3>Mỗi nhịp sống có một góc riêng.</h3><p>Chọn một tình huống mẫu hoặc điền tiêu chí.<br>Phòng vượt điều kiện bắt buộc sẽ không được gợi ý.</p></div></div>
+        <details id="audit" hidden><summary>Vì sao các phòng khác bị loại?</summary><ul id="exclusions"></ul><p>Mỗi phòng chỉ tính lý do loại đầu tiên. Không tự nới điều kiện khi hết kết quả.</p></details>
+        <p class="footnote">BẢN MINH HỌA · Không đặt phòng, không gửi liên hệ. Thời gian đi lại chưa được tính bằng bản đồ thực tế.</p>
+      </section>
+    </div>
+  </main>
+  <footer><span>góc trọ / thử nghiệm tư vấn local</span><span>Chọn nơi ở. Giữ nhịp sống.</span></footer>
+</body></html>

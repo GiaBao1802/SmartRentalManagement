@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { CLOUDY_CHAT_MAX_LENGTH, createMockCloudyChatService, normalizeCloudyChatInput } from "./cloudy-chat-service";
+import { CLOUDY_CHAT_MAX_LENGTH, createLocalCloudyChatService, createMockCloudyChatService, normalizeCloudyChatInput } from "./cloudy-chat-service";
 
 test("Cloudy rejects blank and overlong text, but trims valid input", () => {
   assert.equal(normalizeCloudyChatInput("  \n  "), null);
@@ -26,4 +26,20 @@ test("aborting a pending mock response prevents a late reply", async () => {
   const response = service.send("Xin chào", [], controller.signal);
   controller.abort();
   await assert.rejects(response, { name: "AbortError" });
+});
+
+test("local AI sends only current message, keeps abort signal and validates source", async () => {
+  const controller=new AbortController();
+  const service=createLocalCloudyChatService((async(url,options)=>{
+    assert.equal(url,"/api/cloudy/chat");assert.equal(options?.signal,controller.signal);
+    assert.deepEqual(JSON.parse(String(options?.body)),{message:"tìm phòng"});
+    return Response.json({text:"PHÒNG GIẢ LẬP",synthetic:true});
+  }) as typeof fetch);
+  assert.equal(await service.send(" tìm phòng ",[{id:"old",role:"user",text:"private old message",createdAt:""}],controller.signal),"PHÒNG GIẢ LẬP");
+});
+test("local AI rejects unavailable or unlabelled replies without mock fallback", async () => {
+  for (const response of [Response.json({}, {status:503}),Response.json({text:"unlabelled"})]) {
+    const service=createLocalCloudyChatService((async()=>response) as typeof fetch);
+    await assert.rejects(service.send("phòng",[],new AbortController().signal));
+  }
 });
