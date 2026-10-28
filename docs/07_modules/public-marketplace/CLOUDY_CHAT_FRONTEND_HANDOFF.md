@@ -1,8 +1,10 @@
 # Cloudy chat frontend handoff
 
-Status: CURRENT — development local AI integration. Updated: 2026-10-28.
+Status: CURRENT — development local AI with guest confirmation before retrieval. Updated: 2026-10-28.
 
-The user's requested local integration now uses `createLocalCloudyChatService` and `POST /api/cloudy/chat` with Qwen3 1.7B and 300 synthetic rooms. History remains UI memory only; every request sends only the current message. Production stays disabled. See the [integration report](CLOUDY_LOCAL_AI_INTEGRATION_REPORT.md) and [runbook](../../../scripts/cloudy-ai/README.md). The service signature and session-reset boundaries below remain unchanged; mock behavior and original verification below are historical evidence for 2026-10-26, not the current development adapter.
+Guest requests now prepare a filter summary first; only the explicit confirm button retrieves rooms. Editing invalidates proposals. The service exposes `hasProposal`, `discardProposal`, and `confirm` alongside `send`; accepted context updates only after confirmation.
+
+The user's requested local integration now uses `createLocalCloudyChatService` and `POST /api/cloudy/chat` with Qwen3 1.7B and 300 synthetic rooms. Raw history remains UI memory only; requests now send a mode plus validated filter context for continuation. The optional fourth `send` argument selects new/continue; `hasContext()` controls continuation availability. Production stays disabled. See the [integration report](CLOUDY_LOCAL_AI_INTEGRATION_REPORT.md) and [runbook](../../../scripts/cloudy-ai/README.md). Session keys now explicitly include auth status and role as well as route group/account; a public same-account role change also resets chat. Session-key/service tests cover the transitions; authenticated UI remains unverified. mock behavior and original verification below are historical evidence for 2026-10-26, not the current development adapter.
 
 ## Original mock scope and evidence — historical, 2026-10-26
 

@@ -7,7 +7,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Database V1.13 application mapping; SQL baseline: database/baselines/v1.13/schema.sql.
+// Database V1.15 application mapping; SQL baseline: database/baselines/v1.15/schema.sql.
+// complaint_room_requests and room_equipment use scoped SQL repositories and baseline guards.
+// resident_meter_submissions is accessed by scoped backend SQL, with composite FKs in the baseline.
 // auth_sessions is accessed by backend SQL and intentionally has no Prisma model.
 // V1.8 recurring Parking partial uniqueness is enforced by SQL, not a Prisma @@unique.
 // Status domains remain varchar + PostgreSQL CHECK constraints.

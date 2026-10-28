@@ -1,4 +1,5 @@
 "use client";
+import { RoomEquipment } from "../../../../components/room-requests";
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
@@ -372,6 +373,7 @@ export default function PropertyRoomsPage() {
         <label className="property-room-check"><input type="checkbox" disabled={saving} checked={form.is_public} onChange={(event) => setForm({ ...form, is_public: event.target.checked })} /><span><strong>Đăng phòng công khai</strong><small>Cho phép hiển thị theo điều kiện API.</small></span></label>
         <label className="property-room-field property-room-field-wide">Mô tả công khai{!editing && createMode === "bulk" ? " mặc định" : ""}<textarea maxLength={10000} disabled={saving} value={form.public_description} onChange={(event) => setForm({ ...form, public_description: event.target.value })} /></label>
       </div></fieldset>
+      {editing && <RoomEquipment roomId={editing.room_id} />}
       {editing && <RoomImageGallery propertyId={propertyId} roomId={editing.room_id} roomCode={editing.room_code} />}
       {!editing && createMode === "single" && <><RoomImagePicker files={singleImages} disabled={saving} onChange={(files) => { setSingleImages(files); setImagePickerError(""); }} onError={setImagePickerError} />{imagePickerError && <p className="room-image-error" role="alert">{imagePickerError}</p>}</>}
       {!editing && createMode === "bulk" && <><div className="room-bulk-image-note"><strong>Ảnh dùng chung ban đầu</strong><p>Các ảnh này sẽ được áp dụng chung cho các phòng tạo thành công.</p><small>Sau khi tạo, mỗi phòng có gallery riêng. Chỉnh sửa một phòng không làm thay đổi phòng khác.</small></div><RoomImagePicker files={singleImages} disabled={saving || Boolean(bulkResult)} onChange={(files) => { setSingleImages(files); setImagePickerError(""); }} onError={setImagePickerError} />{imagePickerError && <p className="room-image-error" role="alert">{imagePickerError}</p>}</>}

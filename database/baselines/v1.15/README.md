@@ -1,0 +1,5 @@
+# V1.15 candidate — Resident Parking on the local V1.14 baseline
+
+This candidate adds the pulled Resident Parking request schema to the user's promoted meter V1.13 and room-request V1.14 chain. It adds `parking_slot_requests` and the accepted vehicle type and default entitlement columns on `parking_slots`. The original Parking V1.13 candidate is preserved in `database/parallel-baselines/parking-v1.13/` because its version number collides with the user's meter V1.13.
+
+`node scripts/prepare-v115.mjs` verified the exact V1.14 predecessor and ran the guarded additive migration on a uniquely named disposable PostgreSQL database, generated the clean-install catalog, and seeded only that disposable database. It dropped the disposable database afterward. The configured application database was not changed. This candidate is **REHEARSED_NOT_APPLIED**; backup, protected-target authorization, migration, runtime validation and authenticated UI review are required before promotion. The separate physical Parking V1.13 branch cannot be treated as this candidate's V1.14 predecessor.

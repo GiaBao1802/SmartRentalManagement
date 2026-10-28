@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "synthetic": true,
+  "asOf": "2026-10-28",
+  "ownerId": "1",
+  "accountId": "1",
+  "accountEmail": "admin.one@example.test",
+  "roomCount": 100,
+  "invoiceCount": 160,
+  "note": "JSON-only test fixtures. Account/Owner IDs verified read-only locally. All properties, rooms, invoices and rates are synthetic; never import as real debt."
+}

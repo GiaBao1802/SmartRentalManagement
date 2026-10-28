@@ -16,10 +16,10 @@ git status --short --branch
 
 - `frontend/`: ứng dụng Next App Router hiện hành; `backend/src/server.ts`: API entrypoint, V1 endpoints dưới `/api/v1`.
 - `database/schema.prisma`: mapping ORM hiện hành. SQL vẫn enforce CHECKs/triggers/partial indexes Prisma không thể biểu diễn đầy đủ.
-- `database/baselines/v1.11/`, `v1.12/` và `v1.13/`: V1.11/V1.12 là các predecessor; V1.12 mở provider demo. V1.13 bổ sung yêu cầu gửi xe và đã áp dụng cục bộ trên `Goctro_dev_v18` sau backup xác minh; source baseline còn chờ promotion.
+- `database/baselines/v1.13/` và `v1.14/`: baseline local của chủ dự án cho ảnh chỉ số điện nước và yêu cầu thiết bị. `v1.15/` là bản gửi xe đã ghép trên V1.14, mới thử trên database tạm, chưa áp dụng vào database đang chạy. Bản Parking V1.13 kéo về được lưu tại `database/parallel-baselines/parking-v1.13/` để giữ lịch sử hai nhánh.
 - `database/migrations/`, các `schema.*.prisma` snapshot và `database/seeds/seed.ts`: lịch sử legacy/demo, **không tương đương V1.13**. Giữ nguyên để tra cứu; không chạy các migration legacy. Lệnh `db:migrate` lịch sử nâng V1.10→V1.11; `setup.bat` dùng luồng versioned qua V1.13 sau xác nhận backup.
 - `legacy/`: chỉ còn wireframe, artwork/tham chiếu và JSON demo lịch sử; không còn ứng dụng hoặc launcher demo. Không dùng JSON này làm dữ liệu ứng dụng.
-- [Documentation](docs/README.md), [Database V1.13 candidate](database/baselines/v1.13/README.md), [Database V1.12 setup history](docs/10_operations/DATABASE_V1_12_SETUP.md).
+- [Documentation](docs/README.md), [Database V1.15 candidate](database/baselines/v1.15/README.md), [Database V1.12 setup history](docs/10_operations/DATABASE_V1_12_SETUP.md).
 
 ### Nguồn triển khai AWS
 
@@ -36,7 +36,7 @@ Giữ Public Explorer → chi tiết phòng → liên hệ; Auth/Accounts/invita
 Trên Windows, mở **`setup.bat`** làm entry duy nhất (menu tiếng Việt):
 
 1. **Cài đặt lần đầu**: cố định **localhost:5432**, user **postgres**, database **Goctro_dev_v18**; chỉ nhập **mật khẩu PostgreSQL** bằng input ẩn nếu chưa có. Không hỏi/đổi host, cổng, user hoặc database. Kiểm tra Node 24.11+/npm 11.6+, cài project theo lockfile khi cần, tạo env còn thiếu và secret local ngẫu nhiên. PostgreSQL 18.6+ phải được cài/chạy sẵn. Xác nhận đúng target trước tạo DB/bootstrap/seed; kết nối sai thì dừng, không tự đổi cấu hình/dịch vụ.
-2. **Cập nhật và khởi động**: sau khi tự `git pull`, giữ database/env/credential. Setup nhận V1.8–V1.13, yêu cầu xác nhận đã có backup khôi phục được rồi chạy migration additive đến V1.13; V1.11→V1.12 mở provider `demo`, V1.12→V1.13 thêm yêu cầu Parking của cư dân. Không seed/reset dữ liệu hiện có. Dependency không đổi và đã kiểm tra đầy đủ thì bỏ qua `npm ci`; Prisma chỉ generate khi mapping/tooling đổi hoặc client thiếu. Process được xác minh thuộc project sẽ restart khi code/env đổi; process khác giữ nguyên.
+2. **Cập nhật và khởi động**: sau khi tự `git pull`, giữ database/env/credential. Setup nhận chuỗi baseline local V1.8–V1.15, yêu cầu xác nhận đã có backup khôi phục được rồi nâng theo thứ tự: V1.13 ảnh chỉ số, V1.14 yêu cầu thiết bị, V1.15 gửi xe. Không seed/reset dữ liệu hiện có. Database Parking V1.13 của nhánh khác không được tự động coi là baseline local V1.13. Dependency không đổi và đã kiểm tra đầy đủ thì bỏ qua `npm ci`; Prisma chỉ generate khi mapping/tooling đổi hoặc client thiếu. Process được xác minh thuộc project sẽ restart khi code/env đổi; process khác giữ nguyên.
 3. **Thoát**.
 
 Database cũ chỉ được nâng sau khi xác nhận đúng target và backup; migration giữ dữ liệu, không gán loại cho tiện ích legacy. Schema không tương thích hoặc lỗi kết nối/quyền sẽ dừng. Bootstrap không phải upgrade. Nếu `.env` đã trỏ target khác bộ mặc định, cài lần đầu dừng và hướng dẫn chọn **Cập nhật và khởi động**; không ghi đè file hoặc mở wizard. `Goctro_test3` bị chặn khỏi các migration của module này. Thiếu env/database thì báo chưa hoàn tất cài đặt; target khác bị thiếu phải xử lý cấu hình hiện tại, không tự chuyển target.
@@ -56,7 +56,7 @@ Nếu lỗi, đọc bước đã hoàn thành và log `.local/setup`/`.local/dev
 
 ### Lệnh thủ công dành cho developer (không cần chạy thêm sau setup)
 
-1. `npm ci` (hoặc `setup.bat` trên Windows để tạo env templates khi thiếu, cài dependency, setup/inspect database V1.13, provision credential DEV và khởi động app).
+1. `npm ci` (hoặc `setup.bat` trên Windows để tạo env templates khi thiếu, cài dependency, setup/inspect chuỗi database local đến V1.15, provision credential DEV và khởi động app).
 2. Copy root `.env.example` → `.env`, `backend/.env.example` → `backend/.env`, `frontend/.env.example` → `frontend/.env.local` **chỉ khi file chưa tồn tại**. Đặt password local riêng và secrets cần thiết; đồng bộ backend URL với instance. Không commit env thật.
 3. Nếu dùng Docker: `npm run db:up`. Service `postgres18` dùng image `postgres:18.6`, volume mới `goctro_pg18_v18_data`, mount `/var/lib/postgresql`; không tái dùng PG17 volume. Nếu đã có PostgreSQL native, dùng đúng instance và tạo database trống riêng thay vì chạy thêm container trùng cổng.
 4. Cấp URL setup riêng rồi bootstrap/seed theo thứ tự:
@@ -74,13 +74,13 @@ npm run db:generate
 .\setup.bat
 ```
 
-Thay `REPLACE_WITH_NEW_EMPTY_DB`, role `goctro` và `<URL_ENCODED_LOCAL_PASSWORD>` theo database mới đã kiểm tra và do bạn kiểm soát; không sao chép tên database populated trong các report lịch sử. AWS clean install vẫn dùng V1.12 vì V1.13 chưa được promote; menu Windows cài mới bootstrap V1.11 rồi nâng tiếp tới V1.13. Seed là tùy chọn và chỉ trên schema trống. Chạy lại bootstrap/seed sẽ bị từ chối, không ghi đè. Công cụ setup không tự đọc `DATABASE_URL`/`.env` thật, không DROP/reset. Seed có dữ liệu synthetic và không có password login mặc định; provision DEV credential riêng theo tài liệu.
+Thay `REPLACE_WITH_NEW_EMPTY_DB`, role `goctro` và `<URL_ENCODED_LOCAL_PASSWORD>` theo database mới đã kiểm tra và do bạn kiểm soát; không sao chép tên database populated trong các report lịch sử. Menu Windows cài mới bootstrap V1.11 rồi nâng theo chuỗi local đến V1.15 sau xác nhận backup. Seed là tùy chọn và chỉ trên schema trống. Chạy lại bootstrap/seed sẽ bị từ chối, không ghi đè. Công cụ setup không tự đọc `DATABASE_URL`/`.env` thật, không DROP/reset. Seed có dữ liệu synthetic và không có password login mặc định; provision DEV credential riêng theo tài liệu.
 
 `db:down` chỉ stop service PG18 và giữ volume. Dùng menu setup cho startup có guard; FE `http://localhost:3000`, BE `http://localhost:4000`, login `/login`. Kiểm tra `/api/health`, `/api/health/db`, `/api/v1/auth/csrf`.
 
 ## B. Database đã có dữ liệu
 
-Xác định instance/version/schema, sao lưu và xác minh `pg_restore --list` trước. `db:state -- --database NAME` nhận biết V1.8–V1.13. `setup.bat` là đường nâng hiện hành; nó yêu cầu xác nhận backup khôi phục được trước khi chạm database populated, kiểm tra catalog chính xác và chạy migration transaction. Không seed/reset dữ liệu hiện có. Không dùng SQL clean-install làm migration và không gắn PG17 volume vào PG18. V1.13 source baseline còn là candidate cho đến khi expected catalog và runtime validation được ghi nhận.
+Xác định instance/version/schema, sao lưu và xác minh `pg_restore --list` trước. `db:state -- --database NAME` nhận biết chuỗi local V1.8–V1.15. `setup.bat` yêu cầu xác nhận backup khôi phục được trước khi chạm database populated, kiểm tra catalog chính xác và chạy migration transaction. Không seed/reset dữ liệu hiện có. Không dùng SQL clean-install làm migration và không gắn PG17 volume vào PG18. V1.15 hiện mới được thử trên database tạm.
 
 ## Kiểm chứng tooling
 

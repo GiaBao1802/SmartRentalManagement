@@ -1,3 +1,4 @@
+import { isFilterContext, type FilterContext, type FilterMode } from "../../lib/cloudy-filter-context";
 export const CLOUDY_CHAT_MAX_LENGTH = 500;
 
 export type CloudyChatMessage = {
@@ -5,10 +6,16 @@ export type CloudyChatMessage = {
   role: "user" | "cloudy";
   text: string;
   createdAt: string;
+  filterMode?: FilterMode;
+  confirmation?: boolean;
 };
 
 export interface CloudyChatService {
-  send(message: string, history: readonly CloudyChatMessage[], signal: AbortSignal): Promise<string>;
+  send(message: string, history: readonly CloudyChatMessage[], signal: AbortSignal, mode?: FilterMode): Promise<string>;
+  hasContext?(): boolean;
+  hasProposal?(): boolean;
+  discardProposal?(): void;
+  confirm?(signal: AbortSignal): Promise<string>;
 }
 
 export function normalizeCloudyChatInput(value: string): string | null {
@@ -16,20 +23,45 @@ export function normalizeCloudyChatInput(value: string): string | null {
   return text && text.length <= CLOUDY_CHAT_MAX_LENGTH ? text : null;
 }
 
-// Single-turn local AI: history is deliberately not sent or interpreted as context.
+// Only validated filters carry over; raw chat history is never sent.
 export function createLocalCloudyChatService(fetchImpl: typeof fetch = fetch): CloudyChatService {
+  let context: FilterContext | null = null;
+  let proposal: FilterContext | null = null;
+  let revision = 0;
+  async function request(body: unknown, signal: AbortSignal) {
+    const response = await fetchImpl("/api/cloudy/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal, cache: "no-store" });
+    if (response.status === 429) throw new Error("Cloudy đang xử lý yêu cầu khác. Bạn thử lại sau nhé.");
+    if (!response.ok) throw new Error("Chưa kết nối được AI local. Kiểm tra Ollama rồi thử lại.");
+    const reply = await response.json();
+    if (signal.aborted) throw new DOMException("Aborted", "AbortError");
+    if (!reply || typeof reply.text !== "string" || !reply.text || reply.text.length > 16000 || reply.synthetic !== true || !["preview","no_matches","needs_clarification","awaiting_confirmation"].includes(reply.status) || (reply.status === "needs_clarification" ? reply.context !== null : !isFilterContext(reply.context))) throw new Error("Phản hồi không hợp lệ. Hãy thử lại.");
+    return reply;
+  }
   return {
-    async send(message, _history, signal) {
+    hasContext: () => context !== null,
+    hasProposal: () => proposal !== null,
+    discardProposal: () => { proposal = null; revision++; },
+    async confirm(signal) {
+      if (!proposal) throw new Error("Hãy gửi yêu cầu để Cloudy xác nhận lại trước.");
+      const version = revision;
+      const accepted = proposal;
+      const reply = await request({ action: "confirm", context: accepted }, signal);
+      if (version !== revision) throw new DOMException("Aborted", "AbortError");
+      if (!["preview","no_matches"].includes(reply.status) || JSON.stringify(reply.context) !== JSON.stringify(accepted)) throw new Error("Bộ lọc xác nhận không khớp. Hãy gửi lại yêu cầu.");
+      context = accepted; proposal = null;
+      return reply.text;
+    },
+    async send(message, _history, signal, mode = "new") {
       const text = normalizeCloudyChatInput(message);
       if (!text) throw new Error("Hãy nhập từ 1 đến 500 ký tự.");
-      const response = await fetchImpl("/api/cloudy/chat", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text }), signal, cache: "no-store",
-      });
-      if (response.status === 429) throw new Error("Cloudy đang xử lý yêu cầu khác. Bạn thử lại sau nhé.");
-      if (!response.ok) throw new Error("Chưa kết nối được AI local. Kiểm tra Ollama rồi thử lại.");
-      const reply: unknown = await response.json();
-      if (!reply || typeof reply !== "object" || !("text" in reply) || typeof reply.text !== "string" || !reply.text || reply.text.length > 16_000 || !("synthetic" in reply) || reply.synthetic !== true) throw new Error("Phản hồi không hợp lệ. Hãy thử lại.");
+      if (mode === "continue" && !context) throw new Error("Hãy lọc mới trước khi lọc tiếp.");
+      proposal = null;
+      const version = ++revision;
+      const reply = await request({ message: text, mode, ...(mode === "continue" ? { context } : {}) }, signal);
+      if (version !== revision) throw new DOMException("Aborted", "AbortError");
+      if (!["awaiting_confirmation","needs_clarification"].includes(reply.status)) throw new Error("Cloudy cần xác nhận yêu cầu trước khi tìm phòng.");
+      if (mode === "new") context = null;
+      proposal = reply.status === "awaiting_confirmation" ? reply.context : null;
       return reply.text;
     },
   };

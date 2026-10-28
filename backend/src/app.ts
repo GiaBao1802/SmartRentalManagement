@@ -1,3 +1,5 @@
+import { RoomRequestRepository } from "./resident-assistant/room-request.repository.js";
+import { MeterSubmissionRepository } from "./resident-assistant/meter.repository.js";
 import { EnrollmentService } from "./accounts/enrollment.service.js";
 import { PrismaEnrollmentRepository } from "./accounts/enrollment.repository.js";
 import { UnconfiguredEnrollmentDelivery } from "./accounts/credential-infrastructure.js";
@@ -43,6 +45,7 @@ app.use(
     credentials: true,
   }),
 );
+app.use(["/api/v1/me/meter-ocr", "/api/v1/me/meter-submissions"], express.json({ limit: "8mb" }));
 app.use(express.json({ limit: "1mb" }));
 app.use("/api/v1/public/explorer", createExplorerRouter(prisma));
 
@@ -52,6 +55,8 @@ const invoiceRepository = new PrismaInvoiceRepository(prisma);
 const invoicePricing = new PrismaItemizedInvoicePricing();
 const billingWorkspaceRepository = new PrismaBillingWorkspaceRepository(prisma, invoicePricing);
 app.use("/api/v1", createV1Router({
+  roomRequestRepository: new RoomRequestRepository(prisma),
+  meterSubmissionRepository: new MeterSubmissionRepository(prisma),
   config: runtimeConfig,
   repository: new PrismaAuthRepository(prisma),
   sessions,

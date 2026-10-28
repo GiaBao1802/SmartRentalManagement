@@ -29,3 +29,17 @@ test("Cloudy limits concurrent inference and releases busy flag after failure", 
   release();const response=await first;assert.equal(response.status,503);assert.ok(!(await response.text()).includes("private path"));
   assert.equal((await handleCloudyChat(request(),async()=>reply,"development")).status,200);
 });
+
+test("continue requires validated context; new rejects old context", async () => {
+ const context={price:[{op:"lt",value:4000000}],area:[],location:"Bến Nắng",occupants:null,amenities:[]};
+ for(const body of [{message:"thêm máy lạnh",mode:"continue"},{message:"phòng",mode:"new",context},{message:"phòng",mode:"invalid"},{message:"phòng",mode:"continue",context:{...context,occupants:-1}}]) assert.equal((await handleCloudyChat(request(body),async()=>reply,"development")).status,400);
+ const response=await handleCloudyChat(request({message:"thêm máy lạnh",mode:"continue",context}),async(_message,_signal,options)=>{assert.deepEqual(options,{mode:"continue",context});return reply;},"development");
+ assert.equal(response.status,200);
+});
+
+test("confirmation validates exact body and forwards only explicit filters", async()=>{
+ const context={price:[],area:[],location:null,occupants:null,amenities:[]};let calls=0;
+ for(const body of [{action:"confirm"},{action:"confirm",context:{}},{action:"confirm",context,message:"extra"},{message:"phòng",action:"execute"}]) assert.equal((await handleCloudyChat(request(body),async()=>{calls++;return reply;},"development")).status,400);
+ assert.equal(calls,0);
+ const response=await handleCloudyChat(request({action:"confirm",context}),async(message,_signal,options)=>{assert.equal(message,"");assert.deepEqual(options,{action:"confirm",context});return reply;},"development");assert.equal(response.status,200);
+});

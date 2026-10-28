@@ -1511,9 +1511,60 @@ This is outside the production `/api/v1` business API. It does not enable produc
 
 - `POST /api/cloudy/chat`: Next Node route, development only. Other modes return 404 before inference.
 - Requires loopback URL hostname (`localhost`, `127.0.0.1`, `[::1]`), matching Host and same Origin. No authenticated business records are accessed.
-- JSON body exactly `{ "message": "Tìm phòng ở Bến Nắng dưới 4 triệu" }`; trimmed nonempty message, maximum 500 JavaScript string units, body maximum 4096 bytes. History, model overrides and other keys are rejected.
-- HTTP 200: `{ "text": "...", "synthetic": true, "model": "qwen3:1.7b", "status": "preview" }`. Status may also be `no_matches` or `needs_clarification`. Text is plain text, labels synthetic data and lists at most five catalog results. It is not SQL or a production room schema.
+- JSON body `{ "message": "Tìm phòng ở Bến Nắng dưới 4 triệu", "mode": "new" }`; `mode` defaults to `new`. For `continue`, require `context` from the last accepted response (price/area comparison arrays, location, occupants, amenities); reject context in `new`. Context is validated and never interpreted as executable instructions; trimmed nonempty message, maximum 500 JavaScript string units, body maximum 4096 bytes. Raw history, model overrides and other keys are rejected.
+- HTTP 200: `{ "text": "...", "synthetic": true, "model": "qwen3:1.7b", "status": "preview" }`. Status may also be `no_matches` or `needs_clarification`. Response also has `context`: accepted filters for preview/no_matches, null for clarification. Text is plain text, labels synthetic data and lists at most five catalog results. It is not SQL or a production room schema.
 - Errors: 400 invalid body/message, 403 origin/host rejection, 413 oversized body, 415 unsupported content type, 429 another inference active in this Next process, 503 unavailable/invalid/timed-out worker. Error JSON contains `error` and may contain a safe `message`. All replies use `Cache-Control: no-store`.
-- No persistence, booking, automatic relaxation or conversation-context inference. Dataset is `data/room-ai/v1/rooms.json`; Ollama is fixed to local Qwen3 1.7B. Server deadline 110 seconds. Browser abort propagates to the Python process when received; this does not guarantee immediate cancellation inside Ollama.
+- No persistence, booking or automatic relaxation. User-authorized continuation (2026-10-28): `continue` retains accepted filters and replaces fields explicitly supplied by the new turn; exact removal commands can clear a field. `new` ignores prior filters. Clarification preserves previous context only in continue mode; failed/aborted transport never commits context. Dataset is `data/room-ai/v1/rooms.json`; Ollama is fixed to local Qwen3 1.7B. Server deadline 110 seconds. Browser abort propagates to the Python process when received; this does not guarantee immediate cancellation inside Ollama.
+
+### Guest confirmation update — 2026-10-28
+
+This supersedes immediate retrieval in the local Cloudy contract above. Normal message requests (optional `action: "prepare"`) only interpret the request and return `status: "awaiting_confirmation"`, the proposed filter `context`, and a plain-language summary. They do not load or filter the catalog. Ambiguous or unsupported requests return `needs_clarification` with null context and no confirmation action.
+
+After the guest explicitly confirms, send exactly `{ "action": "confirm", "context": <proposed filters> }` to the same route. Context schema is revalidated. Confirmation executes deterministic catalog filtering without another model call; returns `preview`/`no_matches` and the exact accepted context. Extra message/mode keys are rejected for confirmation. This local synthetic read-only route accepts client-provided filters, not a signed proposal token; it does not prove human consent or authorize business writes.
+
+Client holds a proposal separately from confirmed context. Editing input/changing mode invalidates the proposal; a newer request or an abort cannot commit an old reply. Only successful confirmation enables continuation using those filters. Retry after a confirmation transport error uses the unchanged proposal. Session remount drops both proposal and confirmed filters. Owner/Resident assistant contracts are unaffected.
 
 See [integration evidence](07_modules/public-marketplace/CLOUDY_LOCAL_AI_INTEGRATION_REPORT.md) for limits and verification.
+
+
+### Local-only Cloudy Owner advisor — 2026-10-28
+
+Next.js development route `/api/v1/cloudy/owner` (outside canonical `/api/v1`) powers the Admin Cloudy panel directly, without the standalone port 4332 server. Every GET/POST validates `gt_session` with backend `/auth/me` and requires active Admin. GET returns synthetic tasks/periods/room codes scoped to assigned account 1 / Owner 1; other Admins receive empty scope. POST accepts exactly `{question}` to propose a task, or `{task,period,room,confirmed:true}` to read scoped snapshots after explicit confirmation. No client authority fields, writes or financial calculations by AI. Local host and POST same-origin checks, 4 KiB body limit, no-store. Anonymous/expired session 401, Resident 403, auth unavailable 503, production disabled 404. Dataset: `data/owner-ai/v1`. This demo does not replace Invoice/Billing API contracts.
+
+
+Owner local demo correction (2026-10-28): the Next route must reside at `/api/v1/cloudy/owner` to receive the existing `gt_session` Path=/api/v1 cookie. This is a frontend local-demo route, not a new backend production route. GET includes the `requests` task; confirmed task requests returns scoped synthetic request rows. Additional exact POST shape `{requestId,action,revision,reason,confirmed:true}` applies an allowlisted simulation transition with nonempty reason, revision check and history, scoped by validated account/owner. Foreign request 404; stale/invalid transition 409; no persistent DB writes or charges. State is process-local and resets on restart. This does not replace canonical booking/Complaint commands.
+
+## Resident assistant and meter approval — approved 2026-10-28
+
+All paths below use /api/v1 and existing session/CSRF middleware. Anonymous is denied; Resident-only commands reject Admin. Identity/Owner scope is always server-derived. JSON image bodies accept at most 8 MB; other JSON routes retain 1 MB. Missing required database tables return 503 FEATURE_NOT_READY.
+
+| Method/path | Contract |
+|---|---|
+| POST /me/assistant/chat | Resident; exact body message (1–500 chars). Local Qwen3 1.7B classifies services/meter/help; response data {intent,text}. No mutation, SQL or model-selected resource identifiers. 429 busy, 503 AI unavailable. |
+| GET /me/meter-targets | Resident; up to 50 draft Invoice targets scoped to currently active Occupancy/Contract, with invoice_id, contract_id, room_id, property_id, room_code, property_name, period_start/end. No client-selected tenant scope. |
+| POST /me/meter-ocr | Resident; exact body image (data URI JPEG/PNG/WebP <=5 MB decoded; <=20 million input pixels). Returns data {reading: string or null}; ambiguous/low-confidence returns null. 429 busy, 503 unavailable/timeout; caller may enter a reading manually from the image. Does not persist or mutate Invoice. |
+| POST /me/meter-submissions | Resident; exact invoice_id, utility ELECTRICITY/WATER, reading decimal string (0–999999999.999), image. Revalidates current scope/draft and same-Contract opening reading. Saves PENDING with normalized JPEG and prior draft reading; data {submission_id,status}. Repeated identical pending submission returns original; conflicting pending request 409. |
+| GET /me/meter-submissions | Resident own history, newest pending first, at most 100, no image bytes. |
+| GET /meter-submissions | Admin own Owner queue/history, at most 100, no image bytes. |
+| GET /meter-submissions/{id}/image | Authenticated; Owner Admin or submitting Resident only; foreign resource 404; JPEG private/no-store. |
+| POST /meter-submissions/{id}/decision | Admin; exact decision APPROVE/REJECT, optional reason <=1000 chars. Invoice-first row locks. Approval checks active context, draft, unchanged current draft reading, authoritative same-Contract continuity and nondecreasing proposed reading; atomically updates draft utility and decision audit. Rejection only records decision. Same repeated decision returns result; opposite after decision 409. No finalize, total calculation, payment or Zalo. |
+
+List rows: submission_id, invoice_id, utility, reading, status, decision_note, created_at, decision_at, room_code, property_name, period_start/end. BigInt IDs are decimal strings; timestamps/dates serialize ISO. Backend client-authority rejection continues to apply. Resident service registration reuses existing BOOKING endpoints and approval contract; SUBSCRIPTION enrollment remains deferred.
+
+## Resident room requests and confirmed equipment — 2026-10-28
+
+All paths /api/v1, existing session/CSRF and authority-rejection middleware. Real persisted Complaint workflow, separate from owner-advisor synthetic request demo.
+
+| Endpoint | Contract |
+|---|---|
+| GET /me/room-request-targets | Resident only; returns rooms for currently active Occupancy/Contract, each occupancy_id/room_id/property_id/contract_id/resident_id/room_code/property_name/equipment, plus equipment_options {code,name}. Max 100 rooms. |
+| POST /me/room-requests | Resident only; exact occupancy_id, request_key UUIDv4, equipment_code (supported code or null), content 5–5000 chars. Server derives identity/context; creates pending Complaint + extension + history + Admin notification. Same retry key and exact content returns existing result; mismatched retry 409. Duplicate open equipment/room or existing equipment 409; foreign/noncurrent occupancy 404. |
+| GET /me/room-requests | Resident own Complaint history, newest 100, including older feedback. |
+| GET /room-requests | Admin Owner-scoped Complaint history, newest 100, including older feedback. |
+| POST /room-requests/{id}/decision | Admin only; exact decision START/APPROVE/REJECT, required reason 1–1000 chars. START pending→in_progress; APPROVE pending/in_progress→resolved; REJECT pending/in_progress→rejected. Same decision state repeats idempotently, contradictory terminal decision 409. Equipment approval revalidates original active occupancy/contract and atomically inserts room equipment plus status/history/notification. Free-text complaints never modify equipment. |
+| GET /rooms/{room_id}/equipment | Owner Admin or Resident with active occupancy for that Room; returns {code,name,confirmed_at} array; foreign scope 404. |
+
+Complaint list DTO: complaint_id,room_id,property_id,room_code,property_name,category,content,status,created_at,equipment_code,equipment_name,history[{action,from_status,to_status,note,created_at}]. IDs decimal strings; dates ISO. Create/decision return {complaint_id,status}. Supported equipment FRIDGE/AIR_CONDITIONER/WASHING_MACHINE/WATER_HEATER/BED/WARDROBE/DESK. Presence only, no serial or quantity. AI chat adds intent requests; model output never grants authority or performs writes. UI requires explicit submission and Owner confirmation of actual supplied equipment. No automatic fee, rent change or invoice mutation. This delivery does not expose reopen/amendment operations for equipment requests.
+
+
+Owner Cloudy live adapter (2026-10-28): frontend local route `/api/v1/cloudy/owner` now defaults to authenticated reads of the configured backend. GET returns source=database, synthetic=false, current Vietnam date, scoped room labels and periods. Confirmed task POST reads full paginated Property/Room/Invoice/Billing-workspace data; Invoice month is period_end month. Utilities use saved detail snapshots; legacy tiers are not synthesized. Requests combine up to 100 latest /room-requests (limit disclosed) by creation month and pending service bookings by service_date month; links use existing Admin management screens. Local synthetic action POST is rejected in live mode. Existing backend contracts/authorization/CSRF/state transitions unchanged. No live financial data goes to the task-classification model.

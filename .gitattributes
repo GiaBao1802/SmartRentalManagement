@@ -5,6 +5,9 @@
 /database/baselines/v1.11/** -text
 /database/baselines/v1.12/** -text
 /database/baselines/v1.13/** -text
+/database/baselines/v1.14/** -text
+/database/baselines/v1.15/** -text
+/database/parallel-baselines/parking-v1.13/** -text
 
 # AI dataset manifests hash exact bytes across Windows/Linux checkouts.
 /data/room-ai/v1/*.json -text

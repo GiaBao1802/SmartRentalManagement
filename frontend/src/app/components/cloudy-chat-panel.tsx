@@ -4,6 +4,9 @@ import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type Keyb
 import { createPortal } from "react-dom";
 import { CLOUDY_CHAT_MAX_LENGTH, createLocalCloudyChatService, normalizeCloudyChatInput, type CloudyChatMessage, type CloudyChatService } from "./cloudy-chat-service";
 
+import { CloudyOwnerAdvisor } from "./cloudy-owner-advisor";
+import type { FilterMode } from "../../lib/cloudy-filter-context";
+
 const ASSET_ROOT = "/mascot/cloudy-2d";
 
 function CloudyPortrait() {
@@ -31,12 +34,15 @@ function safeInsets() {
 type ChatStatus = "idle" | "pending" | "error";
 type ChatError = { messageId: string; text: string } | null;
 
-export function CloudyChatSession({ open, mascotRef, onClose }: { open: boolean; mascotRef: RefObject<HTMLDivElement | null>; onClose: () => void }) {
+export function CloudyChatSession({ open, mascotRef, onClose, ownerMode = false }: { ownerMode?: boolean; open: boolean; mascotRef: RefObject<HTMLDivElement | null>; onClose: () => void }) {
   const preview = process.env.NODE_ENV === "development";
   const serviceRef = useRef<CloudyChatService | null>(null);
   if (preview && !serviceRef.current) serviceRef.current = createLocalCloudyChatService();
   const [messages, setMessages] = useState<CloudyChatMessage[]>([]);
   const messagesRef = useRef<CloudyChatMessage[]>([]);
+  const [filterMode, setFilterMode] = useState<FilterMode>("new");
+  const [hasProposal, setHasProposal] = useState(false);
+  const [hasContext, setHasContext] = useState(false);
   const [draft, setDraft] = useState("");
   const [status, setStatus] = useState<ChatStatus>("idle");
   const [error, setError] = useState<ChatError>(null);
@@ -70,11 +76,16 @@ export function CloudyChatSession({ open, mascotRef, onClose }: { open: boolean;
     pendingRef.current = request;
     setStatus("pending");
     setError(null);
-    void serviceRef.current.send(message.text, history, controller.signal).then((reply) => {
+    const response = message.confirmation ? serviceRef.current.confirm!(controller.signal) : serviceRef.current.send(message.text, history, controller.signal, message.filterMode ?? "new");
+    void response.then((reply) => {
       if (pendingRef.current !== request || controller.signal.aborted) return;
       const cloudyMessage: CloudyChatMessage = { id: `cloudy-${++nextId.current}`, role: "cloudy", text: reply, createdAt: new Date().toISOString() };
       messagesRef.current = [...messagesRef.current, cloudyMessage];
       setMessages(messagesRef.current);
+      const available = serviceRef.current?.hasContext?.() ?? false;
+      setHasContext(available);
+      setHasProposal(serviceRef.current?.hasProposal?.() ?? false);
+      setFilterMode(available ? "continue" : "new");
       setStatus("idle");
       pendingRef.current = null;
     }).catch((cause: unknown) => {
@@ -90,10 +101,26 @@ export function CloudyChatSession({ open, mascotRef, onClose }: { open: boolean;
     const text = normalizeCloudyChatInput(draft);
     if (!text) return;
     const history = messagesRef.current;
-    const message: CloudyChatMessage = { id: `user-${++nextId.current}`, role: "user", text, createdAt: new Date().toISOString() };
+    const message: CloudyChatMessage = { id: `user-${++nextId.current}`, role: "user", text, filterMode, createdAt: new Date().toISOString() };
     messagesRef.current = [...history, message];
     setMessages(messagesRef.current);
     setDraft("");
+    send(message, history);
+  };
+
+  const invalidateProposal = () => { serviceRef.current?.discardProposal?.(); setHasProposal(false); setError(null); };
+  const changeDraft = (value: string) => { invalidateProposal(); setDraft(value); };
+  const changeMode = (mode: FilterMode) => { invalidateProposal(); setFilterMode(mode); };
+  const editProposal = () => {
+    const previous = [...messagesRef.current].reverse().find(m => m.role === "user" && !m.confirmation);
+    invalidateProposal();
+    if (previous) { setDraft(previous.text); setFilterMode(previous.filterMode ?? "new"); }
+  };
+  const confirmProposal = () => {
+    if (!hasProposal || pendingRef.current || draft.trim()) return;
+    const message: CloudyChatMessage = { id: `user-${++nextId.current}`, role: "user", text: "Đúng rồi, tìm phòng", confirmation: true, createdAt: new Date().toISOString() };
+    const history = messagesRef.current;
+    messagesRef.current = [...history, message]; setMessages(messagesRef.current);
     send(message, history);
   };
 
@@ -110,10 +137,11 @@ export function CloudyChatSession({ open, mascotRef, onClose }: { open: boolean;
   };
 
   if (!open) return null;
-  return <CloudyChatPanel mascotRef={mascotRef} onClose={handleClose} preview={preview} messages={messages} draft={draft} onDraftChange={setDraft} onSubmit={submit} status={status} error={error} onRetry={retry} />;
+  return <CloudyChatPanel ownerMode={ownerMode} mascotRef={mascotRef} onClose={handleClose} preview={preview} messages={messages} draft={draft} onDraftChange={changeDraft} onSubmit={submit} status={status} error={error} onRetry={retry} filterMode={filterMode} onFilterModeChange={changeMode} hasContext={hasContext} hasProposal={hasProposal} onConfirm={confirmProposal} onEdit={editProposal} />;
 }
 
-function CloudyChatPanel({ mascotRef, onClose, preview, messages, draft, onDraftChange, onSubmit, status, error, onRetry }: {
+function CloudyChatPanel({ ownerMode, mascotRef, onClose, preview, messages, draft, onDraftChange, onSubmit, status, error, onRetry, filterMode, onFilterModeChange, hasContext, hasProposal, onConfirm, onEdit }: {
+  ownerMode: boolean;
   mascotRef: RefObject<HTMLDivElement | null>;
   onClose: () => void;
   preview: boolean;
@@ -124,6 +152,12 @@ function CloudyChatPanel({ mascotRef, onClose, preview, messages, draft, onDraft
   status: ChatStatus;
   error: ChatError;
   onRetry: () => void;
+  filterMode: FilterMode;
+  onFilterModeChange: (mode: FilterMode) => void;
+  hasContext: boolean;
+  hasProposal: boolean;
+  onConfirm: () => void;
+  onEdit: () => void;
 }) {
   const panelRef = useRef<HTMLElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -199,7 +233,7 @@ function CloudyChatPanel({ mascotRef, onClose, preview, messages, draft, onDraft
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") { event.preventDefault(); onClose(); }
       if (event.key === "Tab" && window.matchMedia("(max-width: 760px)").matches) {
-        const focusable = Array.from(panelRef.current?.querySelectorAll<HTMLElement>("button:not(:disabled), textarea:not(:disabled)") ?? []);
+        const focusable = Array.from(panelRef.current?.querySelectorAll<HTMLElement>("button:not(:disabled), textarea:not(:disabled), select:not(:disabled), input:not(:disabled)") ?? []);
         const first = focusable[0];
         const last = focusable[focusable.length - 1];
         if (!first || !last) return;
@@ -229,33 +263,50 @@ function CloudyChatPanel({ mascotRef, onClose, preview, messages, draft, onDraft
     <section id="cloudy-chat-panel" ref={panelRef} className="cloudy-chat" role="dialog" aria-labelledby="cloudy-chat-title" aria-describedby="cloudy-chat-preview-note">
       <header className="cloudy-chat__header">
         <CloudyPortrait />
-        <div className="cloudy-chat__heading"><h2 id="cloudy-chat-title">Cloudy</h2><span>{preview ? "AI local · Phòng giả lập" : "Đang được hoàn thiện"}</span></div>
+        <div className="cloudy-chat__heading"><h2 id="cloudy-chat-title">Cloudy</h2><span>{preview ? ownerMode ? "Tư vấn chủ trọ · Dữ liệu quản lý" : "AI local · Phòng giả lập" : "Đang được hoàn thiện"}</span></div>
         <button ref={closeRef} className="cloudy-chat__close" type="button" onClick={onClose} aria-label="Đóng khung chat Cloudy">×</button>
       </header>
+      {ownerMode && preview ? <div className="cloudy-chat__messages"><CloudyOwnerAdvisor /></div> : <>
       <div ref={messagesRef} className="cloudy-chat__messages" role="log" aria-label="Tin nhắn Cloudy" aria-live="off" onScroll={(event) => {
         const node = event.currentTarget;
         nearBottomRef.current = node.scrollHeight - node.scrollTop - node.clientHeight < 64;
       }}>
         <div className="cloudy-chat__message-row cloudy-chat__message-row--cloudy">
           <CloudyPortrait />
-          <p className="cloudy-chat__message">Xin chào! Mình là Cloudy. {preview ? "Mình giúp tìm trong 300 phòng giả lập. Hãy gửi đủ điều kiện trong mỗi tin nhắn; mình chưa hiểu câu nối tiếp như ‘rẻ hơn nữa’. Ví dụ: Phòng ở Bến Nắng dưới 4 triệu có máy lạnh." : "Khung trò chuyện đang được chuẩn bị."}</p>
+          <p className="cloudy-chat__message">Xin chào! Mình là Cloudy. {preview ? "Mình sẽ nhắc lại nhu cầu để bạn xác nhận trước khi tìm trong 300 phòng giả lập. Chọn Lọc mới để bắt đầu, hoặc Lọc tiếp để giữ điều kiện trước và thay đổi điều bạn muốn. Ví dụ: thêm máy lạnh, dưới 3 triệu, hoặc bỏ giới hạn giá." : "Khung trò chuyện đang được chuẩn bị."}</p>
         </div>
         {messages.map((message) => <div className={`cloudy-chat__message-row cloudy-chat__message-row--${message.role}`} key={message.id}>
           {message.role === "cloudy" && <CloudyPortrait />}
-          <p className="cloudy-chat__message"><span className="sr-only">{message.role === "user" ? "Bạn: " : "Cloudy: "}</span>{message.text}</p>
+          <p className="cloudy-chat__message"><span className="sr-only">{message.role === "user" ? "Bạn: " : "Cloudy: "}</span>{message.role === "user" && <small className="cloudy-chat__mode-label">{message.confirmation ? "Xác nhận" : message.filterMode === "continue" ? "Lọc tiếp" : "Lọc mới"} · </small>}{message.text}</p>
         </div>)}
         {status === "pending" && <div className="cloudy-chat__message-row cloudy-chat__message-row--cloudy"><CloudyPortrait /><p className="cloudy-chat__message cloudy-chat__message--pending">Cloudy đang trả lời…</p></div>}
         {error && <div className="cloudy-chat__error"><p>{error.text}</p><button type="button" onClick={() => { onRetry(); inputRef.current?.focus(); }} disabled={status === "pending"}>Thử lại</button></div>}
       </div>
       <p className="cloudy-chat__status sr-only" role="status" aria-live="polite">{status === "pending" ? "Cloudy đang trả lời." : status === "error" ? "Phản hồi gặp lỗi. Có thể thử lại." : ""}</p>
       <form className="cloudy-chat__composer" onSubmit={handleSubmit}>
-        <p id="cloudy-chat-preview-note">{preview ? "Qwen3 1.7B · 300 phòng giả lập, không phải tin thật. Mỗi tin nhắn là một yêu cầu riêng." : "Cloudy đang được hoàn thiện. Chưa thể gửi tin nhắn."}</p>
+        <p id="cloudy-chat-preview-note">{preview ? "Qwen3 1.7B · 300 phòng giả lập, không phải tin thật." : "Cloudy đang được hoàn thiện. Chưa thể gửi tin nhắn."}</p>
+        {preview && <div className="cloudy-chat__filter-mode" role="group" aria-label="Bạn muốn lọc tiếp hay lọc mới?">
+          <span>Bạn muốn lọc tiếp hay lọc mới?</span>
+          <div>
+            <button type="button" aria-pressed={filterMode === "continue"} disabled={!hasContext || status === "pending"} onClick={() => onFilterModeChange("continue")}>Lọc tiếp</button>
+            <button type="button" aria-pressed={filterMode === "new"} disabled={status === "pending"} onClick={() => onFilterModeChange("new")}>Lọc mới</button>
+          </div>
+          <small>{filterMode === "continue" ? "Giữ điều kiện cũ; điều kiện bạn đổi sẽ thay thế điều kiện cùng loại." : "Bắt đầu từ đầu, không dùng điều kiện cũ."}</small>
+        </div>}
+        {preview && hasProposal && <div className="cloudy-chat__filter-mode" role="group" aria-label="Xác nhận nhu cầu tìm phòng">
+          <span>Cloudy đã hiểu đúng ý bạn chưa?</span>
+          <div>
+            <button type="button" onClick={onConfirm} disabled={status === "pending" || !!draft.trim()}>Đúng rồi, tìm phòng</button>
+            <button type="button" onClick={onEdit} disabled={status === "pending"}>Sửa yêu cầu</button>
+          </div>
+        </div>}
         <div className="cloudy-chat__composer-controls">
-          <textarea ref={inputRef} aria-label="Tin nhắn cho Cloudy" aria-describedby={preview ? "cloudy-chat-preview-note cloudy-chat-limit" : "cloudy-chat-preview-note"} placeholder={preview ? "Nhập tin nhắn…" : "Trò chuyện chưa khả dụng"} rows={1} value={draft} maxLength={CLOUDY_CHAT_MAX_LENGTH} onChange={(event) => onDraftChange(event.target.value)} onKeyDown={handleInputKeyDown} disabled={!preview} />
+          <textarea ref={inputRef} aria-label="Tin nhắn cho Cloudy" aria-describedby={preview ? "cloudy-chat-preview-note cloudy-chat-limit" : "cloudy-chat-preview-note"} placeholder={preview ? "Nhập tin nhắn…" : "Trò chuyện chưa khả dụng"} rows={1} value={draft} maxLength={CLOUDY_CHAT_MAX_LENGTH} onChange={(event) => onDraftChange(event.target.value)} onKeyDown={handleInputKeyDown} disabled={!preview || status === "pending"} />
           <button type="submit" disabled={!preview || status === "pending" || !normalizeCloudyChatInput(draft)} aria-label={preview ? "Gửi tin nhắn" : "Gửi tin nhắn chưa khả dụng"}>Gửi</button>
         </div>
         {preview && <span id="cloudy-chat-limit" className="cloudy-chat__limit">{draft.length}/{CLOUDY_CHAT_MAX_LENGTH} ký tự · Enter gửi, Shift+Enter xuống dòng</span>}
       </form>
+      </>}
     </section>
   </>, document.body);
 }

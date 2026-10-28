@@ -1,4 +1,6 @@
-# Góc Trọ — demo tư vấn local
+# Góc Trọ — demo tư vấn local (lịch sử)
+
+**Đã thay hướng ngày 2026-10-28:** demo hiện hành là [trợ lý chủ trọ](../owner-advisor-demo/README.md). Lệnh demo:advisor và setup mục 4 mở bản mới. Nội dung bên dưới giữ làm bằng chứng lịch sử; dùng demo:advisor:legacy nếu cần chạy lại fixture cũ. Cloudy truy vấn phòng không thay đổi trong pass này.
 
 Demo độc lập, Qwen3 1.7B qua Ollama local. Có bản fixture 18 phòng và bản đọc trực tiếp 300 phòng từ `data/room-ai/v1/rooms.json`. Không phải Foxi/V1, không đọc/ghi PostgreSQL hoặc gọi API trả phí.
 

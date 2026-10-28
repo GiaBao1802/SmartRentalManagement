@@ -1,0 +1,32 @@
+[
+  {
+    "id": "SYN-P1",
+    "ownerId": "1",
+    "name": "Khu trọ mẫu 1",
+    "synthetic": true
+  },
+  {
+    "id": "SYN-P2",
+    "ownerId": "1",
+    "name": "Khu trọ mẫu 2",
+    "synthetic": true
+  },
+  {
+    "id": "SYN-P3",
+    "ownerId": "1",
+    "name": "Khu trọ mẫu 3",
+    "synthetic": true
+  },
+  {
+    "id": "SYN-P4",
+    "ownerId": "1",
+    "name": "Khu trọ mẫu 4",
+    "synthetic": true
+  },
+  {
+    "id": "SYN-P5",
+    "ownerId": "1",
+    "name": "Khu trọ mẫu 5",
+    "synthetic": true
+  }
+]

@@ -11,6 +11,7 @@ export const ADMIN_NAV_GROUPS: NavGroup[] = [
     { href: "/admin/contact-requests", label: "Khách quan tâm", icon: "M4 5h16v12H8l-4 4V5m4 4h8m-8 4h5" },
   ] },
   { label: "Dịch vụ & Hỗ trợ", items: [
+    { href: "/admin/requests", label: "Yêu cầu & Khiếu nại", icon: "M4 5h16v12H8l-4 4V5m4 4h8m-8 4h5" },
     { href: "/admin/services", label: "Dịch vụ & Tiện ích", icon: "M4 6h16M4 12h16M4 18h16M8 6v.01M8 12v.01M8 18v.01" },
   ] },
   { label: "Quản trị", items: [

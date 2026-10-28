@@ -1,0 +1,17 @@
+{
+  "version": "1.13",
+  "predecessor": "database/baselines/v1.12",
+  "role": "Parking request schema applied locally; source baseline promotion pending exact catalog and runtime validation",
+  "catalogGeneratedOn": "Pending exact post-migration expected-catalog capture and V1.13-specific runtime validation",
+  "status": "PENDING_LOCAL_CANDIDATE",
+  "sha256": {
+    "README.md": "3b32992a4950ed00f9040d04b123d8af80a11a6d520e8a5e8bcf6faad0f94005",
+    "erd.md": "1962f97042133ef752a40e72c92d362d39602cffc69c5f0aa88cad00b7febc3c",
+    "schema.sql": "b5afb90e63b60789f6150d3c5c8994a4c76285f4d0b4f1480d73b3b51a71b5ce",
+    "seed.sql": "914a3a80fe262e3e81ca9cca71ac47338c69131ae27b4c87f8d0d3c7e343ad26",
+    "runtime_validator.sql": "d9e8156cb464a23bc3a588149d0420851ab0ad0634ae964e7a7806ba05ed6d3d",
+    "runtime_validator_fixture.sql": "d074f643c69d423d28b47c2ba80b70a675e5028212b3f9b95e0a09a128f7b6b2",
+    "runtime_validator_resident_bookings.sql": "f9b763f6d6051e6df3f92b3fbcaa8e08aa55f7bfb32f3b59ac8b78714708ccc3",
+    "migrations/V1_12_to_V1_13_resident_parking_requests.sql": "5798d77e75b2a91cf64f747ca9c735562629e119ac9d7eb6a501049cbade1a4d"
+  }
+}

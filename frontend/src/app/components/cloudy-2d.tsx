@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "./auth-provider";
+import { ResidentAssistant } from "./resident-assistant";
 import { CloudyChatSession } from "./cloudy-chat-panel";
+import { cloudyChatSessionKey } from "./cloudy-chat-session-key";
 import { cloudySuggestionSource, validateCloudySuggestion, type CloudySuggestion, type CloudySuggestionScope } from "./cloudy-suggestion-source";
 
 const ASSET_ROOT = "/mascot/cloudy-2d";
@@ -58,7 +60,7 @@ export function Cloudy2D() {
       ? role === "resident" ? "resident" : null
       : visible ? "public" : null;
   const suggestionKey = `${pathname}|${suggestionScope ?? "none"}|${accountId ?? "anonymous"}`;
-  const chatScopeKey = `${suggestionScope ?? "none"}|${accountId ?? "anonymous"}`;
+  const chatScopeKey = cloudyChatSessionKey(suggestionScope, status, accountId, role);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const eyesRef = useRef<HTMLSpanElement>(null);
@@ -92,7 +94,7 @@ export function Cloudy2D() {
     chatOpenRef.current = false;
     restoreFocusRef.current = false;
     setChatOpen(false);
-  }, [suggestionKey, visible]);
+  }, [suggestionKey, chatScopeKey, visible]);
 
   const positionBubble = useCallback(() => {
     const root = rootRef.current;
@@ -467,6 +469,6 @@ export function Cloudy2D() {
         <span>{suggestionView.value.text}</span>
       </div>}
     </div>
-    <CloudyChatSession key={chatScopeKey} open={chatOpen} mascotRef={rootRef} onClose={closeChat} />
+    {status === "authenticated" && role === "resident" ? (chatOpen && <ResidentAssistant key={chatScopeKey} onClose={closeChat} />) : <CloudyChatSession ownerMode={role === "admin"} key={chatScopeKey} open={chatOpen} mascotRef={rootRef} onClose={closeChat} />}
   </>;
 }

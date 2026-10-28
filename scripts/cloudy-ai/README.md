@@ -11,7 +11,7 @@ Development-only integration of the existing mascot with Ollama `qwen3:1.7b` and
 
 If Python is not on PATH, set `$env:CLOUDY_PYTHON = 'C:\path\to\python.exe'` before starting Next. The launcher uses no shell. Existing management pages still have their usual backend requirements; this chat route reads only JSON.
 
-Expected example: 14 matches, top 5 sorted by rent then ID. Prices exclude utilities. Each response labels the source as synthetic. Send full conditions each time: visible chat history is kept in React memory but is not sent to the model. Follow-up references such as “rẻ hơn nữa” are not a supported context contract.
+Cloudy first summarizes the filters without searching rooms. Click **Đúng rồi, tìm phòng** to retrieve, or **Sửa yêu cầu** to edit and invalidate the old proposal. Both new and continued searches require confirmation. Expected confirmed example: 14 matches, top 5 sorted by rent then ID. Prices exclude utilities. Each response labels the source as synthetic. Choose **Lọc mới** to discard old conditions, or **Lọc tiếp** to keep accepted filters and update a field. Example: Bến Nắng below 4 million → thêm máy lạnh → dưới 3 triệu retains Bến Nắng and AC. An updated numeric field replaces its previous bounds. Exact commands such as `bỏ giới hạn giá` and `bỏ điều kiện máy lạnh` remove that constraint. Vague requests such as “rẻ hơn nữa” still require an explicit amount. Context lives in the current chat service memory and resets with the existing session boundaries; raw messages are never sent as history. New-search clarification clears old context; continuation clarification preserves the last accepted filters.
 
 ## Boundaries
 
@@ -22,8 +22,8 @@ The model classifies source candidates into JSON; deterministic guards validate 
 ## Verification
 
 ```powershell
-python -B -m unittest discover -s scripts/cloudy-ai -p test_worker.py
-node node_modules/tsx/dist/cli.mjs --test frontend/src/app/components/cloudy-chat-service.test.ts frontend/src/app/components/cloudy-suggestion-source.test.ts frontend/src/lib/cloudy-local-server.test.ts
+python -B -m unittest discover -s scripts/cloudy-ai -p "test_*.py"
+node node_modules/tsx/dist/cli.mjs --test frontend/src/app/components/cloudy-chat-service.test.ts frontend/src/app/components/cloudy-chat-session-key.test.ts frontend/src/app/components/cloudy-suggestion-source.test.ts frontend/src/lib/cloudy-local-server.test.ts
 npm run typecheck --workspace=@goctro/frontend
 ```
 

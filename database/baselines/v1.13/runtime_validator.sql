@@ -104,7 +104,7 @@ DO $$
 DECLARE c probe_context%ROWTYPE; v bigint; v2 bigint; v3 bigint; inv bigint; item bigint; tier bigint; fc bigint; snap bigint; assignment bigint; other_inv bigint; other_assignment bigint; other_slot bigint; other_vehicle bigint; s text:=txid_current()::text;
 BEGIN
  SELECT * INTO c FROM probe_context;
- PERFORM pg_temp.assert_true('CORE-01 exactly 43 public tables',(SELECT count(*)=43 FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'));
+ PERFORM pg_temp.assert_true('CORE-01 exactly 44 public tables',(SELECT count(*)=44 FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'));
  PERFORM pg_temp.assert_true('CORE-02 all twelve V1.7 tables exist',(SELECT count(*)=12 FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('utility_tariffs','utility_tariff_versions','electricity_tariff_tiers','property_facilities','property_pricing_items','property_price_versions','flexible_service_charges','parking_entitlements','meter_readings','invoice_meter_reading_snapshots','invoice_items','invoice_item_electricity_tiers')));
  PERFORM pg_temp.assert_true('CORE-03 original 28 tables preserved',(SELECT count(*)=28 FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('owners','accounts','account_invitations','properties','rooms','room_images','residents','room_residents','contracts','contract_change_history','contract_documents','contract_idempotency_requests','invoices','payment_transactions','invoice_zalo_oa_send_logs','amenities','amenity_price_history','amenity_subscriptions','amenity_subscription_cycles','parking_areas','parking_slots','parking_slot_assignments','vehicles','complaints','complaint_history','contact_requests','notifications','notification_preferences')));
  PERFORM pg_temp.assert_true('CORE-04 invoices.snapshot_kind exists',EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='invoices' AND column_name='snapshot_kind'));
@@ -254,6 +254,6 @@ BEGIN
  PERFORM pg_temp.assert_true('CORE-89 auth session indexes exist',(SELECT count(*)=3 FROM pg_indexes WHERE schemaname='public' AND tablename='auth_sessions' AND indexname IN ('auth_sessions_pkey','auth_sessions_by_account','auth_sessions_by_expiry')));
  SELECT count(*) INTO v FROM validator_results;
  IF v<>89 THEN RAISE EXCEPTION 'VALIDATION FAIL: expected 89 CORE checks, got %',v; END IF;
- RAISE NOTICE 'DATABASE V1.11 CORE VALIDATION = PASS; TOTAL=% PASS=% FAIL=0',v,v;
+ RAISE NOTICE 'DATABASE V1.13 CORE VALIDATION = PASS; TOTAL=% PASS=% FAIL=0',v,v;
 END $$;
 ROLLBACK;

@@ -1,4 +1,4 @@
--- Góc Trọ Database V1.11 Resident Flexible Service booking schema validator.
+-- Góc Trọ Database V1.13 Resident Flexible Service booking schema validator.
 -- Read-only against application rows; the temporary result table is rolled back.
 BEGIN;
 SET LOCAL search_path=public,pg_catalog;
@@ -13,8 +13,8 @@ END $$;
 DO $$
 DECLARE total integer;
 BEGIN
-  PERFORM pg_temp.assert_true('BOOKING-01 V1.11 has exactly 43 public tables',
-    (SELECT count(*)=43 FROM pg_tables WHERE schemaname='public'));
+  PERFORM pg_temp.assert_true('BOOKING-01 V1.13 has exactly 44 public tables',
+    (SELECT count(*)=44 FROM pg_tables WHERE schemaname='public'));
   PERFORM pg_temp.assert_true('BOOKING-02 auth_sessions and Resident bookings both exist',
     to_regclass('public.auth_sessions') IS NOT NULL AND to_regclass('public.resident_service_bookings') IS NOT NULL);
   PERFORM pg_temp.assert_true('BOOKING-03 booking table has all 23 mapped columns',
@@ -51,6 +51,6 @@ BEGIN
 
   SELECT count(*) INTO total FROM booking_validation_results;
   IF total<>17 THEN RAISE EXCEPTION 'VALIDATION FAIL: expected 17 booking checks, got %',total; END IF;
-  RAISE NOTICE 'DATABASE V1.11 BOOKING VALIDATION = PASS; TOTAL=% PASS=% FAIL=0',total,total;
+  RAISE NOTICE 'DATABASE V1.13 BOOKING VALIDATION = PASS; TOTAL=% PASS=% FAIL=0',total,total;
 END $$;
 ROLLBACK;

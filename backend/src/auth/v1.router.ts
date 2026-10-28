@@ -1,3 +1,7 @@
+import { createRoomRequestRouter } from "../resident-assistant/room-request.routes.js";
+import type { RoomRequestRepository } from "../resident-assistant/room-request.repository.js";
+import { createResidentAssistantRouter } from "../resident-assistant/assistant.routes.js";
+import type { MeterSubmissionRepository } from "../resident-assistant/meter.repository.js";
 import { createEnrollmentRouter } from "../accounts/enrollment.routes.js";
 import type { EnrollmentService } from "../accounts/enrollment.service.js";
 import express from "express";
@@ -36,7 +40,7 @@ import type { PrismaNotificationRepository } from "../notifications/notification
 import { createDemoPaymentRouter } from "../payments/demo-payment.routes.js";
 import type { DemoPaymentRepository, ResidentFeedbackRepository } from "../payments/demo-payment.repository.js";
 
-export function createV1Router(deps: AuthDependencies & { enrollment?: EnrollmentService; accountManagementRepository?: AccountManagementRepository; propertyRoomRepository?: PropertyRoomRepository; roomImageRepository?: PrismaRoomImageRepository; roomImageStorage?: RoomImageStorage; publicMarketplaceRepository?: ContactRequestRepositoryPort; residentOccupancyRepository?: PrismaResidentOccupancyRepository; contractRepository?: PrismaContractRepository; contractIdempotency?: ContractIdempotencyService; objectStorage?: ObjectStorage; contractDocumentService?: ContractDocumentService; invoiceRepository?: PrismaInvoiceRepository; billingWorkspaceRepository?: PrismaBillingWorkspaceRepository; invoicePricing?: InvoicePricing; invoiceZalo?: InvoiceZaloService; utilityTariffRepository?: PrismaUtilityTariffManagementRepository; propertyServiceRepository?: PrismaPropertyServiceRepository; parkingManagementRepository?: PrismaParkingManagementRepository; notificationRepository?: PrismaNotificationRepository; demoPaymentRepository?: DemoPaymentRepository; feedbackRepository?: ResidentFeedbackRepository; demoEnabled?: boolean }): express.Router {
+export function createV1Router(deps: AuthDependencies & { roomRequestRepository?: RoomRequestRepository; meterSubmissionRepository?: MeterSubmissionRepository; enrollment?: EnrollmentService; accountManagementRepository?: AccountManagementRepository; propertyRoomRepository?: PropertyRoomRepository; roomImageRepository?: PrismaRoomImageRepository; roomImageStorage?: RoomImageStorage; publicMarketplaceRepository?: ContactRequestRepositoryPort; residentOccupancyRepository?: PrismaResidentOccupancyRepository; contractRepository?: PrismaContractRepository; contractIdempotency?: ContractIdempotencyService; objectStorage?: ObjectStorage; contractDocumentService?: ContractDocumentService; invoiceRepository?: PrismaInvoiceRepository; billingWorkspaceRepository?: PrismaBillingWorkspaceRepository; invoicePricing?: InvoicePricing; invoiceZalo?: InvoiceZaloService; utilityTariffRepository?: PrismaUtilityTariffManagementRepository; propertyServiceRepository?: PrismaPropertyServiceRepository; parkingManagementRepository?: PrismaParkingManagementRepository; notificationRepository?: PrismaNotificationRepository; demoPaymentRepository?: DemoPaymentRepository; feedbackRepository?: ResidentFeedbackRepository; demoEnabled?: boolean }): express.Router {
   const router = express.Router();
   router.use(rejectClientAuthority);
   router.use(csrfProtection(deps.config));
@@ -55,6 +59,8 @@ export function createV1Router(deps: AuthDependencies & { enrollment?: Enrollmen
   if (deps.parkingManagementRepository) router.use(createParkingManagementRouter(deps, deps.parkingManagementRepository));
   if (deps.notificationRepository) router.use(createNotificationRouter({ ...deps, notificationRepository: deps.notificationRepository }));
   if (deps.demoPaymentRepository && deps.feedbackRepository) router.use(createDemoPaymentRouter({ ...deps, demoPaymentRepository: deps.demoPaymentRepository, feedbackRepository: deps.feedbackRepository, demoEnabled: deps.demoEnabled ?? false }));
+  if (deps.roomRequestRepository) router.use(createRoomRequestRouter(deps, deps.roomRequestRepository));
+  if (deps.meterSubmissionRepository) router.use(createResidentAssistantRouter(deps, deps.meterSubmissionRepository));
   if (deps.invoiceRepository && deps.billingWorkspaceRepository && deps.invoicePricing && deps.invoiceZalo) router.use(createInvoiceRouter({ ...deps, invoiceRepository: deps.invoiceRepository, billingWorkspaceRepository: deps.billingWorkspaceRepository, invoicePricing: deps.invoicePricing, invoiceZalo: deps.invoiceZalo }));
   router.use((_request, _response, next) => next(notFound()));
   return router;

@@ -1,5 +1,7 @@
 # Demo tư vấn phòng local — triển khai và kiểm thử ngữ cảnh
 
+**SUPERSEDED về hướng sản phẩm standalone (2026-10-28):** người dùng chuyển sang [trợ lý chủ trọ](../invoice-zalo/OWNER_ADVISOR_DEMO_REPORT.md). Các kết quả dưới đây là lịch sử và vẫn đúng trong phạm vi lúc kiểm thử.
+
 - Ngày triển khai: 2026-10-23; kiểm tra mở rộng: 2026-10-24–26.
 - Trạng thái: CURRENT — bộ lọc/UI đã kiểm tra; độ ổn định model được báo riêng bên dưới.
 - Phạm vi: demo local độc lập được người dùng yêu cầu, không đưa AI/Foxi vào V1.

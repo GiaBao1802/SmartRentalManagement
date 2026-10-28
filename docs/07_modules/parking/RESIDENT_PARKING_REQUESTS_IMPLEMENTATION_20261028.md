@@ -1,5 +1,7 @@
 # Resident Parking requests and Admin approval — implementation report
 
+**Integration note (2026-10-28):** The V1.13 Parking candidate documented below came from the pulled branch and conflicts in version number with the user's already-promoted meter V1.13. Its original artifacts are preserved in `database/parallel-baselines/parking-v1.13/`. The local canonical chain retains meter V1.13 and room requests V1.14; Parking DDL is now a rehearsed V1.15 candidate. The local V1.14 application database has not received Parking DDL.
+
 **Status: source implementation complete; Database V1.13 applied locally; authenticated user review pending.** This report records source implementation and local schema apply, not a completed authenticated UI flow or full baseline promotion.
 
 ## Delivered flow

@@ -2123,8 +2123,8 @@ tbody tr:hover td { background: #fffcf8; }
   flex-direction: column;
   box-sizing: border-box;
   width: min(350px, calc(100vw - 24px));
-  height: min(430px, calc(100dvh - 24px));
-  overflow: hidden;
+  height: min(510px, calc(100dvh - 24px));
+  overflow: clip;
   border: 1px solid #0e5a4f33;
   border-radius: 20px;
   background: #fff;
@@ -2443,3 +2443,48 @@ body:has(.explore-results.is-expanded) .cloudy-2d--explorer { visibility: hidden
   .resident-amenity-state { min-height: 145px; gap: 11px; padding: 17px 12px; }
   .resident-amenity-state-icon { width: 40px; height: 40px; flex-basis: 40px; border-radius: 13px; }
 }
+
+.cloudy-chat__filter-mode { display: grid; gap: 6px; margin-bottom: 8px; font-size: 12px; }
+.cloudy-chat__filter-mode > div { display: flex; gap: 8px; }
+.cloudy-chat__composer .cloudy-chat__filter-mode button { height: 34px; border: 1px solid #cbd5e1; border-radius: 12px; padding: 6px 14px; background: white; color: #334155; cursor: pointer; }
+.cloudy-chat__composer .cloudy-chat__filter-mode button[aria-pressed="true"] { background: #0e5a4f; border-color: #0e5a4f; color: white; font-weight: 700; }
+.cloudy-chat__composer .cloudy-chat__filter-mode button:disabled { opacity: .45; cursor: default; }
+.cloudy-chat__filter-mode small { color: #64748b; }
+.cloudy-chat__mode-label { font-weight: 700; }
+
+/* Resident assistant and owner meter review */
+.resident-assistant-backdrop{position:fixed;inset:0;z-index:2000;background:#0b2b2a55;display:flex;justify-content:flex-end;align-items:flex-end;padding:24px}
+.resident-assistant{width:min(100%,480px);max-height:88dvh;overflow:auto;background:#f3f5f2;color:#0b2b2a;border:1px solid #0e5a4f33;border-radius:20px;padding:24px;box-shadow:0 18px 60px #0b2b2a33;display:grid;gap:16px}
+.resident-assistant header,.meter-approval header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.resident-assistant h2,.meter-approval h2{margin:0}.resident-assistant p,.meter-approval p{margin:4px 0;line-height:1.6}
+.resident-assistant form,.resident-assistant-fields,.meter-approval-detail{display:grid;gap:12px}
+.resident-assistant label,.meter-approval label{display:grid;gap:6px;font-size:14px;font-weight:600}
+.resident-assistant input,.resident-assistant select,.meter-approval textarea{width:100%;min-height:42px;border:1px solid #0e5a4f44;border-radius:8px;background:white;padding:9px;color:#0b2b2a}
+.resident-assistant button,.meter-approval button{border:1px solid #0e5a4f55;border-radius:10px;background:white;color:#0e5a4f;min-height:42px;padding:9px 14px;cursor:pointer;font-weight:600}
+.resident-assistant button:disabled,.meter-approval button:disabled{opacity:.5;cursor:wait}
+.resident-assistant button[aria-pressed=true]{background:#0e5a4f;color:white}.resident-assistant nav{display:flex;gap:8px;flex-wrap:wrap}
+.resident-assistant .resident-assistant-check{display:flex;align-items:center;font-weight:400}.resident-assistant-check input{width:18px;min-height:18px}
+.resident-meter-image{max-width:100%;max-height:300px;object-fit:contain;border-radius:10px;background:#e6ebe5}
+.resident-assistant article{padding:12px;border-top:1px solid #0e5a4f22;font-size:13px}
+.meter-approval{margin:24px;padding:24px;background:#fff;border:1px solid #0e5a4f22;border-radius:16px;display:grid;gap:16px}
+.meter-approval-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}.meter-approval-list button{display:grid;text-align:left;gap:6px}.meter-approval-detail{border-top:1px solid #ddd;padding-top:16px}.meter-approval-detail>div{display:flex;gap:10px}
+@media(max-width:600px){.resident-assistant-backdrop{padding:8px}.resident-assistant{max-height:95dvh;padding:18px}.meter-approval{margin:12px;padding:16px}}
+
+/* Owner billing demo inside the existing Cloudy panel. */
+.cloudy-owner { padding: 0.25rem; font-size: 0.95rem; }
+.cloudy-owner form, .cloudy-owner label { display: grid; gap: 0.5rem; }
+.cloudy-owner form { gap: 0.85rem; }
+.cloudy-owner textarea, .cloudy-owner select { width: 100%; min-width: 0; border: 1px solid #c9deda; border-radius: 12px; padding: 0.65rem; background: white; color: #22454b; font: inherit; }
+.cloudy-owner textarea { min-height: 4.5rem; resize: vertical; }
+.cloudy-owner button { border: 0; border-radius: 12px; padding: 0.7rem; background: #0d5b52; color: white; font: inherit; cursor: pointer; }
+.cloudy-owner button:disabled { opacity: 0.5; cursor: default; }
+.cloudy-owner article { border-top: 1px solid #c9deda; margin-top: 1rem; padding-top: 0.5rem; }
+.cloudy-owner input[type="checkbox"] { width: 1.2rem; height: 1.2rem; }
+
+.cloudy-owner__bubble { background: #eaf4fa; border-radius: 18px; padding: 0.85rem; margin: 0.8rem 0; }
+.cloudy-owner__bubble--user { background: #0d5b52; color: white; margin-left: 2rem; }
+.cloudy-owner__choices { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.cloudy-owner__bubble button { margin: 0.3rem 0.35rem 0.3rem 0; }
+.cloudy-owner__composer { position: sticky; bottom: 0; background: white; padding-top: 0.75rem; margin-top: 1rem; }
+
+.resident-assistant textarea{width:100%;border:1px solid #0e5a4f44;border-radius:8px;background:white;padding:9px;color:#0b2b2a;resize:vertical}.meter-approval form{display:grid;gap:12px}.meter-approval article{overflow-wrap:anywhere}

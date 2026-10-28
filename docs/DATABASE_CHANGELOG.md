@@ -1,5 +1,19 @@
 # Góc Trọ V1 — Database changelog and audit
 
+## Database V1.15 — Parking integrated on the local V1.14 branch (rehearsed, not applied; 2026-10-28)
+
+The user's promoted meter V1.13 and room-request V1.14 baselines are retained byte-for-byte as the local authority. The pulled Parking branch independently used the number V1.13 for a different schema; its source artifacts are preserved under [`database/parallel-baselines/parking-v1.13/`](../database/parallel-baselines/parking-v1.13/). Its additive Parking DDL has been rebased as guarded V1.14→V1.15 in [`database/baselines/v1.15/`](../database/baselines/v1.15/). A disposable PostgreSQL rehearsal passed predecessor catalog, migration, clean-install catalog creation and seed. No configured application database was migrated or seeded. Parking requests require a verified backup and explicit V1.15 migration before use against the local database. The separate machine/database that received the pulled Parking V1.13 remains a divergent physical branch and is not automatically converted by this migration.
+
+## Database V1.14 — Room equipment requests (applied locally 2026-10-28)
+
+Goctro_dev_v18 localhost:5433 upgraded from exact V1.13 after verified 520-entry backup and restored-copy rehearsal. Adds complaint_room_requests and room_equipment with scope guards; 46 tables. All 44 previous tables retain row counts/content. CORE 89/89 and booking 17/17 rollback validation PASS. No target seed/reset. [Artifacts](../database/baselines/v1.14/README.md), [backup and implementation evidence](07_modules/resident-occupancy/RESIDENT_ROOM_REQUEST_IMPLEMENTATION_REPORT.md). V1.13 below is historical predecessor.
+
+## Database V1.13 — Resident meter approval (applied locally 2026-10-28)
+
+Fresh inspection found configured Goctro_dev_v18 localhost:5433 at exact V1.8, superseding the older V1.12 current-target claim below. A verified 466-entry backup was restored and the canonical V1.8→V1.13 chain rehearsed on a disposable copy before one atomic local upgrade. V1.13 exact catalog PASS, 44 tables; all 40 old tables retain row counts/content. CORE 89/89 and booking 17/17 PASS with rollback validators. No target seed/reset/env/credential changes.
+
+V1.13 adds resident_meter_submissions with scoped composite FKs, private JPEG evidence, decimal reading and approval audit. Backup SHA-256: a8581cdd96f9dd0407c6d6840449f55c9c051b7fc28174fc1ed0bca535a205d9. [Artifacts](../database/baselines/v1.13/README.md), [implementation and backup evidence](07_modules/resident-occupancy/RESIDENT_ASSISTANT_IMPLEMENTATION_REPORT.md). Prior baselines remain immutable.
+
 ## Database V1.13 — Resident Parking requests (applied locally; baseline promotion pending; 2026-10-28)
 
 V1.13 is an additive candidate to the last verified V1.12 baseline. It adds an optional accepted vehicle category and configured default entitlement to each Parking slot, plus durable Resident requests with status/review history, 24-hour expiry, Owner/Property/Contract/Resident/Vehicle/slot-consistent foreign keys, and unique pending holds per slot and Resident. Admin approval links exactly one Parking assignment. The existing Property pricing authority remains unchanged; no invoice or payment is created at request time. No business data is rewritten.

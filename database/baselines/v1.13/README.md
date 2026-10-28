@@ -1,9 +1,9 @@
-# Database V1.13 candidate — Resident Parking requests
+# Database V1.13 candidate — Resident meter submissions
 
-**Status: applied locally; baseline promotion pending exact catalog capture and runtime validation.** The guarded V1.12→V1.13 migration was applied to populated `Goctro_dev_v18` on 2026-10-28 after a fresh verified backup. Migration post-check, read-only `state`/`inspect`, a Prisma count of the new request table, and backend DB health passed. V1.12 and earlier artifacts are unchanged.
+Additive to immutable V1.12. Adds `resident_meter_submissions`: private normalized JPEG, Resident/Contract/Room/Invoice context, confirmed decimal reading, pending state and owner decision audit. Composite foreign keys enforce scope. A partial unique index allows one pending request per Invoice/utility.
 
-V1.13 adds optional accepted-vehicle category and default entitlement configuration to `parking_slots`, plus `parking_slot_requests`. A pending request reserves one slot and Contract capacity for 24 hours; Admin approval creates the linked assignment. Existing Property pricing remains the only amount authority. No payment is taken when a Resident requests a slot.
+Status: PROMOTED_LOCAL on 2026-10-28. Fresh inspection identified Goctro_dev_v18:5433 as exact V1.8, superseding older V1.12 target claims. Verified backup restore, complete canonical V1.8→V1.9→V1.10→V1.11→V1.12→V1.13 rehearsal, then atomic live upgrade passed. All 40 predecessor tables preserved row counts/content. See the Resident assistant implementation report for evidence.
 
-The additive migration is [`migrations/V1_12_to_V1_13_resident_parking_requests.sql`](migrations/V1_12_to_V1_13_resident_parking_requests.sql). The matching clean-install SQL is `schema.sql`; it contains the V1.13 objects without the migration-only protected-target guard. `seed.sql` and V1.12 runtime validators are unchanged copies. `database-v111.mjs migrate-v113` requires the exact V1.12 predecessor and performs a structural post-migration catalog check. Protected local databases require a verified backup confirmation through the setup flow.
+`node scripts/database-v113.mjs rehearse` checks the immutable predecessor, upgrades and seeds a uniquely named disposable database, exports candidate catalog/hashes, and drops only that disposable database. It never migrates or seeds the application target.
 
-The exact V1.13 `expected-catalog.json` and V1.13-specific runtime validation remain pending, so this folder remains a local candidate rather than a promoted source baseline. Do not confuse the successful local apply with full baseline promotion. See `docs/DATABASE_CHANGELOG.md` for the current database status.
+Apply prerequisites: reconcile target state, verified backup, exact V1.12 catalog, transaction containing session authorization `goctro.allow_locked_db_migration=V1.13`, migration, exact V1.13 catalog check, rollback on mismatch. No ad hoc schema repair or reset.

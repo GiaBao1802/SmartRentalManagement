@@ -1,0 +1,42 @@
+"""Validated, bounded filter context; never infer context from assistant prose."""
+import copy,re
+from id_normalizer import normalized
+
+EMPTY={'price':[], 'area':[], 'location':None, 'occupants':None, 'amenities':[]}
+
+def valid_context(f):
+ if not isinstance(f,dict) or set(f)!=set(EMPTY):return False
+ for key in ['price','area']:
+  if not isinstance(f[key],list) or len(f[key])>4:return False
+  for c in f[key]:
+   if not isinstance(c,dict) or set(c)!={'op','value'} or c['op'] not in ['lt','lte','gt','gte','eq'] or type(c['value']) not in [int,float] or not 0<c['value']<=1e12:return False
+ if f['location'] is not None and (not isinstance(f['location'],str) or not 1<=len(f['location'])<=100):return False
+ if f['occupants'] is not None and (type(f['occupants']) is not int or not 1<=f['occupants']<=100):return False
+ return isinstance(f['amenities'],list) and len(f['amenities'])<=1 and all(x=='air_conditioning' for x in f['amenities'])
+
+def understand(message,mode,context,extract):
+ if mode=='new':return extract(message)
+ if not valid_context(context):raise ValueError('Invalid context')
+ # Explicit removal commands are deliberately narrow: other content must not be dropped.
+ removals={'bo gioi han gia':'price','khong gioi han gia':'price','bo dieu kien may lanh':'amenities','khong can may lanh':'amenities','bo dieu kien dien tich':'area','bo dieu kien khu vuc':'location','bo dieu kien so nguoi':'occupants'}
+ command=normalized(message).strip(' .!?')
+ if command in removals:
+  merged=copy.deepcopy(context);field=removals[command];merged[field]=copy.deepcopy(EMPTY[field])
+  return {'status':'ready','filters':merged}
+ # Strip only leading conversational update markers; the parser still checks all remaining words.
+ delta=re.sub(r'^(?:(?:thêm|them|đổi sang|doi sang|đổi thành|doi thanh|đổi|doi|chuyển sang|chuyen sang|giữ nguyên,?|giu nguyen,?)\s+)+','',message.strip(),flags=re.I)
+ parsed=extract('Tìm phòng '+delta)
+ if parsed.get('status')!='ready':return parsed
+ merged=copy.deepcopy(context)
+ for field,value in parsed['filters'].items():
+  if value is not None and value!=[]:merged[field]=value
+ return {**parsed,'filters':merged}
+
+def describe(f):
+ parts=[];ops={'lt':'<','lte':'≤','gt':'>','gte':'≥','eq':'='}
+ if f['location']:parts.append('khu vực '+f['location'])
+ for field,label,unit in [('price','giá thuê','đ/tháng'),('area','diện tích','m²')]:
+  for c in f[field]:parts.append(f"{label} {ops[c['op']]} {c['value']:,} {unit}".replace(',','.'))
+ if f['occupants']:parts.append(f"cho {f['occupants']} người")
+ if f['amenities']:parts.append('có máy lạnh')
+ return 'Đang lọc: '+('; '.join(parts) or 'tất cả phòng còn trống trong bộ mẫu')+'.'

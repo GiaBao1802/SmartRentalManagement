@@ -1,16 +1,40 @@
 # Góc Trọ — Current State
 
+### Resident room requests and V1.14 — 2026-10-28
+
+Cloudy Resident supports complaints/equipment requests for a selected current Occupancy. Admin /admin/requests confirms actual equipment addition, atomically updating only that Room and Complaint history/notification. Local Goctro_dev_v18:5433 promoted exact V1.13→V1.14 after verified backup/restore; 46 tables and 44 predecessor table fingerprints unchanged. 10 HTTP/PostgreSQL tests, typechecks, CORE89/89 and booking17/17 PASS. Browser review pending. [Evidence](07_modules/resident-occupancy/RESIDENT_ROOM_REQUEST_IMPLEMENTATION_REPORT.md).
+
+### Resident Cloudy assistant and V1.13 local promotion — 2026-10-28
+
+Resident login now selects a dedicated Cloudy flow: real BOOKING service requests and meter-photo submissions pending Owner approval. Admin reviews images under Invoices; approval atomically updates only a valid unchanged draft reading. Fresh target inspection found exact V1.8 at Goctro_dev_v18:5433, superseding older V1.12 target claims. Verified backup/restore plus canonical migration chain promoted that target to V1.13; 44 tables, 40 old-table fingerprints unchanged. Backend/frontend typechecks, 10 focused tests, CORE 89/89, booking 17/17, two Qwen intents and synthetic-image OCR PASS. Real-photo and authenticated browser review pending (browser controller unavailable). [Evidence](07_modules/resident-occupancy/RESIDENT_ASSISTANT_IMPLEMENTATION_REPORT.md).
+
 ## Last Updated
 
 2026-10-28
 
-### Resident Parking request flow — local V1.13 applied; authenticated user review pending (2026-10-28)
+### Resident Parking integration — V1.15 rehearsed, target unchanged (2026-10-28)
+
+The pulled Parking branch and the user's meter/room-request branch both used V1.13 for different schemas. The user's promoted meter V1.13 and room-request V1.14 are retained as the local baseline. Parking source and original candidate are preserved, with additive DDL rebased to V1.14→V1.15. Disposable PostgreSQL rehearsal passed; the configured application database has not received V1.15. Review, verified backup and target migration remain pending.
 
 Admin can define area/slot inventory, accepted vehicle type and FREE/PAID offer, review Resident requests, and approve/reject with a required reason for rejection. Residents can register a vehicle, find available compatible slots by area/location/code, submit a request, cancel it, and see request/assignment history. A successful request creates an account-scoped Parking notification for active Owner Admins, shown in the Admin bell with Invoice/feedback category and read-state filters. A pending request reserves one slot and Contract parking capacity for 24 hours. Approval creates the linked assignment; requests do not collect payment. Existing Property Parking pricing, invoice rules, and Góc Trọ brand tokens remain in use. A fresh V1.12 backup was verified and the guarded V1.12→V1.13 migration applied to `Goctro_dev_v18`; `state` and `inspect` pass, Prisma can query the new table, and backend DB health is HTTP 200. The exact expected-catalog artifact, V1.13 runtime validator, and authenticated Admin/Resident flow remain unverified, so baseline promotion and user review are still pending. See [Parking implementation report](07_modules/parking/RESIDENT_PARKING_REQUESTS_IMPLEMENTATION_20261028.md).
 
+### Owner advisor demo replaces room recommendation — 2026-10-28
+
+Live data update: Admin Cloudy now reads the configured backend database through authenticated APIs, with full invoice/property/room pagination, saved utility snapshots and canonical billing missing-data checks. Real requests link to existing Admin management workflows; synthetic mutations are disabled in live mode. Current target inspected as Goctro_dev_v18:5433; no database creation, seed, migration or business-data edits. Authenticated HTTP checks loaded 4 rooms for Admin 1 and all five tasks returned 200; test session logged out. Standalone/JSON history below remains separate. Primary Exact Next Task unchanged.
+
+Owner Cloudy now uses question → clarification if needed → explicit task/month/room confirmation → results, replacing the initial selection form. Edits invalidate old proposals; request decisions still require separate confirmation. Frontend typecheck and 9 focused tests pass; UI visual verification not performed (no computer use). Synthetic data, backend permissions and DB unchanged. Primary Exact Next Task unchanged.
+
+Cookie-path correction verified by real HTTP login: 100 rooms / 45 unpaid invoices returned; test session logged out. Owner Cloudy now includes 20 synthetic service/complaint requests with confirmed transitions/history and server-memory-only state. Frontend typecheck + 6 targeted tests pass; no computer use or real financial/request writes.
+
+Integration correction: authenticated Admin now sees the owner billing flow inside the existing Cloudy panel, through the development-only Next `/api/v1/cloudy/owner` route; it no longer requires port 4332. The 100-room JSON dataset is scoped by backend-validated account/Owner. Frontend typecheck, 19 integration/query regression tests and 16 owner tests pass; running Next anonymous route returns 401. No computer use or authenticated UI review in this pass. Standalone launch below remains available. Primary Exact Next Task unchanged.
+
+At the user's explicit request, standalone advisor and setup option 4 now open the read-only owner billing assistant at http://localhost:4332, gated by the existing Admin session on every UI/API request. Anonymous 401, Resident 403, auth-service failure 503. Four tasks: unpaid invoices, saved electricity/water breakdown, missing draft data and period overview. Qwen3 1.7B classifies questions; the server scopes synthetic invoice snapshots and builds monetary facts. 100-room JSON dataset (5 properties, 160 synthetic invoices) now bound to verified existing Admin account 1 / Owner 1; other accounts see no fixture data. 16/16 tests PASS (including account scope, session revocation/access denial and invoice consistency); six-case regression 6/6 (four model calls and two scope guards). Session validation uses backend /auth/me; live Invoice data integration remains pending; no database writes or Cloudy-query changes. Old room-advisor sections below are historical for this standalone feature, not the current launch. See [owner advisor report](07_modules/invoice-zalo/OWNER_ADVISOR_DEMO_REPORT.md). Demo next task: authenticated read-only Invoice/Billing adapter. Primary Exact Next Task unchanged.
+
 ### Cloudy local AI integration — 2026-10-28
 
-At the user's request, the existing mascot now calls local Qwen3 1.7B in development and filters 300 synthetic rooms through guarded JSON. Public landing browser checks returned 14 matches for Bến Nắng below 4 million and 99 for AC at most 5 million; close/reopen/retry preserved the chat. Production remains disabled, and DB/dataset bytes are untouched. This supersedes earlier Cloudy mock-only statements for development. See [integration evidence](07_modules/public-marketplace/CLOUDY_LOCAL_AI_INTEGRATION_REPORT.md). Active Module and primary Exact Next Task remain unchanged; this AI demo's next check is authenticated Admin/Resident session reset.
+Guest confirmation update: question → summarized proposed filters → explicit confirm/edit → catalog retrieval, for both new and continued searches. Editing invalidates proposals. 22 TypeScript and 14 Python tests plus typecheck pass; no computer use. Owner/Resident flows and DB unchanged. This supersedes earlier immediate-retrieval behavior.
+
+At the user's request, the existing mascot now calls local Qwen3 1.7B in development and filters 300 synthetic rooms through guarded JSON. Public landing browser checks returned 14 matches for Bến Nắng below 4 million and 99 for AC at most 5 million; close/reopen/retry preserved the chat. Production remains disabled, and DB/dataset bytes are untouched. Cloudy now also offers Lọc mới/Lọc tiếp with validated in-memory filter context; targeted Qwen continuation returned 14 → 9 → 6 matches. This supersedes earlier mock-only and single-turn-only statements for development. See [integration evidence](07_modules/public-marketplace/CLOUDY_LOCAL_AI_INTEGRATION_REPORT.md). Active Module and primary Exact Next Task remain unchanged; session-key isolation now includes auth status and role (including role changes on public pages), with 21/21 focused TypeScript tests and typecheck passing. The AI demo's next task is an unseen multi-turn filter suite; authenticated UI reset remains unverified. No computer use was performed for the session audit.
 
 ### Goctro_test3 V1.11 promotion — 2026-10-27
 
@@ -125,7 +149,7 @@ Latest Auth browser/UI pass (2026-10-19): Admin invitation → human accept → 
 
 ## Active Module
 
-**Resident Parking requests — source implementation complete; V1.13 applied locally, authenticated user review pending.** Admin slot setup/approval and Resident vehicle/request/history screens are wired to the Owner-scoped API. Residents start by selecting an Admin-created parking area and see only free slots in that area; Room stays backend Contract context, not the slot-finding control. Residents can remove a mistakenly entered vehicle only before any Parking request or assignment uses it; history-linked vehicles are protected. The local database migration and structural catalog inspection passed. The V1.13 source baseline remains pending exact expected-catalog capture/runtime validation and the authenticated UI flow. No commit or push has been made. See the [implementation report](07_modules/parking/RESIDENT_PARKING_REQUESTS_IMPLEMENTATION_20261028.md).
+**Resident room and Parking requests — integration in progress.** Resident room/equipment requests and local V1.14 are preserved. The pulled Parking source flow is preserved; its V1.13 candidate conflicts with the already-promoted local meter V1.13, so Parking is being rebased as an additive V1.15 candidate on the local V1.14 baseline. Authenticated review and V1.15 promotion remain pending.
 
 ### Legacy-to-current migration — Phase 1 completed, 2026-10-16
 
@@ -221,7 +245,7 @@ Workspace code and PostgreSQL read-model integration pass on V1.8 rehearsal. Aut
 
 ## Exact Next Task
 
-**Review Resident Parking in the authenticated local app.** Refresh the running app and walk through Admin parking-area/slot configuration/request approval and Resident area-first slot discovery, vehicle add/delete (unused vehicle), request/cancel/history. Confirm that history-linked vehicles cannot be deleted and show a clear explanation. Report any issue for correction. Keep the change local until the user confirms the review; do not push before that approval.
+**Validate the merged Resident workflows on an isolated V1.15 database and in the authenticated app.** Review Parking request/approval and Resident equipment request/Owner confirmation before any local database promotion.
 ## Resume Checklist
 
 1. Read repository-wide [AGENTS.md](../AGENTS.md), [Documentation Rules](DOCUMENTATION_RULES.md), this checkpoint, and the [Document Catalog](DOCUMENT_CATALOG.md).

@@ -10,11 +10,11 @@ const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 // No database client, environment file or connection configuration is loaded.
 export async function verifyBaselineArtifacts() {
   let failed = false;
-  for (const version of ['1.8', '1.9', '1.10', '1.11', '1.12', '1.13']) {
+  for (const version of ['1.8', '1.9', '1.10', '1.11', '1.12', '1.13', '1.14', '1.15']) {
     const relativeDirectory = `database/baselines/v${version}/`;
     const manifest = JSON.parse(await readFile(path.join(root, relativeDirectory, 'PROVENANCE.json'), 'utf8'));
     if (manifest.version !== version) throw new Error(`Phiên bản baseline không phải V${version}.`);
-    const candidateStatus = ['1.12', '1.13'].includes(version) && ['PENDING_LOCAL_CANDIDATE', 'PROMOTED_LOCAL_PENDING_SOURCE_COMMIT', 'PROMOTED_LOCAL'].includes(manifest.status);
+    const candidateStatus = ['1.12', '1.13', '1.14', '1.15'].includes(version) && ['PENDING_LOCAL_CANDIDATE', 'PROMOTED_LOCAL_PENDING_SOURCE_COMMIT', 'PROMOTED_LOCAL', 'REHEARSED_NOT_APPLIED'].includes(manifest.status);
     if (version === '1.12' && !candidateStatus) throw new Error('V1.12 source cần trạng thái candidate/promoted-local trước khi được kiểm tra.');
     if (version === '1.13' && !candidateStatus) throw new Error('V1.13 source cần trạng thái candidate/promoted-local trước khi được kiểm tra.');
     for (const [filename, expected] of Object.entries(manifest.sha256)) {

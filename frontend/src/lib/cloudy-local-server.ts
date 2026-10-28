@@ -1,13 +1,14 @@
+import { isFilterContext, type FilterContext, type FilterMode } from "./cloudy-filter-context";
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
-type Reply = { text: string; synthetic: true; model: "qwen3:1.7b"; status: string };
-type Runner = (message: string, signal: AbortSignal) => Promise<Reply>;
+type Reply = { text: string; synthetic: true; model: "qwen3:1.7b"; status: string; context?: FilterContext | null };
+type Runner = (message: string, signal: AbortSignal, options?: { mode?: FilterMode; context?: FilterContext; action?: "prepare" | "confirm" }) => Promise<Reply>;
 const state = globalThis as typeof globalThis & { cloudyLocalBusy?: boolean };
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 
-export function runCloudyWorker(message: string, signal: AbortSignal): Promise<Reply> {
+export function runCloudyWorker(message: string, signal: AbortSignal, options?: { mode?: FilterMode; context?: FilterContext; action?: "prepare" | "confirm" }): Promise<Reply> {
   return new Promise((resolve, reject) => {
     if (signal.aborted) { reject(new Error("cancelled")); return; }
     const file = [path.resolve(process.cwd(), "../scripts/cloudy-ai/worker.py"), path.resolve(process.cwd(), "scripts/cloudy-ai/worker.py")].find(existsSync);
@@ -37,11 +38,11 @@ export function runCloudyWorker(message: string, signal: AbortSignal): Promise<R
       if (settled) return;
       try {
         const reply = JSON.parse(output) as Reply;
-        if (code !== 0 || typeof reply.text !== "string" || !reply.text || reply.text.length > 16_000 || reply.synthetic !== true || reply.model !== "qwen3:1.7b" || !["preview", "no_matches", "needs_clarification"].includes(reply.status)) throw new Error();
+        if (code !== 0 || typeof reply.text !== "string" || !reply.text || reply.text.length > 16_000 || reply.synthetic !== true || reply.model !== "qwen3:1.7b" || !["preview", "no_matches", "needs_clarification", "awaiting_confirmation"].includes(reply.status)) throw new Error();
         finish(undefined, reply);
       } catch { finish(new Error("unavailable")); }
     });
-    child.stdin.end(JSON.stringify({ message }));
+    child.stdin.end(JSON.stringify(options?.action === "confirm" ? { action: "confirm", context: options.context } : { message, ...options }));
     if (signal.aborted) abort();
   });
 }
@@ -59,12 +60,25 @@ export async function handleCloudyChat(request: Request, run: Runner = runCloudy
     while (true) { const { value, done } = await reader.read(); if (done) break; size += value.byteLength; if (size > 4096) { await reader.cancel(); return json({ error: "TOO_LARGE" }, 413); } chunks.push(value); }
     body = JSON.parse(Buffer.concat(chunks).toString("utf8"));
   } catch { return json({ error: "INVALID_BODY" }, 400); }
-  if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).join() !== "message" || typeof (body as { message: unknown }).message !== "string") return json({ error: "INVALID_BODY" }, 400);
-  const message = (body as { message: string }).message.trim();
-  if (!message || message.length > 500) return json({ error: "INVALID_MESSAGE" }, 400);
+  if (!body || typeof body !== "object" || Array.isArray(body)) return json({ error: "INVALID_BODY" }, 400);
+  const input = body as { message?: unknown; mode?: unknown; context?: unknown; action?: unknown };
+  const action = input.action === undefined ? "prepare" : input.action;
+  let message = "";
+  let options: { mode?: FilterMode; context?: FilterContext; action?: "prepare" | "confirm" };
+  if (action === "confirm") {
+    if (Object.keys(body).sort().join() !== "action,context" || !isFilterContext(input.context)) return json({ error: "INVALID_CONFIRMATION" }, 400);
+    options = { action: "confirm", context: input.context };
+  } else {
+    if (action !== "prepare" || Object.keys(body).some(key => !["action", "message", "mode", "context"].includes(key)) || typeof input.message !== "string") return json({ error: "INVALID_BODY" }, 400);
+    message = input.message.trim();
+    if (!message || message.length > 500) return json({ error: "INVALID_MESSAGE" }, 400);
+    const filterMode = input.mode === undefined ? "new" : input.mode;
+    if ((filterMode !== "new" && filterMode !== "continue") || (filterMode === "continue" && !isFilterContext(input.context)) || (filterMode === "new" && input.context !== undefined)) return json({ error: "INVALID_CONTEXT" }, 400);
+    options = { mode: filterMode, ...(filterMode === "continue" ? { context: input.context as FilterContext } : {}) };
+  }
   if (state.cloudyLocalBusy) return json({ error: "BUSY", message: "Cloudy đang xử lý yêu cầu khác. Bạn thử lại sau nhé." }, 429);
   state.cloudyLocalBusy = true;
-  try { return json(await run(message, request.signal)); }
+  try { return json(await run(message, request.signal, options)); }
   catch { return json({ error: "AI_UNAVAILABLE", message: "Chưa nhận được phản hồi AI. Kiểm tra Ollama và model qwen3:1.7b, rồi thử lại." }, 503); }
   finally { state.cloudyLocalBusy = false; }
 }

@@ -30,10 +30,14 @@ function DatabaseCommand([string]$command) {
   $databaseTool = if ($command -eq 'migrate-v18') { 'scripts/database-v19.mjs' } else { 'scripts/database-v111.mjs' }
   if ($command -eq 'migrate-v112' -and $script:db -in @('Goctro_test3','Goctro_dev_v18')) { $env:GOCTRO_V112_BACKUP_VERIFIED = $script:db }
   if ($command -eq 'migrate-v113' -and $script:db -in @('Goctro_test3','Goctro_dev_v18')) { $env:GOCTRO_V113_BACKUP_VERIFIED = $script:db }
+  if ($command -eq 'migrate-v114' -and $script:db -in @('Goctro_test3','Goctro_dev_v18')) { $env:GOCTRO_V114_BACKUP_VERIFIED = $script:db }
+  if ($command -eq 'migrate-v115' -and $script:db -in @('Goctro_test3','Goctro_dev_v18')) { $env:GOCTRO_V115_BACKUP_VERIFIED = $script:db }
   $lines = & node $databaseTool $command --database $script:db
   $script:dbExit = $LASTEXITCODE
   if ($command -eq 'migrate-v112') { Remove-Item Env:GOCTRO_V112_BACKUP_VERIFIED -ErrorAction SilentlyContinue }
   if ($command -eq 'migrate-v113') { Remove-Item Env:GOCTRO_V113_BACKUP_VERIFIED -ErrorAction SilentlyContinue }
+  if ($command -eq 'migrate-v114') { Remove-Item Env:GOCTRO_V114_BACKUP_VERIFIED -ErrorAction SilentlyContinue }
+  if ($command -eq 'migrate-v115') { Remove-Item Env:GOCTRO_V115_BACKUP_VERIFIED -ErrorAction SilentlyContinue }
   $script:dbText = $lines -join "`n"
   $lines | ForEach-Object { Write-Host $_ }
 }
@@ -61,11 +65,11 @@ try {
   Write-Host '1. Cài đặt lần đầu'
   Write-Host '2. Cập nhật và khởi động (hãy tự git pull trước)'
   Write-Host '3. Thoát'
-  Write-Host '4. Demo AI 300 phòng JSON (không cần database)'
+  Write-Host '4. Trợ lý chủ trọ: thu tiền, điện nước (dữ liệu giả lập)'
   $mode = (Read-Host 'Chọn 1, 2, 3 hoặc 4').Trim()
   if ($mode -eq '3') { exit 0 }
   if ($mode -eq '4') {
-    $step = 'Mở demo JSON'
+    $step = 'Mở trợ lý chủ trọ'
     & "$PSScriptRoot/start-json-demo.ps1"
     if ($LASTEXITCODE -ne 0) { throw 'Demo JSON chưa khởi động được.' }
     exit 0
@@ -204,8 +208,8 @@ try {
     if (-not $match.Success) { throw 'Không đọc được trạng thái database.' }
     $dataState = $match.Groups[1].Value
   }
-  if ($dataState -in @('v18_populated','v18_empty','v19_populated','v19_empty','v110_populated','v110_empty','v110_booking_branch_populated','v110_booking_branch_empty','v111_populated','v111_empty','v112_populated','v112_empty')) {
-    if (-not (Yes 'Đã tạo và kiểm tra backup khôi phục được; cho phép nâng database lên baseline V1.13 trên target đã xác nhận')) { throw 'Chưa xác nhận backup và migration; database được giữ nguyên.' }
+  if ($dataState -in @('v18_populated','v18_empty','v19_populated','v19_empty','v110_populated','v110_empty','v110_booking_branch_populated','v110_booking_branch_empty','v111_populated','v111_empty','v112_populated','v112_empty','v113_populated','v113_empty','v114_populated','v114_empty')) {
+    if (-not (Yes 'Đã tạo và kiểm tra backup khôi phục được; cho phép nâng database lên baseline V1.15 trên target đã xác nhận')) { throw 'Chưa xác nhận backup và migration; database được giữ nguyên.' }
   }
   if ($dataState -in @('v18_populated','v18_empty')) {
     $wasPopulated = $dataState -eq 'v18_populated'
@@ -237,13 +241,7 @@ try {
     if ($dbExit -ne 0) { throw 'Migration V1.11→V1.12 thất bại; transaction đã rollback nếu bắt đầu. Database giữ nguyên baseline hiện tại, không seed/reset.' }
     $completed.Add('Migration V1.11 → V1.12'); $dataState = if ($wasPopulated) { 'v112_populated' } else { 'v112_empty' }
   }
-  if ($dataState -in @('v112_populated','v112_empty')) {
-    $wasPopulated = $dataState -eq 'v112_populated'
-    $step = 'Migration database V1.12 lên V1.13'; DatabaseCommand 'migrate-v113'
-    if ($dbExit -ne 0) { throw 'Migration V1.12→V1.13 thất bại; transaction đã rollback nếu bắt đầu. Database giữ nguyên baseline hiện tại, không seed/reset.' }
-    $completed.Add('Migration V1.12 → V1.13'); $dataState = if ($wasPopulated) { 'v113_populated' } else { 'v113_empty' }
-  }
-  if ($mode -eq '2' -and $dataState -ne 'v113_populated' -and $dataState -ne 'v113_empty') { throw 'Chế độ cập nhật cần schema V1.13; setup không bootstrap hoặc seed database hiện có.' }
+  if ($mode -eq '2' -and $dataState -notin @('v112_populated','v112_empty','v113_populated','v113_empty','v114_populated','v114_empty','v115_populated','v115_empty')) { throw 'Chế độ cập nhật cần schema V1.12/V1.13/V1.14/V1.15; setup không bootstrap hoặc seed database hiện có.' }
   $seededNow = $false
   if ($mode -eq '1') {
     if ($dataState -eq 'empty_schema') {
@@ -277,6 +275,18 @@ try {
     $step = 'Migration database V1.12 lên V1.13'; DatabaseCommand 'migrate-v113'
     if ($dbExit -ne 0) { throw 'Migration V1.12→V1.13 thất bại; transaction đã rollback nếu bắt đầu. Database giữ nguyên baseline hiện tại, không seed/reset.' }
     $completed.Add('Migration V1.12 → V1.13'); $dataState = if ($wasPopulated) { 'v113_populated' } else { 'v113_empty' }
+  }
+  if ($dataState -in @('v113_populated','v113_empty')) {
+    $wasPopulated = $dataState -eq 'v113_populated'
+    $step = 'Migration database V1.13 lên V1.14'; DatabaseCommand 'migrate-v114'
+    if ($dbExit -ne 0) { throw 'Migration V1.13→V1.14 thất bại; database giữ nguyên baseline hiện tại.' }
+    $completed.Add('Migration V1.13 → V1.14'); $dataState = if ($wasPopulated) { 'v114_populated' } else { 'v114_empty' }
+  }
+  if ($dataState -in @('v114_populated','v114_empty')) {
+    $wasPopulated = $dataState -eq 'v114_populated'
+    $step = 'Migration database V1.14 lên V1.15'; DatabaseCommand 'migrate-v115'
+    if ($dbExit -ne 0) { throw 'Migration V1.14→V1.15 thất bại; database giữ nguyên baseline hiện tại.' }
+    $completed.Add('Migration V1.14 → V1.15'); $dataState = if ($wasPopulated) { 'v115_populated' } else { 'v115_empty' }
   }
   $step = 'Generate Prisma'
   if ($dependenciesChanged -or (Cache 'check' 'prisma') -ne 'CURRENT') {

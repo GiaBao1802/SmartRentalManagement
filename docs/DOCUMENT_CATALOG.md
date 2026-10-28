@@ -1,12 +1,29 @@
 # Document catalog
 
+## V1.15 local database integration — 2026-10-28
+
+[V1.15 candidate](../database/baselines/v1.15/README.md) — REHEARSED_NOT_APPLIED. Parking schema added to the user's promoted meter V1.13 and room-request V1.14 chain on a disposable PostgreSQL database only. [Pulled Parking V1.13 source](../database/parallel-baselines/parking-v1.13/INTEGRATION_NOTE.md) remains archived for provenance. Configured database and business data unchanged.
+
 ## Resident Parking request flow — 2026-10-28
 
-[Implementation report](07_modules/parking/RESIDENT_PARKING_REQUESTS_IMPLEMENTATION_20261028.md) — CURRENT SOURCE IMPLEMENTATION; V1.13 applied locally with structural catalog inspection PASS; authenticated user review and baseline promotion pending. No commit or push was performed.
+[Implementation report](07_modules/parking/RESIDENT_PARKING_REQUESTS_IMPLEMENTATION_20261028.md) — CURRENT SOURCE IMPLEMENTATION from the pulled branch. Its V1.13 candidate is archived under `database/parallel-baselines/parking-v1.13/`; the user's meter V1.13 and room-request V1.14 remain authoritative, with Parking rebased as a rehearsed V1.15 candidate. Authenticated user review and local V1.15 application remain pending.
+
+## Resident room requests — 2026-10-28
+
+[Room request implementation](07_modules/resident-occupancy/RESIDENT_ROOM_REQUEST_IMPLEMENTATION_REPORT.md) — CURRENT. Resident Complaint/equipment request, Owner confirmed room update, audit and notifications; local V1.14 promoted with verified backup/restore and 44 old tables unchanged. HTTP/PostgreSQL workflow 10 tests, typechecks, CORE89/89, booking17/17 PASS; browser review pending.
+
+## Resident Cloudy assistant — 2026-10-28
+
+[Resident assistant implementation](07_modules/resident-occupancy/RESIDENT_ASSISTANT_IMPLEMENTATION_REPORT.md) — CURRENT. Resident-only real service booking and private meter-photo submission with owner approval; local V1.13 promoted after verified backup/restore and canonical V1.8 chain. 10 tests, typechecks, CORE 89/89 and booking 17/17 PASS. Real-meter-photo accuracy and authenticated browser review remain pending. Supersedes older local database target claims based on fresh inspection; preserves historical evidence.
+
+## Owner advisor demo — 2026-10-28
+
+[Owner advisor report](07_modules/invoice-zalo/OWNER_ADVISOR_DEMO_REPORT.md) — CURRENT live backend data for Admin Cloudy (authenticated HTTP verified; no DB writes), with existing management links for real requests; standalone remains synthetic. Natural-language owner chat with clarification and explicit scope confirmation (typecheck + 9 focused tests PASS); cookie-path fix verified by real HTTP login; 20 synthetic service/complaint requests with confirmed in-memory transitions/history, 6 targeted tests + typecheck PASS. Admin Cloudy integration plus standalone replacement for room recommendation demo. Admin panel now uses authenticated Next /api/v1/cloudy/owner directly; frontend typecheck and 19 focused tests PASS, alongside 16 owner tests. Four read-only billing tasks, synthetic snapshots only, Qwen3 1.7B task classification. [100-room dataset/runbook](../data/owner-ai/v1/README.md) bound to existing Admin 1 / Owner 1; 160 synthetic invoices. 16/16 tests including Admin-only session access and account isolation, 6/6 scoped model regression. Setup option 4 and demo:advisor now use port 4332. Backend session gate implemented; live Invoice/Billing data integration pending; Cloudy room query unchanged. Older local room-advisor/JSON launch reports are historical for the standalone product direction.
+
 
 ## Cloudy local AI integration — 2026-10-28
 
-[Integration report](07_modules/public-marketplace/CLOUDY_LOCAL_AI_INTEGRATION_REPORT.md) — CURRENT, development-only Qwen3 1.7B on 300 synthetic rooms through the existing mascot. Supersedes earlier mock-only claims for development; production AI remains deferred. [Runbook](../scripts/cloudy-ai/README.md) — CURRENT. The [chat handoff](07_modules/public-marketplace/CLOUDY_CHAT_FRONTEND_HANDOFF.md) preserves historical mock evidence and links the active integration.
+[Integration report](07_modules/public-marketplace/CLOUDY_LOCAL_AI_INTEGRATION_REPORT.md) — CURRENT, development-only Qwen3 1.7B on 300 synthetic rooms through the existing mascot. Guest confirmation now precedes retrieval (22 TypeScript / 14 Python tests PASS; no computer use). Includes user-selected new/continue filtering with validated session context; session isolation audit fixes same-account public-role transitions, 21/21 TypeScript checks PASS (no computer use; authenticated UI unverified); supersedes earlier mock-only and single-turn-only claims for development; production AI remains deferred. [Runbook](../scripts/cloudy-ai/README.md) — CURRENT. The [chat handoff](07_modules/public-marketplace/CLOUDY_CHAT_FRONTEND_HANDOFF.md) preserves historical mock evidence and links the active integration.
 
 ## JSON-only advisor launch — 2026-10-28
 
