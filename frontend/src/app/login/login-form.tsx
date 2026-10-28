@@ -33,7 +33,7 @@ export default function LoginForm() {
       <PasswordField label="Mật khẩu" value={password} onChange={setPassword} disabled={busy} autoComplete="current-password" minimum={1} />
       {error && <p id="login-error" className={`${styles.message} ${styles.error}`} tabIndex={-1} ref={alert} role="alert">{error}</p>}
       <button className={styles.submit} type="submit" disabled={busy}>{busy ? "Đang đăng nhập…" : "Đăng nhập"}</button>
-      <p className={styles.help}>Phiên làm việc được lưu bằng cookie bảo mật do máy chủ quản lý.</p>
+      <p className={styles.help}>Phiên đăng nhập của bạn được bảo vệ an toàn.</p>
     </form>
   </AuthLayout>;
 }

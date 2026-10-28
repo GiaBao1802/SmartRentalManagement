@@ -27,15 +27,25 @@ class WorkerTests(unittest.TestCase):
   filters={'price':[],'area':[],'location':None,'occupants':None,'amenities':['unspecified_amenity']}
   result=handle_request({'message':'phòng có tiện ích'},lambda _:{'status':'ready','filters':filters})
   self.assertEqual(result['status'],'needs_clarification');self.assertIsNone(result['context'])
-  self.assertIn('chưa hiểu từ “tiện ích”',result['text'])
-  self.assertIn('chờ bạn làm rõ',result['text'])
+  self.assertIn('Mình hiểu bạn muốn biết về tiện ích',result['text'])
+  self.assertIn('tiện ích chung của khu trọ',result['text'])
+  self.assertIn('chưa tìm phòng',result['text'])
  def test_vague_price_asks_for_maximum_budget(self):
   result=handle_request({'message':'phòng rẻ'},lambda _:{'status':'needs_clarification','questions':['Chưa xử lý hết câu: re'],'unrecognizedTerms':['rẻ']})
   self.assertIn('ngân sách tối đa mỗi tháng',result['text'])
   self.assertIn('ví dụ dưới 4 triệu',result['text'])
+ def test_bare_shorthand_price_is_acknowledged_and_comparison_is_clarified(self):
+  parsed={'status':'needs_clarification','questions':['Chưa rõ phép so sánh'],'clarificationHints':[{'type':'price_operator','quote':'2tr','value':2000000}]}
+  result=handle_request({'message':'tôi muốn tìm phòng 2tr','mode':'new'},lambda _:parsed)
+  self.assertEqual(result['status'],'needs_clarification')
+  self.assertIn('“2tr” là 2.000.000 đồng tiền thuê mỗi tháng',result['text'])
+  self.assertIn('tối đa 2.000.000đ/tháng hay phòng có giá đúng',result['text'])
+  self.assertNotIn('chưa hiểu cụm “2tr”',result['text'])
+  self.assertIsNone(result['context'])
  def test_unsupported_nearby_search_explains_supported_location_input(self):
   result=handle_request({'message':'phòng gần trường đại học'},lambda _:{'status':'needs_clarification','questions':['Chưa xử lý hết câu: gan truong dai hoc'],'unrecognizedTerms':['gần trường đại học']})
-  self.assertIn('chưa lọc được khoảng cách đến trường',result['text'])
+  self.assertIn('Mình hiểu bạn muốn tìm phòng gần trường',result['text'])
+  self.assertIn('chưa hỗ trợ lọc khoảng cách',result['text'])
   self.assertIn('tỉnh/thành hoặc khu vực',result['text'])
  def test_unrecognized_term_is_echoed_in_clarification(self):
   result=handle_request({'message':'phòng sạch sẽ'},lambda _:{'status':'needs_clarification','questions':['Chưa xử lý hết câu'],'unrecognizedTerms':['sạch sẽ']})

@@ -12,6 +12,8 @@ import { runtimeConfig } from "./config/env.js";
 import { PrismaAuthRepository } from "./auth/account-repository.js";
 import { PrismaPropertyRoomRepository } from "./properties/property-room.repository.js";
 import { PrismaResidentOccupancyRepository } from "./residents/resident.repository.js";
+import { PrismaResidentAvatarRepository } from "./residents/resident-avatar.repository.js";
+import { LocalResidentAvatarStorage } from "./residents/resident-avatar.storage.js";
 import { PrismaContractRepository } from "./contracts/contract.repository.js";
 import { ContractIdempotencyService, EnvironmentContractResponseKeyProvider } from "./contracts/contract-idempotency.js";
 import { UnconfiguredObjectStorage } from "./contract-documents/object-storage.js";
@@ -34,6 +36,8 @@ import { PrismaParkingManagementRepository } from "./services/parking-management
 import { PrismaAccountManagementRepository } from "./accounts/account.repository.js";
 import { PrismaNotificationRepository } from "./notifications/notification.repository.js";
 import { DemoPaymentRepository, ResidentFeedbackRepository } from "./payments/demo-payment.repository.js";
+import { PrismaCloudyFeedbackRepository } from "./resident-assistant/cloudy-feedback.repository.js";
+import { PrismaOwnerOperationsReportRepository } from "./reports/owner-operations.repository.js";
 
 const app = express();
 
@@ -54,9 +58,11 @@ const objectStorage = new UnconfiguredObjectStorage();
 const invoiceRepository = new PrismaInvoiceRepository(prisma);
 const invoicePricing = new PrismaItemizedInvoicePricing();
 const billingWorkspaceRepository = new PrismaBillingWorkspaceRepository(prisma, invoicePricing);
+const cloudyFeedbackRepository = new PrismaCloudyFeedbackRepository(prisma, runtimeConfig.sessionSecret);
 app.use("/api/v1", createV1Router({
   roomRequestRepository: new RoomRequestRepository(prisma),
   meterSubmissionRepository: new MeterSubmissionRepository(prisma),
+  cloudyFeedbackRepository,
   config: runtimeConfig,
   repository: new PrismaAuthRepository(prisma),
   sessions,
@@ -67,6 +73,8 @@ app.use("/api/v1", createV1Router({
   roomImageStorage: runtimeConfig.nodeEnv === "production" ? undefined : new LocalRoomImageStorage(),
   publicMarketplaceRepository: new PrismaPublicMarketplaceRepository(prisma),
   residentOccupancyRepository: new PrismaResidentOccupancyRepository(prisma),
+  residentAvatarRepository: runtimeConfig.nodeEnv === "production" ? undefined : new PrismaResidentAvatarRepository(prisma),
+  residentAvatarStorage: runtimeConfig.nodeEnv === "production" ? undefined : new LocalResidentAvatarStorage(),
   contractRepository: new PrismaContractRepository(prisma),
   contractIdempotency: new ContractIdempotencyService(prisma, new EnvironmentContractResponseKeyProvider()),
   objectStorage,
@@ -81,6 +89,7 @@ app.use("/api/v1", createV1Router({
   notificationRepository: new PrismaNotificationRepository(prisma),
   demoPaymentRepository: new DemoPaymentRepository(prisma),
   feedbackRepository: new ResidentFeedbackRepository(prisma),
+  ownerOperationsReportRepository: new PrismaOwnerOperationsReportRepository(prisma),
   demoEnabled: runtimeConfig.nodeEnv !== "production",
 }));
 

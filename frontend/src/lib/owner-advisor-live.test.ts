@@ -43,6 +43,59 @@ test('resident statistics aggregate every resident page without returning person
  assert.match(all.summary,/2 cư dân đang ở, 1 hồ sơ đã rời đi/);assert.match(all.summary,/1 người chưa hoàn tất đăng ký/);assert.equal(JSON.stringify(all).includes('Private Name'),false);assert.ok(calls.some(path=>path.includes('page=2')));
  const room=await client.answer({task:'residents',period:'2026-10',room:'Khu A / P101 [11]'});assert.match(room.summary,/1 cư dân đang ở/);assert.match(room.summary,/1 người chưa hoàn tất/);
 });
+test('vacant-room list uses effective backend status and includes safe room details only',async()=>{
+ const fetchImpl:typeof fetch=async(input)=>{
+  const url=new URL(String(input));const path=url.pathname.replace('/api/v1','');
+  if(path==='/properties')return Response.json({data:[{property_id:'1',name:'Khu A',province:'Đồng Nai'}],meta:{total_pages:1}});
+  if(path==='/properties/1/rooms')return Response.json({data:[
+   {room_id:'11',room_code:'A01',status:'available',area_m2:'22.00',default_rent:'2500000'},
+   {room_id:'12',room_code:'A02',status:'occupied',area_m2:'24.00',default_rent:'2700000'},
+   {room_id:'13',room_code:'A03',status:'inactive',area_m2:'20.00',default_rent:'2300000'},
+  ],meta:{total_pages:1}});
+  throw new Error('Unexpected endpoint '+path);
+ };
+ const client=createLiveAdvisor('gt_session=test',fetchImpl);
+ const result=await client.answer({task:'available_rooms',period:'',room:''});
+ assert.equal(result.cards.length,1);assert.equal(result.cards[0].room,'A01');assert.equal(result.cards[0].status,'Còn trống');
+ assert.match(result.cards[0].details.join(' '),/22\.00 m²/);assert.match(result.cards[0].details.join(' '),/2\.500\.000 đ\/tháng/);
+ assert.match(result.summary,/Có 1 phòng đang còn trống trên 1 khu trọ/);
+});
+test('live owner insights rank finalized electricity use and current parking assignments',async()=>{
+ const calls:string[]=[];
+ const fetchImpl:typeof fetch=async(input)=>{
+  const url=new URL(String(input));const path=url.pathname.replace('/api/v1','');calls.push(path);
+  if(path==='/properties')return Response.json({data:[{property_id:'1',name:'Khu A',province:'Đồng Nai'}],meta:{total_pages:1}});
+  if(path==='/properties/1/rooms')return Response.json({data:[{room_id:'11',room_code:'A01',status:'occupied',area_m2:'22',default_rent:'2500000'},{room_id:'12',room_code:'A02',status:'occupied',area_m2:'24',default_rent:'2700000'}],meta:{total_pages:1}});
+  if(path==='/properties/1/parking-assignments')return Response.json({data:[
+   {assignment_id:'1',vehicle_id:'v1',room_id:'11',status:'active'}, {assignment_id:'2',vehicle_id:'v2',room_id:'11',status:'active'},
+   {assignment_id:'3',vehicle_id:'v3',room_id:'12',status:'active'}, {assignment_id:'4',vehicle_id:'v4',room_id:'12',status:'ended'},
+  ]});
+  if(path==='/invoices')return Response.json({data:[
+   {invoice_id:'i1',period_start:'2026-09-21',period_end:'2026-10-20',finalized_at:'2026-10-20',contract:{room_id:'11',room_code:'A01',property:{name:'Khu A'}}},
+   {invoice_id:'i2',period_start:'2026-09-21',period_end:'2026-10-20',finalized_at:'2026-10-20',contract:{room_id:'12',room_code:'A02',property:{name:'Khu A'}}},
+   {invoice_id:'i3',period_start:'2026-09-21',period_end:'2026-10-20',finalized_at:null,contract:{room_id:'12',room_code:'A02',property:{name:'Khu A'}}},
+  ],meta:{total_pages:1}});
+  if(path==='/invoices/i1')return Response.json({data:{electricity_previous_kwh:'100',electricity_current_kwh:'260'}});
+  if(path==='/invoices/i2')return Response.json({data:{electricity_previous_kwh:'20',electricity_current_kwh:'80'}});
+  throw new Error('Unexpected endpoint '+path);
+ };
+ const client=createLiveAdvisor('gt_session=test',fetchImpl);
+ const vehicles=await client.answer({task:'vehicle_counts',period:'',room:''});
+ assert.deepEqual(vehicles.cards.map(card=>[card.room,card.status]),[['A01','2 xe đang được phân công'],['A02','1 xe đang được phân công']]);
+ const electricity=await client.answer({task:'electricity_ranking',period:'2026-10',room:''});
+ assert.deepEqual(electricity.cards.map(card=>[card.room,card.status]),[['A01','160 kWh'],['A02','60 kWh']]);
+ assert.match(electricity.summary,/hóa đơn đã chốt/);assert.equal(calls.includes('/invoices/i3'),false);
+});
+test('frequent-request ranking discloses its backend list limit',async()=>{
+ const fetchImpl:typeof fetch=async(input)=>{const path=new URL(String(input)).pathname.replace('/api/v1','');
+  if(path==='/properties')return Response.json({data:[{property_id:'1',name:'Khu A'}],meta:{total_pages:1}});
+  if(path==='/properties/1/rooms')return Response.json({data:[{room_id:'11',room_code:'A01',status:'occupied'}],meta:{total_pages:1}});
+  if(path==='/room-requests')return Response.json({data:[{complaint_id:'1',room_id:'11',room_code:'A01',property_name:'Khu A',category:'Hư hỏng',content:'Rò nước',created_at:'2026-10-20',status:'pending'}]});
+  throw new Error('Unexpected endpoint '+path);
+ };
+ const result=await createLiveAdvisor('gt_session=test',fetchImpl).answer({task:'frequent_requests',period:'2026-10',room:''});
+ assert.equal(result.cards.length,1);assert.match(result.summary,/tối đa 100 yêu cầu gần nhất/);
+});
 test('live room-code duplicates require explicit clarification',()=>{
  const base={tasks:{unpaid:'Chưa đóng'},periods:['2026-10'],asOf:'2026-10-28',rooms:['Khu A / P101 [11]']};
  assert.equal(proposeOwnerScope('P101 tháng 10','unpaid',base).room,base.rooms[0]);

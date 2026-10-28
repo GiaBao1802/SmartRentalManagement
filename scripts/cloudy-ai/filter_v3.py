@@ -11,6 +11,7 @@ SINGLE = re.compile(rf'(?<![\w.,])({TOKEN})(?!\w)')
 OPS = {
  'khong lon hon':'lte', 'khong cao hon':'lte','khong tren':'lte',
  'khong vuot qua':'lte','khong qua':'lte','toi da':'lte',
+ 'do lai':'lte',
  'khong nho hon':'gte','khong thap hon':'gte','khong duoi':'gte',
  'it nhat':'gte','toi thieu':'gte','tu':'gte',
  'nho hon':'lt','thap hon':'lt','duoi':'lt',
@@ -22,6 +23,8 @@ WORDS = {'mot':'1','hai':'2','ba':'3','bon':'4','nam':'5','sau':'6','bay':'7','t
 
 def normalized(s):
     s=norm(s)
+    # Common Vietnamese spelling variants for the same amenity.
+    s=re.sub(r'\bwi[\s-]+fi\b','wifi',s)
     # Unambiguous repeated three-digit grouping. Do not silently guess single separators.
     s=re.sub(r'(?<![\w.,])\d{1,3}(?:\.\d{3}){2,}(?![\d.,])',lambda m:m[0].replace('.',''),s)
     s=re.sub(r'(?<![\w.,])\d{1,3}(?:,\d{3}){2,}(?![\d.,])',lambda m:m[0].replace(',',''),s)

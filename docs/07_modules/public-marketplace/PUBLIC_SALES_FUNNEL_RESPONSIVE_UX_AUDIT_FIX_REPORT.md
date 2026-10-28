@@ -1,5 +1,9 @@
 # Góc Trọ — Public Sales Funnel Responsive + UX Audit & Fix Report
 
+## Marketplace full-list view — 2026-10-29
+
+The in-map result tray was limited to a short height, which made cards and paging controls cramped even after expanding. Added a dedicated `/tim-phong/danh-sach` list view with a same-app map/list switch, full-width responsive card grid, clear result count, filters, sort, page size and top/bottom pagination. The map now links to the full list while preserving the active public search filters; the list preserves its updated filters in the URL and offers a direct return to the map. Opening a room keeps a safe, same-site return link with the active search. Public room cards and existing detail/contact flow are reused. This is a presentation/navigation change: public API and database contracts are unchanged. Frontend typecheck and production build pass. The local page was opened and its controls were present, but the public rooms API returned an error, so result-card visual review with real data remains pending.
+
 - Date: 2026-10-12
 - Status: **FIXED — AVAILABLE HOST-BROWSER CHECKS PASS; FULL VIEWPORT MATRIX PENDING**
 - Scope: public homepage, room listing/detail, image gallery, and contact panel layout.

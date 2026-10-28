@@ -222,11 +222,11 @@ export default function FlexibleServiceCatalog() {
         <div className="flex-service-mode-options">
           <label className={configDraft.service_mode === "BOOKING" ? "selected" : ""}>
             <input type="radio" name={configTarget ? `mode-${configTarget}` : "new-service-mode"} value="BOOKING" checked={configDraft.service_mode === "BOOKING"} onChange={() => setConfigDraft((value) => ({ ...value, service_mode: "BOOKING" }))} />
-            <span><strong>Đặt lịch từng lượt</strong><small>Ví dụ: spa, dọn phòng, sửa chữa</small></span>
+            <span><strong>Đặt lịch từng lượt</strong><small>Hồ bơi, sân bóng/tennis; hoặc dịch vụ như cắt tóc, tỉa cây</small></span>
           </label>
           <label className={configDraft.service_mode === "SUBSCRIPTION" ? "selected" : ""}>
             <input type="radio" name={configTarget ? `mode-${configTarget}` : "new-service-mode"} value="SUBSCRIPTION" checked={configDraft.service_mode === "SUBSCRIPTION"} onChange={() => setConfigDraft((value) => ({ ...value, service_mode: "SUBSCRIPTION" }))} />
-            <span><strong>Gói sử dụng</strong><small>Ví dụ: gym, hồ bơi, sân thể thao</small></span>
+            <span><strong>Gói sử dụng</strong><small>Gói theo thời hạn; không phải lịch đặt từng khung giờ</small></span>
           </label>
         </div>
       </fieldset>
@@ -252,7 +252,7 @@ export default function FlexibleServiceCatalog() {
           <label>Thời lượng mỗi lượt (phút) *<input required type="number" min="1" max="1440" step="1" value={configDraft.slot_duration_minutes} disabled={saving} onChange={(event) => setConfigDraft((value) => ({ ...value, slot_duration_minutes: event.target.value }))} /></label>
           <label>Sức chứa mỗi lượt (người) *<input required type="number" min="1" step="1" value={configDraft.capacity_per_slot} disabled={saving} onChange={(event) => setConfigDraft((value) => ({ ...value, capacity_per_slot: event.target.value }))} /></label>
         </div>
-        <p className="utility-note">Sức chứa giới hạn số người trong cùng khung giờ. Yêu cầu chờ duyệt vẫn giữ chỗ; khi duyệt, phí theo giá đã báo sẽ vào hóa đơn hợp đồng.</p>
+        <p className="utility-note">Sức chứa giới hạn số người trong cùng khung giờ. Cư dân gửi yêu cầu và chờ bạn duyệt. Phát hành giá 0 để đăng ký tiện ích miễn phí; giá dương cho dịch vụ phát sinh, chỉ ghi phí sau khi bạn duyệt.</p>
       </div> : <div className="flex-service-mode-detail">
         <h3>Thời hạn gói</h3>
         <div className="utility-form-grid">
@@ -334,7 +334,7 @@ export default function FlexibleServiceCatalog() {
       </section>;
     })()}
 
-    <section className="admin-card utility-section" id="create-flexible-service"><div className="utility-section-heading"><div><h2>Tạo dịch vụ hoặc gói</h2><p>Tạo xong, hãy mở “Giá & lịch sử” để phát hành giá. Cấu hình và danh mục được lưu cho khu vực đã chọn.</p></div></div>
+    <section className="admin-card utility-section" id="create-flexible-service"><div className="utility-section-heading"><div><h2>Tạo tiện ích đặt lịch hoặc dịch vụ phát sinh</h2><p>Tạo xong, hãy mở “Giá & lịch sử” để phát hành giá: 0 đồng cho tiện ích đăng ký miễn phí; giá dương cho dịch vụ phát sinh. Lịch và danh mục chỉ áp dụng tại khu trọ đang chọn.</p></div></div>
       <form className="flexible-service-config-form" onSubmit={(event) => void createItem(event)}>
         <div className="utility-form-grid"><label>Mã dịch vụ *<input required maxLength={60} pattern="[A-Za-z0-9][A-Za-z0-9_-]*" value={draft.code} disabled={saving} onChange={(event) => setDraft((value) => ({ ...value, code: event.target.value }))} /></label><label>Tên dịch vụ *<input required maxLength={150} value={draft.name} disabled={saving} onChange={(event) => setDraft((value) => ({ ...value, name: event.target.value }))} /></label><label className="wide-field">Mô tả<input maxLength={10000} value={draft.description} disabled={saving} onChange={(event) => setDraft((value) => ({ ...value, description: event.target.value }))} /></label></div>
         {renderConfigurationFields(false)}

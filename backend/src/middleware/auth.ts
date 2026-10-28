@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import type { RequestHandler } from "express";
 import type { RuntimeConfig } from "../config/env.js";
-import type { AuthRepository, AuthContext, CurrentAccountRecord } from "../auth/auth.types.js";
+import type { AuthRepository, AuthContext, CurrentAccountRecord, SuperadminAuthContext } from "../auth/auth.types.js";
 import type { SessionStore } from "../auth/session-store.js";
 import { hashSessionToken } from "../auth/session-store.js";
 import { getCookie, SESSION_COOKIE } from "./csrf.js";
@@ -44,6 +44,11 @@ function resolveContext(account: CurrentAccountRecord): AuthContext | null {
   return null;
 }
 
+function resolveSuperadminContext(account: CurrentAccountRecord): SuperadminAuthContext | null {
+  if (account.status !== "active" || account.role !== "superadmin" || account.ownerId !== null || account.residentId !== null) return null;
+  return { accountId: account.accountId, role: "superadmin", ownerId: null, residentId: null, account: { email: account.email, phone: account.phone, status: "active" } };
+}
+
 export function authenticateRequest(deps: AuthDependencies): RequestHandler {
   return async (request, response, next) => {
     try {
@@ -65,7 +70,8 @@ export function authenticateRequest(deps: AuthDependencies): RequestHandler {
         throw unauthenticated();
       }
       const context = resolveContext(account);
-      if (!context) { await deps.sessions.revoke(tokenHash); throw unauthenticated(); }
+      const platformContext = resolveSuperadminContext(account);
+      if (!context && !platformContext) { await deps.sessions.revoke(tokenHash); throw unauthenticated(); }
       const idleExpiry = now + deps.config.sessionIdleMinutes * 60 * 1000;
       const expiresAt = Math.min(idleExpiry, session.absoluteExpiresAt);
       if (!await deps.sessions.touch(tokenHash, now, expiresAt)) throw unauthenticated();
@@ -75,15 +81,17 @@ export function authenticateRequest(deps: AuthDependencies): RequestHandler {
       ];
       if (deps.config.nodeEnv === "production") cookieParts.push("Secure");
       response.append("Set-Cookie", cookieParts.join("; "));
-      request.auth = context;
+      if (context) request.auth = context;
+      else request.platformAuth = platformContext!;
       next();
     } catch (error) { next(error); }
   };
 }
 
 export const requireAuthenticated: RequestHandler = (request, _response, next) => request.auth ? next() : next(unauthenticated());
-export const requireAdmin: RequestHandler = (request, _response, next) => request.auth?.role === "admin" ? next() : request.auth ? next(forbidden()) : next(unauthenticated());
-export const requireResident: RequestHandler = (request, _response, next) => request.auth?.role === "resident" ? next() : request.auth ? next(forbidden()) : next(unauthenticated());
+export const requireAdmin: RequestHandler = (request, _response, next) => request.auth?.role === "admin" ? next() : request.auth || request.platformAuth ? next(forbidden()) : next(unauthenticated());
+export const requireResident: RequestHandler = (request, _response, next) => request.auth?.role === "resident" ? next() : request.auth || request.platformAuth ? next(forbidden()) : next(unauthenticated());
+export const requireSuperadmin: RequestHandler = (request, _response, next) => request.platformAuth?.role === "superadmin" ? next() : request.auth ? next(forbidden()) : next(unauthenticated());
 
 export function getAdminOwnerId(context: AuthContext): bigint {
   if (context.role !== "admin") throw forbidden();

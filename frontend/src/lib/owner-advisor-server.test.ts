@@ -42,8 +42,8 @@ test('request HTTP list/decision cannot bypass confirmation or inject owner; rou
  const body={task:'requests',period:'2026-10',room:'',confirmed:true};
  const list=await (await handleOwnerAdvisor(request('gt_session=admin',body),options)).json();assert.equal(list.requests.length,20);
  const other=await (await handleOwnerAdvisor(request('gt_session=other',body),options)).json();assert.equal(other.requests.length,0);
- const proposal=await (await handleOwnerAdvisor(request('gt_session=admin',{question:'Duyệt yêu cầu tiện ích'}),options)).json();assert.equal(proposal.task,'requests');assert.equal(proposal.reviewRequired,true);
- const residentProposal=await (await handleOwnerAdvisor(request('gt_session=admin',{question:'Thống kê cư dân đang ở phòng P101'}),{...options,source:'database'})).json();assert.equal(residentProposal.task,'residents');assert.equal(residentProposal.source,'request_router');assert.equal(residentProposal.reviewRequired,true);
+ const proposal=await (await handleOwnerAdvisor(request('gt_session=admin',{question:'Duyệt yêu cầu tiện ích'}),options)).json();assert.equal(proposal.task,'requests');assert.equal(proposal.reviewRequired,false);
+ const residentProposal=await (await handleOwnerAdvisor(request('gt_session=admin',{question:'Thống kê cư dân đang ở phòng P101'}),{...options,source:'database'})).json();assert.equal(residentProposal.task,'residents');assert.equal(residentProposal.source,'request_router');assert.equal(residentProposal.reviewRequired,false);
  const action={requestId:'SYN-REQ-003',action:'reject',revision:0,reason:'Thử nghiệm',confirmed:true};
  assert.equal((await handleOwnerAdvisor(request('gt_session=other',action),options)).status,404);
  assert.equal((await handleOwnerAdvisor(request('gt_session=admin',{...action,ownerId:'1'}),options)).status,400);
@@ -63,4 +63,51 @@ test('interpretation proposes task; confirmed read rejects forged scope and fore
  for(const body of [{...query,confirmed:false},{...query,ownerId:'1'},{...query,role:'admin'}])assert.equal((await handleOwnerAdvisor(request('gt_session=admin',body),options)).status,400);
  assert.equal((await handleOwnerAdvisor(request('gt_session=admin',query,'https://foreign.test'),options)).status,403);
  assert.equal((await handleOwnerAdvisor(request('gt_session=admin',{question:'x'.repeat(5000)}),options)).status,413);
+});
+test('vacant-room phrasing is routed before the invoice classifier only for authenticated database Cloudy',async()=>{
+ let modelCalled=false;
+ const live=await handleOwnerAdvisor(request('gt_session=admin',{question:'danh sách các phòng còn trống'}),{...options,source:'database',interpretImpl:async()=>{modelCalled=true;return {task:'unpaid',model:'qwen3:1.7b',reviewRequired:true,message:'Mô hình đã gọi.'};}});
+ assert.equal(live.status,200);assert.equal((await live.json()).task,'available_rooms');assert.equal(modelCalled,false);
+ const unknown=await handleOwnerAdvisor(request('gt_session=admin',{question:'phòng nào chưa có người thuê?'}),{...options,source:'database',interpretImpl:async()=>({task:'clarify',model:'qwen3:1.7b',reviewRequired:true,message:'Mình chưa hiểu.'})});
+ assert.equal((await unknown.json()).task,'available_rooms');
+});
+test('common owner questions route deterministically before the local classifier',async()=>{
+ for(const [question,task] of [
+  ['Ai chưa đăng ký tạm trú?','residents'],['Phòng nào xài điện nhiều nhất tháng này?','electricity_ranking'],
+  ['Phòng nào có nhiều xe nhất?','vehicle_counts'],['Phòng nào hay báo hỏng nhất tháng này?','frequent_requests'],
+  ['Phòng nào hay báo sửa chữa nhất tháng này?','frequent_requests'],['Tiền điện tháng trước tính ra sao?','utilities'],
+  ['Kỳ này còn phòng nào chưa có số điện nước để lên bill?','missing'],['Liệt kê phòng chưa có ai thuê nhé.','available_rooms'],
+  ['Phòng nào chưa đóng tiền thuê kỳ này?','unpaid'],['Kỳ này còn việc gì cần kiểm tra?','overview'],
+ ] as const){
+  let modelCalled=false;const response=await handleOwnerAdvisor(request('gt_session=admin',{question}),{...options,source:'database',interpretImpl:async()=>{modelCalled=true;return {task:'clarify',model:'qwen',reviewRequired:true,message:'chưa hiểu'};}});
+  assert.equal((await response.json()).task,task,question);assert.equal(modelCalled,false,question);
+ }
+});
+test('informal maintenance-report wording opens the read-only requests list',async()=>{
+ let modelCalled=false;
+ const response=await handleOwnerAdvisor(request('gt_session=admin',{question:'Khách thuê có ai báo hư gì gần đây không?'}),{...options,source:'database',interpretImpl:async()=>{modelCalled=true;return {task:'clarify',model:'qwen',reviewRequired:true,message:'chưa hiểu'};}});
+ assert.equal((await response.json()).task,'requests');assert.equal(modelCalled,false);
+});
+test('all supported read-only tasks run without confirmation; mutations remain separate',async()=>{
+ const backendFetch:typeof fetch=async(input,init)=>{
+  const path=new URL(String(input)).pathname.replace('/api/v1','');
+  if(path==='/auth/me')return mockAuth(input,init);
+  if(path==='/properties')return Response.json({data:[{property_id:'1',name:'Khu A',province:'Đồng Nai'}],meta:{total_pages:1}});
+  if(path==='/properties/1/rooms')return Response.json({data:[{room_id:'11',room_code:'P101',status:'available',area_m2:'22.00',default_rent:'2500000'}],meta:{total_pages:1}});
+  if(path==='/residents')return Response.json({data:[{resident_id:'private',full_name:'Không được trả tên',residence_status:'living',residence_registration_status:'not_completed',room_residents:[{room_id:'11',status:'active'}]}],meta:{total_pages:1}});
+  if(path==='/invoices')return Response.json({data:[],meta:{total_pages:1}});
+  if(path==='/billing/workspace')return Response.json({data:[],meta:{total_pages:1}});
+  if(path==='/room-requests')return Response.json({data:[]});
+  if(path==='/properties/1/service-bookings')return Response.json({data:[]});
+  throw new Error(`Unexpected endpoint ${path}`);
+ };
+ const response=await handleOwnerAdvisor(request('gt_session=admin',{task:'residents',period:'',room:''}),{mode:'development',fetchImpl:backendFetch,source:'database'});
+ assert.equal(response.status,200);const data=await response.json();assert.match(data.summary,/Toàn tài khoản: 1 cư dân đang ở/);assert.equal(JSON.stringify(data).includes('Không được trả tên'),false);
+ for(const task of ['unpaid','utilities','missing','overview','requests']){
+  const direct=await handleOwnerAdvisor(request('gt_session=admin',{task,period:'2026-10',room:''}),{mode:'development',fetchImpl:backendFetch,source:'database'});
+  assert.equal(direct.status,200,`${task} should be a direct read-only query`);
+ }
+ const vacancies=await handleOwnerAdvisor(request('gt_session=admin',{task:'available_rooms',period:'',room:''}),{mode:'development',fetchImpl:backendFetch,source:'database'});
+ assert.equal(vacancies.status,200);const vacancyData=await vacancies.json();assert.equal(vacancyData.cards.length,1);assert.equal(vacancyData.cards[0].room,'P101');
+ assert.equal((await handleOwnerAdvisor(request('gt_session=admin',{task:'create-service',period:'2026-10',room:''}),options)).status,400);
 });

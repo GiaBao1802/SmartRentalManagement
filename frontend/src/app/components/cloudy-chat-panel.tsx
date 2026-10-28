@@ -1,26 +1,13 @@
 "use client";
 
-import { Fragment, useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from "react";
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { CLOUDY_CHAT_MAX_LENGTH, createLocalCloudyChatService, normalizeCloudyChatInput, type CloudyChatMessage, type CloudyChatService } from "./cloudy-chat-service";
+import { CloudyPortrait } from "./cloudy-portrait";
 
 import { CloudyOwnerAdvisor } from "./cloudy-owner-advisor";
 import type { FilterMode } from "../../lib/cloudy-filter-context";
 import { parseCloudyRoomLinks } from "../../lib/cloudy-room-links";
-
-const ASSET_ROOT = "/mascot/cloudy-2d";
-
-function CloudyPortrait() {
-  return <span className="cloudy-chat__avatar" aria-hidden="true">
-    <img className="cloudy-2d__layer" src={`${ASSET_ROOT}/cloud-body.png`} alt="" />
-    <span className="cloudy-2d__eye-pair">
-      <img className="cloudy-2d__layer cloudy-2d__eye cloudy-2d__eye--left" src={`${ASSET_ROOT}/cloud-eyes-open.png`} alt="" />
-      <img className="cloudy-2d__layer cloudy-2d__eye cloudy-2d__eye--right" src={`${ASSET_ROOT}/cloud-eyes-open.png`} alt="" />
-    </span>
-    <img className="cloudy-2d__layer cloudy-2d__nose" src={`${ASSET_ROOT}/cloud-nose.png`} alt="" />
-    <img className="cloudy-2d__layer cloudy-2d__mouth-idle" src={`${ASSET_ROOT}/cloud-mouth-idle.png`} alt="" />
-  </span>;
-}
 
 function CloudyMessageText({ text, allowRoomLinks }: { text: string; allowRoomLinks: boolean }) {
   return <>{parseCloudyRoomLinks(text, allowRoomLinks).map((segment, index) => {
@@ -42,6 +29,8 @@ function safeInsets() {
 
 type ChatStatus = "idle" | "pending" | "error";
 type ChatError = { messageId: string; text: string } | null;
+type ResizeDirection = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
+const resizeDirections: ResizeDirection[] = ["n", "s", "e", "w", "ne", "nw", "se", "sw"];
 
 export function CloudyChatSession({ open, mascotRef, onClose, ownerMode = false }: { ownerMode?: boolean; open: boolean; mascotRef: RefObject<HTMLDivElement | null>; onClose: () => void }) {
   const preview = process.env.NODE_ENV === "development";
@@ -53,6 +42,8 @@ export function CloudyChatSession({ open, mascotRef, onClose, ownerMode = false 
   const [hasProposal, setHasProposal] = useState(false);
   const [hasContext, setHasContext] = useState(false);
   const [draft, setDraft] = useState("");
+  const [panelWidth, setPanelWidth] = useState(460);
+  const [panelHeight, setPanelHeight] = useState(510);
   const [status, setStatus] = useState<ChatStatus>("idle");
   const [error, setError] = useState<ChatError>(null);
   const pendingRef = useRef<{ controller: AbortController; messageId: string } | null>(null);
@@ -146,10 +137,10 @@ export function CloudyChatSession({ open, mascotRef, onClose, ownerMode = false 
   };
 
   if (!open) return null;
-  return <CloudyChatPanel ownerMode={ownerMode} mascotRef={mascotRef} onClose={handleClose} preview={preview} messages={messages} draft={draft} onDraftChange={changeDraft} onSubmit={submit} status={status} error={error} onRetry={retry} filterMode={filterMode} onFilterModeChange={changeMode} hasContext={hasContext} hasProposal={hasProposal} onConfirm={confirmProposal} onEdit={editProposal} />;
+  return <CloudyChatPanel ownerMode={ownerMode} mascotRef={mascotRef} onClose={handleClose} preview={preview} messages={messages} draft={draft} onDraftChange={changeDraft} onSubmit={submit} status={status} error={error} onRetry={retry} filterMode={filterMode} onFilterModeChange={changeMode} hasContext={hasContext} hasProposal={hasProposal} onConfirm={confirmProposal} onEdit={editProposal} panelWidth={panelWidth} panelHeight={panelHeight} setPanelWidth={setPanelWidth} setPanelHeight={setPanelHeight} />;
 }
 
-function CloudyChatPanel({ ownerMode, mascotRef, onClose, preview, messages, draft, onDraftChange, onSubmit, status, error, onRetry, filterMode, onFilterModeChange, hasContext, hasProposal, onConfirm, onEdit }: {
+function CloudyChatPanel({ ownerMode, mascotRef, onClose, preview, messages, draft, onDraftChange, onSubmit, status, error, onRetry, filterMode, onFilterModeChange, hasContext, hasProposal, onConfirm, onEdit, panelWidth, panelHeight, setPanelWidth, setPanelHeight }: {
   ownerMode: boolean;
   mascotRef: RefObject<HTMLDivElement | null>;
   onClose: () => void;
@@ -167,12 +158,79 @@ function CloudyChatPanel({ ownerMode, mascotRef, onClose, preview, messages, dra
   hasProposal: boolean;
   onConfirm: () => void;
   onEdit: () => void;
+  panelWidth: number;
+  panelHeight: number;
+  setPanelWidth: (width: number | ((previous: number) => number)) => void;
+  setPanelHeight: (height: number | ((previous: number) => number)) => void;
 }) {
   const panelRef = useRef<HTMLElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesRef = useRef<HTMLDivElement>(null);
   const nearBottomRef = useRef(true);
+
+  const resizePanel = (direction: ResizeDirection, start: DOMRect, deltaX: number, deltaY: number) => {
+    const panel = panelRef.current;
+    if (!panel) return;
+    const safe = safeInsets();
+    const minLeft = safe.left + 12;
+    const maxRight = window.innerWidth - safe.right - 12;
+    const minTop = safe.top + 12;
+    const maxBottom = window.innerHeight - safe.bottom - 12;
+    const minWidth = Math.min(360, maxRight - minLeft);
+    const maxWidth = Math.min(720, maxRight - minLeft);
+    const minHeight = Math.min(320, maxBottom - minTop);
+    const maxHeight = Math.min(760, maxBottom - minTop);
+    let left = start.left;
+    let right = start.right;
+    let top = start.top;
+    let bottom = start.bottom;
+
+    if (direction.includes("w")) left = Math.max(minLeft, Math.min(start.left + deltaX, right - minWidth));
+    if (direction.includes("e")) right = Math.min(maxRight, Math.max(start.right + deltaX, left + minWidth));
+    if (direction.includes("n")) top = Math.max(minTop, Math.min(start.top + deltaY, bottom - minHeight));
+    if (direction.includes("s")) bottom = Math.min(maxBottom, Math.max(start.bottom + deltaY, top + minHeight));
+
+    const nextWidth = Math.min(maxWidth, right - left);
+    const nextHeight = Math.min(maxHeight, bottom - top);
+    if (direction.includes("w")) left = right - nextWidth;
+    else right = left + nextWidth;
+    if (direction.includes("n")) top = bottom - nextHeight;
+    else bottom = top + nextHeight;
+
+    panel.style.left = `${left}px`;
+    panel.style.top = `${top}px`;
+    setPanelWidth(nextWidth);
+    setPanelHeight(nextHeight);
+  };
+
+  const startPanelResize = (direction: ResizeDirection, event: ReactPointerEvent<HTMLDivElement>) => {
+    if (window.matchMedia("(max-width: 760px)").matches || event.button !== 0) return;
+    event.preventDefault();
+    const panel = panelRef.current;
+    if (!panel) return;
+    const rect = panel.getBoundingClientRect();
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const onMove = (move: PointerEvent) => resizePanel(direction, rect, move.clientX - startX, move.clientY - startY);
+    const onEnd = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onEnd);
+      window.removeEventListener("pointercancel", onEnd);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onEnd);
+    window.addEventListener("pointercancel", onEnd);
+  };
+
+  const resizeHandleKeyDown = (direction: ResizeDirection, event: ReactKeyboardEvent<HTMLDivElement>) => {
+    const deltaX = event.key === "ArrowLeft" ? -40 : event.key === "ArrowRight" ? 40 : 0;
+    const deltaY = event.key === "ArrowUp" ? -40 : event.key === "ArrowDown" ? 40 : 0;
+    if (!deltaX && !deltaY) return;
+    event.preventDefault();
+    const panel = panelRef.current;
+    if (panel) resizePanel(direction, panel.getBoundingClientRect(), deltaX, deltaY);
+  };
 
   useLayoutEffect(() => {
     const container = messagesRef.current;
@@ -269,10 +327,11 @@ function CloudyChatPanel({ ownerMode, mascotRef, onClose, preview, messages, dra
 
   return createPortal(<>
     <div className="cloudy-chat__backdrop" aria-hidden="true" onClick={onClose} />
-    <section id="cloudy-chat-panel" ref={panelRef} className="cloudy-chat" role="dialog" aria-labelledby="cloudy-chat-title" aria-describedby="cloudy-chat-preview-note">
+    <section id="cloudy-chat-panel" ref={panelRef} className="cloudy-chat" style={{ "--cloudy-chat-width": `${panelWidth}px`, "--cloudy-chat-height": `${panelHeight}px` } as CSSProperties} role="dialog" aria-labelledby="cloudy-chat-title" aria-describedby="cloudy-chat-preview-note">
+      {resizeDirections.map((direction) => <div key={direction} className={`cloudy-chat__resize-handle cloudy-chat__resize-handle--${direction}`} role="separator" aria-label={`Kéo cạnh ${direction} để đổi kích thước khung chat`} aria-orientation={direction === "e" || direction === "w" ? "vertical" : direction === "n" || direction === "s" ? "horizontal" : undefined} aria-valuenow={Math.round(direction.includes("e") || direction.includes("w") ? panelWidth : panelHeight)} tabIndex={0} onPointerDown={(event) => startPanelResize(direction, event)} onKeyDown={(event) => resizeHandleKeyDown(direction, event)} />)}
       <header className="cloudy-chat__header">
         <CloudyPortrait />
-        <div className="cloudy-chat__heading"><h2 id="cloudy-chat-title">Cloudy</h2><span>{preview ? ownerMode ? "Tư vấn chủ trọ · Dữ liệu quản lý" : "AI local · Database phòng công khai" : "Đang được hoàn thiện"}</span></div>
+        <div className="cloudy-chat__heading"><h2 id="cloudy-chat-title">Cloudy</h2><span>{preview ? ownerMode ? "Hỗ trợ quản lý nhà trọ" : "AI được huấn luyện bởi đội ngũ DayOne Studio" : "Đang được hoàn thiện"}</span></div>
         <button ref={closeRef} className="cloudy-chat__close" type="button" onClick={onClose} aria-label="Đóng khung chat Cloudy">×</button>
       </header>
       {ownerMode && preview ? <div className="cloudy-chat__messages"><CloudyOwnerAdvisor /></div> : <>
@@ -282,19 +341,22 @@ function CloudyChatPanel({ ownerMode, mascotRef, onClose, preview, messages, dra
       }}>
         <div className="cloudy-chat__message-row cloudy-chat__message-row--cloudy">
           <CloudyPortrait />
-          <p className="cloudy-chat__message">Xin chào! Mình là Cloudy. {preview ? "Mình sẽ nhắc lại nhu cầu để bạn xác nhận trước khi tìm trong tin phòng công khai. Chọn Lọc mới để bắt đầu, hoặc Lọc tiếp để giữ điều kiện trước và thay đổi điều bạn muốn. Ví dụ: tìm cho 2 người, dưới 3 triệu, hoặc bỏ giới hạn giá." : "Khung trò chuyện đang được chuẩn bị."}</p>
+          <div className="cloudy-chat__message cloudy-chat__welcome">
+            <p>Chào bạn, mình là Cloudy, trợ lý tìm phòng của Góc Trọ ☁️ Bạn cứ mô tả khu vực, mức giá, diện tích, số người và tiện ích mong muốn. Mình sẽ nhắc lại tiêu chí để bạn xác nhận trước khi tìm phòng phù hợp.</p>
+            <p className="cloudy-chat__welcome-note">{preview ? "Ví dụ: “Tìm phòng Thủ Đức dưới 4 triệu, có máy lạnh, cho 2 người.”" : "Tính năng tìm phòng qua trò chuyện đang được hoàn thiện."}</p>
+          </div>
         </div>
         {messages.map((message) => <div className={`cloudy-chat__message-row cloudy-chat__message-row--${message.role}`} key={message.id}>
           {message.role === "cloudy" && <CloudyPortrait />}
           <p className="cloudy-chat__message"><span className="sr-only">{message.role === "user" ? "Bạn: " : "Cloudy: "}</span>{message.role === "user" && <small className="cloudy-chat__mode-label">{message.confirmation ? "Xác nhận" : message.filterMode === "continue" ? "Lọc tiếp" : "Lọc mới"} · </small>}<CloudyMessageText text={message.text} allowRoomLinks={message.role === "cloudy"} /></p>
         </div>)}
-        {status === "pending" && <div className="cloudy-chat__message-row cloudy-chat__message-row--cloudy"><CloudyPortrait /><p className="cloudy-chat__message cloudy-chat__message--pending">Cloudy đang trả lời…</p></div>}
+        {status === "pending" && <div className="cloudy-chat__message-row cloudy-chat__message-row--cloudy"><CloudyPortrait /><p className="cloudy-chat__message cloudy-chat__message--pending"><span>Cloudy đang nghĩ</span><span className="resident-assistant-thinking-dots" aria-hidden="true"><i/><i/><i/></span></p></div>}
         {error && <div className="cloudy-chat__error"><p>{error.text}</p><button type="button" onClick={() => { onRetry(); inputRef.current?.focus(); }} disabled={status === "pending"}>Thử lại</button></div>}
       </div>
       <p className="cloudy-chat__status sr-only" role="status" aria-live="polite">{status === "pending" ? "Cloudy đang trả lời." : status === "error" ? "Phản hồi gặp lỗi. Có thể thử lại." : ""}</p>
       <form className="cloudy-chat__composer" onSubmit={handleSubmit}>
-        <p id="cloudy-chat-preview-note">{preview ? "Qwen3 1.7B · Dữ liệu phòng công khai; Cloudy sẽ hỏi xác nhận trước khi tìm." : "Cloudy đang được hoàn thiện. Chưa thể gửi tin nhắn."}</p>
-        {preview && <div className="cloudy-chat__filter-mode" role="group" aria-label="Bạn muốn lọc tiếp hay lọc mới?">
+        <p id="cloudy-chat-preview-note">{preview ? "Hãy nhập khu vực, mức giá hoặc tiện ích bạn quan tâm." : "Cloudy đang được hoàn thiện. Chưa thể gửi tin nhắn."}</p>
+        {preview && hasContext && <div className="cloudy-chat__filter-mode" role="group" aria-label="Bạn muốn lọc tiếp hay lọc mới?">
           <span>Bạn muốn lọc tiếp hay lọc mới?</span>
           <div>
             <button type="button" aria-pressed={filterMode === "continue"} disabled={!hasContext || status === "pending"} onClick={() => onFilterModeChange("continue")}>Lọc tiếp</button>

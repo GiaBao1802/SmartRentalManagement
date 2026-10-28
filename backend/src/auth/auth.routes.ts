@@ -45,6 +45,9 @@ function clearCookie(response: express.Response, name: string, config: RuntimeCo
 }
 
 function safeProfile(account: CurrentAccountRecord | LoginAccountRecord) {
+  if (account.role === "superadmin" && account.ownerId === null && account.residentId === null) {
+    return { platform_role: "superadmin" };
+  }
   if (account.role === "admin" && account.owner && account.ownerId !== null && account.residentId === null && account.ownerId === account.owner.ownerId) {
     return { owner_id: account.owner.ownerId.toString(), display_name: account.owner.displayName };
   }
@@ -123,6 +126,12 @@ export function createAuthRouter(deps: AuthDependencies): express.Router {
 
   router.get("/me", authenticateRequest(deps), (request, response) => {
     response.setHeader("Cache-Control", "no-store");
+    if (request.platformAuth) {
+      const context = request.platformAuth;
+      const account = { account_id: context.accountId.toString(), role: context.role, email: context.account.email, phone: context.account.phone, status: context.account.status };
+      sendJson(response, 200, { data: { account, profile: { platform_role: "superadmin" } } });
+      return;
+    }
     const context = request.auth!;
     const account = {
       account_id: context.accountId.toString(),
@@ -133,7 +142,9 @@ export function createAuthRouter(deps: AuthDependencies): express.Router {
     };
     const profile = context.role === "admin"
       ? { owner_id: context.owner.ownerId.toString(), display_name: context.owner.displayName }
-      : { resident_id: context.resident.residentId.toString(), full_name: context.resident.fullName };
+      : context.role === "resident"
+        ? { resident_id: context.resident.residentId.toString(), full_name: context.resident.fullName }
+        : { platform_role: "superadmin" };
     sendJson(response, 200, { data: { account, profile } });
   });
 

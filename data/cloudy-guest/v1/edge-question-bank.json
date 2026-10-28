@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "language": "vi",
+  "status": "held_out_evaluation_only",
+  "description": "Informal, typo-prone and multi-turn guest messages. Evaluation data only; not runtime training or fine-tuning.",
+  "cases": [
+    {"id":"edge-001","category":"unaccented_mixed","message":"tim tro o thu duc duoi 4tr cho 2 nguoi co wifi","mode":"new","expected_status":"ready","expected_filters":{"price":[{"op":"lt","value":4000000}],"area":[],"location":"thu duc","occupants":2,"amenities":["wifi"]}},
+    {"id":"edge-002","category":"informal_multi_filter","message":"cần trọ Đà Nẵng tầm 20 đến 30 mét vuông, giá 3tr5 đổ lại nha","mode":"new","expected_status":"ready","expected_filters":{"price":[{"op":"lte","value":3500000}],"area":[{"op":"gte","value":20},{"op":"lte","value":30}],"location":"Đà Nẵng","occupants":null,"amenities":[]}},
+    {"id":"edge-003","category":"late_amenities","message":"Ở Biên Hòa 2 người, có máy lạnh, máy giặt với ban công, dưới 4tr nhé","mode":"new","expected_status":"ready","expected_filters":{"price":[{"op":"lt","value":4000000}],"area":[],"location":"Biên Hòa","occupants":2,"amenities":["air_conditioning","balcony","washing_machine"]}},
+    {"id":"edge-004","category":"ambiguous_or","message":"tìm phòng ở Huế có máy lạnh hoặc wifi, dưới 3tr","mode":"new","expected_status":"needs_clarification"},
+    {"id":"edge-005","category":"vague_price","message":"phòng ở Cần Thơ tầm 3tr","mode":"new","expected_status":"needs_clarification"},
+    {"id":"edge-006","category":"unsupported_distance","message":"kiếm trọ gần Đại học Quốc gia, khoảng 3tr5","mode":"new","expected_status":"needs_clarification"},
+    {"id":"edge-007","category":"ambiguous_area","message":"tìm phòng ở Nha Trang tầm 25m2","mode":"new","expected_status":"needs_clarification"},
+    {"id":"edge-008","category":"unaccented_known_faq","message":"coc 2 thang ha? co lay lai dc ko","mode":"new","expected_status":"needs_clarification","expected_route":"safe_faq"},
+    {"id":"edge-009","category":"unaccented_facility_fee","message":"ho boi co mat phi ko, may gio dong cua","mode":"new","expected_status":"needs_clarification","expected_route":"safe_faq"},
+    {"id":"edge-010","category":"unaccented_pet_choice","message":"tim phong cho nuoi meo hoac cho o dong nai","mode":"new","expected_status":"needs_clarification","expected_route":"safe_faq"},
+    {"id":"edge-011","category":"continue_add_filters","message":"them wifi va may lanh nhe!","mode":"continue","context":{"price":[{"op":"lt","value":5000000}],"area":[{"op":"gte","value":20}],"location":"Đồng Nai","occupants":2,"amenities":[]},"expected_status":"ready","expected_filters":{"price":[{"op":"lt","value":5000000}],"area":[{"op":"gte","value":20}],"location":"Đồng Nai","occupants":2,"amenities":["air_conditioning","wifi"]}},
+    {"id":"edge-012","category":"continue_replace_location","message":"đổi qua Bình Dương, giá vẫn như cũ nha","mode":"continue","context":{"price":[{"op":"lte","value":4000000}],"area":[],"location":"Đồng Nai","occupants":1,"amenities":["wifi"]},"expected_status":"ready","expected_filters":{"price":[{"op":"lte","value":4000000}],"area":[],"location":"Bình Dương","occupants":1,"amenities":["wifi"]}},
+    {"id":"edge-013","category":"continue_remove_filter","message":"thôi bỏ giá đi nhé!","mode":"continue","context":{"price":[{"op":"lt","value":4000000}],"area":[],"location":"Huế","occupants":null,"amenities":[]},"expected_status":"ready","expected_filters":{"price":[],"area":[],"location":"Huế","occupants":null,"amenities":[]}},
+    {"id":"edge-014","category":"new_search_reset","message":"Lọc mới: phòng ở Long An cho 1 người, wifi","mode":"new","context":{"price":[{"op":"lt","value":2000000}],"area":[],"location":"Huế","occupants":2,"amenities":["air_conditioning"]},"expected_status":"ready","expected_filters":{"price":[],"area":[],"location":"Long An","occupants":1,"amenities":["wifi"]}},
+    {"id":"edge-015","category":"continue_ambiguous_comparison","message":"rẻ hơn nữa","mode":"continue","context":{"price":[{"op":"lt","value":4000000}],"area":[],"location":"Đồng Nai","occupants":null,"amenities":[]},"expected_status":"needs_clarification"},
+    {"id":"edge-016","category":"unrecognized_condition","message":"tìm phòng ở Vũng Tàu dưới 4tr, ban công hướng đông","mode":"new","expected_status":"needs_clarification"},
+    {"id":"edge-017","category":"negative_amenity","message":"phòng ở Hà Nội dưới 5tr, không cần máy lạnh","mode":"new","expected_status":"needs_clarification"},
+    {"id":"edge-018","category":"multiple_numeric_constraints","message":"tìm ở Vũng Tàu giá trên 2tr nhưng tối đa 4 triệu, diện tích không quá 30m2","mode":"new","expected_status":"ready","expected_filters":{"price":[{"op":"gt","value":2000000},{"op":"lte","value":4000000}],"area":[{"op":"lte","value":30}],"location":"Vũng Tàu","occupants":null,"amenities":[]}}
+  ]
+}

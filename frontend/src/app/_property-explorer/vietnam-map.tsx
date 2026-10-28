@@ -34,7 +34,7 @@ function Region({ feature, stat, selected, reduced, moved, onSelect }: {
     onClick={e => { e.stopPropagation(); if (isSceneClick(e.delta, moved.current)) { setHover(null); onSelect(feature.properties.code); } }}>
     <meshStandardMaterial color={selected ? "#FFB020" : hover ? "#FFD27A" : count === undefined ? "#e5e4de" : count > 5 ? "#0E5A4F" : count ? "#7FB3A8" : "#D9E9E5"} roughness={.78} />
     <Edges threshold={24} color={selected ? "#0A3F38" : hover ? "#0E5A4F" : "#b7beaf"} />
-  </mesh>{hover && <Html position={hover} center style={{ pointerEvents: "none" }}><div className="explore-tooltip"><strong>{feature.properties.name}</strong><span>{stat ? `${stat.public_properties} cơ sở có tin · ${stat.public_rooms} phòng công khai` : "Chưa tải được số liệu tỉnh"}</span><small>Bấm để khám phá phòng</small></div></Html>}</group>;
+  </mesh>{hover && <Html position={hover} center style={{ pointerEvents: "none" }}><div className="explore-tooltip"><strong>{feature.properties.name}</strong><span>{stat ? `${stat.public_properties} khu trọ có tin · ${stat.public_rooms} phòng công khai` : "Chưa tải được thông tin khu vực"}</span><small>Chọn để xem phòng</small></div></Html>}</group>;
 }
 function Scene({ geo, stats, selected, onSelect, command, insets, reduced, moved }: MapProps & { moved: { current: boolean } }) {
   const controls = useRef<CameraControls>(null);

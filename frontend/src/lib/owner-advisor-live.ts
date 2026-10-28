@@ -4,9 +4,10 @@ import type {Property} from './api/propertyApi';
 import type {Room} from './api/roomApi';
 import type {AdminServiceBooking} from './api/propertyServiceApi';
 import type {Resident} from './api/residentApi';
+import type {ParkingAssignment} from './api/parkingApi';
 import {invoiceDisplayStatus,invoiceDueStateLabel} from './invoice-status';
 const money=(value:string|number)=>new Intl.NumberFormat('vi-VN').format(Number(value))+' đ';
-const tasks={unpaid:'Hóa đơn chưa thanh toán',utilities:'Giải thích tiền điện nước',missing:'Thiếu dữ liệu lập hóa đơn',overview:'Việc cần kiểm tra trong kỳ',requests:'Yêu cầu tiện ích và khiếu nại',residents:'Thống kê cư dân'};
+const tasks={unpaid:'Hóa đơn chưa thanh toán',utilities:'Giải thích tiền điện nước',missing:'Thiếu dữ liệu lập hóa đơn',overview:'Việc cần kiểm tra trong kỳ',requests:'Yêu cầu tiện ích và khiếu nại',residents:'Thống kê cư dân',available_rooms:'Danh sách phòng còn trống',vehicle_counts:'Thống kê xe đang gửi',electricity_ranking:'Xếp hạng phòng dùng điện',frequent_requests:'Phòng có nhiều yêu cầu / sự cố'};
 type Complaint={complaint_id:string;room_id:string|null;room_code:string|null;property_name:string;category:string;content:string;status:string;created_at:string};
 export function createLiveAdvisor(cookie:string,fetchImpl:typeof fetch=fetch,signal?:AbortSignal){
  const base=process.env.OWNER_ADVISOR_API_BASE||process.env.NEXT_PUBLIC_API_BASE_URL||'http://localhost:4000/api/v1';
@@ -29,8 +30,8 @@ export function createLiveAdvisor(cookie:string,fetchImpl:typeof fetch=fetch,sig
  }
  async function inventory(){
   const properties=await pages<Property>('/properties');
-  const rooms:{id:string;key:string}[]=[];
-  for(const p of properties){for(const r of await pages<Room>(`/properties/${p.property_id}/rooms`))rooms.push({id:r.room_id,key:`${p.name} / ${r.room_code} [${r.room_id}]`});}
+  const rooms:{id:string;key:string;propertyId:string;propertyName:string;roomCode:string;status:Room['status'];areaM2:string;rent:string}[]=[];
+  for(const p of properties){for(const r of await pages<Room>(`/properties/${p.property_id}/rooms`))rooms.push({id:r.room_id,key:`${p.name} / ${r.room_code} [${r.room_id}]`,propertyId:p.property_id,propertyName:p.name,roomCode:r.room_code,status:r.status,areaM2:r.area_m2,rent:r.default_rent});}
   return {properties,rooms};
  }
  const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
@@ -39,15 +40,49 @@ export function createLiveAdvisor(cookie:string,fetchImpl:typeof fetch=fetch,sig
    const {rooms,properties}=await inventory();const invoices=await pages<InvoiceResource>('/invoices');
    const complaints=(await get<{data:Complaint[]}>('/room-requests')).data;
    const bookingMonths:string[]=[];for(const p of properties){const data=(await get<{data:AdminServiceBooking[]}>(`/properties/${p.property_id}/service-bookings?status=PENDING`)).data;bookingMonths.push(...data.map(b=>b.service_date.slice(0,7)));}
-   return {source:'database',synthetic:false,asOf:today(),tasks,properties:properties.map(({property_id,name,province})=>({property_id,name,province})),rooms:rooms.map(r=>r.key),periods:[...new Set([today().slice(0,7),...invoices.map(i=>i.period_end.slice(0,7)),...complaints.map(c=>c.created_at.slice(0,7)),...bookingMonths])].sort().reverse()};
+   return {source:'database',synthetic:false,asOf:today(),tasks,properties:properties.map(({property_id,name,province})=>({property_id,name,province})),rooms:rooms.map(r=>r.key),room_targets:rooms.map(({id,propertyId,propertyName,roomCode})=>({room_id:id,property_id:propertyId,property_name:propertyName,room_code:roomCode})),periods:[...new Set([today().slice(0,7),...invoices.map(i=>i.period_end.slice(0,7)),...complaints.map(c=>c.created_at.slice(0,7)),...bookingMonths])].sort().reverse()};
   },
   async answer(input:{task:string;period:string;room:string}){
-   if(!Object.hasOwn(tasks,input.task)||(input.task!=='residents'&&!/^\d{4}-(0[1-9]|1[0-2])$/.test(input.period))||typeof input.room!=='string'||input.room.length>500)throw new AccessError(400,'Phạm vi tra cứu không hợp lệ.');
+   if(!Object.hasOwn(tasks,input.task)||(!['residents','available_rooms','vehicle_counts'].includes(input.task)&&!/^\d{4}-(0[1-9]|1[0-2])$/.test(input.period))||typeof input.room!=='string'||input.room.length>500)throw new AccessError(400,'Phạm vi tra cứu không hợp lệ.');
    const {rooms,properties}=await inventory();const selected=rooms.find(r=>r.key===input.room);
    if(input.room&&!selected)throw new AccessError(404,'Không tìm thấy phòng trong tài khoản.');
    const cards:{id:string;room:string;property:string;status:string;total:number|null;details:string[];href?:string;amountLabel?:string}[]=[];
    let summary='';
-   if(input.task==='residents'){
+   if(input.task==='available_rooms'){
+    const available=rooms.filter(r=>r.status==='available'&&(!selected||r.id===selected.id));
+    for(const r of available)cards.push({id:r.id,room:r.roomCode,property:r.propertyName,status:'Còn trống',total:null,amountLabel:'Phòng có thể cho thuê',details:[`Diện tích: ${r.areaM2} m².`,`Giá thuê mặc định: ${money(r.rent)}/tháng.`],href:`/admin/properties/${r.propertyId}/rooms`});
+    summary=selected?`${selected.key} ${available.length?'đang còn trống':'hiện không còn trống'}. Trạng thái được lấy từ dữ liệu phòng hiện tại.`:`Có ${available.length} phòng đang còn trống trên ${properties.length} khu trọ thuộc tài khoản. Danh sách chỉ gồm phòng có trạng thái hiện tại là còn trống; giá thuê là giá mặc định của phòng.`;
+   }else if(input.task==='vehicle_counts'){
+    const counts=new Map<string,{room:typeof rooms[number];vehicles:Set<string>}>();
+    for(const p of properties){const response=await get<{data:ParkingAssignment[]}>(`/properties/${p.property_id}/parking-assignments`);
+     for(const assignment of response.data){if(assignment.status!=='active'||(selected&&assignment.room_id!==selected.id))continue;
+      const room=rooms.find(r=>r.id===assignment.room_id);if(!room)continue;
+      const entry=counts.get(room.id)||{room,vehicles:new Set<string>()};entry.vehicles.add(assignment.vehicle_id);counts.set(room.id,entry);
+     }
+    }
+    const ranked=[...counts.values()].sort((a,b)=>b.vehicles.size-a.vehicles.size||a.room.propertyName.localeCompare(b.room.propertyName)||a.room.roomCode.localeCompare(b.room.roomCode));
+    for(const entry of ranked)cards.push({id:entry.room.id,room:entry.room.roomCode,property:entry.room.propertyName,status:`${entry.vehicles.size} xe đang được phân công`,total:null,amountLabel:'Xe đang gửi',details:['Chỉ tính xe có phân công chỗ giữ xe đang hoạt động.'] ,href:`/admin/properties/${entry.room.propertyId}/parking`});
+    summary=selected?`${selected.key} có ${counts.get(selected.id)?.vehicles.size||0} xe được phân công chỗ giữ xe đang hoạt động.`:`Đã xếp ${ranked.length} phòng theo số xe có phân công chỗ giữ xe đang hoạt động. Phòng không có phân công hiện hành không xuất hiện.`;
+   }else if(input.task==='electricity_ranking'){
+    const invoices=await pages<InvoiceResource>('/invoices');const periodInvoices=invoices.filter(i=>i.period_end.slice(0,7)===input.period&&i.finalized_at&&i.contract?.room_id&&(!selected||i.contract.room_id===selected.id));
+    const usage=new Map<string,{room:typeof rooms[number];kwh:number;periods:number}>();
+    for(const invoice of periodInvoices){const detail=(await get<{data:InvoiceDetailResponse}>(`/invoices/${invoice.invoice_id}`)).data;
+     const previous=detail.electricity_previous_kwh,current=detail.electricity_current_kwh;if(previous==null||current==null||previous.trim()===''||current.trim()==='')continue;
+     const beginning=Number(previous),ending=Number(current);if(!Number.isFinite(beginning)||!Number.isFinite(ending)||ending<beginning)continue;
+     const room=rooms.find(r=>r.id===invoice.contract!.room_id);if(!room)continue;const entry=usage.get(room.id)||{room,kwh:0,periods:0};entry.kwh+=ending-beginning;entry.periods++;usage.set(room.id,entry);
+    }
+    const ranked=[...usage.values()].sort((a,b)=>b.kwh-a.kwh||a.room.propertyName.localeCompare(b.room.propertyName)||a.room.roomCode.localeCompare(b.room.roomCode));
+    for(const entry of ranked)cards.push({id:entry.room.id,room:entry.room.roomCode,property:entry.room.propertyName,status:`${entry.kwh.toLocaleString('vi-VN')} kWh`,total:null,amountLabel:'Điện năng đã ghi nhận',details:[`Dựa trên ${entry.periods} hóa đơn đã chốt trong tháng ${input.period.slice(5)}/${input.period.slice(0,4)}.`],href:'/admin/invoices'});
+    summary=ranked.length?`Xếp hạng theo tổng kWh đã ghi nhận trong các hóa đơn đã chốt, kỳ kết thúc vào tháng ${input.period.slice(5)}/${input.period.slice(0,4)}. Có ${ranked.length} phòng đủ số liệu hợp lệ; bỏ qua bản nháp và số đo thiếu/không hợp lệ.`:`Không có số điện đã chốt hợp lệ trong kỳ ${input.period} và phạm vi này để xếp hạng.`;
+   }else if(input.task==='frequent_requests'){
+    const complaints=(await get<{data:Complaint[]}>('/room-requests')).data;const counts=new Map<string,{roomCode:string;property:string;count:number;open:number}>();
+    for(const complaint of complaints.filter(r=>r.created_at.slice(0,7)===input.period&&(!selected||r.room_id===selected.id)&&r.room_id)){
+     const room=rooms.find(item=>item.id===complaint.room_id);if(!room)continue;const entry=counts.get(room.id)||{roomCode:room.roomCode,property:room.propertyName,count:0,open:0};entry.count++;if(['pending','in_progress'].includes(complaint.status))entry.open++;counts.set(room.id,entry);
+    }
+    const ranked=[...counts.entries()].sort((a,b)=>b[1].count-a[1].count||a[1].property.localeCompare(b[1].property)||a[1].roomCode.localeCompare(b[1].roomCode));
+    for(const [id,entry] of ranked)cards.push({id,room:entry.roomCode,property:entry.property,status:`${entry.count} yêu cầu / khiếu nại`,total:null,amountLabel:'Theo tháng gửi',details:[`${entry.open} yêu cầu đang chờ hoặc đang xử lý.`],href:'/admin/requests'});
+    summary=`Xếp theo khiếu nại/yêu cầu phòng gửi trong tháng ${input.period.slice(5)}/${input.period.slice(0,4)}. Nguồn danh sách hiện trả tối đa 100 yêu cầu gần nhất; ${complaints.length===100?'kết quả có thể chưa bao quát toàn bộ lịch sử.':'kết quả chỉ phản ánh dữ liệu API hiện có.'}`;
+   }else if(input.task==='residents'){
     const profiles=await pages<Resident>('/residents');
     const scoped=selected?profiles.filter(r=>r.room_residents?.some(o=>o.status==='active'&&o.room_id===selected.id)):profiles;
     const living=scoped.filter(r=>r.residence_status==='living');
@@ -55,7 +90,9 @@ export function createLiveAdvisor(cookie:string,fetchImpl:typeof fetch=fetch,sig
     const registrationPending=living.filter(r=>r.residence_registration_status==='not_completed').length;
     const temporaryResidents=living.filter(r=>r.residence_registration_status==='temporary_resident').length;
     const temporaryAbsences=living.filter(r=>r.residence_registration_status==='temporary_absence').length;
-    summary=selected?`${selected.key}: ${living.length} cư dân đang ở; ${registrationPending} người chưa hoàn tất đăng ký tạm trú/tạm vắng.`:`Toàn tài khoản: ${living.length} cư dân đang ở, ${left} hồ sơ đã rời đi; trong số đang ở có ${registrationPending} người chưa hoàn tất đăng ký, ${temporaryResidents} người đã đăng ký tạm trú và ${temporaryAbsences} người đăng ký tạm vắng.`;
+    const details=selected?`${living.length} cư dân đang ở; ${registrationPending} người chưa hoàn tất đăng ký tạm trú/tạm vắng.`:`${living.length} cư dân đang ở, ${left} hồ sơ đã rời đi; trong số đang ở có ${registrationPending} người chưa hoàn tất đăng ký, ${temporaryResidents} người đã đăng ký tạm trú và ${temporaryAbsences} người đăng ký tạm vắng.`;
+    summary=`${selected?`${selected.key}: `:'Toàn tài khoản: '}${details} Cloudy chỉ tổng hợp số lượng trong chat; mở Hồ sơ cư dân để xem từng người.`;
+    cards.push({id:'resident-summary',room:selected?.roomCode||'Toàn khu',property:selected?.propertyName||`${properties.length} khu trọ`,status:'Tổng hợp cư trú',total:null,amountLabel:'Thống kê',details:[details,'Danh tính từng cư dân không hiển thị trong hội thoại.'],href:'/admin/tenants'});
    }else if(input.task==='requests'){
     const complaints=(await get<{data:Complaint[]}>('/room-requests')).data;
     for(const r of complaints.filter(r=>r.created_at.slice(0,7)===input.period&&(!selected||r.room_id===selected.id)))cards.push({id:`complaint-${r.complaint_id}`,room:r.room_code||'Theo khu trọ',property:r.property_name,status:({pending:'Chờ xử lý',in_progress:'Đang xử lý',resolved:'Đã giải quyết',rejected:'Đã từ chối'} as Record<string,string>)[r.status]||r.status,total:null,amountLabel:'Yêu cầu / khiếu nại',details:[r.category,r.content],href:'/admin/requests'});

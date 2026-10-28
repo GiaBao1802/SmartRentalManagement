@@ -1,5 +1,6 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
 import type { ResidentCreate } from "./resident.validation.js";
+import { illustrativeRoomImageKeys } from "../room-images/illustrative-room-image-keys.js";
 
 export type ResidentFilters = { page: number; page_size: number; residenceStatus?: string; registrationStatus?: string; propertyId?: bigint; roomId?: bigint };
 const activeOn = (date: Date): Prisma.ContractWhereInput => ({ status: "active", startDate: { lte: date }, endDate: { gte: date } });
@@ -146,7 +147,7 @@ export class PrismaResidentOccupancyRepository {
         roomResidents: {
           where: { ownerId }, orderBy: [{ startedAt: "desc" }, { occupancyId: "desc" }],
           include: {
-            room: { include: { property: { select: { propertyId: true, name: true, province: true, address: true } } } },
+            room: { include: { property: { select: { propertyId: true, name: true, province: true, address: true } }, images: { orderBy: [{ sortOrder: "asc" }, { roomImageId: "asc" }], select: { roomImageId: true, storageKey: true, isCover: true, sortOrder: true } } } },
             contract: { select: { contractId: true, contractNo: true, representativeResidentId: true, startDate: true, endDate: true, status: true, residentCapacity: true } },
           },
         },
@@ -157,6 +158,20 @@ export class PrismaResidentOccupancyRepository {
       },
     });
     if (!resident) return null;
-    return { resident, occupancies: resident.roomResidents, representativeContracts: resident.representativeContracts };
+    const occupancies = resident.roomResidents.map((occupancy) => {
+      const { images, ...room } = occupancy.room;
+      const toSafeImage = (image: typeof images[number]) => ({
+        roomImageId: image.roomImageId,
+        isCover: image.isCover,
+        sortOrder: image.sortOrder,
+        isIllustrative: illustrativeRoomImageKeys.has(image.storageKey),
+      });
+      const cover = images.find((image) => image.isCover) ?? images[0];
+      return { ...occupancy, room: { ...room, images: images.map(toSafeImage), coverImage: cover ? toSafeImage(cover) : null } };
+    });
+    // The included Resident carries a duplicate occupancy relation. Reuse the sanitized rows there too,
+    // otherwise the selected image storageKey fields could escape through resident.roomResidents.
+    const safeResident = { ...resident, roomResidents: occupancies };
+    return { resident: safeResident, occupancies, representativeContracts: resident.representativeContracts };
   }
 }

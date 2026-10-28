@@ -30,7 +30,7 @@ test("Service workspace gives direct access to all approved sections with busine
     ["utilities", "Điện & nước"],
     ["fixed", "Tiện ích cố định"],
     ["flexible", "Tiện ích phát sinh"],
-    ["parking", "Parking"],
+    ["parking", "Gửi xe"],
   ]);
   assert.deepEqual(SERVICE_WORKSPACE_SECTIONS.map(({ href }) => href), [
     "/admin/services/utilities",

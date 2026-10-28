@@ -27,6 +27,10 @@ const resident: LoginAccountRecord = {
   passwordHash: passwordHash(password, "bbccddeeff00112233445566778899aa"), status: "active", owner: null,
   resident: { residentId: 2002n, ownerId: 9001n, fullName: "Cư dân thử nghiệm" },
 };
+const superadmin: LoginAccountRecord = {
+  accountId: 1006n, ownerId: null, residentId: null, role: "superadmin", email: "platform@example.test", phone: null,
+  passwordHash: passwordHash(password, "ccddee112233445566778899aabbccdd"), status: "active", owner: null, resident: null,
+};
 const locked: LoginAccountRecord = {
   ...admin, accountId: 1003n, email: "locked@example.test", status: "locked",
 };
@@ -34,7 +38,7 @@ const duplicatePhone: LoginAccountRecord[] = [
   { ...resident, accountId: 1004n, residentId: 2004n, email: "duplicate-a@example.test", phone: "+84999999999", resident: { residentId: 2004n, ownerId: 9001n, fullName: "A" } },
   { ...resident, accountId: 1005n, residentId: 2005n, email: "duplicate-b@example.test", phone: "+84999999999", resident: { residentId: 2005n, ownerId: 9001n, fullName: "B" } },
 ];
-const records = [admin, resident, locked, ...duplicatePhone];
+const records = [admin, resident, superadmin, locked, ...duplicatePhone];
 
 class MockAuthRepository implements AuthRepository {
   async findCandidates(login: string): Promise<LoginAccountRecord[]> {
@@ -131,6 +135,19 @@ test("login valid Resident returns profile reference and never client Owner auth
   assert.equal(result.response.status, 200);
   assert.equal(result.body.data.account.role, "resident");
   assert.deepEqual(result.body.data.profile, { resident_id: "2002", full_name: "Cư dân thử nghiệm" });
+});
+
+test("Superadmin has a separate profile and is denied Admin and Resident routes", async () => {
+  const authenticated = await login("platform@example.test");
+  assert.equal(authenticated.response.status, 200);
+  assert.equal(authenticated.body.data.account.role, "superadmin");
+  assert.deepEqual(authenticated.body.data.profile, { platform_role: "superadmin" });
+  const cookie = { Cookie: authenticated.sessionCookie! };
+  assert.equal((await http("/api/v1/test/admin", { headers: cookie })).response.status, 403);
+  assert.equal((await http("/api/v1/test/resident", { headers: cookie })).response.status, 403);
+  const profile = await http("/api/v1/auth/me", { headers: cookie });
+  assert.equal(profile.response.status, 200);
+  assert.deepEqual(profile.body.data.profile, { platform_role: "superadmin" });
 });
 
 test("invalid credentials and unknown login have the same generic response", async () => {

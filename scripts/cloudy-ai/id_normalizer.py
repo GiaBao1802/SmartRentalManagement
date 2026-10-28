@@ -29,7 +29,7 @@ def infer(question):
  return json.loads(data['message']['content']),round(time.perf_counter()-start,3)
 
 def normalize(question,raw):
- filters=dict(price=[],area=[],location=None,occupants=None,amenities=[]);issues=[];covered=[False]*len(question)
+ filters=dict(price=[],area=[],location=None,occupants=None,amenities=[]);issues=[];clarification_hints=[];covered=[False]*len(question)
  if not isinstance(raw,dict) or set(raw)!={'intent','spans'} or raw['intent'] not in ['search_rooms','unknown'] or not isinstance(raw['spans'],list) or len(raw['spans'])>12:
   return {'status':'needs_clarification','questions':['Cấu trúc trích xuất không hợp lệ.'],'draftFilters':filters}
  if raw['intent']!='search_rooms':issues.append('Chưa xác định yêu cầu tìm phòng.')
@@ -44,6 +44,7 @@ def normalize(question,raw):
    if field in ['price','area']:
     t=re.sub(r'^khoang\s+(?=dien tich\s+tu\b)','',t)
     t=re.sub(r'^(?:tien thue|gia thue|gia|ngan sach|budget|dien tich|rong)\s+','',t)
+    if re.match(r'^tam\s+\d.*\sden\s',t):t=re.sub(r'^tam\s+','tu ',t,count=1)
     t=re.sub(r'^dung vuot\b','khong qua',t)
     t=re.sub(r'\s*(?:/thang|moi thang)$','',t)
     if field=='price' and normalized(q) in ['khong gioi han tien thue','gia bao nhieu cung duoc']:
@@ -55,19 +56,25 @@ def normalize(question,raw):
      filters[field]+=[{'op':'gte','value':a},{'op':'lte','value':b}]
     else:
      tokens=list(SINGLE.finditer(t))
-     if len(tokens)!=1 or tokens[0].end()!=len(t):raise ValueError('Điều kiện thiếu hoặc chưa hỗ trợ')
+     suffix=t[tokens[0].end():].strip() if len(tokens)==1 else ''
+     if len(tokens)!=1 or (tokens[0].end()!=len(t) and suffix!='do lai'):raise ValueError('Điều kiện thiếu hoặc chưa hỗ trợ')
      token=tokens[0];prefix=t[:token.start()];op=OP_PATTERN.fullmatch(prefix)
      if op:operator=OPS[op[1]]
+     elif field=='price' and suffix=='do lai':operator='lte'
      elif not prefix.strip() and field=='price' and re.match(r'^(?:ngan sach|budget)\b',normalized(q)):operator='lte'
+     elif not prefix.strip() and field=='price':operator=None
      else:raise ValueError('Chưa rõ phép so sánh')
      k,v=numeric_value(token[0])
      if k!=field:raise ValueError('Đơn vị không khớp trường')
-     filters[field].append({'op':operator,'value':v})
+     if operator is None:
+      issues.append('Chưa rõ phép so sánh')
+      clarification_hints.append({'type':'price_operator','quote':token[0],'value':v})
+     else:filters[field].append({'op':operator,'value':v})
    elif field=='location':
     if filters['location'] is not None or not re.fullmatch(r'[\w\s.]+',q) or re.search(r'\b(?:hoac|va|khong|tru|gan|duoi|tren)\b',t):raise ValueError('Cần một địa điểm rõ ràng')
     if re.search(r'\d\s*(?:trieu|tr|k|dong|vnd|m2|met vuong|nguoi)\b',t):raise ValueError('Địa điểm không được là giá, diện tích hoặc số người')
-    # Require a location marker immediately before the quoted name.
-    marker=re.search(r'\b(?:ở|o|tại|tai|khu vực|khu vuc)\s*$',question[:m.start()],re.IGNORECASE)
+    # Require a location marker or room-search phrase immediately before the name.
+    marker=re.search(r'\b(?:ở|o|tại|tai|khu vực|khu vuc)\s*$|\b(?:muốn\s+thuê|muon\s+thue|tìm|tim|thuê|thue|cần|can)\s+(?:phòng|trọ|tro)\s*$',question[:m.start()],re.IGNORECASE)
     if not marker:raise ValueError('Thiếu dấu hiệu địa điểm')
     covered[marker.start():marker.end()]=[True]*(marker.end()-marker.start())
     filters['location']=q
@@ -96,7 +103,7 @@ def normalize(question,raw):
  rest=normalized(raw_rest)
  rest=re.sub(r'\bkhong\s*\?\s*$',' ',rest)
  # Only conversational glue may remain. Operators, numbers and unknown content block.
- allowed=set('minh toi em e anh chi ban tim kiem thue phong tro can muon co cho giup nho voi va o nha nhe a nao gi duoc xin dang'.split())
+ allowed=set('minh toi em e anh chi ban tim kiem thue phong tro can muon co cho giup nho voi va nhung o nha nhe a nao gi duoc xin dang mot moi thang xem tat ca dang con trong nua'.split())
  unknown=[w for w in re.findall(r'\w+',rest) if w not in allowed]
  if unknown:issues.append('Chưa xử lý hết câu: '+' '.join(dict.fromkeys(unknown)))
  # Keep exact unsupported snippets for a useful guest-facing clarification.
@@ -118,7 +125,7 @@ def normalize(question,raw):
     if lo['value']>hi['value'] or (lo['value']==hi['value'] and (lo['op']=='gt' or hi['op']=='lt')):issues.append('Giới hạn mâu thuẫn')
  if filters['price'] and any(normalized(s.get('quote','')) in ['khong gioi han tien thue','gia bao nhieu cung duoc'] for s in raw['spans']):issues.append('Vừa giới hạn vừa không giới hạn giá')
  filters['amenities']=sorted(set(filters['amenities']))
- return {'status':'needs_clarification' if issues else 'ready','questions':list(dict.fromkeys(issues)),'unrecognizedTerms':unrecognized,('draftFilters' if issues else 'filters'):filters}
+ return {'status':'needs_clarification' if issues else 'ready','questions':list(dict.fromkeys(issues)),'clarificationHints':clarification_hints,'unrecognizedTerms':unrecognized,('draftFilters' if issues else 'filters'):filters}
 
 if __name__=='__main__':
  sys.stdout.reconfigure(encoding='utf-8')

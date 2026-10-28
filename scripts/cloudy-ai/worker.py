@@ -4,6 +4,7 @@ import re
 import id_v3
 from id_normalizer import normalized
 from conversation import understand,describe,valid_context
+from guest_question_router import route as route_guest_question
 from room_catalog_lab import load_catalog,retrieve
 
 def clarification_text(message='',parsed=None):
@@ -12,7 +13,13 @@ def clarification_text(message='',parsed=None):
  if re.search(r'\b(?:re|gia re|re hon|gia mem)\b',request):
   return 'Mình hiểu bạn muốn tìm phòng giá rẻ nhưng chưa rõ mức giá tối đa. Bạn cho mình ngân sách tối đa mỗi tháng nhé, ví dụ dưới 4 triệu; mình sẽ chờ bạn cập nhật rồi mới tìm.'
  if re.search(r'\b(?:gan|cach)\b',request) and re.search(r'\b(?:truong|dai hoc|cong ty|cho lam|noi lam viec)\b',request):
-  return 'Mình chưa lọc được khoảng cách đến trường hoặc nơi làm việc từ dữ liệu tin đăng. Bạn có thể cho mình tỉnh/thành hoặc khu vực có trong địa chỉ phòng; mình sẽ chờ bạn cập nhật rồi mới tìm.'
+  return 'Mình hiểu bạn muốn tìm phòng gần trường hoặc nơi làm việc, nhưng dữ liệu tin đăng hiện chưa hỗ trợ lọc khoảng cách. Bạn cho mình tỉnh/thành hoặc khu vực ghi trong địa chỉ phòng nhé; mình sẽ chờ bạn cập nhật rồi mới tìm.'
+ hints=(parsed or {}).get('clarificationHints',[])
+ price_hint=next((hint for hint in hints if isinstance(hint,dict) and hint.get('type')=='price_operator' and type(hint.get('value')) in [int,float] and hint['value']>0),None)
+ if price_hint:
+  amount=f"{price_hint['value']:,.0f}".replace(',','.')
+  quote=re.sub(r'\s+',' ',str(price_hint.get('quote',''))).strip()[:40]
+  return f'Mình hiểu “{quote}” là {amount} đồng tiền thuê mỗi tháng. Bạn muốn tìm phòng tối đa {amount}đ/tháng hay phòng có giá đúng {amount}đ/tháng? Mình sẽ chờ bạn làm rõ rồi mới tìm phòng.'
  if terms:
   term=re.sub(r'\s+',' ',str(terms[0])).strip()[:80]
   if term:return f'Mình chưa hiểu cụm “{term}” trong yêu cầu. Bạn vui lòng giải thích hoặc cập nhật cụm đó; mình sẽ chờ và chưa tiếp tục tìm phòng.'
@@ -48,13 +55,22 @@ def handle_request(body,extract=id_v3.extract):
  if not set(body)<= {'message','mode','context','action'} or body.get('action','prepare')!='prepare':raise ValueError('Invalid request')
  message=body.get('message');mode=body.get('mode','new')
  if not isinstance(message,str) or not 1<=len(message.strip())<=500 or mode not in ['new','continue']:raise ValueError('Invalid input')
- parsed=understand(message.strip(),mode,body.get('context'),extract)
+ message=message.strip()
+ # Handle known renter questions with a safe, data-grounded response before Qwen.
+ # The router returns None for ordinary supported filter requests.
+ renter_reply=route_guest_question(message)
+ if renter_reply:
+  return {'text':renter_reply,'source':'public_database','model':'qwen3:1.7b','status':'needs_clarification','context':None}
+ parsed=understand(message,mode,body.get('context'),extract)
  filters=parsed.get('filters')
  if parsed.get('status')!='ready' or not valid_context(filters):
+  renter_reply=route_guest_question(message)
+  if renter_reply:
+   return {'text':renter_reply,'source':'public_database','model':'qwen3:1.7b','status':'needs_clarification','context':None}
   return {'text':clarification_text(message,parsed),'source':'public_database','model':'qwen3:1.7b','status':'needs_clarification','context':None}
   # No catalog loading or retrieval before the guest explicitly confirms.
  if 'unspecified_amenity' in filters['amenities']:
-  return {'text':'Mình chưa hiểu từ “tiện ích” ở đây là tiện ích nào. Bạn vui lòng cập nhật cụ thể; mình sẽ chờ bạn làm rõ và chưa tiếp tục tìm phòng.','source':'public_database','model':'qwen3:1.7b','status':'needs_clarification','context':None}
+  return {'text':'Mình hiểu bạn muốn biết về tiện ích, nhưng chưa rõ bạn hỏi tiện ích trong phòng (như máy lạnh, Wi-Fi) hay tiện ích chung của khu trọ (như hồ bơi, sân thể thao). Bạn chọn loại hoặc tên tiện ích cụ thể nhé; mình chưa tìm phòng khi điều kiện còn chưa rõ.','source':'public_database','model':'qwen3:1.7b','status':'needs_clarification','context':None}
  if not any([filters['price'],filters['area'],filters['location'],filters['occupants'],filters['amenities']]):
   summary='Bạn đang muốn xem tất cả phòng đang công khai, chưa lọc theo khu vực, giá, diện tích, số người hay tiện ích.'
   next_step='Bạn muốn thêm điều kiện trước hay xem tất cả? Chọn “Sửa yêu cầu” để thu hẹp, hoặc “Đúng rồi, tìm phòng” để xem toàn bộ.'

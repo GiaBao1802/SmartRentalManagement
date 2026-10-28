@@ -1,0 +1,8 @@
+# Reference versions used for the local CPU preparation environment.
+torch==2.15.0+cpu
+transformers==4.57.6
+peft==0.21.2
+accelerate==1.15.0
+safetensors==0.8.0
+psutil==7.2.2
+bitsandbytes==0.50.0

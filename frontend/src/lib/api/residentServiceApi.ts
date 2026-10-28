@@ -19,7 +19,15 @@ export type ResidentService = {
 export type ResidentServiceProperty = {
   property_id: string;
   property_name: string;
+  facilities: ResidentPropertyFacility[];
   services: ResidentService[];
+};
+
+export type ResidentPropertyFacility = {
+  facility_id: string;
+  name: string;
+  description: string | null;
+  location: string | null;
 };
 
 export type ResidentServiceSlot = { start_time: string; end_time: string; remaining_capacity: number };
@@ -56,8 +64,8 @@ export type ResidentServiceBooking = {
 };
 
 export const residentServiceApi = {
-  list() {
-    return apiRequest<ResidentServiceProperty[]>("/me/services");
+  list(options?: RequestInit) {
+    return apiRequest<ResidentServiceProperty[]>("/me/services", options);
   },
   availability(serviceId: string, date: string) {
     return apiRequest<ResidentServiceAvailability>(`/me/services/${encodeURIComponent(serviceId)}/availability?date=${encodeURIComponent(date)}`);

@@ -1,6 +1,68 @@
 # Document catalog
 
-[Marketplace amenities V1.16 implementation report](07_modules/public-marketplace/MARKETPLACE_AMENITIES_V116_IMPLEMENTATION_REPORT.md) — CURRENT on Neon shared-dev `production`; applied after verified backup and clone rehearsal. Public API list/filter and live Qwen confirmation pass. Existing Room amenities remain empty pending Owner confirmation; local `Goctro_dev_v18` remains V1.15.
+## Fine-tune Qwen3 cục bộ cho Cloudy — 2026-10-29
+
+[Qwen3 1.7B local fine-tuning](11_project-reports/CLOUDY_QWEN3_FINETUNE_PREPARATION_20261029.md) — TRAINED, NOT PROMOTED: one CPU QLoRA NF4 epoch on 84 synthetic examples; 36 untouched holdouts improved on teacher-forced token accuracy (48.5%→65.2%), but exact matches were 0/36 and free-generation smoke 0/3 for both base and adapter. Adapter misroutes a Resident invoice question and repeats Owner JSON keys. Local artifact checksum recorded; runtime, database, Ollama and production unchanged.
+
+## Báo cáo vận hành chủ trọ — 2026-10-29
+
+[Owner operations report implementation](11_project-reports/OWNER_OPERATIONS_REPORT_IMPLEMENTATION_20261029.md) — CURRENT IMPLEMENTATION: Owner-scoped read-only API and responsive `/admin/reports` dashboard for occupancy, registration, invoices, finalized utility consumption, vehicles, requests, and 12-month rent billing/paid-invoice aggregates. It explicitly does not infer net profit without an expense ledger. No schema or business-data writes. Backend tests 4/4, frontend tests 79/79, both typechecks and full production build pass; authenticated browser visual review remains.
+
+## Owner Cloudy insight demo data — 2026-10-29
+
+[Owner 6 Cloudy insight fixtures](07_modules/invoice-zalo/OWNER6_CLOUDY_INSIGHTS_DEMO_DATA_20261029.md) — APPLIED to Neon shared-dev `production`: three new synthetic residents/contracts, varied September meter usage and itemized invoices with utility tariff snapshots, five vehicle assignments, and 12 mock resident requests with history. Backup snapshot is available through 2026-11-05. No schema/API change; fixtures stay private and are not for collection. See the guarded [seed script](../backend/scripts/seed-owner6-cloudy-insights.ts).
+
+## Resident room photo display — 2026-10-29
+
+[Resident room photo display fix](07_modules/resident-occupancy/RESIDENT_ROOM_PHOTO_DISPLAY_FIX_20261029.md) — CURRENT: Resident occupancy cards and the top hero render linked room photos; the hero has an ordered, accessible carousel and a smaller decorative backdrop. It uses the same gallery order and cover as Marketplace. Illustrative photos retain their label and the Resident-scoped API never returns storage keys. No database writes; binary demo assets remain local to the current development machine. Resident 49/49 and backend typecheck pass. Latest full frontend typecheck reports unrelated errors in `frontend/src/lib/owner-advisor-live.ts`; the production build is blocked by another Next process using `.next`. Authenticated visual check is pending.
+
+## Resident amenities display correction — 2026-10-29
+
+[Resident amenity display and booking implementation](07_modules/service/RESIDENT_PROPERTY_FACILITY_DISPLAY_FIX_20261029.md) — CURRENT: `/me/services` returns active shared Facilities separately from Owner-configured bookable services. Zero-priced Flexible BOOKING offerings reserve capacity without charge after approval; positive-priced incidental services create a charge only after approval. See the applied data follow-up below.
+
+[Shared Resident amenity demo fixture](07_modules/service/RESIDENT_AMENITY_DEMO_FIXTURE_20261029.md) — CURRENT DEMO DATA: all 11 synthetic Properties on Neon shared-dev `production` have varied, clearly labeled pool/soccer/tennis/haircut/gardening schedules. All 31 added services are currently free and require Owner approval; old sample prices remain only in append-only history. Added 16 Facilities; 70 Facilities and 33 active Flexible Services now exist. Backup branch ready through 2026-11-05; no schema change. Authenticated Resident/Owner UI review and booking PostgreSQL integration remain pending.
+
+## Public shared Property Facilities — 2026-10-29
+
+Marketplace API and filters now expose active shared Facility names, distinct from room-specific amenity codes. Public cards and detail list names only; filtering is Property-scoped and requires every selected name. The guest options endpoint only includes Facilities from active Properties with public available Rooms. Live read-only checks returned 45 rooms with “Hồ bơi (demo)” and 32 with “Sân bóng mini (demo)”. No DB/schema change. Backend marketplace route/repository 11/11, backend typecheck, frontend API 78/78, and frontend typecheck pass. Visual review pending.
+
+## Cloudy prospective-renter questions — 2026-10-29
+
+[Guest rental question bank V1](07_modules/public-marketplace/CLOUDY_GUEST_RENTAL_QUESTION_BANK_V1_20261029.md) — CURRENT LOCAL DEVELOPMENT: 53 Vietnamese guest-question scenarios plus a separate 18-case informal/multi-turn holdout covering no-accent shorthand, colloquial price ceilings, conversational filter updates, ambiguous alternatives and unverified listing FAQs. Python Cloudy suite 60/60; live Qwen 1.7B: original bank 53/53, edge bank 18/18, room-search holdout 12/12. No prompt training, API, database, room-data or production change.
+
+[Cloudy room-search training candidate corpus V2](07_modules/public-marketplace/CLOUDY_ROOM_SEARCH_TRAINING_CORPUS_V2_20261029.md) — 40 structured Vietnamese scenarios (28 train-reference + 12 holdout), included in the local QLoRA candidate. The earlier report's 12/12 result was a runtime evaluation, not a fine-tuning result. No runtime/API/database/room-data change.
+
+## Cloudy Resident and Owner intent corpora — 2026-10-29
+
+[Resident and Owner intent corpora V1](11_project-reports/CLOUDY_RESIDENT_OWNER_INTENT_CORPORA_V1_20261029.md) — two separate 40-case corpora (28 train-reference + 12 holdout), included in the local QLoRA candidate. The earlier report records pre-training router/model checks. No runtime/API/database/schema or production-data change.
+
+## Cloudy unresolved-message review — 2026-10-29
+
+[Cloudy unresolved-message review change request](07_modules/superadmin/CLOUDY_UNRESOLVED_FEEDBACK_CHANGE_REQUEST.md) — CURRENT SOURCE IMPLEMENTATION; Database V1.17 rehearsal PASS on a disposable Neon branch (49 tables; predecessor rows preserved). Includes opt-in Resident `help` capture, redaction, Superadmin inbox, immutable per-change review audit and 30-day retention. Rollback-only PostgreSQL guard/cleanup test passes on the branch. Shared-dev/local database apply and account invitation remain pending; no Superadmin account exists. Dedupe concurrency and authenticated browser review remain open.
+
+## Rà soát UX ba trợ lý Cloudy — 2026-10-29
+
+[Báo cáo rà soát và cải thiện ba Cloudy](11_project-reports/CLOUDY_THREE_ASSISTANTS_UX_REVIEW_20261029.md) — CURRENT: giảm bước chọn chế độ tìm phòng ban đầu; thêm context giới hạn cho câu nối Resident; sửa alias Wi-Fi và cách hiểu giá `2tr`; lời chào từng Cloudy đúng vai trò: public chỉ tìm phòng, Resident hỗ trợ khách thuê, Owner hỗ trợ chủ trọ; cập nhật chat/mascot theo vai trò. Bằng chứng lịch sử: runner live 18/18; lần chạy mở rộng hiện tại 22/29 (Public 5/5, Resident 11/12, Owner 6/12); các case sai thuộc intent Resident/Owner và được ghi rõ trong report. Bộ câu hỏi mới của guest Cloudy có báo cáo riêng. API thêm context tùy chọn; visual/login review sau chỉnh chat vẫn chờ.
+
+## Owner 6 phòng, tài khoản cư dân và ảnh demo — 2026-10-29
+
+[Owner 6 room/resident photo demo data](07_modules/public-marketplace/OWNER6_ROOM_RESIDENT_PHOTOS_DEMO_DATA_20261029.md) — CURRENT: five private rooms, five synthetic Resident accounts, 15 local room-cover images and eight synthetic Resident avatars added to Neon shared-dev `production`; avatar read/self-upload routes and API contract documented. No schema version change; local image files are ignored and remain machine-specific. Typechecks and focused avatar route tests pass; authenticated UI review remains for the user.
+
+[Public room demo photos](07_modules/public-marketplace/PUBLIC_ROOM_DEMO_PHOTOS_20261029.md) — CURRENT IMPLEMENTATION / HISTORICAL SINGLE-COVER CHECKPOINT: 85 public rooms have labeled illustrative covers under the user-approved Requirement §3 exception. Marketplace list/map cards and detail share the ordered RoomImage gallery; Public APIs return safe image metadata, not storage keys; delivery rechecks Room visibility. The expanded-map card cover wrapper fills the card; stylesheet parsing passes, while visual refresh confirmation remains pending. The earlier one-cover fixture was expanded by the newer all-room gallery follow-up listed below. No schema change. Public routes 8/8, Resident 49/49, frontend API 77/77, backend typecheck, and earlier live image metadata/Marketplace HTTP checks pass. Image bytes are machine-local.
+
+[All Room galleries minimum two images](07_modules/public-marketplace/ALL_ROOM_GALLERIES_TWO_IMAGES_20261029.md) — CURRENT DEMO DATA: all 115 Neon shared-dev Rooms have 2–5 images (233 associations); 129 allowlisted illustrative associations added through a guarded transaction. Public API returns at least two labeled images for all 85 public rooms. Three image endpoints return HTTP 200 `image/jpeg`; backend typecheck passes. Snapshot branch is ready until 2026-11-05. No schema change; image bytes remain local to the development machine. This follow-up supersedes the earlier one-image-per-public-room state described in the report below.
+
+[Room A05 gallery demo photos](07_modules/public-marketplace/ROOM_A05_GALLERY_DEMO_PHOTOS_20261029.md) — CURRENT DATA FOLLOW-UP: the public A05 Room in An Bình Biên Hòa now has five ordered illustrative images, including its preserved cover. Added four approved Unsplash stock objects through the guarded database script; the live API returns 200 `image/jpeg` for each photo and marks all illustrative. The backup branch is ready until 2026-11-05. No schema change; binary objects remain local to this development machine.
+
+## Owner 6 shared demo data expansion — 2026-10-28
+
+[Owner 6 shared demo data expansion](07_modules/invoice-zalo/OWNER6_SHARED_DEMO_DATA_EXPANSION_20261028.md) — HISTORICAL baseline for the Owner 6 synthetic fixture before the 2026-10-29 room/account/image additions. It documents the original 10-room Property, service/invoice examples, and pre-write snapshot branch; follow-on data is documented in the current room/resident photo report above.
+
+[Marketplace amenities V1.16 implementation report](07_modules/public-marketplace/MARKETPLACE_AMENITIES_V116_IMPLEMENTATION_REPORT.md) — CURRENT schema/API evidence on Neon shared-dev `production`; applied after verified backup and clone rehearsal. Its synthetic AI-fixture counts (each Owner had three active Residents at that checkpoint) are historical; the later Owner 6 data expansion is recorded above. Fixtures are not real property claims; local `Goctro_dev_v18` remains V1.15.
+
+[Marketplace full-list UX](07_modules/public-marketplace/PUBLIC_SALES_FUNNEL_RESPONSIVE_UX_AUDIT_FIX_REPORT.md#marketplace-full-list-view--2026-10-29) — CURRENT frontend enhancement: a dedicated, responsive full-list search page with map/list navigation, preserved filters, sort and pagination. Typecheck and production build pass; browser visual review remains pending. Public API and database contracts are unchanged.
+
+[Full UI/UX review](08_audits/FULL_UI_UX_REVIEW_2026_10_29.md) — CURRENT, PARTIAL: route/CTA mismatch, desktop map error-banner overlap, unsupported intro claims and nested hotline link are fixed; intro preview mirrors match. Typecheck, 77/77 API/UI tests, production build, and public browser spot-check pass. Authenticated Admin/Resident pages and live API data remain unverified; no database changes.
 
 ## Intro scroll performance — 2026-10-28
 
@@ -10,7 +72,7 @@ Navigation follow-up: section-aware desktop/mobile active state, one small green
 
 ## Neon shared database setup — 2026-10-28
 
-[Neon setup runbook](10_operations/NEON_SHARED_DATABASE_SETUP.md) — CURRENT, V1.16 plus shared synthetic dataset: 100 varied rooms, 10 demo resident accounts linked to active contracts/occupancies, property facilities, vehicles and Parking inventory. Ten rooms are occupied and 90 are publicly available. Setup menu option 5 requires latest Git `main`, links each developer to Neon `production`, pulls ignored local env values, verifies the catalog read-only, and can start the app; it does not migrate/seed/reset cloud data. It stops only verified Góc Trọ dev processes before startup and preserves unrelated port owners. tv999ht@gmail.com has project Editor; Lamsonhung1999@gmail.com is still pending.
+[Neon setup runbook](10_operations/NEON_SHARED_DATABASE_SETUP.md) — CURRENT, V1.16 plus synthetic test data: 110 rooms across 11 Properties, 10 demo resident accounts plus 8 synthetic profiles, 18 active demo contracts/occupancies, all 12 amenity codes across rooms, property facilities/services, vehicles and Parking inventory. Eighteen rooms are occupied, 85 remain public available, and the Owner 6 test Property also has 5 private available and 2 inactive rooms. Setup option 5 requires latest Git `main`, links each developer to Neon `production`, pulls ignored local env values, verifies the catalog read-only, and can start the app; it does not migrate/seed/reset cloud data. tv999ht@gmail.com has project Editor; Lamsonhung1999@gmail.com is still pending.
 
 [Neon teammate onboarding](10_operations/NEON_TEAMMATE_ONBOARDING.md) — CURRENT. Step-by-step Windows instructions for a new Neon user: register with the invited email, accept the org invite, receive project-level Editor, pull `main`, and run option 5 safely.
 
@@ -32,7 +94,7 @@ Navigation follow-up: section-aware desktop/mobile active state, one small green
 
 ## Owner advisor demo — 2026-10-28
 
-[Owner advisor report](07_modules/invoice-zalo/OWNER_ADVISOR_DEMO_REPORT.md) — CURRENT clarification follow-ups preserve pending requests and reconfirm edits; authenticated chat creates confirmed free shared Facilities through Owner-scoped API routes on the existing table, and paid Fixed Services through existing pricing APIs. No DB schema change. Backend/frontend typechecks PASS; focused routes 7/7 and API client 1/1 PASS using mocks; live DB write and authenticated UI review remain unverified. Historical owner-chat, cookie-path, simulated request and account-isolation evidence remains in the report. Live backend data for Admin Cloudy; standalone remains synthetic. Four read-only billing tasks and Qwen3 1.7B task classification. [100-room dataset/runbook](../data/owner-ai/v1/README.md) bound to existing Admin 1 / Owner 1; 160 synthetic invoices. Older local room-advisor/JSON launch reports are historical for the standalone product direction.
+[Owner advisor report](07_modules/invoice-zalo/OWNER_ADVISOR_DEMO_REPORT.md) — CURRENT: live backend data for Admin Cloudy; standalone remains synthetic. Six read-only queries (billing, utilities, missing data, overview, requests, residents) run immediately when scope is clear; Cloudy asks only for an unavailable/ambiguous month or room. Unknown intent offers supported topics. Service creation and request decisions remain explicitly confirmed. [100-room dataset/runbook](../data/owner-ai/v1/README.md) is historical demo data bound to Admin 1 / Owner 1; 160 synthetic invoices. Focused adapter/intent/route tests and frontend typechecks pass; authenticated visual review remains pending. No database schema change. Older local room-advisor/JSON launch reports are historical for the standalone product direction.
 
 
 ## Cloudy local AI integration — 2026-10-28
@@ -199,7 +261,7 @@ Navigation follow-up: section-aware desktop/mobile active state, one small green
 | `08_audits/PRE_GIT_STEP_3_TRACKED_DELETION_REVIEW.md` | Cross-domain repository staging preparation | CURRENT — STEP 3 REVIEW | Confirms three documentation deletions are intentional moves with preserved replacements; no staging, restore, or deletion was performed. |
 | `08_audits/PRE_GIT_STEP_4_LEGACY_RETIREMENT_AUDIT.md` | Cross-domain repository cleanup / legacy retirement | REFERENCE — PRE-PHASE-1 SNAPSHOT | Preserves the earlier inventory before source removal. Current cleanup status, fresh diagnostic measurements and phased next steps are in LEGACY_TO_CURRENT_MIGRATION_PLAN.md; historical no-deletion claims apply only to the earlier audit. |
 | `10_operations/LOCAL_DEV_STARTUP_REPORT.md` | Local operations | REFERENCE | Windows local development startup procedure and diagnostics. |
-| `10_operations/NEON_SHARED_DATABASE_SETUP.md` | Shared cloud database operations | CURRENT — V1.15 SYNTHETIC DATA; CONNECTION VERIFIED | Neon project/branch details, team setup, ignored environment workflow, synthetic dataset inventory, safe schema install evidence, runtime startup cleanup, and current invitation/project permission state. |
+| `10_operations/NEON_SHARED_DATABASE_SETUP.md` | Shared cloud database operations | CURRENT — V1.16 SYNTHETIC AI TEST DATA; CONNECTION VERIFIED | Neon project/branch details, team setup, ignored environment workflow, owner/resident and room-amenity fixtures, migration/backup evidence, runtime startup cleanup, and current invitation/project permission state. |
 | `10_operations/NEON_TEAMMATE_ONBOARDING.md` | Shared cloud database / teammate onboarding | CURRENT | Detailed signup, invitation, project permission, Git branch, Windows prerequisites, and option 5 steps for a teammate new to Neon. |
 | `10_operations/DATABASE_V1_8_SETUP.md` | Database operations / Windows menu setup | HISTORICAL — V1.8 PREDECESSOR | Preserves setup and PostgreSQL 18.6 V1.8 rehearsal evidence. Current local baseline and V1.8 migration instructions are in the V1.9 guide. |
 | `10_operations/DATABASE_V1_9_SETUP.md` | Database operations / V1.9 clean install and V1.8 upgrade | CURRENT — CLEAN INSTALL, POPULATED REHEARSAL AND LOCAL APPLY PASS | V1.9 clean schema+seed, V1.8 migration, backup verification, 40-table preservation fingerprints and runtime validator 85/85. Goctro_test3 was not touched. |

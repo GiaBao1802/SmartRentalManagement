@@ -46,7 +46,7 @@ function actionFor(row: BillingWorkspaceRow) {
     return { label: "Quản lý tiện ích phát sinh", href: "/admin/services/flexible?property_id=" + encodeURIComponent(row.property.property_id) };
   }
   if (row.state.code === "MISSING_DATA" && row.missing_or_invalid.some((item) => item.code.startsWith("PARKING_"))) {
-    return { label: "Kiểm tra đăng ký và giá Parking", href: "/admin/services/parking?property_id=" + encodeURIComponent(row.property.property_id) };
+    return { label: "Kiểm tra đăng ký và mức phí gửi xe", href: "/admin/services/parking?property_id=" + encodeURIComponent(row.property.property_id) };
   }
   if (row.state.code === "MISSING_DATA" && row.missing_or_invalid.some((item) => /ENDING_(MISSING|INVALID|BELOW_OPENING)/.test(item.code))) {
     return { label: "Nhập chỉ số cuối kỳ", href: `/admin/invoices/${encodeURIComponent(row.invoice.invoice_id)}` };

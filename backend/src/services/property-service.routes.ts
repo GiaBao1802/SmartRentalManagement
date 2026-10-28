@@ -151,9 +151,15 @@ export function createPropertyServiceRouter(auth: AuthDependencies, repository: 
       const context = getResidentContext(req.auth!);
       const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
       const groups = await repository.listResidentServices(context.ownerId, context.residentId, new Date(`${today}T00:00:00.000Z`));
-      sendJson(res, 200, { data: groups.map(({ property, services }) => ({
+      sendJson(res, 200, { data: groups.map(({ property, facilities, services }) => ({
         property_id: String(property.propertyId),
         property_name: property.name,
+        facilities: facilities.map((facility) => ({
+          facility_id: String(facility.propertyFacilityId),
+          name: facility.name,
+          description: facility.description,
+          location: facility.location,
+        })),
         services: services.map((item) => ({
           service_id: String(item.propertyPricingItemId),
           name: item.name,

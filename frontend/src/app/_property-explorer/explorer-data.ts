@@ -21,7 +21,7 @@ const demoRooms: (PublicRoomListItem & { province_code: string })[] = [
   ["01", "Hà Nội", "Góc Trọ · Nhà mẫu Hà Nội", "Khu vực Cầu Giấy (minh họa)", "3800000", "28.00", 2],
   ["48", "Đà Nẵng", "Góc Trọ · Nhà mẫu Đà Nẵng", "Khu vực Hải Châu (minh họa)", "2800000", "22.00", 2],
   ["75", "Đồng Nai", "Góc Trọ · Nhà mẫu Đồng Nai", "Khu vực Biên Hòa (minh họa)", "2200000", "20.00", 2],
-].map((r, i) => ({ province_code: String(r[0]), room_id: `demo-${i}`, room_code: `M${i + 101}`, property: { province: String(r[1]), name: String(r[2]), address: String(r[3]) }, default_rent: String(r[4]), area_m2: String(r[5]), default_capacity: Number(r[6]), status: "available", public_description: "Phòng minh họa để đánh giá tương tác, không phải tin cho thuê thực tế.", amenities: [], cover_image: null }));
+].map((r, i) => ({ province_code: String(r[0]), room_id: `demo-${i}`, room_code: `M${i + 101}`, property: { province: String(r[1]), name: String(r[2]), address: String(r[3]) }, property_facilities: [], default_rent: String(r[4]), area_m2: String(r[5]), default_capacity: Number(r[6]), status: "available", public_description: "Phòng minh họa để đánh giá tương tác, không phải tin cho thuê thực tế.", amenities: [], cover_image: null, images: [] }));
 export function demoOverview(geo: Geography): Overview {
   return { mode: "mock", unmapped_rooms: 0, note: "Dữ liệu minh họa riêng; không ghi vào PostgreSQL.", provinces: geo.features.map(f => {
     const rows = demoRooms.filter(r => r.province_code === f.properties.code);

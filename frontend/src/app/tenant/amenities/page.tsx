@@ -8,6 +8,7 @@ import { displayName } from "../../../lib/api/authApi";
 import { ApiError } from "../../../lib/api/errors";
 import { residentServiceApi, type ResidentService, type ResidentServiceBooking, type ResidentServiceProperty, type ResidentServiceSlot } from "../../../lib/api/residentServiceApi";
 import ResidentPrimaryNavigation from "../resident-primary-navigation";
+import ResidentAccountMenu from "../resident-account-menu";
 
 function message(reason: unknown) {
   return reason instanceof ApiError ? reason.message : reason instanceof Error ? reason.message : "Không thể tải danh sách tiện ích.";
@@ -40,6 +41,7 @@ function bookingStatusLabel(booking: ResidentServiceBooking) {
     const state = booking.invoice_status === "paid" ? "đã thanh toán" : booking.invoice_status === "unpaid" ? "chưa thanh toán" : "bản nháp";
     return `Hóa đơn ${booking.invoice_no} · ${state}`;
   }
+  if (booking.amount === "0") return "Đã duyệt · đã giữ lịch miễn phí";
   return "Đã duyệt · chờ lập hóa đơn";
 }
 
@@ -72,7 +74,7 @@ function ServiceCard({
 }) {
   const configuration = service.service_configuration;
   const isBooking = configuration?.service_mode === "BOOKING";
-  const serviceType = !configuration ? "Chưa có lịch" : isBooking ? "Đặt theo khung giờ" : "Gói đăng ký";
+  const serviceType = !configuration ? "Chưa có lịch" : isBooking ? service.current_price?.unit_price === "0" ? "Tiện ích · đăng ký miễn phí" : service.current_price ? "Dịch vụ phát sinh · có lịch" : "Chưa có giá áp dụng" : "Gói đăng ký";
   const availableDays = configuration?.available_weekdays.map((day) => weekdayNames[day]).join(" · ");
   return <article className={`resident-amenity-card${expanded ? " is-expanded" : ""}`}>
     <div className="resident-amenity-card-top">
@@ -83,8 +85,8 @@ function ServiceCard({
     <p className="resident-amenity-card-description">{service.description?.trim() || "Chủ trọ chưa thêm mô tả cho tiện ích này."}</p>
     <div className="resident-amenity-card-price">
       <span>Giá hiện hành</span>
-      <strong>{service.current_price ? money(service.current_price.unit_price) : "Chưa có giá áp dụng"}</strong>
-      {service.current_price && <small>{service.unit ? `/${service.unit}` : ""}</small>}
+      <strong>{service.current_price?.unit_price === "0" ? "Miễn phí" : service.current_price ? money(service.current_price.unit_price) : "Chưa có giá áp dụng"}</strong>
+      {service.current_price && service.current_price.unit_price !== "0" && <small>{service.unit ? `/${service.unit}` : ""}</small>}
     </div>
     {expanded && <div className="resident-amenity-details">
       <div><span>Đơn vị tính</span><strong>{service.unit || "Chưa cập nhật"}</strong></div>
@@ -111,7 +113,7 @@ function ServiceCard({
         </select></label>
         <button className="resident-amenity-book-button" type="button" disabled={!selectedTime || bookingPending || !quotedPrice?.unit_price} onClick={onBook}>{bookingPending ? "Đang gửi…" : "Gửi yêu cầu"}</button>
       </div>}
-      {quotedPrice && <p className="resident-amenity-booking-quote">{quotedPrice.unit_price === null ? "Chưa có giá hiệu lực cho ngày này nên chưa thể gửi yêu cầu." : <>Phí dự kiến <strong>{money(quotedPrice.unit_price)} / {quotedPrice.unit}</strong>. Giá này được ghi nhận khi gửi; chỉ tính vào hóa đơn sau khi chủ trọ duyệt.</>}</p>}
+      {quotedPrice && <p className="resident-amenity-booking-quote">{quotedPrice.unit_price === null ? "Chưa có giá hiệu lực cho ngày này nên chưa thể gửi yêu cầu." : quotedPrice.unit_price === "0" ? <>Tiện ích này <strong>miễn phí</strong>. Lịch chỉ được giữ sau khi chủ trọ duyệt.</> : <>Phí dự kiến <strong>{money(quotedPrice.unit_price)} / {quotedPrice.unit}</strong>. Chỉ ghi vào khoản phí sau khi chủ trọ duyệt.</>}</p>}
       <p className="resident-amenity-booking-footnote">Yêu cầu giữ một chỗ trong sức chứa của khung giờ và chờ chủ trọ duyệt. Chưa thu tiền tại bước đăng ký.</p>
     </div>}
     {expanded && configuration?.service_mode === "SUBSCRIPTION" && <div className="resident-amenity-booking-panel">
@@ -215,7 +217,7 @@ export default function ResidentAmenitiesPage() {
     setBookingActionError("");
     try {
       const booking = await residentServiceApi.book(service.service_id, availabilityDate, selectedTime);
-      const quotedFee = booking.amount === null ? "" : ` Phí dự kiến ${money(booking.amount)}; `;
+      const quotedFee = booking.amount === "0" ? " Tiện ích miễn phí; " : booking.amount === null ? " " : ` Phí dự kiến ${money(booking.amount)}; `;
       setBookingNotice(`Đã gửi yêu cầu ${service.name} vào ${availabilityDate}, ${selectedTime}.${quotedFee}đang chờ chủ trọ duyệt.`);
       setSelectedTime("");
       await Promise.all([refreshBookings(), checkAvailability(service.service_id, availabilityDate)]);
@@ -248,8 +250,9 @@ export default function ResidentAmenitiesPage() {
   }
 
   const name = user ? displayName(user) : "Cư dân";
-  const initials = name.trim().split(/\s+/).slice(-2).map((part) => part.charAt(0)).join("").toUpperCase();
   const serviceCount = useMemo(() => groups?.reduce((sum, group) => sum + group.services.length, 0) ?? 0, [groups]);
+  const facilityCount = useMemo(() => groups?.reduce((sum, group) => sum + group.facilities.length, 0) ?? 0, [groups]);
+  const amenityCount = serviceCount + facilityCount;
 
   if (status === "loading" || (status === "authenticated" && user?.account.role === "resident" && loading && groups === null && !error)) {
     return <main className="tenant-page resident-state-page"><div className="resident-state-card"><span className="resident-state-symbol"><ServiceIcon /></span><span className="resident-eyebrow">CỔNG CƯ DÂN</span><h1>Đang tải tiện ích</h1><p>Vui lòng chờ trong giây lát.</p><span className="resident-progress" aria-label="Đang tải" /></div></main>;
@@ -262,14 +265,14 @@ export default function ResidentAmenitiesPage() {
     <header className="tenant-header resident-topbar">
       <a href="/" aria-label="Trang chủ Góc Trọ"><BrandLogo /></a>
       <ResidentPrimaryNavigation active="amenities" />
-      <div className="resident-topbar-actions"><span className="resident-user-avatar" aria-hidden="true">{initials}</span><div className="resident-user-copy"><strong>{name}</strong><span>Cư dân</span></div><button className="resident-logout-button" type="button" disabled={logoutPending} onClick={() => void handleLogout()}>{logoutPending ? "Đang đăng xuất…" : "Đăng xuất"}</button></div>
+      <div className="resident-topbar-actions"><ResidentAccountMenu name={name} email={user?.account.email ?? null} logoutPending={logoutPending} onLogout={() => void handleLogout()} /></div>
     </header>
 
     <div className="tenant-content resident-layout resident-amenities-layout">
       <section className="resident-amenity-hero" aria-labelledby="resident-amenity-title">
-        <div className="resident-amenity-hero-copy"><span className="resident-eyebrow">DỊCH VỤ DÀNH CHO NƠI Ở CỦA BẠN</span><h1 id="resident-amenity-title">Tiện ích</h1><p>Xem dịch vụ, chọn lịch còn chỗ và theo dõi lịch đã đặt ngay tại đây.</p></div>
+        <div className="resident-amenity-hero-copy"><span className="resident-eyebrow">DỊCH VỤ DÀNH CHO NƠI Ở CỦA BẠN</span><h1 id="resident-amenity-title">Tiện ích</h1><p>Xem tiện ích chung của khu trọ, đặt dịch vụ còn chỗ và theo dõi lịch đã gửi.</p></div>
         <div className="resident-amenity-hero-art" aria-hidden="true"><span className="resident-amenity-orbit orbit-one" /><span className="resident-amenity-orbit orbit-two" /><span className="resident-amenity-hero-icon"><ServiceIcon /></span><i className="resident-amenity-spark spark-one" /><i className="resident-amenity-spark spark-two" /></div>
-        <div className="resident-amenity-hero-count"><strong>{groups === null || loading ? "…" : serviceCount}</strong><span>tiện ích đang mở</span></div>
+        <div className="resident-amenity-hero-count"><strong>{groups === null || loading ? "…" : amenityCount}</strong><span>tiện ích & dịch vụ</span></div>
       </section>
 
       {logoutError && <p className="notice resident-inline-notice" role="alert">{logoutError}</p>}
@@ -284,7 +287,7 @@ export default function ResidentAmenitiesPage() {
         {!bookingsError && !bookingsLoading && bookings && bookings.length > 0 && <div className="resident-amenity-booking-list">
           {bookings.map((booking) => <article className={`resident-amenity-booking-item${booking.status === "CANCELLED" ? " is-cancelled" : booking.status === "PENDING" ? " is-pending" : booking.status === "REJECTED" ? " is-rejected" : ""}`} key={booking.booking_id}>
             <span className="resident-amenity-booking-item-icon"><ServiceIcon small /></span>
-            <div className="resident-amenity-booking-item-main"><strong>{booking.service_name}</strong><span>{booking.property_name ? `${booking.property_name} · ` : ""}{serviceDateLabel(booking.service_date)} · {booking.start_time}–{booking.end_time}</span>{booking.amount !== null && <span>Phí dự kiến: <strong>{money(booking.amount)} / {booking.unit}</strong></span>}{booking.decision_note && <span>Lý do: {booking.decision_note}</span>}</div>
+            <div className="resident-amenity-booking-item-main"><strong>{booking.service_name}</strong><span>{booking.property_name ? `${booking.property_name} · ` : ""}{serviceDateLabel(booking.service_date)} · {booking.start_time}–{booking.end_time}</span>{booking.amount !== null && <span>{booking.amount === "0" ? "Miễn phí" : <>Phí: <strong>{money(booking.amount)} / {booking.unit}</strong></>}</span>}{booking.decision_note && <span>Lý do: {booking.decision_note}</span>}</div>
             <span className={`resident-amenity-booking-status${booking.status === "CANCELLED" ? " is-cancelled" : booking.status === "PENDING" ? " is-pending" : booking.status === "REJECTED" ? " is-rejected" : ""}`}>{bookingStatusLabel(booking)}</span>
             {booking.can_cancel && <button className="resident-amenity-cancel-button" type="button" disabled={cancelPendingId === booking.booking_id} onClick={() => void handleCancel(booking)}>{cancelPendingId === booking.booking_id ? "Đang hủy…" : "Hủy yêu cầu"}</button>}
           </article>)}
@@ -292,7 +295,7 @@ export default function ResidentAmenitiesPage() {
       </section>
 
       <section className="resident-amenity-content" aria-label="Danh sách tiện ích">
-        <div className="resident-amenity-section-heading"><div><span className="resident-eyebrow">THEO KHU TRỌ ĐANG CƯ TRÚ</span><h2>Tiện ích hiện có</h2></div><span className="resident-amenity-count-pill"><i />{groups === null || loading ? "Đang cập nhật" : `${serviceCount} dịch vụ`}</span></div>
+        <div className="resident-amenity-section-heading"><div><span className="resident-eyebrow">THEO KHU TRỌ ĐANG CƯ TRÚ</span><h2>Tiện ích hiện có</h2></div><span className="resident-amenity-count-pill"><i />{groups === null || loading ? "Đang cập nhật" : `${facilityCount} tiện ích · ${serviceCount} dịch vụ đặt lịch`}</span></div>
 
         {error && <div className="resident-amenity-state is-error" role="alert"><span className="resident-amenity-state-icon"><ServiceIcon /></span><div><h3>Chưa tải được danh sách</h3><p>{error}</p><button className="resident-secondary-button" type="button" onClick={() => setRetry((current) => current + 1)}>Thử tải lại</button></div></div>}
         {!error && loading && groups === null && <div className="resident-amenity-state" role="status"><span className="resident-progress" aria-label="Đang tải" /><p>Đang tải danh mục tiện ích…</p></div>}
@@ -300,10 +303,17 @@ export default function ResidentAmenitiesPage() {
 
         {!error && !loading && groups && groups.length > 0 && <div className="resident-amenity-properties">
           {groups.map((group) => <section className="resident-amenity-property" key={group.property_id} aria-labelledby={`resident-amenity-property-${group.property_id}`}>
-            <div className="resident-amenity-property-heading"><div><span className="resident-amenity-property-mark"><ServiceIcon small /></span><div><span className="resident-eyebrow">KHU TRỌ</span><h3 id={`resident-amenity-property-${group.property_id}`}>{group.property_name}</h3></div></div><span>{group.services.length} tiện ích</span></div>
+            <div className="resident-amenity-property-heading"><div><span className="resident-amenity-property-mark"><ServiceIcon small /></span><div><span className="resident-eyebrow">KHU TRỌ</span><h3 id={`resident-amenity-property-${group.property_id}`}>{group.property_name}</h3></div></div><span>{group.facilities.length} tiện ích chung · {group.services.length} dịch vụ</span></div>
+            {group.facilities.length > 0 && <div className="resident-amenity-facilities">
+              <h4>Tiện ích chung</h4>
+              <div className="resident-amenity-facility-grid">{group.facilities.map((facility) => <article className="resident-amenity-facility" key={facility.facility_id}>
+                <span className="resident-amenity-facility-mark"><ServiceIcon small /></span>
+                <div><strong>{facility.name}</strong>{facility.location && <span className="resident-amenity-facility-location">{facility.location}</span>}{facility.description && <p>{facility.description}</p>}</div>
+              </article>)}</div>
+            </div>}
             {group.services.length === 0
-              ? <div className="resident-amenity-property-empty"><span>Chưa có tiện ích phát sinh được đăng tải tại khu trọ này.</span></div>
-              : <div className="resident-amenity-grid">{group.services.map((service) => <ServiceCard
+              ? <div className="resident-amenity-property-empty"><span>{group.facilities.length > 0 ? "Khu trọ đã có các tiện ích chung ở trên, nhưng hiện chưa có dịch vụ đặt lịch trực tuyến." : "Chủ trọ chưa khai báo tiện ích chung hoặc dịch vụ đặt lịch cho khu trọ này."}</span></div>
+              : <><h4 className="resident-amenity-service-heading">Dịch vụ do chủ trọ đăng</h4><div className="resident-amenity-grid">{group.services.map((service) => <ServiceCard
                 key={service.service_id}
                 service={service}
                 expanded={expandedServiceId === service.service_id}
@@ -319,7 +329,7 @@ export default function ResidentAmenitiesPage() {
                 onBook={() => void handleBook(service)}
                 bookingPending={bookingPending && expandedServiceId === service.service_id}
                 quotedPrice={availabilityServiceId === service.service_id ? availabilityQuote : null}
-              />)}</div>}
+              />)}</div></>}
           </section>)}
         </div>}
       </section>

@@ -25,7 +25,7 @@ export default function LandingPage() {
         <nav className={styles.nav} aria-label="Điều hướng trang giới thiệu">
           <a href="#tim-phong">Tìm phòng</a>
           <a href="#hanh-trinh">Cách hoạt động</a>
-          <a href="#quan-ly">Dành cho chủ nhà</a>
+          <a href="#quan-ly">Dành cho chủ trọ</a>
         </nav>
         <div className={styles.headerActions}>
           <Link className={styles.login} href="/login">Đăng nhập</Link>
@@ -39,7 +39,7 @@ export default function LandingPage() {
         <div className={styles.heroCopy}>
           <p className={styles.eyebrow}>KHÁM PHÁ NƠI Ở THEO CÁCH TRỰC QUAN HƠN</p>
           <h1>Tìm một góc<br/><span>để yên tâm ở.</span></h1>
-          <p className={styles.heroLead}>Bắt đầu từ bản đồ Việt Nam, lọc theo nhu cầu, xem thông tin phòng và gửi liên hệ đến nơi phù hợp — trong một hành trình liền mạch.</p>
+          <p className={styles.heroLead}>Tìm khu vực trên bản đồ, lọc phòng theo nhu cầu, xem thông tin chi tiết và liên hệ với chủ trọ ngay tại trang phòng.</p>
           <div className={styles.heroActions}>
             <Link className={styles.primary} href="/">Tìm phòng ngay <span aria-hidden="true">→</span></Link>
             <a className={styles.textLink} href="#hanh-trinh">Xem cách hoạt động <span aria-hidden="true">↓</span></a>
@@ -74,7 +74,7 @@ export default function LandingPage() {
     <section className={styles.statement}>
       <Reveal className={styles.statementInner}>
         <p>“Trọ” không chỉ là một chỗ ở tạm.</p>
-        <h2>Đó là một góc của riêng mình — đủ rõ ràng để lựa chọn, đủ gọn gàng để bắt đầu.</h2>
+        <h2>Thông tin rõ ràng giúp bạn chọn được nơi ở phù hợp và chủ động liên hệ với chủ trọ.</h2>
       </Reveal>
     </section>
 
@@ -83,7 +83,7 @@ export default function LandingPage() {
         <Reveal className={styles.sectionHeading}>
           <p className={styles.eyebrow}>MỘT HÀNH TRÌNH TÌM PHÒNG GỌN HƠN</p>
           <h2>Từ toàn cảnh đến căn phòng bạn muốn xem.</h2>
-          <p>Góc Trọ giúp bạn đi từ địa điểm đến thông tin cụ thể mà không phải ghép nối nhiều nguồn rời rạc.</p>
+          <p>Góc Trọ giúp bạn tìm khu vực, xem thông tin phòng và liên hệ với chủ trọ ngay trên cùng một nền tảng.</p>
         </Reveal>
         <div className={styles.featureLayout}>
           <Reveal className={`${styles.featureMain} ${styles.featureCard}`}>
@@ -98,13 +98,13 @@ export default function LandingPage() {
               <div className={styles.icon}><FeatureIcon kind="room" /></div>
               <span>02 · SO SÁNH</span>
               <h3>Lọc và xem thông tin phòng</h3>
-              <p>Thu hẹp theo giá, diện tích và khu vực; mở chi tiết để xem nội dung mà nơi cho thuê đã công khai.</p>
+              <p>Lọc theo giá, diện tích và khu vực; mở trang phòng để xem thông tin chủ trọ đã đăng.</p>
             </Reveal>
             <Reveal className={`${styles.featureCard} ${styles.darkCard}`} delay={130}>
               <div className={styles.icon}><FeatureIcon kind="contact" /></div>
               <span>03 · KẾT NỐI</span>
               <h3>Gửi nhu cầu liên hệ</h3>
-              <p>Để lại thông tin ngay tại phòng quan tâm để đơn vị vận hành tiếp nhận và phản hồi.</p>
+              <p>Gửi thông tin liên hệ tại phòng bạn quan tâm để chủ trọ tiếp nhận và phản hồi.</p>
             </Reveal>
           </div>
         </div>
@@ -137,7 +137,7 @@ export default function LandingPage() {
         <Reveal className={styles.managementCopy}>
           <p className={styles.eyebrow}>PHÍA SAU MỘT NƠI Ở GỌN GÀNG</p>
           <h2>Công việc vận hành cũng cần một góc rõ ràng.</h2>
-          <p>Góc Trọ cung cấp các workspace quản lý cư dân, hợp đồng, hóa đơn, dịch vụ và phòng. Mỗi vai trò đăng nhập vào đúng khu vực để theo dõi công việc thuộc phạm vi của mình.</p>
+          <p>Góc Trọ hỗ trợ chủ trọ quản lý cư dân, hợp đồng, hóa đơn, dịch vụ và phòng. Mỗi tài khoản chỉ xem được những thông tin thuộc phạm vi được cấp quyền.</p>
           <Link className={styles.managementLink} href="/login">Đi đến trang đăng nhập <span aria-hidden="true">→</span></Link>
         </Reveal>
         <Reveal className={styles.managementBoard} delay={120}>

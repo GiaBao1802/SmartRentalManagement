@@ -5,6 +5,7 @@ import { publicAvailableRoomWhere } from "../properties/room-status.js";
 export type ContactListQuery = { page: number; page_size: number; property_id?: bigint; status?: string; created_at?: Date };
 export type ContactRequestRepositoryPort = {
   listPublicRooms(query: PublicRoomListQuery): Promise<{ rows: unknown[]; total: number }>;
+  listPublicPropertyFacilities(): Promise<string[]>;
   findPublicRoom(roomId: bigint): Promise<unknown | null>;
   createContactRequest(input: ContactRequestInput): Promise<{ contactRequestId: bigint; status: string } | null>;
   listContactRequests(ownerId: bigint, query: ContactListQuery): Promise<{ rows: unknown[]; total: number }>;
@@ -12,8 +13,11 @@ export type ContactRequestRepositoryPort = {
   updateContactRequestStatus(ownerId: bigint, contactRequestId: bigint, status: "new" | "contacted" | "closed"): Promise<unknown | null>;
 };
 
-const publicPropertySelect = { name: true, province: true, address: true } satisfies Prisma.PropertySelect;
-const publicImageSelect = { roomImageId: true, isCover: true, sortOrder: true } satisfies Prisma.RoomImageSelect;
+const publicPropertySelect = {
+  name: true, province: true, address: true,
+  propertyFacilities: { where: { active: true }, orderBy: [{ name: "asc" }, { propertyFacilityId: "asc" }], select: { name: true } },
+} satisfies Prisma.PropertySelect;
+const publicImageSelect = { roomImageId: true, isCover: true, sortOrder: true, storageKey: true } satisfies Prisma.RoomImageSelect;
 const adminContactSelect = {
   contactRequestId: true, propertyId: true, roomId: true, requesterName: true, phone: true,
   email: true, message: true, status: true, createdAt: true, updatedAt: true,
@@ -30,6 +34,7 @@ export class PrismaPublicMarketplaceRepository implements ContactRequestReposito
       ...(query.provinceNames ? { province: { in: query.provinceNames } } : {}),
       ...(query.province ? { province: { contains: query.province, mode: "insensitive" } } : {}),
       ...(query.address ? { address: { contains: query.address, mode: "insensitive" } } : {}),
+      ...(query.property_facilities?.length ? { AND: query.property_facilities.map((name) => ({ propertyFacilities: { some: { active: true, name: { equals: name, mode: "insensitive" } } } })) } : {}),
     };
     const where: Prisma.RoomWhereInput = {
       ...publicAvailableRoomWhere(),
@@ -50,12 +55,26 @@ export class PrismaPublicMarketplaceRepository implements ContactRequestReposito
         select: {
           roomId: true, roomCode: true, defaultRent: true, areaM2: true, defaultCapacity: true, publicDescription: true, marketplaceAmenities: true, createdAt: true,
           property: { select: publicPropertySelect },
-          images: { where: { isCover: true }, orderBy: [{ sortOrder: "asc" }, { roomImageId: "asc" }], take: 1, select: publicImageSelect },
+          images: { orderBy: [{ sortOrder: "asc" }, { roomImageId: "asc" }], select: publicImageSelect },
         },
       }),
       this.prisma.room.count({ where }),
     ]);
     return { rows, total };
+  }
+
+  async listPublicPropertyFacilities() {
+    const rows = await this.prisma.propertyFacility.findMany({
+      where: { active: true, property: { status: "active", rooms: { some: publicAvailableRoomWhere() } } },
+      orderBy: [{ name: "asc" }, { propertyFacilityId: "asc" }],
+      select: { name: true },
+    });
+    const unique = new Map<string, string>();
+    for (const row of rows) {
+      const key = row.name.normalize("NFC").toLocaleLowerCase("vi");
+      if (!unique.has(key)) unique.set(key, row.name);
+    }
+    return [...unique.values()];
   }
 
   findPublicRoom(roomId: bigint) {

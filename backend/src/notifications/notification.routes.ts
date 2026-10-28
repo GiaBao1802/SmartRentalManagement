@@ -1,6 +1,6 @@
 import express, { type RequestHandler } from "express";
 import type { AuthDependencies } from "../middleware/auth.js";
-import { authenticateRequest, requireAuthenticated } from "../middleware/auth.js";
+import { authenticateRequest, getAdminOwnerId, requireAdmin, requireAuthenticated } from "../middleware/auth.js";
 import { foreignResourceNotFound } from "../middleware/auth.js";
 import { validationError } from "../middleware/api-error.js";
 import { parseBigIntId, sendJson } from "../utils/ids.js";
@@ -80,6 +80,26 @@ function validatePreferencesPatch(body: unknown): NotificationPreferencesPatch {
 export function createNotificationRouter(deps: Dependencies): express.Router {
   const router = express.Router();
   const authenticated: RequestHandler[] = [authenticateRequest(deps), requireAuthenticated];
+  const admin: RequestHandler[] = [authenticateRequest(deps), requireAdmin];
+
+  router.post("/notifications/room-reminders", ...admin, async (request, response, next) => {
+    try {
+      const body = request.body as Record<string, unknown> | null;
+      if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).sort().join(",") !== "confirmed,message,property_id,room_id") {
+        throw validationError("Thông tin thông báo phòng không hợp lệ.");
+      }
+      if (body.confirmed !== true) throw validationError("Cần xác nhận nội dung trước khi gửi thông báo.");
+      if (typeof body.message !== "string" || !body.message.trim() || body.message.trim().length > 500) {
+        throw validationError("Nội dung thông báo phải từ 1 đến 500 ký tự.");
+      }
+      let propertyId: bigint; let roomId: bigint;
+      try { propertyId = parseBigIntId(body.property_id); roomId = parseBigIntId(body.room_id); }
+      catch { throw validationError("Mã khu trọ hoặc phòng không hợp lệ."); }
+      const result = await deps.notificationRepository.sendRoomReminder(getAdminOwnerId(request.auth!), propertyId, roomId, body.message.trim());
+      if (!result) foreignResourceNotFound();
+      sendJson(response, 200, { data: { room_code: result.roomCode, property_name: result.propertyName, recipient_count: result.recipientCount, delivery: "in_app" } });
+    } catch (error) { next(error); }
+  });
 
   router.get("/notifications", ...authenticated, async (request, response, next) => {
     try {

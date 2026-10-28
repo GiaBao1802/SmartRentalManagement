@@ -2,6 +2,7 @@
 
 import BrandLogo from "../../components/brand-logo";
 import ResidentPrimaryNavigation from "../resident-primary-navigation";
+import ResidentAccountMenu from "../resident-account-menu";
 import { useAuth } from "../../components/auth-provider";
 import { displayName } from "../../../lib/api/authApi";
 import { ApiError } from "../../../lib/api/errors";
@@ -80,21 +81,21 @@ function DemoPaymentPanel({ invoice, onPaid }: { invoice: InvoiceDetailResponse;
     try {
       const payment = await demoPaymentApi.simulate(invoice.invoice_id, outcome);
       setHistory((current) => [payment, ...current]);
-      if (outcome === "success") { setSuccess("Thanh toán demo thành công. Hóa đơn đã chuyển sang Đã thanh toán."); onPaid(payment); }
-      else setError(payment.failure_reason ?? "Thanh toán demo thất bại. Hóa đơn vẫn chưa thanh toán; bạn có thể thử lại.");
+      if (outcome === "success") { setSuccess("Thanh toán mô phỏng thành công. Hóa đơn đã chuyển sang Đã thanh toán."); onPaid(payment); }
+      else setError(payment.failure_reason ?? "Thanh toán mô phỏng thất bại. Hóa đơn vẫn chưa thanh toán; bạn có thể thử lại.");
     } catch (reason) { setError(errorMessage(reason)); }
     finally { setBusy(false); }
   }
 
-  return <section className="resident-demo-payment" aria-label="Thanh toán demo">
-    <div className="resident-demo-payment-heading"><div><span className="resident-eyebrow">DÙNG CHO BUỔI THUYẾT TRÌNH</span><h3>{invoice.status === "paid" ? "Lịch sử thanh toán demo" : "Thanh toán hóa đơn"}</h3><p>Chỉ mô phỏng, không kết nối ngân hàng hoặc chuyển tiền.</p></div><button className="resident-primary-button" type="button" onClick={() => setOpen((value) => !value)}>{open ? "Đóng" : invoice.status === "paid" ? "Xem lịch sử demo" : "Thanh toán"}</button></div>
+  return <section className="resident-demo-payment" aria-label="Thanh toán mô phỏng">
+    <div className="resident-demo-payment-heading"><div><span className="resident-eyebrow">THANH TOÁN MÔ PHỎNG</span><h3>{invoice.status === "paid" ? "Lịch sử thanh toán mô phỏng" : "Thanh toán hóa đơn"}</h3><p>Chỉ mô phỏng, không kết nối ngân hàng hoặc chuyển tiền.</p></div><button className="resident-primary-button" type="button" onClick={() => setOpen((value) => !value)}>{open ? "Đóng" : invoice.status === "paid" ? "Xem lịch sử thanh toán" : "Thanh toán"}</button></div>
     {open && <div className="resident-demo-checkout">
       <div className="resident-demo-qr-wrap"><DemoQr invoiceNo={invoice.invoice_no} /><span>MÃ QR MINH HỌA</span></div>
       <div className="resident-demo-checkout-copy"><p>Hóa đơn <strong>{invoice.invoice_no}</strong></p><p>Số tiền <strong>{money(invoice.total_amount)}</strong></p><p className="resident-demo-warning">Mã QR không thể quét để chuyển tiền. Hãy chọn một kết quả mô phỏng:</p>
         {error && <p className="resident-demo-message is-error" role="alert">{error}</p>}{success && <p className="resident-demo-message is-success" role="status">{success}</p>}
-        {invoice.status === "unpaid" && <div className="resident-demo-actions"><button className="resident-primary-button" type="button" disabled={busy} onClick={() => void simulate("success")}>{busy ? "Đang xử lý…" : "Thanh toán thành công (demo)"}</button><button className="resident-secondary-button" type="button" aria-label="Test mô phỏng thanh toán thất bại" title="Mô phỏng thất bại do không đủ số dư" disabled={busy} onClick={() => void simulate("failed")}>Test</button></div>}
+        {invoice.status === "unpaid" && <div className="resident-demo-actions"><button className="resident-primary-button" type="button" disabled={busy} onClick={() => void simulate("success")}>{busy ? "Đang xử lý…" : "Mô phỏng thanh toán thành công"}</button><button className="resident-secondary-button" type="button" title="Mô phỏng giao dịch không thành công" disabled={busy} onClick={() => void simulate("failed")}>Mô phỏng thất bại</button></div>}
       </div>
-      <div className="resident-demo-history"><h4>Lịch sử giao dịch demo</h4>{historyError && <p role="alert">{historyError}</p>}{history.length === 0 && !historyError && <p>Chưa có lần thử thanh toán.</p>}{history.map((item) => <article key={item.transaction_id}><div><strong>{item.outcome === "success" ? "Thành công" : "Thất bại"}</strong><small>{item.transaction_code} · {new Date(item.created_at).toLocaleString("vi-VN")}</small>{item.failure_reason && <small>{item.failure_reason}</small>}</div><b>{money(item.amount)}</b></article>)}</div>
+      <div className="resident-demo-history"><h4>Lịch sử thanh toán mô phỏng</h4>{historyError && <p role="alert">{historyError}</p>}{history.length === 0 && !historyError && <p>Chưa có giao dịch mô phỏng.</p>}{history.map((item) => <article key={item.transaction_id}><div><strong>{item.outcome === "success" ? "Thành công" : "Thất bại"}</strong><small>{item.transaction_code} · {new Date(item.created_at).toLocaleString("vi-VN")}</small>{item.failure_reason && <small>{item.failure_reason}</small>}</div><b>{money(item.amount)}</b></article>)}</div>
     </div>}
   </section>;
 }
@@ -221,7 +222,6 @@ export default function ResidentInvoicesPage() {
   }
 
   const name = displayName(user);
-  const nameInitials = name.trim().split(/\s+/).slice(-2).map((part) => part.charAt(0)).join("").toUpperCase();
   const summaries = [
     { key: "all", label: "Tổng hóa đơn", tone: "" },
     { key: "unpaid", label: "Chưa thanh toán", tone: "is-attention" },
@@ -233,7 +233,7 @@ export default function ResidentInvoicesPage() {
     <header className="tenant-header resident-topbar">
       <a href="/" aria-label="Trang chủ Góc trọ"><BrandLogo /></a>
       <ResidentPrimaryNavigation active="invoices" />
-      <div className="resident-topbar-actions"><span className="resident-user-avatar" aria-hidden="true">{nameInitials}</span><div className="resident-user-copy"><strong>{name}</strong><span>Cư dân</span></div><button className="resident-logout-button" type="button" disabled={logoutPending} onClick={() => void handleLogout()}>{logoutPending ? "Đang đăng xuất…" : "Đăng xuất"}</button></div>
+      <div className="resident-topbar-actions"><ResidentAccountMenu name={name} email={user?.account.email ?? null} logoutPending={logoutPending} onLogout={() => void handleLogout()} /></div>
     </header>
     <div className="tenant-content resident-layout resident-invoice-layout">
       <section className="resident-invoice-hero" aria-labelledby="resident-invoice-title">
@@ -243,7 +243,7 @@ export default function ResidentInvoicesPage() {
 
       {logoutError && <p className="notice resident-inline-notice" role="alert">{logoutError}</p>}
       <section className="resident-invoice-summary" aria-label="Tổng hợp hóa đơn">
-        {summaries.map(({ key, label, tone }) => <article className={`resident-invoice-summary-card ${tone}`} key={key}><span>{label}</span><strong>{summaryLoading ? "…" : counts[key] === null ? "—" : counts[key]}</strong><small>{key === "unpaid" ? "Hóa đơn đã phát hành" : key === "draft" ? "Số tiền còn tạm tính" : key === "paid" ? "Đã ghi nhận thanh toán" : "Theo hợp đồng của bạn"}</small></article>)}
+        {summaries.map(({ key, label, tone }) => <article className={`resident-invoice-summary-card ${tone}`} key={key}><span>{label}</span><strong>{summaryLoading ? "…" : counts[key] === null ? "—" : counts[key]}</strong><small>{key === "unpaid" ? "Hóa đơn đã phát hành" : key === "draft" ? "Chưa phải khoản cần thanh toán" : key === "paid" ? "Đã ghi nhận thanh toán" : "Theo hợp đồng của bạn"}</small></article>)}
       </section>
       {summaryError && <p className="resident-invoice-summary-note" role="status">Chưa tải được số liệu tổng hợp. Danh sách bên dưới vẫn có thể xem. <button type="button" onClick={() => setSummaryRetry((value) => value + 1)}>Thử lại</button></p>}
 

@@ -42,6 +42,8 @@ export type Occupancy = {
   room?: {
     room_id: string;
     room_code: string;
+    cover_image?: { room_image_id: string; url: string; is_illustrative: boolean; is_cover?: boolean; sort_order?: number } | null;
+    images?: { room_image_id: string; url: string; is_illustrative: boolean; is_cover: boolean; sort_order: number }[];
     property?: { property_id: string; name: string; province?: string; address?: string };
   };
   contract?: { contract_id: string; contract_no: string; status: string; start_date: string; end_date: string; resident_capacity: number; revision?: number } | null;
@@ -81,6 +83,7 @@ export const residentApi = {
   searchByNationalId(nationalId: string) { return apiRequest<Resident>("/residents/search", { method: "POST", body: JSON.stringify({ national_id: nationalId }) }); },
   create(input: ResidentInput) { return apiRequest<Resident>("/residents", { method: "POST", headers: { "Idempotency-Key": crypto.randomUUID() }, body: JSON.stringify(input) }); },
   update(id: string, input: Partial<ResidentInput>) { return apiRequest<Resident>(`/residents/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(input) }); },
+  updateMyAvatar(file: File) { const form = new FormData(); form.append("file", file); return apiRequest<void>("/me/avatar", { method: "PUT", body: form }); },
   archive(id: string) { return apiRequest<Resident>(`/residents/${encodeURIComponent(id)}`, { method: "DELETE" }); },
   meRental() { return apiRequest<MeRental>("/me/rental"); },
   meContracts(page = 1, pageSize = 20) { return apiRequest<ResidentContracts>(`/me/contracts?page=${page}&page_size=${pageSize}`); },

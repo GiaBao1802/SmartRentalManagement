@@ -15,17 +15,21 @@ def valid_context(f):
  return isinstance(f['amenities'],list) and len(f['amenities'])<=8 and all(x in ['air_conditioning','parking','wifi','elevator','washing_machine','refrigerator','water_heater','private_kitchen','private_bathroom','balcony','unspecified_amenity','cats_allowed','dogs_allowed'] for x in f['amenities'])
 
 def understand(message,mode,context,extract):
- if mode=='new':return extract(message)
+ if mode=='new':
+  delta=re.sub(r'^(?:lọc mới|loc moi|bắt đầu lại|bat dau lai)\s*[:,]?\s*','',message.strip(),flags=re.I)
+  return extract(delta or message)
  if not valid_context(context):raise ValueError('Invalid context')
  # Explicit removal commands are deliberately narrow: other content must not be dropped.
- removals={'bo gioi han gia':'price','khong gioi han gia':'price','bo dieu kien may lanh':'amenities','khong can may lanh':'amenities','bo dieu kien dien tich':'area','bo dieu kien khu vuc':'location','bo dieu kien so nguoi':'occupants'}
+ removals={'bo gioi han gia':'price','thoi bo gioi han gia':'price','bo gioi han gia di':'price','khong gioi han gia':'price','bo gia':'price','bo gia di':'price','thoi bo gia di nhe':'price','bo dieu kien may lanh':'amenities','khong can may lanh':'amenities','bo dieu kien dien tich':'area','bo dieu kien khu vuc':'location','bo dieu kien so nguoi':'occupants'}
  command=normalized(message).strip(' .!?')
  if command in removals:
   merged=copy.deepcopy(context);field=removals[command];merged[field]=copy.deepcopy(EMPTY[field])
   return {'status':'ready','filters':merged}
  # Strip only leading conversational update markers; the parser still checks all remaining words.
  additive=bool(re.match(r'^(?:thêm|them)\s+',normalized(message.strip())))
- delta=re.sub(r'^(?:(?:thêm|them|đổi sang|doi sang|đổi thành|doi thanh|đổi|doi|chuyển sang|chuyen sang|giữ nguyên,?|giu nguyen,?)\s+)+','',message.strip(),flags=re.I)
+ delta=re.sub(r'^(?:(?:lọc tiếp|loc tiep|lọc thêm|loc them|thêm|them|đổi sang|doi sang|đổi qua|doi qua|đổi thành|doi thanh|đổi|doi|chuyển sang|chuyen sang|chuyển qua|chuyen qua|giữ nguyên,?|giu nguyen,?)\s+)+','',message.strip(),flags=re.I)
+ # Explicitly unchanged fields do not need to be re-parsed or replaced.
+ delta=re.sub(r'(?:[,;]?\s*)(?:còn\s+|con\s+)?(?:giá|gia|diện tích|dien tich|khu vực|khu vuc|số người|so nguoi|tiện ích|tien ich)\s+(?:vẫn\s+|van\s+)?(?:giữ nguyên|giu nguyen|như cũ|nhu cu)(?:\s+(?:nha|nhé|nhe|ạ|a))?\s*[.!?]*\s*$','',delta,flags=re.I).strip(' ,;')
  parsed=extract('Tìm phòng '+delta)
  if parsed.get('status')!='ready':return parsed
  merged=copy.deepcopy(context)

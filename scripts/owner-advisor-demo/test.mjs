@@ -19,13 +19,13 @@ test('missing-data lists only actionable draft blockers',()=>{assert.deepEqual(a
 test('fixture finalization is after period end with five-day due date',()=>{
  for(const row of invoices.filter(r=>r.finalizedAt)){assert.ok(row.finalizedAt>=row.periodEnd);assert.equal((Date.parse(row.dueDate)-Date.parse(row.finalizedAt))/86400000,5);}
 });
-test('model only classifies allowlisted task, cannot return SQL, amounts or scope',async()=>{
- const fetchImpl=async(url,options)=>{const body=JSON.parse(options.body);assert.equal(body.model,'qwen3:1.7b');assert.ok(!options.body.includes('DEMO-I01'));return Response.json({done_reason:'stop',message:{content:'{"task":"unpaid"}'}});};
+test('model uses Vietnamese examples and only returns an allowlisted intent',async()=>{
+ const fetchImpl=async(url,options)=>{const body=JSON.parse(options.body);assert.equal(body.model,'qwen3:1.7b');assert.ok(!options.body.includes('DEMO-I01'));assert.ok(body.messages.some(m=>m.role==='user'&&m.content==='Sao tiền điện kỳ này cao vậy?'));assert.ok(body.messages.some(m=>m.role==='user'&&m.content==='Giúp tôi hiểu cách tính tiền điện nước tháng này.'));assert.ok(body.messages.some(m=>m.role==='user'&&m.content==='Những hóa đơn nháp nào chưa có số nước?'));return Response.json({done_reason:'stop',message:{content:'{"task":"unpaid"}'}});};
  assert.equal((await interpret('Phòng nào chưa đóng tiền?',{fetchImpl})).task,'unpaid');
  for(const content of ['{"task":"delete"}','{"task":"unpaid","ownerId":"B"}'])await assert.rejects(interpret('x',{fetchImpl:async()=>Response.json({done_reason:'stop',message:{content}})}));
 });
 test('explicit rental search and mutation requests are routed out without model or writes',async()=>{
- for(const question of ['Tìm phòng giá rẻ','Đánh dấu A01 đã trả','Gửi nhắc tiền A01']){
+ for(const question of ['Tìm phòng giá rẻ','Đánh dấu A01 đã trả','Gửi nhắc tiền A01','Xử lý hết mấy việc đó giúp tôi']){
  const r=await interpret(question,{fetchImpl:()=>{throw new Error('must not call');}});assert.equal(r.task,'clarify');assert.equal(r.source,'scope_guard');
  }
 });

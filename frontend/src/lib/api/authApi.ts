@@ -1,9 +1,9 @@
 import { apiRequest } from "./apiClient";
 
-export type Role = "admin" | "resident";
+export type Role = "admin" | "resident" | "superadmin";
 export type AuthUser = {
   account: { account_id: string; role: Role; email: string | null; phone: string | null; status: "active" };
-  profile: { owner_id: string; display_name: string } | { resident_id: string; full_name: string };
+  profile: { owner_id: string; display_name: string } | { resident_id: string; full_name: string } | { platform_role: "superadmin" };
 };
 type LoginResponse = AuthUser & { expires_at: string };
 
@@ -19,5 +19,5 @@ export const authApi = {
 };
 
 export function displayName(user: AuthUser): string {
-  return "display_name" in user.profile ? user.profile.display_name : user.profile.full_name;
+  return "display_name" in user.profile ? user.profile.display_name : "full_name" in user.profile ? user.profile.full_name : "Superadmin";
 }

@@ -1,5 +1,5 @@
 import express, { type RequestHandler } from "express";
-import { authenticateRequest, foreignResourceNotFound, getAdminOwnerId, requireAdmin, type AuthDependencies } from "../middleware/auth.js";
+import { authenticateRequest, foreignResourceNotFound, getAdminOwnerId, getResidentContext, requireAdmin, requireResident, type AuthDependencies } from "../middleware/auth.js";
 import { ApiError, validationError } from "../middleware/api-error.js";
 import { parseBigIntId, sendJson } from "../utils/ids.js";
 import { RoomImageService } from "./room-image.service.js";
@@ -32,10 +32,21 @@ export function createRoomImageRouter(auth: AuthDependencies, repository: RoomIm
   const router = express.Router();
   const service = new RoomImageService(repository, storage);
   const admin: RequestHandler[] = [authenticateRequest(auth), requireAdmin];
+  const resident: RequestHandler[] = [authenticateRequest(auth), requireResident];
 
   router.get("/public/room-images/:image_id", async (request, response, next) => {
     try {
       const association = await service.readPublic(parseId(request.params.image_id));
+      if (!association) { foreignResourceNotFound(); }
+      const bytes = await service.get(association.storageKey);
+      response.status(200).set({ "Content-Type": contentTypeForKey(association.storageKey), "X-Content-Type-Options": "nosniff", "Cache-Control": "private, no-store" }).end(bytes);
+    } catch (error) { next(error); }
+  });
+
+  router.get("/me/room-images/:image_id", ...resident, async (request, response, next) => {
+    try {
+      const context = getResidentContext(request.auth!);
+      const association = await service.readResident(context.ownerId, context.residentId, parseId(request.params.image_id));
       if (!association) { foreignResourceNotFound(); }
       const bytes = await service.get(association.storageKey);
       response.status(200).set({ "Content-Type": contentTypeForKey(association.storageKey), "X-Content-Type-Options": "nosniff", "Cache-Control": "private, no-store" }).end(bytes);
