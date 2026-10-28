@@ -86,4 +86,3 @@ Setup có thể yêu cầu đăng nhập Neon CLI lần đầu. Nếu trình duy
 - [ ] Thành viên đã đăng nhập đúng Neon account trên trình duyệt/CLI.
 - [ ] Thành viên đang dùng nhánh Git `codex/cloudy-public-db-read`.
 - [ ] Thành viên chạy option 5 và thấy thông báo kết nối Neon/schema thành công.
-
