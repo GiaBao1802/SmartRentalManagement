@@ -514,3 +514,6 @@ Cloudy Chủ trọ — điều chỉnh hội thoại local 2026-10-28: thay form
 
 
 Cloudy Chủ trọ — thử database hiện tại (2026-10-28): theo yêu cầu người dùng, Cloudy trong app đọc dữ liệu thật qua API backend đã xác thực. Không cố định account/Owner mẫu, không fallback JSON khi API lỗi. Tra cứu hóa đơn theo tháng kết thúc kỳ; hiển thị kỳ thực tế, snapshot đã lưu và cảnh báo thiếu dữ liệu từ backend. Tra cứu yêu cầu chỉ dẫn sang màn quản lý hiện có để xác nhận xử lý thật, không chạy thao tác mô phỏng lên database. Bộ JSON/standalone vẫn dùng riêng cho kiểm thử. Không thay luật tiền điện nước hoặc quyền Owner.
+
+
+Cloudy Chủ trọ — tiếp lời làm rõ phạm vi (2026-10-28): khi Cloudy hỏi tháng/phòng còn thiếu, người dùng có thể trả lời tự nhiên ngay trong ô chat; câu trả lời được áp dụng vào yêu cầu đang chờ thay vì bị phân loại thành phiên truy vấn mới. Khi đã có tóm tắt xác nhận, người dùng có thể sửa tháng/phòng bằng tin nhắn; phạm vi mới phải hiện lại để xác nhận, chưa đọc kết quả ngay. Nếu người dùng nêu một nhóm tác vụ khác, bắt đầu diễn giải ý định mới.

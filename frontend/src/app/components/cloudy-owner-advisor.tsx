@@ -1,6 +1,6 @@
 "use client";
 import {useEffect,useRef,useState} from 'react';
-import {proposeOwnerScope,ownerConfirmation} from '../../lib/owner-chat-intent';
+import {proposeOwnerScope,ownerConfirmation,parseOwnerClarificationReply,namesDifferentOwnerTask} from '../../lib/owner-chat-intent';
 import {OWNER_ADVISOR_ENDPOINT} from '../../lib/owner-advisor-endpoint';
 import {CloudyOwnerRequests,type OwnerRequest} from './cloudy-owner-requests';
 type Catalog={source?:string;tasks:Record<string,string>;rooms:string[];periods:string[];asOf:string};
@@ -32,6 +32,37 @@ export function CloudyOwnerAdvisor(){
    }else{setProposed(false);setResult(data);setMessages(m=>[...m,{role:'cloudy',text:data.summary}]);setNote('');}
   }catch(e){if(!controller.signal.aborted)setMessages(m=>[...m,{role:'cloudy',text:e instanceof Error?e.message:'Có lỗi khi tải dữ liệu. Bạn thử gửi lại nhé.'}]);}finally{if(pending.current===controller){pending.current=null;setBusy(false);}}
  }
+ function submitQuestion(){
+  const text=question.trim();if(!text||busy||!catalog)return;
+  if(proposed&&catalog&&namesDifferentOwnerTask(text,task)){
+   invalidate();setMessages(m=>[...m,{role:'user',text}]);void run({question:text},'interpret');return;
+  }
+  if(proposed&&(!period||roomUnknown)){
+   setQuestion('');setResult(null);setMessages(m=>[...m,{role:'user',text}]);
+   const kind:'period'|'room'=period?'room':'period';
+   const parsed=parseOwnerClarificationReply(text,kind,catalog);
+   if(parsed.resolved&&parsed.value!==null){
+    if(kind==='period')setPeriod(parsed.value);else{setRoom(parsed.value);setRoomUnknown(false);}
+   }else if(kind==='period')setMessages(m=>[...m,{role:'cloudy',text:`Mình chưa nhận ra tháng cần xem. Bạn có thể nhập hoặc chọn: ${catalog.periods.join(', ')}.`}]);
+   else setMessages(m=>[...m,{role:'cloudy',text:'Mình chưa tìm thấy đúng mã phòng. Bạn nhập mã phòng, hoặc ghi “tất cả phòng”.'}]);
+   return;
+  }
+  if(proposed){
+   const parsedPeriod=parseOwnerClarificationReply(text,'period',catalog!);
+   const mentionsPeriod=/\b(thang|ky)\b|\b20\d{2}-(?:0[1-9]|1[0-2])\b/.test(text.normalize('NFD').replace(/[\u0300-\u036f]/g,''));
+   const parsedRoom=parseOwnerClarificationReply(text,'room',catalog!);
+   const mentionsRoom=/\bphong\b|\btat ca\b|\btoan bo\b|\bmoi phong\b|\bk\d+-p\d+\b/i.test(text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/gi,'d'));
+   const nextPeriod=mentionsPeriod&&parsedPeriod.resolved?parsedPeriod.value!:period;
+   const nextRoom=mentionsRoom&&parsedRoom.resolved?parsedRoom.value!:room;
+   if(nextPeriod!==period||nextRoom!==room){setQuestion('');setPeriod(nextPeriod);setRoom(nextRoom);setRoomUnknown(false);setResult(null);setMessages(m=>[...m,{role:'user',text},{role:'cloudy',text:ownerConfirmation({task,period:nextPeriod,room:nextRoom},catalog!)}]);return;}
+  }
+  invalidate();setMessages(m=>[...m,{role:'user',text}]);void run({question:text},'interpret');
+ }
+ function changeQuestion(value:string){
+  if(proposed){pending.current?.abort();pending.current=null;setResult(null);setBusy(false);}
+  else invalidate();
+  setQuestion(value);
+ }
  return <div className="cloudy-owner">
   <p id="cloudy-chat-preview-note">Cloudy hỗ trợ chủ trọ kiểm tra chưa đóng tiền, điện nước và dữ liệu còn thiếu. Nguồn: {catalog?.source==='database'?'database hiện tại, theo tài khoản đăng nhập':'đang kết nối'}.</p>
   <p role="status">{loading?'Đang tải danh sách phòng…':loadError?'Chưa tải được dữ liệu chủ trọ.':note}</p>
@@ -51,9 +82,9 @@ export function CloudyOwnerAdvisor(){
   {result&&!result.requests&&!result.cards.length&&<p>Không có hóa đơn phù hợp phạm vi đã chọn.</p>}
   <a href="/admin/requests">Mở yêu cầu & khiếu nại thật từ khách</a>
   <div ref={chatEnd}/>
-  <form className="cloudy-owner__composer" onSubmit={e=>{e.preventDefault();if(!busy&&question.trim()){invalidate();setMessages(m=>[...m,{role:'user',text:question.trim()}]);void run({question},'interpret');}}}>
+  <form className="cloudy-owner__composer" onSubmit={e=>{e.preventDefault();submitQuestion();}}>
    <label className="sr-only" htmlFor="cloudy-owner-question">Tin nhắn cho Cloudy</label>
-   <textarea id="cloudy-owner-question" value={question} maxLength={500} placeholder="Hỏi Cloudy: Phòng nào chưa đóng tiền tháng 10?" onChange={e=>{invalidate();setQuestion(e.target.value);}} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();e.currentTarget.form?.requestSubmit();}}}/>
+   <textarea id="cloudy-owner-question" value={question} maxLength={500} placeholder={proposed&&!period?'Bạn muốn xem tháng nào?':proposed&&roomUnknown?'Bạn muốn xem phòng nào?':'Hỏi Cloudy: Phòng nào chưa đóng tiền tháng 10?'} onChange={e=>changeQuestion(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();e.currentTarget.form?.requestSubmit();}}}/>
    <button disabled={busy||!question.trim()}>Gửi</button>
   </form>
   </>}

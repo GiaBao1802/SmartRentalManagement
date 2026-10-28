@@ -32,6 +32,8 @@ Admin can define area/slot inventory, accepted vehicle type and FREE/PAID offer,
 
 ### Owner advisor demo replaces room recommendation — 2026-10-28
 
+UX follow-up improvement: typed replies now complete missing month/room clarifications in the same pending request; users can revise a proposed month/room and must confirm the revised scope again. A different task phrase starts a new classification. No API/data behavior changed. Not run through tests or typecheck in this pass.
+
 Live data update: Admin Cloudy now reads the configured backend database through authenticated APIs, with full invoice/property/room pagination, saved utility snapshots and canonical billing missing-data checks. Real requests link to existing Admin management workflows; synthetic mutations are disabled in live mode. Current target inspected as Goctro_dev_v18:5433; no database creation, seed, migration or business-data edits. Authenticated HTTP checks loaded 4 rooms for Admin 1 and all five tasks returned 200; test session logged out. Standalone/JSON history below remains separate. Primary Exact Next Task unchanged.
 
 Owner Cloudy now uses question → clarification if needed → explicit task/month/room confirmation → results, replacing the initial selection form. Edits invalidate old proposals; request decisions still require separate confirmation. Frontend typecheck and 9 focused tests pass; UI visual verification not performed (no computer use). Synthetic data, backend permissions and DB unchanged. Primary Exact Next Task unchanged.
