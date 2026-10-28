@@ -1,10 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { notificationApi, type ResidentNotification } from "../../lib/api/notificationApi";
 
-type Category = "all" | "invoice_demo_payment" | "resident_feedback" | "parking_request";
+type Category = "all" | "resident_feedback" | "service_booking_requested" | "parking_request" | "invoice_demo_payment" | "billing_period_closeout";
 type ReadFilter = "all" | "unread" | "read";
+const PAGE_SIZE = 30;
+
+const notificationDetails: Record<string, { label: string; href: string; action: string }> = {
+  resident_feedback: { label: "Khiếu nại / yêu cầu", href: "/admin/requests", action: "Mở yêu cầu" },
+  service_booking_requested: { label: "Yêu cầu dịch vụ", href: "/admin/services/flexible", action: "Mở yêu cầu dịch vụ" },
+  parking_request: { label: "Yêu cầu gửi xe", href: "/admin/services/parking", action: "Mở yêu cầu gửi xe" },
+  invoice_demo_payment: { label: "Hóa đơn / thanh toán", href: "/admin/invoices", action: "Mở hóa đơn" },
+  billing_period_closeout: { label: "Chốt kỳ hóa đơn", href: "/admin/billing", action: "Mở chốt kỳ" },
+};
 
 function dateLabel(value: string) { return new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" }).format(new Date(value)); }
 
@@ -17,29 +27,50 @@ export default function AdminNotificationBell() {
   const [unreadCount, setUnreadCount] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextPage, setNextPage] = useState<number | null>(null);
+  const requestVersion = useRef(0);
 
   useEffect(() => {
     let current = true;
-    void Promise.all([
-      notificationApi.list({ page: 1, page_size: 1, unread: true, type: "invoice_demo_payment" }),
-      notificationApi.list({ page: 1, page_size: 1, unread: true, type: "resident_feedback" }),
-      notificationApi.list({ page: 1, page_size: 1, unread: true, type: "parking_request" }),
-    ])
-      .then(([invoice, feedback, parking]) => { if (current) setUnreadCount(invoice.meta.total_items + feedback.meta.total_items + parking.meta.total_items); })
+    void notificationApi.list({ page: 1, page_size: 1, unread: true })
+      .then((result) => { if (current) setUnreadCount(result.meta.total_items); })
       .catch(() => { if (current) setUnreadCount(null); });
     return () => { current = false; };
   }, [open, rows.length]);
 
   useEffect(() => {
     if (!open) return;
-    let current = true;
-    setLoading(true); setError("");
-    void notificationApi.list({ page: 1, page_size: 30, ...(category === "all" ? {} : { type: category }), ...(readFilter === "all" ? {} : { unread: readFilter === "unread" }) })
-      .then((result) => { if (current) setRows(result.data); })
-      .catch((reason: unknown) => { if (current) setError(reason instanceof Error ? reason.message : "Không tải được thông báo."); })
-      .finally(() => { if (current) setLoading(false); });
-    return () => { current = false; };
+    const version = ++requestVersion.current;
+    setLoading(true); setLoadingMore(false); setError(""); setRows([]); setNextPage(null);
+    void notificationApi.list({ page: 1, page_size: PAGE_SIZE, ...(category === "all" ? {} : { type: category }), ...(readFilter === "all" ? {} : { unread: readFilter === "unread" }) })
+      .then((result) => {
+        if (requestVersion.current !== version) return;
+        setRows(result.data); setNextPage(result.meta.total_pages > 1 ? 2 : null);
+      })
+      .catch((reason: unknown) => { if (requestVersion.current === version) setError(reason instanceof Error ? reason.message : "Không tải được thông báo."); })
+      .finally(() => { if (requestVersion.current === version) setLoading(false); });
+    return () => { requestVersion.current += 1; };
   }, [category, open, readFilter]);
+
+  async function loadMore() {
+    if (nextPage === null || loadingMore) return;
+    const version = requestVersion.current;
+    setLoadingMore(true); setError("");
+    try {
+      const result = await notificationApi.list({ page: nextPage, page_size: PAGE_SIZE, ...(category === "all" ? {} : { type: category }), ...(readFilter === "all" ? {} : { unread: readFilter === "unread" }) });
+      if (requestVersion.current !== version) return;
+      setRows((current) => {
+        const known = new Set(current.map((row) => row.notification_id));
+        return [...current, ...result.data.filter((row) => !known.has(row.notification_id))];
+      });
+      setNextPage(nextPage < result.meta.total_pages ? nextPage + 1 : null);
+    } catch (reason) {
+      if (requestVersion.current === version) setError(reason instanceof Error ? reason.message : "Không tải thêm được thông báo.");
+    } finally {
+      if (requestVersion.current === version) setLoadingMore(false);
+    }
+  }
 
   async function markRead(row: ResidentNotification) {
     if (row.read_at) return;
@@ -57,20 +88,22 @@ export default function AdminNotificationBell() {
     </button>
     {open && <section className="admin-notification-popover" aria-label="Thông báo quản trị">
       <header><div><small>HỘP THƯ QUẢN TRỊ</small><h2>Thông báo</h2></div><button type="button" aria-label="Đóng thông báo" onClick={() => setOpen(false)}>×</button></header>
-      <div className="admin-notification-filters"><label>Nhóm<select value={category} onChange={(event) => setCategory(event.target.value as Category)}><option value="all">Tất cả</option><option value="invoice_demo_payment">Hóa đơn</option><option value="resident_feedback">Phản hồi</option><option value="parking_request">Parking</option></select></label><label>Trạng thái<select value={readFilter} onChange={(event) => setReadFilter(event.target.value as ReadFilter)}><option value="all">Tất cả</option><option value="unread">Chưa đọc</option><option value="read">Đã đọc</option></select></label></div>
+      <div className="admin-notification-filters"><label>Nhóm<select value={category} onChange={(event) => setCategory(event.target.value as Category)}><option value="all">Tất cả</option><option value="resident_feedback">Khiếu nại / yêu cầu</option><option value="service_booking_requested">Yêu cầu dịch vụ</option><option value="parking_request">Yêu cầu gửi xe</option><option value="invoice_demo_payment">Hóa đơn / thanh toán</option><option value="billing_period_closeout">Chốt kỳ hóa đơn</option></select></label><label>Trạng thái<select value={readFilter} onChange={(event) => setReadFilter(event.target.value as ReadFilter)}><option value="all">Tất cả</option><option value="unread">Chưa đọc</option><option value="read">Đã đọc</option></select></label></div>
       {error && <p className="admin-notification-error" role="alert">{error}</p>}{loading && <p className="admin-notification-empty">Đang tải…</p>}{!loading && !error && rows.length === 0 && <p className="admin-notification-empty">Chưa có thông báo phù hợp.</p>}
       {!loading && rows.length > 0 && <div className={`admin-notification-list${rows.length > 3 ? " is-scrollable" : ""}`}>{rows.map((row) => {
         const expanded = expandedNotificationId === row.notification_id;
         const canExpand = row.body.length > 110;
+        const detail = notificationDetails[row.notification_type];
         return <article className={row.read_at ? "is-read" : "is-unread"} key={row.notification_id}>
-          <div><span>{row.notification_type === "invoice_demo_payment" ? "Hóa đơn" : row.notification_type === "resident_feedback" ? "Phản hồi" : row.notification_type === "parking_request" ? "Parking" : "Thông báo"}</span>{!row.read_at && <b>Chưa đọc</b>}</div>
+          <div><span>{detail?.label ?? "Thông báo"}</span>{!row.read_at && <b>Chưa đọc</b>}</div>
           <h3>{row.title}</h3>
           <p className={expanded ? "is-expanded" : undefined}>{row.body}</p>
           {canExpand && <button className={`admin-notification-more${expanded ? " is-expanded" : ""}`} type="button" aria-expanded={expanded} aria-label={expanded ? "Thu gọn nội dung thông báo" : "Xem đầy đủ nội dung thông báo"} title={expanded ? "Thu gọn" : "Xem đầy đủ"} onClick={() => setExpandedNotificationId(expanded ? null : row.notification_id)}>{expanded ? "Thu gọn" : "…"}</button>}
           <time dateTime={row.created_at}>{dateLabel(row.created_at)}</time>
+          {detail && <Link className="admin-notification-action" href={detail.href}>{detail.action}</Link>}
           {!row.read_at && <button type="button" onClick={() => void markRead(row)}>Đánh dấu đã đọc</button>}
         </article>;
-      })}</div>}
+      })}{nextPage !== null && <button className="admin-notification-load-more" type="button" disabled={loadingMore} onClick={() => void loadMore()}>{loadingMore ? "Đang tải…" : "Tải thêm thông báo"}</button>}</div>}
     </section>}
   </div>;
 }

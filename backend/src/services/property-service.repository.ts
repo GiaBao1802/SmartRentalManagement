@@ -387,6 +387,13 @@ export class PrismaPropertyServiceRepository {
           body: `${service.service_name} · ${input.serviceDate} · ${slot.start}–${slot.end}. Yêu cầu đang chờ chủ trọ duyệt.`,
         },
       });
+      const admins = await tx.account.findMany({ where: { ownerId, role: "admin", status: "active" }, select: { accountId: true } });
+      if (admins.length) await tx.notification.createMany({ data: admins.map(({ accountId: adminAccountId }) => ({
+        accountId: adminAccountId,
+        notificationType: "service_booking_requested",
+        title: "Cư dân gửi yêu cầu đặt tiện ích",
+        body: `${service.service_name} · ${input.serviceDate} · ${slot.start}–${slot.end}. Vui lòng xem mục Tiện ích phát sinh để duyệt yêu cầu.`,
+      })) });
       return { booking, created: true };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
   }
