@@ -2,7 +2,7 @@
 
 ## Neon shared database setup — 2026-10-28
 
-[Neon setup runbook](10_operations/NEON_SHARED_DATABASE_SETUP.md) — CURRENT, V1.15 plus shared synthetic dataset: 100 varied room descriptions, property facilities, vehicles and Parking inventory. Setup menu option 5 requires latest Git `main`, links each developer to Neon `production`, pulls ignored local env values, verifies the catalog read-only, and can start the app; it does not migrate/seed/reset cloud data. Two Collaborator invitations are pending acceptance; grant project-only Editor access before setup.
+[Neon setup runbook](10_operations/NEON_SHARED_DATABASE_SETUP.md) — CURRENT, V1.15 plus shared synthetic dataset: 100 varied rooms, 10 demo resident accounts linked to active contracts/occupancies, property facilities, vehicles and Parking inventory. Ten rooms are occupied and 90 are publicly available. Setup menu option 5 requires latest Git `main`, links each developer to Neon `production`, pulls ignored local env values, verifies the catalog read-only, and can start the app; it does not migrate/seed/reset cloud data. Two Collaborator invitations are pending acceptance; grant project-only Editor access before setup.
 
 [Neon teammate onboarding](10_operations/NEON_TEAMMATE_ONBOARDING.md) — CURRENT. Step-by-step Windows instructions for a new Neon user: register with the invited email, accept the org invite, receive project-level Editor, pull `main`, and run option 5 safely.
 
