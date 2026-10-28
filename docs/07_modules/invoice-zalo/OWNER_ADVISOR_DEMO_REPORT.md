@@ -2,7 +2,7 @@
 
 CURRENT — Cloudy Admin uses authenticated live backend reads; standalone port 4332 remains synthetic.
 
-Conversation follow-up improvement — 2026-10-28: replies such as “tháng 10”, a unique room code, or “tất cả phòng” now fill the missing part of an in-progress clarification without losing the selected task. Users may also revise month/room after seeing the confirmation; the amended scope is shown again and still requires an affirmative click before querying. Phrases naming another supported task trigger fresh intent classification. Source change only; tests/typecheck were not run in this pass.
+Conversation follow-up improvement — 2026-10-28: replies such as “tháng 10”, a unique room code, or “tất cả phòng” now fill the missing part of an in-progress clarification without losing the selected task. Users may also revise month/room after seeing the confirmation; the amended scope is shown again and still requires an affirmative click before querying. Phrases naming another supported task trigger fresh intent classification. Room matching uses each catalog row's own code and supports both live property-qualified labels and fixture codes, avoiding false ambiguity. Five focused tests and frontend/backend typechecks pass; authenticated browser review remains pending.
 
 Live database integration — 2026-10-28: user requested testing against the current database. Read-only inspection verified backend target Goctro_dev_v18:5433, with 4 rooms / 3 invoices / 1 complaint for Owner 1 and 4 rooms / 11 invoices / 1 complaint for Owner 2 at inspection time. No new database, seeding, migration or business-record write was needed. Current V1.14 promotion remains owned by its existing changelog/report.
 

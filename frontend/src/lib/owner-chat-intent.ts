@@ -18,11 +18,9 @@ export function parseOwnerClarificationReply(question:string,kind:'period'|'room
   return {resolved:false,value:null};
  }
  if(/\b(tat ca|toan bo|cac phong|moi phong)\b/.test(text)||/tat ca phong|toan bo phong|cac phong/.test(text))return {resolved:true,value:''};
- const codes:string[]=text.match(/\bk\d+-p\d+\b/g)||[];
  const matched=catalog.rooms.filter(label=>{
-  const code=label.match(/ \/ (.+) \[\d+\]$/)?.[1];
-  const candidates=[code,...codes].filter((value):value is string=>Boolean(value));
-  return candidates.some(value=>new RegExp('(?:^|[^a-z0-9])'+value.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(?:$|[^a-z0-9])').test(text));
+  const code=label.match(/ \/ (.+) \[\d+\]$/)?.[1]||(/^k\d+-p\d+$/i.test(label.trim())?label.trim():null);
+  return code?new RegExp('(?:^|[^a-z0-9])'+code.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(?:$|[^a-z0-9])').test(text):false;
  });
  const unique=[...new Set(matched)];
  return unique.length===1?{resolved:true,value:unique[0]}:{resolved:false,value:null};
