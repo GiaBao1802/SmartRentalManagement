@@ -78,6 +78,7 @@ Setup có thể yêu cầu đăng nhập Neon CLI lần đầu. Nếu trình duy
 - Sau khi Neon kết nối thành công, setup gỡ riêng dòng `DATABASE_URL` cũ khỏi `backend/.env` để tránh trỏ nhầm; database PostgreSQL local và dữ liệu của máy đó không bị xóa. Các file `.env.neon` và `.neon` không được commit.
 - Nếu gặp `permission denied`, xác nhận đã chấp nhận lời mời và chủ project đã cấp **Editor cho project `goctro-shared-dev`**. Đăng nhập lại CLI bằng đúng tài khoản Neon rồi chạy lại option 5.
 - Nếu lỗi `DATABASE_URL` hoặc không kết nối được, không gửi URL/mật khẩu lên chat. Gửi chủ project phần thông báo lỗi đã che mọi thông tin bí mật.
+- Giao diện phải ở `http://localhost:3000/login`; cổng `4000` là backend API. Nếu trình duyệt báo `ERR_CONNECTION_REFUSED` ở cổng 3000, kiểm tra cửa sổ setup đã nhập `CHAY` và còn chạy. Nếu UI mở nhưng API trả lỗi, gửi phần log backend đã che thông tin bí mật.
 
 ## Danh sách kiểm tra nhanh cho chủ project
 

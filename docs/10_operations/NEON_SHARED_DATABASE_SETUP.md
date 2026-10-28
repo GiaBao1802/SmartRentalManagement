@@ -29,6 +29,8 @@ After pulling the repository, open `setup.bat` and select **5. Dùng database ch
 
 `.neon` and `.env.neon` are Git-ignored; each developer creates them locally. `dev:neon` explicitly loads values from `.env.neon` over inherited shell variables and refuses to start unless the host, database and branch match this Neon target. `DATABASE_URL` is the pooled application connection. `DATABASE_URL_UNPOOLED` is for separately reviewed schema/migration work; the setup option never uses it. The root `.env` is unchanged; only the backend's old database URL line is removed, and its other settings remain. The setup option never bootstraps, seeds, resets, migrates, or changes cloud data. Since this is a shared branch, application writes made by any user are visible to the team. The branch currently has schema only, so importing the reviewed real dataset remains a separate task.
 
+The Neon runner clears a root-level `PORT` inherited from `.env.neon` so Next.js uses port 3000; the backend reads `backend/.env` or its default and uses port 4000. Open the UI at `http://localhost:3000`; port 4000 is the API.
+
 ## Read and write behavior
 
 A read-only database role can display data but cannot persist UI actions. For example, an Admin approving a Parking request must call the authenticated backend approve endpoint; the backend validates Owner scope and writes the resulting assignment to Neon. The frontend never connects to Neon directly. The pooled Neon application URL currently supports normal application writes, while the setup verifier itself runs only a read-only query.

@@ -100,7 +100,6 @@ try {
   $rng = [Security.Cryptography.RandomNumberGenerator]::Create()
   try { $rng.GetBytes($random) } finally { $rng.Dispose() }
   Set-EnvDefault 'NODE_ENV' 'development'
-  Set-EnvDefault 'PORT' '4000'
   Set-EnvDefault 'FRONTEND_ORIGIN' 'http://localhost:3000'
   Set-EnvDefault 'SESSION_SECRET' ([Convert]::ToBase64String($random))
   Set-EnvDefault 'NEXT_PUBLIC_API_BASE_URL' 'http://localhost:4000/api/v1'

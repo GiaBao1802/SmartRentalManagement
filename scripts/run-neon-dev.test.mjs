@@ -11,9 +11,11 @@ test('Neon runner overrides an inherited local DATABASE_URL without printing cre
   const result = spawnSync(process.execPath, [runner, '--check-env'], {
     cwd: root,
     encoding: 'utf8',
-    env: { ...process.env, DATABASE_URL: 'postgresql://local:private@localhost:5432/Goctro_dev_v18' },
+    env: { ...process.env, DATABASE_URL: 'postgresql://local:private@localhost:5432/Goctro_dev_v18', PORT: '4000' },
   });
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /database=neondb; branch=production/);
+  assert.match(result.stdout, /root_port=unset/);
+  assert.match(result.stdout, /frontend_port=3000; backend_port=4000/);
   assert.doesNotMatch(result.stdout, /localhost|private|Goctro_dev_v18/);
 });

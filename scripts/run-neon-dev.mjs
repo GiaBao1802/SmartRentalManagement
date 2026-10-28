@@ -15,6 +15,9 @@ try {
 // Explicit assignment matters: Node --env-file and dotenv do not override a
 // DATABASE_URL inherited from a shell or backend/.env.
 Object.assign(process.env, neonEnv);
+// PORT belongs to the backend's backend/.env (or its 4000 default). Keeping
+// the shared root PORT in the parent makes Next.js bind to the backend port.
+delete process.env.PORT;
 
 let target;
 try {
@@ -33,7 +36,7 @@ if (!['postgres:', 'postgresql:'].includes(target.protocol)
 }
 
 if (process.argv.includes('--check-env')) {
-  console.log(`Neon runtime environment OK: host=${target.hostname}; database=${database}; branch=${process.env.NEON_BRANCH}`);
+  console.log(`Neon runtime environment OK: host=${target.hostname}; database=${database}; branch=${process.env.NEON_BRANCH}; root_port=${process.env.PORT ?? 'unset'}; frontend_port=3000; backend_port=4000`);
   process.exit(0);
 }
 
