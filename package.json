@@ -11,6 +11,7 @@
   },
   "scripts": {
     "dev": "concurrently -k -n frontend,backend -c blue,green \"npm:dev --workspace=@goctro/frontend\" \"npm:dev --workspace=@goctro/backend\"",
+    "dev:neon": "node scripts/run-neon-dev.mjs",
     "dev:all": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/dev-all.ps1",
     "dev:stop": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/dev-stop.ps1",
     "build": "npm run build --workspace=@goctro/frontend && npm run build --workspace=@goctro/backend",
@@ -21,7 +22,7 @@
     "db:state": "node scripts/database-v111.mjs state",
     "db:verify-artifacts": "node scripts/verify-baseline-integrity.mjs",
     "db:validate": "npm run db:validate --workspace=@goctro/backend",
-    "test:db-setup": "node --test scripts/database-v18.test.mjs scripts/setup-cache.test.mjs",
+    "test:db-setup": "node --test scripts/database-v18.test.mjs scripts/setup-cache.test.mjs scripts/run-neon-dev.test.mjs",
     "test:db-setup:runtime": "node --test scripts/database-v18.integration.test.mjs",
     "db:generate": "npm run db:generate --workspace=@goctro/backend",
     "db:migrate": "node scripts/database-v111.mjs migrate-v110",
@@ -55,5 +56,9 @@
     "prisma@6.12.0": true,
     "@prisma/client@6.12.0": true,
     "@prisma/engines@6.12.0": true
+  },
+  "dependencies": {
+    "@neon/config": "^1.9.5",
+    "@neon/env": "^1.6.6"
   }
 }

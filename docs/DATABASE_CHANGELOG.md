@@ -1,5 +1,9 @@
 # Góc Trọ V1 — Database changelog and audit
 
+## Neon shared branch — schema-only V1.15 install (2026-10-28)
+
+Neon project `goctro-shared-dev` (`patient-scene-93926977`), default branch `production` (`br-spring-frog-a1rqjhvq`), AWS Asia Pacific (Singapore). The branch was empty before setup. The byte-verified V1.15 clean-install `schema.sql` was applied in one transaction through the direct/unpooled connection and matched `expected-catalog.json` after apply: 47 tables. No seed, local data import, demo account, or business rows were written. The existing local `Goctro_dev_v18` database remains the local populated V1.15 target; the Neon branch is a separate, schema-only shared target. Runtime uses the pooled `DATABASE_URL`; local credentials stay in ignored `.env.neon`. Backend `/api/health/db` and a database-backed public room-list query returned HTTP 200 against Neon. Setup instructions and limitations: [`NEON_SHARED_DATABASE_SETUP.md`](10_operations/NEON_SHARED_DATABASE_SETUP.md).
+
 ## Database V1.15 — Resident Parking on the local V1.14 branch (applied locally 2026-10-28)
 
 The user's promoted meter V1.13 and room-request V1.14 baselines remain the local authority. The pulled Parking branch independently used V1.13 for a different schema; its artifacts remain under [`database/parallel-baselines/parking-v1.13/`](../database/parallel-baselines/parking-v1.13/). Parking is rebased as V1.14→V1.15 in [`database/baselines/v1.15/`](../database/baselines/v1.15/).

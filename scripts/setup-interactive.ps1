@@ -66,12 +66,19 @@ try {
   Write-Host '2. Cập nhật và khởi động (hãy tự git pull trước)'
   Write-Host '3. Thoát'
   Write-Host '4. Trợ lý chủ trọ: thu tiền, điện nước (dữ liệu giả lập)'
-  $mode = (Read-Host 'Chọn 1, 2, 3 hoặc 4').Trim()
+  Write-Host '5. Dùng database chung Neon (cloud)'
+  $mode = (Read-Host 'Chọn 1, 2, 3, 4 hoặc 5').Trim()
   if ($mode -eq '3') { exit 0 }
   if ($mode -eq '4') {
     $step = 'Mở trợ lý chủ trọ'
     & "$PSScriptRoot/start-json-demo.ps1"
     if ($LASTEXITCODE -ne 0) { throw 'Demo JSON chưa khởi động được.' }
+    exit 0
+  }
+  if ($mode -eq '5') {
+    $step = 'Kết nối database chung Neon'
+    & "$PSScriptRoot/setup-neon.ps1"
+    if ($LASTEXITCODE -ne 0) { throw 'Setup Neon chưa hoàn thành. Kiểm tra lỗi phía trên; database không bị thay đổi.' }
     exit 0
   }
   if ($mode -notin @('1','2')) { throw 'Lựa chọn không hợp lệ.' }

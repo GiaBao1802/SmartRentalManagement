@@ -29,3 +29,4 @@ build/
 .idea/
 .cursor/
 scratch/
+.neon

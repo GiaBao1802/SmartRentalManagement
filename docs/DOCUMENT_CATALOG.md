@@ -1,5 +1,9 @@
 # Document catalog
 
+## Neon shared database setup — 2026-10-28
+
+[Neon setup runbook](10_operations/NEON_SHARED_DATABASE_SETUP.md) — CURRENT, schema-only V1.15. Setup menu option 5 links each developer to the shared branch, pulls ignored local env values, verifies the catalog read-only, and can start the app; no cloud migration/seed/reset path. A Collaborator invite is pending acceptance; grant project-only Editor access before setup. Real dataset import remains pending.
+
 ## V1.15 local database integration — 2026-10-28
 
 [V1.15 database](../database/baselines/v1.15/README.md) — PROMOTED_LOCAL after verified backup restore, disposable rehearsal, and exact target catalog validation. All 46 predecessor table fingerprints unchanged. [Pulled Parking V1.13 source](../database/parallel-baselines/parking-v1.13/INTEGRATION_NOTE.md) remains archived for provenance. Authenticated UI review pending.
@@ -55,7 +59,7 @@
 |---|---|---|---|
 | `README.md` | Navigation | CURRENT | Entry point for this documentation tree. |
 | `../AGENTS.md` | Repository-wide agent working rules | CURRENT | Governance/instructions only; not business Source of Truth. Frontend work also follows `frontend/AGENTS.md`. |
-| `00_CURRENT_STATE.md` | Project Checkpoint / Navigation | CURRENT | Current project checkpoint only; not canonical business authority. Local V1.15 upgrade and exact-catalog validation passed; authenticated Parking review is the next task. |
+| `00_CURRENT_STATE.md` | Project Checkpoint / Navigation | CURRENT | Current project checkpoint only; not canonical business authority. Local and Neon schema-only V1.15 targets are recorded; team access and real-data import preparation are next. |
 | `DOCUMENTATION_RULES.md` | Governance | CURRENT | Placement, report/history rules, Source of Truth order, task-start/end workflow, and conflict handling. |
 | `07_modules/superadmin/SUPERADMIN_REQUIREMENTS_SPEC.md` | Superadmin / platform administration | CURRENT — REQUIREMENTS APPROVED; NOT IMPLEMENTED | Approved role, Owner lifecycle, platform reports, audit and boundaries; no Superadmin source or schema implementation. |
 | `07_modules/superadmin/SUPERADMIN_SCHEMA_API_GAP_REPORT.md` | Superadmin / schema and API gap analysis | REFERENCE — REVIEW ONLY | Snapshot against V1.8, before the V1.9/V1.10 database changes; identified gaps remain subject to fresh review. |
@@ -72,7 +76,7 @@
 | `DOCUMENT_CATALOG.md` | Catalog | CURRENT | This inventory. |
 | `01_REQUIREMENTS.md` | Product requirements | CURRENT — CANONICAL | Business requirements authority for SmartRentalManagement. Historical source provenance is retained in the dependency copies and reports. |
 | `04_API_SPEC.md` | API contract | CURRENT — CANONICAL | `/api/v1` contract authority for SmartRentalManagement. Historical source provenance is retained where applicable. |
-| `DATABASE_CHANGELOG.md` | Database changelog | CURRENT — CANONICAL | `Goctro_dev_v18` has V1.15 physically applied and verified; authenticated Parking UI review remains pending. |
+| `DATABASE_CHANGELOG.md` | Database changelog | CURRENT — CANONICAL | Local `Goctro_dev_v18` has populated V1.15; Neon `production` has a separate schema-only V1.15 install with no seed or imported data. |
 | `../database/baselines/v1.15/` | Database / Resident Parking requests | PROMOTED_LOCAL — APPLIED AND VERIFIED | Adds slot vehicle type/offer configuration and Resident parking requests on the local V1.14 branch. Backup, restore rehearsal, exact catalog and unchanged predecessor fingerprints verified. |
 | `07_modules/parking/RESIDENT_PARKING_REQUESTS_IMPLEMENTATION_20261028.md` | Parking / Resident request and Admin approval | CURRENT SOURCE IMPLEMENTATION — V1.15 APPLIED; USER REVIEW PENDING | Owner-scoped API, Admin slot offers/approval queue, Resident area-first slot discovery and vehicle add/delete, request/history. Vehicle deletion preserves Parking request/assignment history. |
 | `11_project-reports/SOURCE_OF_TRUTH_CURRENT_STATE_GOVERNANCE_FINALIZATION_REPORT.md` | Project governance / Current State workflow | CURRENT | Records evidence checked, stale API baseline metadata reconciled, authority order, workflow, catalog, and checkpoint finalization. |
@@ -185,6 +189,7 @@
 | `08_audits/PRE_GIT_STEP_3_TRACKED_DELETION_REVIEW.md` | Cross-domain repository staging preparation | CURRENT — STEP 3 REVIEW | Confirms three documentation deletions are intentional moves with preserved replacements; no staging, restore, or deletion was performed. |
 | `08_audits/PRE_GIT_STEP_4_LEGACY_RETIREMENT_AUDIT.md` | Cross-domain repository cleanup / legacy retirement | REFERENCE — PRE-PHASE-1 SNAPSHOT | Preserves the earlier inventory before source removal. Current cleanup status, fresh diagnostic measurements and phased next steps are in LEGACY_TO_CURRENT_MIGRATION_PLAN.md; historical no-deletion claims apply only to the earlier audit. |
 | `10_operations/LOCAL_DEV_STARTUP_REPORT.md` | Local operations | REFERENCE | Windows local development startup procedure and diagnostics. |
+| `10_operations/NEON_SHARED_DATABASE_SETUP.md` | Shared cloud database operations | CURRENT — SCHEMA-ONLY V1.15; CONNECTION VERIFIED | Neon project/branch details, team setup, ignored environment workflow, safe schema-only install evidence, build/runtime checks, and remaining data-import/access steps. |
 | `10_operations/DATABASE_V1_8_SETUP.md` | Database operations / Windows menu setup | HISTORICAL — V1.8 PREDECESSOR | Preserves setup and PostgreSQL 18.6 V1.8 rehearsal evidence. Current local baseline and V1.8 migration instructions are in the V1.9 guide. |
 | `10_operations/DATABASE_V1_9_SETUP.md` | Database operations / V1.9 clean install and V1.8 upgrade | CURRENT — CLEAN INSTALL, POPULATED REHEARSAL AND LOCAL APPLY PASS | V1.9 clean schema+seed, V1.8 migration, backup verification, 40-table preservation fingerprints and runtime validator 85/85. Goctro_test3 was not touched. |
 | `10_operations/GITHUB_HANDOFF_READINESS_2026_10_26.md` | Repository-wide GitHub handoff preparation | CURRENT — CLOUDY PUSHED; LOGO REVIEW PENDING | Git/asset/logo decisions, source-versus-reported status, clone guidance, offline checks, unresolved historical links, and scoped Cloudy push `f793f33`. Does not change the single next product task. |

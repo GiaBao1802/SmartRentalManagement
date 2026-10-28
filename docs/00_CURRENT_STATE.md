@@ -1,5 +1,9 @@
 # Góc Trọ — Current State
 
+### Neon shared database setup — 2026-10-28
+
+Neon project `goctro-shared-dev` (`patient-scene-93926977`), default `production` branch in Singapore has the exact V1.15 clean-install schema (47 tables). The target was confirmed empty before transactional schema install; no seeds, demo users, or local rows were copied. `setup.bat` option 5 authenticates each developer's Neon CLI, links the fixed project/branch, pulls only Postgres variables to ignored `.env.neon`, verifies the catalog with a read-only query, removes only the old `DATABASE_URL` line from `backend/.env` after Neon connectivity succeeds, then launches the app with `.env.neon` overriding inherited local settings. The local database and its data are not deleted; no cloud bootstrap/seed/reset/migration path exists. Invitation for `tv999ht@gmail.com` was sent as an organization Collaborator; it is pending, and project-specific Editor access is still required after acceptance. The cloud database has no real dataset yet. See [Neon shared database setup](10_operations/NEON_SHARED_DATABASE_SETUP.md) and [database changelog](DATABASE_CHANGELOG.md#neon-shared-branch--schema-only-v115-install-2026-10-28).
+
 ### Guest Cloudy public database read — 2026-10-28
 
 After explicit guest confirmation, local development Cloudy queries the existing public rooms API using structured filters; no generated SQL or database writes. Actual Qwen3 1.7B inference proposed the expected Đà Nẵng, below 4,000,000 VND and capacity 2 filters; the read-only API adapter returned one public match. Amenities are not exposed as structured public data and therefore require clarification. Production AI remains deferred. 22 focused TypeScript tests, 15 Python tests and frontend typecheck pass. The primary Exact Next Task below is unchanged. See the [Cloudy integration report](07_modules/public-marketplace/CLOUDY_LOCAL_AI_INTEGRATION_REPORT.md).
@@ -253,7 +257,7 @@ Workspace code and PostgreSQL read-model integration pass on V1.8 rehearsal. Aut
 
 ## Exact Next Task
 
-**Review Resident Parking in the authenticated local app.** Confirm a Resident can load vehicles/areas/slots and submit or cancel a request; confirm Admin can review a pending request and view slot/vehicle details. Then recheck Resident equipment request and Owner confirmation.
+**After `tv999ht@gmail.com` accepts the pending Neon invitation, grant Editor access only to `goctro-shared-dev`, then prepare the reviewed real-data import.** Keep the shared branch schema-only until the real dataset is reviewed; do not seed demo fixtures. Then verify imported counts and the app's read flow.
 ## Resume Checklist
 
 1. Read repository-wide [AGENTS.md](../AGENTS.md), [Documentation Rules](DOCUMENTATION_RULES.md), this checkpoint, and the [Document Catalog](DOCUMENT_CATALOG.md).
