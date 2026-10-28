@@ -2,7 +2,7 @@
 
 ### Neon shared database setup — 2026-10-28
 
-Neon project `goctro-shared-dev` (`patient-scene-93926977`), default `production` branch in Singapore has the exact V1.15 clean-install schema (47 tables). The target was confirmed empty before transactional schema install; no seeds, demo users, or local rows were copied. `setup.bat` option 5 authenticates each developer's Neon CLI, links the fixed project/branch, pulls only Postgres variables to ignored `.env.neon`, verifies the catalog with a read-only query, removes only the old `DATABASE_URL` line from `backend/.env` after Neon connectivity succeeds, then launches the app with `.env.neon` overriding inherited local settings. The local database and its data are not deleted; no cloud bootstrap/seed/reset/migration path exists. Invitation for `tv999ht@gmail.com` was sent as an organization Collaborator; it is pending, and project-specific Editor access is still required after acceptance. The cloud database has no real dataset yet. See [Neon shared database setup](10_operations/NEON_SHARED_DATABASE_SETUP.md) and [database changelog](DATABASE_CHANGELOG.md#neon-shared-branch--schema-only-v115-install-2026-10-28).
+Neon project `goctro-shared-dev` (`patient-scene-93926977`), default `production` branch in Singapore has the exact V1.15 clean-install schema (47 tables) and a shared synthetic dataset: 5 Owners/Admins, 10 Properties (5 each in Đồng Nai and TP. Hồ Chí Minh), 100 public/available Rooms (50 per province), and 10 Resident accounts including the requested Gmail login. No local rows or real customer data were imported; the local `Goctro_dev_v18` remains unchanged. Admin and Resident login/session HTTP checks both passed. `setup.bat` option 5 authenticates each developer's Neon CLI, links the fixed project/branch, pulls only Postgres variables to ignored `.env.neon`, verifies the catalog with a read-only query, removes only the old `DATABASE_URL` line from `backend/.env` after Neon connectivity succeeds, then launches the app with `.env.neon` overriding inherited local settings. The local database and its data are not deleted; option 5 still has no cloud bootstrap/seed/reset/migration path. Invitation for `tv999ht@gmail.com` remains pending; project-specific Editor access is required after acceptance. See [Neon shared database setup](10_operations/NEON_SHARED_DATABASE_SETUP.md) and [database changelog](DATABASE_CHANGELOG.md#neon-shared-synthetic-dataset--100-rooms-2026-10-28).
 
 ### Guest Cloudy public database read — 2026-10-28
 
@@ -257,7 +257,7 @@ Workspace code and PostgreSQL read-model integration pass on V1.8 rehearsal. Aut
 
 ## Exact Next Task
 
-**After `tv999ht@gmail.com` accepts the pending Neon invitation, grant Editor access only to `goctro-shared-dev`, then prepare the reviewed real-data import.** Keep the shared branch schema-only until the real dataset is reviewed; do not seed demo fixtures. Then verify imported counts and the app's read flow.
+**After `tv999ht@gmail.com` accepts the pending Neon invitation, grant Editor access only to `goctro-shared-dev`, then have them run setup option 5 and verify the shared demo login and room list.** Keep real customer data out of this shared demo dataset until it is separately reviewed and authorized.
 ## Resume Checklist
 
 1. Read repository-wide [AGENTS.md](../AGENTS.md), [Documentation Rules](DOCUMENTATION_RULES.md), this checkpoint, and the [Document Catalog](DOCUMENT_CATALOG.md).

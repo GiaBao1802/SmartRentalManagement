@@ -2,7 +2,7 @@
 
 ## Neon shared database setup — 2026-10-28
 
-[Neon setup runbook](10_operations/NEON_SHARED_DATABASE_SETUP.md) — CURRENT, schema-only V1.15. Setup menu option 5 links each developer to the shared branch, pulls ignored local env values, verifies the catalog read-only, and can start the app; no cloud migration/seed/reset path. A Collaborator invite is pending acceptance; grant project-only Editor access before setup. Real dataset import remains pending.
+[Neon setup runbook](10_operations/NEON_SHARED_DATABASE_SETUP.md) — CURRENT, V1.15 plus shared synthetic 100-room dataset. Setup menu option 5 links each developer to the shared branch, pulls ignored local env values, verifies the catalog read-only, and can start the app; it does not migrate/seed/reset the cloud database. A Collaborator invite is pending acceptance; grant project-only Editor access before setup.
 
 [Neon teammate onboarding](10_operations/NEON_TEAMMATE_ONBOARDING.md) — CURRENT. Step-by-step Windows instructions for a new Neon user: register with the invited email, accept the org invite, receive project-level Editor, pull the setup branch, and run option 5 safely.
 

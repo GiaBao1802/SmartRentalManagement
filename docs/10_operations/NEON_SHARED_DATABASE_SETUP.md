@@ -8,9 +8,9 @@
 - Region: AWS Asia Pacific (Singapore)
 - PostgreSQL: 18.6
 - Schema: exact V1.15 baseline, 47 tables; catalog verified after installation
-- Data: schema only. No seed, demo account, room fixtures, or local database rows were copied.
+- Data: shared synthetic demo dataset; no real customer or local database rows were copied.
 
-The local populated `Goctro_dev_v18` remains separate and unchanged. The Neon project is the shared cloud target. Its branch currently returns zero public rooms until the real dataset is imported.
+The local populated `Goctro_dev_v18` remains separate and unchanged. The Neon project is the shared cloud target. It contains 100 synthetic public/available rooms across five properties in Đồng Nai and five in TP. Hồ Chí Minh, owned by five synthetic Owner accounts. Ten synthetic Resident accounts are also present, including the requested Gmail login. These rows are shared by all developers connected to the project.
 
 ## Developer setup
 
@@ -27,7 +27,9 @@ After pulling the repository, open `setup.bat` and select **5. Dùng database ch
 5. After that successful check, removes only the `DATABASE_URL` line from `backend/.env`. It does not delete the local database or its data, and it preserves the rest of `backend/.env`.
 6. Requires a second explicit confirmation before starting the app.
 
-`.neon` and `.env.neon` are Git-ignored; each developer creates them locally. `dev:neon` explicitly loads values from `.env.neon` over inherited shell variables and refuses to start unless the host, database and branch match this Neon target. `DATABASE_URL` is the pooled application connection. `DATABASE_URL_UNPOOLED` is for separately reviewed schema/migration work; the setup option never uses it. The root `.env` is unchanged; only the backend's old database URL line is removed, and its other settings remain. The setup option never bootstraps, seeds, resets, migrates, or changes cloud data. Since this is a shared branch, application writes made by any user are visible to the team. The branch currently has schema only, so importing the reviewed real dataset remains a separate task.
+`.neon` and `.env.neon` are Git-ignored; each developer creates them locally. `dev:neon` explicitly loads values from `.env.neon` over inherited shell variables and refuses to start unless the host, database and branch match this Neon target. `DATABASE_URL` is the pooled application connection. `DATABASE_URL_UNPOOLED` is for separately reviewed schema/migration work; the setup option never uses it. The root `.env` is unchanged; only the backend's old database URL line is removed, and its other settings remain. The setup option never bootstraps, seeds, resets, migrates, or changes cloud data. Since this is a shared branch, application writes made by any user are visible to the team.
+
+The demo Owner/Admin accounts are `admin.owner01@example.test` through `admin.owner05@example.test`. Resident accounts are `resident.02@example.test` through `resident.10@example.test`, plus the user's requested Gmail. Each seeded account uses the same randomly generated demo password, provided separately to the user for testing and not stored in Git. These are synthetic login fixtures, not verified email identities. Resident profiles have no room tenancy assigned yet; change the demo password before any non-demo use.
 
 The Neon runner clears a root-level `PORT` inherited from `.env.neon` so Next.js uses port 3000; the backend reads `backend/.env` or its default and uses port 4000. Open the UI at `http://localhost:3000`; port 4000 is the API.
 
@@ -41,7 +43,7 @@ To start the already-configured app manually, run `npm run dev:neon`. If a front
 
 `neon init` linked this repository locally and created `neon.ts`. `neon config plan` reported no changes, with Postgres as the only utilized service. `neon deploy --no-env-pull` completed and confirmed the branch already matched the policy. Environment variables were pulled into the ignored `.env.neon`, leaving local environment files intact.
 
-Before schema installation, the Neon database had zero public tables. The V1.15 artifacts passed their SHA-256 check through the repository's `loadBaseline` routine. The exact clean-install `schema.sql` was applied to the direct connection in one transaction only after confirming the expected project, branch, database, PostgreSQL major version, and empty schema; the transaction compared the resulting catalog to `expected-catalog.json` before commit. Result: 47 tables and no seeded rows. The synthetic `seed.sql` was not executed.
+Before schema installation, the Neon database had zero public tables. The V1.15 artifacts passed their SHA-256 check through the repository's `loadBaseline` routine. The exact clean-install `schema.sql` was applied to the direct connection in one transaction only after confirming the expected project, branch, database, PostgreSQL major version, and empty schema; the transaction compared the resulting catalog to `expected-catalog.json` before commit. Result: 47 tables. The canonical sample `seed.sql` was not executed. Later, the separately reviewed 100-room synthetic dataset above was inserted into the existing V1.15 schema in one transaction after confirming every application table was empty. The local pre-V1.15 dump was not imported because its legacy records failed current V1.15 integrity triggers; failed attempts rolled back with Neon unchanged.
 
 Verification on 2026-10-28:
 
@@ -50,7 +52,10 @@ Verification on 2026-10-28:
 - Backend `/api/health/db` — HTTP 200, real PostgreSQL query through Neon.
 - Backend `/api/v1/public/explorer/rooms?province_code=01&page_size=1` — HTTP 200, database-backed empty result.
 - Frontend `/login` and `/api/health` — HTTP 200.
+- Synthetic dataset verification — exact V1.15 catalog PASS; 5 owners/admins, 10 properties, 100 rooms (50 per province), 10 resident profiles/accounts.
+- Backend authentication — requested Resident login and one Admin login, followed by `/auth/me` session checks: HTTP 200 for both roles.
+- Public room API — Đồng Nai and TP. Hồ Chí Minh filters each returned HTTP 200 and 50 rooms; `npm run dev:neon` is running with frontend `localhost:3000` and backend `localhost:4000` for user testing.
 
 The initial `npm run dev:neon` attempt encountered an already-running Next dev server on port 3000 and exited after Next reported its existing lock. The running frontend was left intact; the Neon-connected backend remained available on port 4000 and passed the checks above. The new setup option checks Neon connectivity before launch and asks the developer to close existing sessions first.
 
-The current local database setup/migration scripts intentionally restrict writes to local PostgreSQL. Do not point them at Neon or run `db:seed`, reset, or `db push` there. A reviewed remote migration procedure is needed before future schema changes. For now, invite the teammates who need access and prepare the real-data import separately; the cloud branch contains schema only.
+The current local database setup/migration scripts intentionally restrict writes to local PostgreSQL. Do not point them at Neon or run `db:seed`, reset, or `db push` there. A reviewed remote migration procedure is needed before future schema changes. Invite teammates who need access; they must accept the invitation and receive project-level Editor permission before setup option 5 can pull credentials.
