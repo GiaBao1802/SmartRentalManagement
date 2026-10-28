@@ -37,7 +37,7 @@ export function createLiveAdvisor(cookie:string,fetchImpl:typeof fetch=fetch,sig
    const {rooms,properties}=await inventory();const invoices=await pages<InvoiceResource>('/invoices');
    const complaints=(await get<{data:Complaint[]}>('/room-requests')).data;
    const bookingMonths:string[]=[];for(const p of properties){const data=(await get<{data:AdminServiceBooking[]}>(`/properties/${p.property_id}/service-bookings?status=PENDING`)).data;bookingMonths.push(...data.map(b=>b.service_date.slice(0,7)));}
-   return {source:'database',synthetic:false,asOf:today(),tasks,rooms:rooms.map(r=>r.key),periods:[...new Set([today().slice(0,7),...invoices.map(i=>i.period_end.slice(0,7)),...complaints.map(c=>c.created_at.slice(0,7)),...bookingMonths])].sort().reverse()};
+   return {source:'database',synthetic:false,asOf:today(),tasks,properties:properties.map(({property_id,name,province})=>({property_id,name,province})),rooms:rooms.map(r=>r.key),periods:[...new Set([today().slice(0,7),...invoices.map(i=>i.period_end.slice(0,7)),...complaints.map(c=>c.created_at.slice(0,7)),...bookingMonths])].sort().reverse()};
   },
   async answer(input:{task:string;period:string;room:string}){
    if(!Object.hasOwn(tasks,input.task)||!/^\d{4}-(0[1-9]|1[0-2])$/.test(input.period)||typeof input.room!=='string'||input.room.length>500)throw new AccessError(400,'Phạm vi tra cứu không hợp lệ.');
