@@ -9,6 +9,14 @@ class ConfirmationTests(unittest.TestCase):
    result=handle_request({'message':'phòng'},lambda _: {'status':'ready','filters':FILTERS})
   self.assertEqual(result['status'],'awaiting_confirmation');self.assertEqual(result['context'],FILTERS)
   self.assertNotIn('SYN-R',result['text']);self.assertIn('4.000.000',result['text'])
+ def test_empty_search_explains_broad_scope_before_confirmation(self):
+  empty={**FILTERS,'price':[],'location':None}
+  with patch('worker.load_catalog',side_effect=AssertionError('must not load')),patch('worker.retrieve',side_effect=AssertionError('must not filter')):
+   result=handle_request({'message':'tìm phòng'},lambda _:{'status':'ready','filters':empty})
+  self.assertEqual(result['status'],'awaiting_confirmation')
+  self.assertIn('tất cả phòng đang công khai',result['text'])
+  self.assertIn('Sửa yêu cầu” để thu hẹp',result['text'])
+  self.assertEqual(result['context'],empty)
  def test_confirm_filters_without_model(self):
   result=handle_request({'action':'confirm','context':FILTERS},lambda _:self.fail('must not re-infer'))
   self.assertEqual(result,{'error':'Confirmation is handled by the live public API'})

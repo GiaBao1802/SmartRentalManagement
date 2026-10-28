@@ -55,7 +55,13 @@ def handle_request(body,extract=id_v3.extract):
   # No catalog loading or retrieval before the guest explicitly confirms.
  if 'unspecified_amenity' in filters['amenities']:
   return {'text':'Mình chưa hiểu từ “tiện ích” ở đây là tiện ích nào. Bạn vui lòng cập nhật cụ thể; mình sẽ chờ bạn làm rõ và chưa tiếp tục tìm phòng.','source':'public_database','model':'qwen3:1.7b','status':'needs_clarification','context':None}
- text='Mình hiểu nhu cầu của bạn như sau:\n'+describe(filters).replace('Đang lọc: ','')+'\n\nSau khi bạn xác nhận, mình sẽ tìm trong các tin phòng đang công khai trên database. Giá là tiền thuê cả phòng, chưa gồm điện nước/phí.\nĐúng ý bạn chưa? Chọn “Đúng rồi, tìm phòng” hoặc “Sửa yêu cầu”.'
+ if not any([filters['price'],filters['area'],filters['location'],filters['occupants'],filters['amenities']]):
+  summary='Bạn đang muốn xem tất cả phòng đang công khai, chưa lọc theo khu vực, giá, diện tích, số người hay tiện ích.'
+  next_step='Bạn muốn thêm điều kiện trước hay xem tất cả? Chọn “Sửa yêu cầu” để thu hẹp, hoặc “Đúng rồi, tìm phòng” để xem toàn bộ.'
+ else:
+  summary=describe(filters).replace('Đang lọc: ','')
+  next_step='Đúng ý bạn chưa? Chọn “Đúng rồi, tìm phòng” hoặc “Sửa yêu cầu”.'
+ text='Mình hiểu nhu cầu của bạn như sau:\n'+summary+'\n\nSau khi bạn xác nhận, mình sẽ tìm trong các tin phòng đang công khai trên database. Giá là tiền thuê cả phòng, chưa gồm điện nước/phí.\n'+next_step
  return {'text':text,'source':'public_database','model':'qwen3:1.7b','status':'awaiting_confirmation','context':filters}
 
 if __name__=='__main__':
