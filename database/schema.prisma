@@ -7,7 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Database V1.11 application mapping; SQL baseline: database/baselines/v1.11/schema.sql.
+// Database V1.13 application mapping; SQL baseline: database/baselines/v1.13/schema.sql.
 // auth_sessions is accessed by backend SQL and intentionally has no Prisma model.
 // V1.8 recurring Parking partial uniqueness is enforced by SQL, not a Prisma @@unique.
 // Status domains remain varchar + PostgreSQL CHECK constraints.
@@ -530,16 +530,45 @@ model ParkingSlot {
   ownerId       BigInt   @map("owner_id")
   slotCode      String   @map("slot_code") @db.VarChar(40)
   status        String   @default("active") @db.VarChar(16)
+  acceptedVehicleType String? @map("accepted_vehicle_type") @db.VarChar(40)
+  defaultEntitlementId BigInt? @map("default_entitlement_id")
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt     DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
 
   parkingArea ParkingArea             @relation(fields: [parkingAreaId, propertyId, ownerId], references: [parkingAreaId, propertyId, ownerId], onDelete: Restrict)
+  defaultEntitlement ParkingEntitlement? @relation("ParkingSlotDefaultEntitlement", fields: [defaultEntitlementId, ownerId, propertyId], references: [parkingEntitlementId, ownerId, propertyId], onDelete: Restrict)
   assignments ParkingSlotAssignment[]
 
   @@unique([parkingAreaId, slotCode], map: "parking_slots_parking_area_id_slot_code_key")
   @@unique([parkingSlotId, parkingAreaId], map: "parking_slots_parking_slot_id_parking_area_id_key")
   @@unique([parkingSlotId, propertyId, ownerId], map: "parking_slots_parking_slot_id_property_id_owner_id_key")
   @@map("parking_slots")
+}
+
+model ParkingSlotRequest {
+  requestId          BigInt    @id @default(autoincrement()) @map("request_id")
+  ownerId            BigInt    @map("owner_id")
+  propertyId         BigInt    @map("property_id")
+  parkingSlotId      BigInt    @map("parking_slot_id")
+  vehicleId          BigInt    @map("vehicle_id")
+  residentId         BigInt    @map("resident_id")
+  roomId             BigInt    @map("room_id")
+  contractId         BigInt    @map("contract_id")
+  entitlementId      BigInt    @map("entitlement_id")
+  startedAt          DateTime  @map("started_at") @db.Date
+  status             String    @default("pending") @db.VarChar(16)
+  requestedAt        DateTime  @default(now()) @map("requested_at") @db.Timestamptz(6)
+  expiresAt          DateTime  @map("expires_at") @db.Timestamptz(6)
+  reviewedAt         DateTime? @map("reviewed_at") @db.Timestamptz(6)
+  reviewedByAccountId BigInt?  @map("reviewed_by_account_id")
+  reviewNote         String?   @map("review_note") @db.VarChar(1000)
+  assignmentId       BigInt?   @unique(map: "parking_slot_requests_assignment_id_key") @map("assignment_id")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([ownerId, propertyId, status, requestedAt], map: "parking_slot_requests_admin_queue")
+  @@index([residentId, requestedAt], map: "parking_slot_requests_resident_history")
+  @@map("parking_slot_requests")
 }
 
 model Vehicle {
@@ -933,6 +962,7 @@ model ParkingEntitlement {
   pricingItem  PropertyPricingItem?    @relation(fields: [propertyPricingItemId, ownerId, propertyId, pricingKind], references: [propertyPricingItemId, ownerId, propertyId, kind], onDelete: Restrict)
   assignments  ParkingSlotAssignment[]
   invoiceItems InvoiceItem[]
+  defaultSlots ParkingSlot[] @relation("ParkingSlotDefaultEntitlement")
 
   @@unique([propertyId, code])
   @@unique([parkingEntitlementId, ownerId, propertyId])

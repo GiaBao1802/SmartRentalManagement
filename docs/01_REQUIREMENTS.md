@@ -102,7 +102,7 @@ Trong V1, **mỗi Owner có đúng một Admin Account**; tài khoản đó là 
 - Chủ trọ có thể tra cứu và quản lý hồ sơ trong các khu trọ thuộc phạm vi của mình.
 - Hồ sơ cư dân liên kết với tài khoản, hợp đồng và phương tiện phù hợp; dữ liệu liên quan phải nhất quán khi cập nhật.
 - Backend kiểm tra định dạng CCCD theo quy tắc đã thống nhất, phát hiện trùng và kiểm tra sức chứa phòng trước khi thêm hoặc chuyển cư dân.
-- Số người đang ở trong phòng không được vượt sức chứa áp dụng cho phòng/hợp đồng. Việc thêm cư dân phải căn cứ sức chứa đã cấu hình và các cư dân đang ở hiện tại. `contracts.resident_capacity` là snapshot điều khoản hợp đồng; khi hợp đồng active, chủ trọ có thể thay đổi giá trị này như một amendment có lý do, `If-Match`, revision và durable history. Backend chặn mức mới thấp hơn số Occupancy active hoặc parking assignment active; không thay đổi `rooms.default_capacity`. Không dùng legacy `occupantCount` làm nguồn capacity có thẩm quyền.
+- Số người đang ở trong phòng không được vượt sức chứa áp dụng cho phòng/hợp đồng. Việc thêm cư dân phải căn cứ sức chứa đã cấu hình và các cư dân đang ở hiện tại. `contracts.resident_capacity` là snapshot điều khoản hợp đồng; khi hợp đồng active, chủ trọ có thể thay đổi giá trị này như một amendment có lý do, `If-Match`, revision và durable history. Backend chặn mức mới thấp hơn số Occupancy active hoặc parking assignment active cộng với yêu cầu Parking chưa hết hạn đang giữ sức chứa; không thay đổi `rooms.default_capacity`. Không dùng legacy `occupantCount` làm nguồn capacity có thẩm quyền.
 - Có thông tin đăng ký tạm trú/tạm vắng và tình trạng lưu trú để chủ trọ tra cứu, lọc và theo dõi.
 - `residence_status` (`living` / `left`) là trạng thái do backend quản lý, suy ra từ các Occupancy `active` của Resident: có ít nhất một lượt đang hoạt động thì `living`, không còn lượt nào thì `left`. Đây là source of truth; client không được tự đặt/chỉnh trạng thái này. Tạo hồ sơ mới chưa có Occupancy mặc định `left`; thêm, kết thúc hoặc chuyển lượt cư trú phải cập nhật nhất quán trong cùng transaction với Occupancy.
 - Không cho xóa hồ sơ nếu còn liên kết nghiệp vụ cần lưu giữ; phải có quy tắc lưu trữ/ngừng hoạt động phù hợp thay vì làm mất lịch sử.
@@ -225,6 +225,7 @@ Bãi xe là nghiệp vụ riêng với tiện ích thông thường.
 
 - Quản lý khu vực đỗ xe, slot, phương tiện, biển số, chủ phương tiện/cư dân và phòng liên quan.
 - Một cư dân có thể đăng ký nhiều phương tiện; mỗi phương tiện được quản lý riêng. Số phương tiện của cư dân không làm tăng giới hạn slot của phòng.
+- Cư dân có thể xóa phương tiện đã nhập nhầm nếu phương tiện chưa được dùng trong bất kỳ yêu cầu Parking hoặc assignment nào. Không xóa phương tiện đã có lịch sử; backend trả xung đột có giải thích để giữ nguyên lịch sử yêu cầu/đăng ký.
 - Số slot xe đang hoạt động tối đa của một phòng bằng số người/sức chứa được khai báo trên hợp đồng đang hiệu lực áp dụng cho phòng đó.
 - V1 không cho phép chủ trọ/Admin ghi đè giới hạn slot cho từng phòng.
 - Mỗi đăng ký slot phải lưu phòng, cư dân/phương tiện liên quan, slot, ngày đăng ký/ngày bắt đầu sử dụng, trạng thái và ngày kết thúc/ngày thu hồi nếu có.
@@ -236,6 +237,11 @@ Bãi xe là nghiệp vụ riêng với tiện ích thông thường.
 - Billing/Pricing là authority về “HOW MUCH DOES IT COST?”. Paid Parking entitlement dùng duy nhất Property pricing authority chung với Billing; không tạo hai bảng giá cho cùng một loại charge.
 - Supported charge basis có thể theo slot, vehicle/card hoặc billing period; thiết kế phải biểu diễn loại charge. Recurring entitlement đủ điều kiện tại `period_start` tính đủ kỳ; bắt đầu sau mốc đó thì bắt đầu tính từ kỳ kế tiếp. Không prorate khi assignment bắt đầu/kết thúc giữa kỳ.
 - Camera hoặc AI nhận diện biển số tự động không thuộc V1.
+- Parking V1.13 có luồng yêu cầu duyệt: Admin cấu hình slot đang hoạt động với nhóm xe được nhận (xe máy/ô tô/xe đạp/khác hoặc mọi loại) và một entitlement FREE hoặc PAID. Slot legacy chưa cấu hình không hiện cho cư dân.
+- Cư dân đang ở theo hợp đồng hiệu lực đăng ký phương tiện, chọn bãi xe Admin đã tạo trong Property thuộc hợp đồng, rồi xem slot vật lý còn trống, đã bật/cấu hình và phù hợp với xe trong bãi đã chọn. Danh sách vẫn hiển thị slot trống khi hợp đồng đã hết sức chứa; khi cư dân gửi yêu cầu, backend kiểm tra sức chứa và từ chối bằng lỗi `409` có số đã dùng/tối đa nếu đã đầy. Ngày bắt đầu tự lấy theo ngày gửi yêu cầu theo giờ Việt Nam; màn cư dân không yêu cầu nhập/chọn ngày. Contract/Room là ngữ cảnh xác nhận sức chứa, không phải cách tìm bãi; chỉ khi có nhiều hợp đồng hợp lệ trong cùng Property mới cần chọn hợp đồng áp dụng, không cần chọn số phòng riêng. Backend lấy Resident/Owner/Room từ phiên đăng nhập và quan hệ cư trú/hợp đồng đã xác minh; ID contract, vehicle, slot phía client chỉ là lựa chọn và phải được kiểm tra thuộc đúng Resident/Property.
+- Yêu cầu `pending` giữ một slot và chiếm một đơn vị sức chứa hợp đồng tối đa 24 giờ. Mỗi cư dân chỉ có một yêu cầu chờ duyệt cùng lúc. Hết hạn, cư dân hủy, Admin từ chối, hoặc hợp đồng hết hiệu lực/kết thúc thì slot/sức chứa được trả lại; lịch sử yêu cầu vẫn được lưu. Không có thanh toán ở bước đăng ký.
+- Admin duyệt hoặc từ chối yêu cầu; từ chối cần ghi lý do. Duyệt tạo đúng một Parking assignment gắn với entitlement đã lưu trên yêu cầu, sau khi kiểm tra lại hợp đồng, cư trú, sức chứa, slot, phương tiện và cấu hình. Không tự duyệt, không mua đứt slot trong luồng này.
+- Màn hình cư dân bắt đầu bằng danh sách bãi xe trong Property hợp đồng, sau đó chỉ hiển thị slot còn trống thuộc bãi đang chọn; không dùng số phòng để tìm slot. Vị trí được chỉ dẫn bằng tên bãi, ghi chú vị trí và mã slot; bản đồ tọa độ/vẽ mặt bằng chưa thuộc V1.13. Giá trả phí hiển thị là giá hiện hành tham khảo; Billing vẫn chọn giá theo `period_start`, bắt đầu giữa kỳ tính từ kỳ kế tiếp và không prorate. FREE không tạo Invoice Item.
 
 ## 15. Khiếu nại / sự cố
 
@@ -315,7 +321,7 @@ Bãi xe là nghiệp vụ riêng với tiện ích thông thường.
 - Khu trọ/phòng không thể được tạo hoặc sửa bởi chủ trọ không sở hữu/phụ trách theo phân quyền.
 - Không thể thêm cư dân nếu CCCD sai/trùng theo quy tắc hoặc sức chứa bị vượt.
 - `residence_status` luôn khớp Occupancy `active`: thêm lượt đầu đặt `living`; kết thúc lượt cuối đặt `left`; kết thúc một lượt khi còn lượt active khác giữ `living`; transfer thành công giữ `living`. Tạo Resident mới mặc định `left`; client không thể set status khi create/PATCH. Transfer phải atomic để lỗi phòng đích không làm sai Occupancy hay trạng thái cư trú.
-- `rooms.default_capacity` là sức chứa mặc định; Contract lưu snapshot điều khoản trong `resident_capacity`. Active Contract có thể amendment capacity bằng lý do, `If-Match`, revision/history và phải giữ giới hạn trên số Occupancy/parking đang active. Thay đổi capacity mặc định của Room không làm thay đổi hợp đồng cũ; không dùng `occupantCount` legacy làm nguồn có thẩm quyền.
+- `rooms.default_capacity` là sức chứa mặc định; Contract lưu snapshot điều khoản trong `resident_capacity`. Active Contract có thể amendment capacity bằng lý do, `If-Match`, revision/history và phải giữ giới hạn trên số Occupancy/parking đang active cùng yêu cầu Parking pending chưa hết hạn. Thay đổi capacity mặc định của Room không làm thay đổi hợp đồng cũ; không dùng `occupantCount` legacy làm nguồn có thẩm quyền.
 - Xóa hồ sơ/khu trọ có liên kết nghiệp vụ phải bị chặn hoặc tuân theo chính sách lưu trữ, không làm mất lịch sử cần thiết.
 
 ### 21.4 Hợp đồng và hóa đơn
@@ -333,7 +339,7 @@ Bãi xe là nghiệp vụ riêng với tiện ích thông thường.
 - Contract business date là `Asia/Ho_Chi_Minh`: đến hết `end_date` vẫn active; ngày kế tiếp persisted status chuyển `active → expired`, một lần duy nhất với revision/history. `terminated` không chuyển sang `expired`.
 - Termination date không vượt ngày hiện tại tại `Asia/Ho_Chi_Minh`. Sau khi kết thúc Occupancy liên kết, mỗi Resident được tính lại `residence_status` từ toàn bộ Occupancy active trong cùng transaction.
 - Successor là meter continuity mới: không nhận chỉ số final/closing hay Invoice của predecessor. Admin phải nhập initial reading mới cho từng utility trên draft successor; thiếu một utility thì không activate.
-- Active capacity amendment yêu cầu `change_reason` và `If-Match`, tăng revision/history nếu thay đổi thực; không thể giảm dưới active Occupancy hoặc active parking assignments và không thay đổi Room default.
+- Active capacity amendment yêu cầu `change_reason` và `If-Match`, tăng revision/history nếu thay đổi thực; không thể giảm dưới active Occupancy, active parking assignments và pending Parking holds chưa hết hạn; không thay đổi Room default.
 - Các Contract command create, activate, renew và terminate có durable server-side replay theo namespace Owner + Account + operation + key + payload; payload khác với key đã dùng trả `409 IDEMPOTENCY_KEY_REUSED`. Cách ly cross-Owner phải được runtime kiểm thử. Cách ly giữa nhiều Admin Account cùng Owner là N/A trong V1 do invariant mỗi Owner có đúng một Admin Account; nếu multi-admin được phê duyệt trong tương lai, test này trở thành release gate. Runtime lưu digest SHA-256 của key, fingerprint có version và response thành công được mã hóa AES-256-GCM trong cùng transaction với mutation. Upload tài liệu vẫn chỉ xác thực header; durable replay cho object storage chưa được triển khai. Thực hiện theo report runtime Contract; không thay đổi business rule này theo trạng thái triển khai.
 - Admin chỉ đọc audit history trong Owner scope qua history endpoint. Resident không có history endpoint và không được xem `change_reason`, before/after hoặc actor context; Resident có thể thấy revision hiện tại nếu thuộc representation chung.
 - PATCH active, renewal và termination dùng `If-Match: "<revision>"`; stale official revision trả `409 CONTRACT_REVISION_CONFLICT` và không thay đổi Contract/history. Activation lock/reload draft thay vì dùng revision 0 làm token; draft PATCH không dùng revision-based `If-Match`.
@@ -380,6 +386,7 @@ Bãi xe là nghiệp vụ riêng với tiện ích thông thường.
 - Nếu hóa đơn đã gửi được cập nhật hợp lệ, hệ thống gửi lại phiên bản hiện hành; log các lần gửi trước và sau vẫn được giữ và phân biệt.
 - Thông báo ngoài hóa đơn hiển thị trong ứng dụng; V1 không cần email/push.
 - Resident có thể gửi phản hồi theo hồ sơ lưu trú hiện hành; phản hồi được lưu thành Complaint category, giữ lịch sử khởi tạo và tạo notification in-app cho Admin cùng Owner. Đây là kênh tiếp nhận phản hồi, không tự tạo thêm workflow phân công.
+- Khi Resident gửi yêu cầu chỗ đỗ xe, Admin nhận notification in-app loại Parking để mở hàng đợi duyệt; thông báo có thể lọc theo loại và trạng thái đã đọc/chưa đọc.
 
 ### 21.6 Tiện ích và bãi xe
 

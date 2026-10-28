@@ -4,7 +4,11 @@
 /database/baselines/v1.10/** -text
 /database/baselines/v1.11/** -text
 /database/baselines/v1.12/** -text
+/database/baselines/v1.13/** -text
 
 # AI dataset manifests hash exact bytes across Windows/Linux checkouts.
 /data/room-ai/v1/*.json -text
 /data/room-ai/v1/*.jsonl -text
+
+# Windows command processor requires CRLF for reliable batch parsing.
+/setup.bat text eol=crlf

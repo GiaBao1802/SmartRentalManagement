@@ -18,6 +18,7 @@ import {
 
 export const baselineDirectory = fileURLToPath(new URL('../database/baselines/v1.11/', import.meta.url));
 const v112Directory = fileURLToPath(new URL('../database/baselines/v1.12/', import.meta.url));
+const v113Directory = fileURLToPath(new URL('../database/baselines/v1.13/', import.meta.url));
 const v110Directory = fileURLToPath(new URL('../database/baselines/v1.10/', import.meta.url));
 const v19Directory = fileURLToPath(new URL('../database/baselines/v1.9/', import.meta.url));
 const v18Directory = fileURLToPath(new URL('../database/baselines/v1.8/', import.meta.url));
@@ -26,6 +27,72 @@ const without = (catalog, phrase) => Object.fromEntries(Object.entries(catalog).
   key,
   rows.filter((row) => !JSON.stringify(row).includes(phrase)),
 ]));
+
+const v113RequestConstraintNames = [
+  'parking_slot_requests_pkey', 'parking_slot_requests_assignment_id_key', 'parking_slot_requests_status_check',
+  'parking_slot_requests_expiry_check', 'parking_slot_requests_review_state_check', 'parking_slot_requests_slot_fk',
+  'parking_slot_requests_vehicle_fk', 'parking_slot_requests_resident_fk', 'parking_slot_requests_room_fk',
+  'parking_slot_requests_contract_fk', 'parking_slot_requests_entitlement_fk', 'parking_slot_requests_reviewer_fk',
+  'parking_slot_requests_assignment_fk',
+];
+const v113RequestNotNullColumns = ['request_id', 'owner_id', 'property_id', 'parking_slot_id', 'vehicle_id', 'resident_id', 'room_id', 'contract_id', 'entitlement_id', 'started_at', 'status', 'requested_at', 'expires_at', 'created_at', 'updated_at'];
+
+function isV113Catalog(actual, predecessor) {
+  const slotConstraintNames = new Set(['parking_slots_accepted_vehicle_type_check', 'parking_slots_default_entitlement_fk']);
+  const slotColumns = new Set(['accepted_vehicle_type', 'default_entitlement_id']);
+  const newRelations = new Set(['parking_slot_requests', 'parking_slot_requests_request_id_seq']);
+  const newTypes = new Set(['parking_slot_requests', '_parking_slot_requests']);
+  const strip = (catalog) => Object.fromEntries(Object.entries(catalog).map(([key, rows]) => [key, rows.filter((row) => {
+    if (key === 'relations') return !newRelations.has(row.name);
+    if (key === 'columns') return !(row.relation === 'parking_slot_requests' || (row.relation === 'parking_slots' && slotColumns.has(row.name)));
+    if (key === 'constraints') return !(row.relation === 'parking_slot_requests' || slotConstraintNames.has(row.name));
+    if (key === 'indexes') return row.tablename !== 'parking_slot_requests';
+    if (key === 'sequences') return row.name !== 'parking_slot_requests_request_id_seq';
+    if (key === 'types') return !newTypes.has(row.name);
+    return true;
+  })]));
+  if (!catalogsMatch(strip(actual), strip(predecessor))) return false;
+
+  const relations = actual.relations.filter((row) => newRelations.has(row.name));
+  if (relations.length !== 2 || !relations.some((row) => row.name === 'parking_slot_requests' && row.kind === 'r' && row.persistence === 'p') || !relations.some((row) => row.name === 'parking_slot_requests_request_id_seq' && row.kind === 'S')) return false;
+  const slotColumnRows = actual.columns.filter((row) => row.relation === 'parking_slots' && slotColumns.has(row.name));
+  if (slotColumnRows.length !== 2 || !slotColumnRows.some((row) => row.name === 'accepted_vehicle_type' && row.position === 9 && row.type === 'character varying(40)' && !row.not_null) || !slotColumnRows.some((row) => row.name === 'default_entitlement_id' && row.position === 10 && row.type === 'bigint' && !row.not_null)) return false;
+
+  const requestColumns = actual.columns.filter((row) => row.relation === 'parking_slot_requests').sort((a, b) => a.position - b.position);
+  const requestColumnSpecs = [
+    ['request_id', 'bigint', true, 'a'], ['owner_id', 'bigint', true, ''], ['property_id', 'bigint', true, ''], ['parking_slot_id', 'bigint', true, ''],
+    ['vehicle_id', 'bigint', true, ''], ['resident_id', 'bigint', true, ''], ['room_id', 'bigint', true, ''], ['contract_id', 'bigint', true, ''],
+    ['entitlement_id', 'bigint', true, ''], ['started_at', 'date', true, ''], ['status', 'character varying(16)', true, ''],
+    ['requested_at', 'timestamp with time zone', true, ''], ['expires_at', 'timestamp with time zone', true, ''], ['reviewed_at', 'timestamp with time zone', false, ''],
+    ['reviewed_by_account_id', 'bigint', false, ''], ['review_note', 'character varying(1000)', false, ''], ['assignment_id', 'bigint', false, ''],
+    ['created_at', 'timestamp with time zone', true, ''], ['updated_at', 'timestamp with time zone', true, ''],
+  ];
+  if (requestColumns.length !== requestColumnSpecs.length || requestColumns.some((row, i) => row.position !== i + 1 || row.name !== requestColumnSpecs[i]?.[0] || row.type !== requestColumnSpecs[i]?.[1] || row.not_null !== requestColumnSpecs[i]?.[2] || row.identity !== requestColumnSpecs[i]?.[3])) return false;
+  const defaultFor = (name) => requestColumns.find((row) => row.name === name)?.default_value ?? null;
+  if (defaultFor('status') !== "'pending'::character varying" || defaultFor('requested_at') !== 'now()' || defaultFor('created_at') !== 'now()' || defaultFor('updated_at') !== 'now()' || defaultFor('expires_at') !== null || defaultFor('request_id') !== null) return false;
+
+  const constraints = actual.constraints.filter((row) => row.relation === 'parking_slot_requests' || slotConstraintNames.has(row.name));
+  const expectedConstraintTypes = new Map(v113RequestConstraintNames.map((name) => [name, name.endsWith('_pkey') ? 'p' : name.endsWith('_key') ? 'u' : name.endsWith('_check') ? 'c' : 'f']));
+  for (const column of v113RequestNotNullColumns) expectedConstraintTypes.set(`parking_slot_requests_${column}_not_null`, 'n');
+  expectedConstraintTypes.set('parking_slots_accepted_vehicle_type_check', 'c');
+  expectedConstraintTypes.set('parking_slots_default_entitlement_fk', 'f');
+  if (constraints.length !== expectedConstraintTypes.size || constraints.some((row) => expectedConstraintTypes.get(row.name) !== row.type || !row.validated)) return false;
+  const constraintDefinition = (name) => constraints.find((row) => row.name === name)?.definition ?? '';
+  if (!constraintDefinition('parking_slots_accepted_vehicle_type_check').includes('MOTORCYCLE') || !constraintDefinition('parking_slots_accepted_vehicle_type_check').includes('OTHER')) return false;
+  if (!constraintDefinition('parking_slots_default_entitlement_fk').includes('parking_entitlements')) return false;
+  if (!constraintDefinition('parking_slot_requests_status_check').includes('expired') || !constraintDefinition('parking_slot_requests_expiry_check').includes('expires_at > requested_at')) return false;
+  for (const name of ['parking_slot_requests_slot_fk', 'parking_slot_requests_vehicle_fk', 'parking_slot_requests_resident_fk', 'parking_slot_requests_room_fk', 'parking_slot_requests_contract_fk', 'parking_slot_requests_entitlement_fk', 'parking_slot_requests_reviewer_fk', 'parking_slot_requests_assignment_fk']) if (!constraintDefinition(name).includes('FOREIGN KEY')) return false;
+
+  const indexes = actual.indexes.filter((row) => row.tablename === 'parking_slot_requests');
+  const expectedIndexes = new Set(['parking_slot_requests_pkey', 'parking_slot_requests_assignment_id_key', 'parking_slot_requests_admin_queue', 'parking_slot_requests_resident_history', 'parking_slot_requests_one_pending_per_slot', 'parking_slot_requests_one_pending_per_resident']);
+  if (indexes.length !== expectedIndexes.size || indexes.some((row) => !expectedIndexes.has(row.indexname))) return false;
+  if (!indexes.find((row) => row.indexname === 'parking_slot_requests_one_pending_per_slot')?.indexdef.includes("'pending'::text")) return false;
+  if (!indexes.find((row) => row.indexname === 'parking_slot_requests_one_pending_per_resident')?.indexdef.includes("'pending'::text")) return false;
+  const sequence = actual.sequences.find((row) => row.name === 'parking_slot_requests_request_id_seq');
+  if (!sequence || sequence.type !== 'bigint' || sequence.start !== '1' || sequence.increment !== '1' || sequence.cache !== '1' || sequence.cycle) return false;
+  const tableTypes = actual.types.filter((row) => newTypes.has(row.name));
+  return tableTypes.length === 2 && tableTypes.some((row) => row.name === 'parking_slot_requests' && row.kind === 'c') && tableTypes.some((row) => row.name === '_parking_slot_requests' && row.kind === 'b');
+}
 
 async function assertPublicOnly(client) {
   const { rows } = await client.query(`SELECT nspname FROM pg_namespace WHERE nspname<>'public' AND nspname<>'information_schema' AND nspname !~ '^pg_'`);
@@ -41,7 +108,10 @@ async function readState(client, database, baselines) {
   await assertPublicOnly(client);
   if (await objectCount(client) === 0) return 'empty_schema';
   const actual = await readCatalog(client);
-  const match = baselines.find((entry) => entry.key !== 'v110_booking_branch' && catalogsMatch(actual, entry.baseline.catalog));
+  const v112 = baselines.find((entry) => entry.key === 'v112');
+  const match = v112 && isV113Catalog(actual, v112.baseline.catalog)
+    ? { key: 'v113', baseline: { catalog: actual } }
+    : baselines.find((entry) => entry.key !== 'v110_booking_branch' && catalogsMatch(actual, entry.baseline.catalog));
   const branchMatch = database === 'Goctro_dev_v18'
     && catalogsMatch(actual, without(baselines.find((entry) => entry.key === 'v111').baseline.catalog, 'auth_sessions'));
   const version = match ?? (branchMatch ? baselines.find((entry) => entry.key === 'v110_booking_branch') : null);
@@ -79,7 +149,7 @@ async function applyDatabase(client, mode, current) {
 
 async function applyMigration(client, database, expected, next, migrationPath, version, afterCheck = null, allowProtectedTarget = false) {
   if (database === 'Goctro_test3' && !allowProtectedTarget) throw new SetupError('Schema migration is blocked for Goctro_test3 without the dedicated backup-confirmed upgrade path.', 'target');
-  if (version === 'V1.12' && ['Goctro_test3', 'Goctro_dev_v18'].includes(database) && !allowProtectedTarget) throw new SetupError(`V1.12 migration is blocked for ${database} without the dedicated backup-confirmed upgrade path.`, 'target');
+  if (['V1.12', 'V1.13'].includes(version) && ['Goctro_test3', 'Goctro_dev_v18'].includes(database) && !allowProtectedTarget) throw new SetupError(`${version} migration is blocked for ${database} without the dedicated backup-confirmed upgrade path.`, 'target');
   await client.query('BEGIN');
   try {
     await client.query("SET LOCAL search_path=public,pg_catalog; SET LOCAL lock_timeout='10s'; SET LOCAL statement_timeout='120s'");
@@ -148,14 +218,27 @@ export async function migrateV1_11ToV1_12(client, database, previous, next, allo
   );
 }
 
+export async function migrateV1_12ToV1_13(client, database, previous, allowProtectedTarget = false) {
+  return applyMigration(
+    client,
+    database,
+    (actual) => catalogsMatch(actual, previous.catalog),
+    previous,
+    path.join(v113Directory, 'migrations/V1_12_to_V1_13_resident_parking_requests.sql'),
+    'V1.13',
+    (actual) => isV113Catalog(actual, previous.catalog),
+    allowProtectedTarget,
+  );
+}
+
 export async function runCommand(args, env = process.env) {
   const [mode, flag, database, ...extra] = args;
   if (mode === 'block-legacy-migrate') {
-    throw new SetupError('db:migrate legacy is blocked: database/migrations is LEGACY/demo history. Use the versioned setup path through V1.12 after verifying a backup.');
+    throw new SetupError('db:migrate legacy is blocked: database/migrations is LEGACY/demo history. Use the versioned setup path through V1.13 after verifying a backup.');
   }
-  const allowed = ['bootstrap', 'seed', 'inspect', 'state', 'migrate-v19', 'migrate-v110', 'migrate-v110-booking-branch', 'migrate-v112'];
+  const allowed = ['bootstrap', 'seed', 'inspect', 'state', 'migrate-v19', 'migrate-v110', 'migrate-v110-booking-branch', 'migrate-v112', 'migrate-v113'];
   if (!allowed.includes(mode) || flag !== '--database' || extra.length) {
-    throw new SetupError('Usage: database-v111.mjs bootstrap|seed|inspect|state|migrate-v19|migrate-v110|migrate-v110-booking-branch|migrate-v112 --database NAME');
+    throw new SetupError('Usage: database-v111.mjs bootstrap|seed|inspect|state|migrate-v19|migrate-v110|migrate-v110-booking-branch|migrate-v112|migrate-v113 --database NAME');
   }
   const target = parseTarget(env.GOCTRO_SETUP_DATABASE_URL, database);
   const current = await loadBaseline(baselineDirectory, '1.11');
@@ -182,10 +265,11 @@ export async function runCommand(args, env = process.env) {
       await client.query('SET LOCAL search_path=public,pg_catalog');
       await assertPublicOnly(client);
       const actual = await readCatalog(client);
-      const match = baselines.find((entry) => catalogsMatch(actual, entry.baseline.catalog)
+      const v113 = isV113Catalog(actual, v112.catalog);
+      const match = v113 ? { key: 'v113' } : baselines.find((entry) => catalogsMatch(actual, entry.baseline.catalog)
         && (entry.key !== 'v110_booking_branch' || target.database === 'Goctro_dev_v18'));
-      if (!match) throw new SetupError('Schema differs from reviewed V1.12/V1.11/V1.10/V1.9/V1.8 catalogs; no write was attempted.', 'schema');
-      const label = { v112: 'V1.12', v111: 'V1.11', v110: 'V1.10', v110_booking_branch: 'local V1.10 booking-first recovery branch', v19: 'V1.9', v18: 'V1.8' }[match.key];
+      if (!match) throw new SetupError('Schema differs from reviewed V1.13/V1.12/V1.11/V1.10/V1.9/V1.8 catalogs; no write was attempted.', 'schema');
+      const label = { v113: 'V1.13', v112: 'V1.12', v111: 'V1.11', v110: 'V1.10', v110_booking_branch: 'local V1.10 booking-first recovery branch', v19: 'V1.9', v18: 'V1.8' }[match.key];
       console.log(`Database ${label} inspect: PASS; database=${target.database}; host=${target.host}; port=${target.port}. Chỉ đọc.`);
       await client.query('ROLLBACK');
     } else if (mode === 'state') {
@@ -210,6 +294,12 @@ export async function runCommand(args, env = process.env) {
       if (protectedTarget && !allowProtectedTarget) throw new SetupError(`V1.12 migration requires a verified backup confirmation for ${target.database}.`, 'target');
       await migrateV1_11ToV1_12(client, target.database, current, v112, allowProtectedTarget);
       console.log(`Database V1.11→V1.12 migration: PASS; database=${target.database}; host=${target.host}; port=${target.port}. Added the demo-only provider value; credentials hidden.`);
+    } else if (mode === 'migrate-v113') {
+      const protectedTarget = ['Goctro_test3', 'Goctro_dev_v18'].includes(target.database);
+      const allowProtectedTarget = protectedTarget && env.GOCTRO_V113_BACKUP_VERIFIED === target.database;
+      if (protectedTarget && !allowProtectedTarget) throw new SetupError(`V1.13 migration requires a verified backup confirmation for ${target.database}.`, 'target');
+      await migrateV1_12ToV1_13(client, target.database, v112, allowProtectedTarget);
+      console.log(`Database V1.12→V1.13 migration: PASS; database=${target.database}; host=${target.host}; port=${target.port}. Added Resident Parking requests; credentials hidden.`);
     } else {
       await applyDatabase(client, mode, current);
       console.log(`Database V1.11 ${mode}: PASS; database=${target.database}; host=${target.host}; port=${target.port}; tables=43. Credentials hidden.`);

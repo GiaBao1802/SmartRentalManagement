@@ -29,9 +29,11 @@ function Cache([string]$action,[string]$kind) {
 function DatabaseCommand([string]$command) {
   $databaseTool = if ($command -eq 'migrate-v18') { 'scripts/database-v19.mjs' } else { 'scripts/database-v111.mjs' }
   if ($command -eq 'migrate-v112' -and $script:db -in @('Goctro_test3','Goctro_dev_v18')) { $env:GOCTRO_V112_BACKUP_VERIFIED = $script:db }
+  if ($command -eq 'migrate-v113' -and $script:db -in @('Goctro_test3','Goctro_dev_v18')) { $env:GOCTRO_V113_BACKUP_VERIFIED = $script:db }
   $lines = & node $databaseTool $command --database $script:db
   $script:dbExit = $LASTEXITCODE
   if ($command -eq 'migrate-v112') { Remove-Item Env:GOCTRO_V112_BACKUP_VERIFIED -ErrorAction SilentlyContinue }
+  if ($command -eq 'migrate-v113') { Remove-Item Env:GOCTRO_V113_BACKUP_VERIFIED -ErrorAction SilentlyContinue }
   $script:dbText = $lines -join "`n"
   $lines | ForEach-Object { Write-Host $_ }
 }
@@ -193,7 +195,7 @@ try {
       2 { if (-not $matchesDefault) { throw 'Database của cấu hình hiện tại chưa tồn tại. Cần xử lý cấu hình hiện tại; không tự chuyển sang bộ mặc định hoặc tạo database trong chế độ cập nhật.' }; throw 'Chưa hoàn tất cài đặt, hãy chọn Cài đặt lần đầu. Chế độ cập nhật không tạo database.' }
       3 { throw 'PostgreSQL từ chối xác thực/quyền; kiểm tra role và mật khẩu PostgreSQL. Không tạo/seed thay thế.' }
       4 { throw 'Không kết nối được PostgreSQL; kiểm tra host/cổng và dịch vụ hiện có. Công cụ không tự bật/tắt PostgreSQL.' }
-      5 { throw 'Schema không tương thích V1.11, V1.10, V1.9 hoặc V1.8. Xem khác biệt phía trên; review/backup trước khi migration. Bootstrap không phải upgrade.' }
+      5 { throw 'Schema không tương thích V1.13, V1.12, V1.11, V1.10, V1.9 hoặc V1.8. Xem khác biệt phía trên; review/backup trước khi migration. Bootstrap không phải upgrade.' }
       6 { throw 'Instance hoặc phiên bản PostgreSQL không khớp target local PostgreSQL 18.6+.' }
       default { throw 'Không kiểm tra được database; dừng các bước phụ thuộc.' }
     }
@@ -202,8 +204,8 @@ try {
     if (-not $match.Success) { throw 'Không đọc được trạng thái database.' }
     $dataState = $match.Groups[1].Value
   }
-  if ($dataState -in @('v18_populated','v18_empty','v19_populated','v19_empty','v110_populated','v110_empty','v110_booking_branch_populated','v110_booking_branch_empty','v111_populated','v111_empty')) {
-    if (-not (Yes 'Đã tạo và kiểm tra backup khôi phục được; cho phép nâng database lên baseline hiện hành V1.12 trên target đã xác nhận')) { throw 'Chưa xác nhận backup và migration; database được giữ nguyên.' }
+  if ($dataState -in @('v18_populated','v18_empty','v19_populated','v19_empty','v110_populated','v110_empty','v110_booking_branch_populated','v110_booking_branch_empty','v111_populated','v111_empty','v112_populated','v112_empty')) {
+    if (-not (Yes 'Đã tạo và kiểm tra backup khôi phục được; cho phép nâng database lên baseline V1.13 trên target đã xác nhận')) { throw 'Chưa xác nhận backup và migration; database được giữ nguyên.' }
   }
   if ($dataState -in @('v18_populated','v18_empty')) {
     $wasPopulated = $dataState -eq 'v18_populated'
@@ -235,11 +237,17 @@ try {
     if ($dbExit -ne 0) { throw 'Migration V1.11→V1.12 thất bại; transaction đã rollback nếu bắt đầu. Database giữ nguyên baseline hiện tại, không seed/reset.' }
     $completed.Add('Migration V1.11 → V1.12'); $dataState = if ($wasPopulated) { 'v112_populated' } else { 'v112_empty' }
   }
-  if ($mode -eq '2' -and $dataState -ne 'v112_populated' -and $dataState -ne 'v112_empty') { throw 'Chế độ cập nhật cần schema V1.12; setup không bootstrap hoặc seed database hiện có.' }
+  if ($dataState -in @('v112_populated','v112_empty')) {
+    $wasPopulated = $dataState -eq 'v112_populated'
+    $step = 'Migration database V1.12 lên V1.13'; DatabaseCommand 'migrate-v113'
+    if ($dbExit -ne 0) { throw 'Migration V1.12→V1.13 thất bại; transaction đã rollback nếu bắt đầu. Database giữ nguyên baseline hiện tại, không seed/reset.' }
+    $completed.Add('Migration V1.12 → V1.13'); $dataState = if ($wasPopulated) { 'v113_populated' } else { 'v113_empty' }
+  }
+  if ($mode -eq '2' -and $dataState -ne 'v113_populated' -and $dataState -ne 'v113_empty') { throw 'Chế độ cập nhật cần schema V1.13; setup không bootstrap hoặc seed database hiện có.' }
   $seededNow = $false
   if ($mode -eq '1') {
     if ($dataState -eq 'empty_schema') {
-      if (-not (Yes 'Schema đang trống. Bootstrap V1.11 trước khi nâng lên V1.12')) { throw 'Chưa xác nhận bootstrap.' }
+      if (-not (Yes 'Schema đang trống. Bootstrap V1.11 trước khi nâng lên V1.13')) { throw 'Chưa xác nhận bootstrap.' }
       $step = 'Bootstrap V1.11'; DatabaseCommand 'bootstrap'
       if ($dbExit -ne 0) { throw 'Bootstrap thất bại; chưa chạy seed/provision/startup.' }
       $completed.Add('Bootstrap V1.11'); $dataState = 'v111_empty'
@@ -264,6 +272,12 @@ try {
     if ($dbExit -ne 0) { throw 'Migration V1.11→V1.12 thất bại; transaction đã rollback nếu bắt đầu. Database giữ nguyên baseline hiện tại, không seed/reset.' }
     $completed.Add('Migration V1.11 → V1.12'); $dataState = if ($wasPopulated) { 'v112_populated' } else { 'v112_empty' }
   }
+  if ($dataState -in @('v112_populated','v112_empty')) {
+    $wasPopulated = $dataState -eq 'v112_populated'
+    $step = 'Migration database V1.12 lên V1.13'; DatabaseCommand 'migrate-v113'
+    if ($dbExit -ne 0) { throw 'Migration V1.12→V1.13 thất bại; transaction đã rollback nếu bắt đầu. Database giữ nguyên baseline hiện tại, không seed/reset.' }
+    $completed.Add('Migration V1.12 → V1.13'); $dataState = if ($wasPopulated) { 'v113_populated' } else { 'v113_empty' }
+  }
   $step = 'Generate Prisma'
   if ($dependenciesChanged -or (Cache 'check' 'prisma') -ne 'CURRENT') {
     & "$PSScriptRoot/dev-stop.ps1"
@@ -280,7 +294,7 @@ try {
   Cache 'record' 'runtime' | Out-Null; $completed.Add('API health, DB health và frontend sẵn sàng')
   Write-Host 'Hoàn tất setup.' -ForegroundColor Green
   if ($demoSet) { Write-Host 'Mật khẩu demo local/dev vừa được thiết lập: Goctro123456789' }
-  elseif ($dataState -eq 'v112_empty') { Write-Host 'Chưa seed mẫu; chưa thiết lập tài khoản/credential demo.' }
+  elseif ($dataState -eq 'v113_empty') { Write-Host 'Chưa seed mẫu; chưa thiết lập tài khoản/credential demo.' }
   else { Write-Host 'Sử dụng mật khẩu hiện có; setup không đổi credential.' }
   Write-Host 'Giới thiệu: http://localhost:3000/'
   Write-Host 'Tìm phòng:  http://localhost:3000/tim-phong'
@@ -288,6 +302,8 @@ try {
   Write-Host 'Admin: admin.one@example.test | Resident: resident.one@example.test'
   Write-Host 'Resident demo dùng email; số điện thoại fixture chưa hợp lệ với Auth V1.'
   Write-Host 'Provider gửi invitation/reset/Zalo và storage ngoài database cần cấu hình riêng; setup không xác minh các dịch vụ này.'
+  try { Start-Process 'http://localhost:3000/' | Out-Null }
+  catch { Write-Host 'Không tự mở được trình duyệt; hãy mở http://localhost:3000/ thủ công.' -ForegroundColor Yellow }
   exit 0
 } catch {
   Write-Host "LỖI tại bước '$step': $($_.Exception.Message)" -ForegroundColor Red

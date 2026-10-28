@@ -67,6 +67,7 @@ export class PrismaContractRepository {
           beforeData: { status: "active" }, afterData: { status: "expired", end_date: sqlDate(current.endDate) },
         } });
         await tx.parkingSlotAssignment.updateMany({ where: { ownerId, contractId: candidate.contractId, status: "active", startedAt: { lte: current.endDate } }, data: { status: "ended", endedAt: current.endDate } });
+        await tx.parkingSlotRequest.updateMany({ where: { ownerId, contractId: candidate.contractId, status: "pending" }, data: { status: "cancelled", reviewedAt: new Date(), reviewNote: "Hợp đồng đã hết hiệu lực." } });
         await tx.amenitySubscription.updateMany({ where: { ownerId, contractId: candidate.contractId, status: { in: ["active", "cancellation_requested"] } }, data: { status: "contract_ended", effectiveEndAt: current.endDate } });
         await tx.amenitySubscriptionCycle.updateMany({ where: { ownerId, contractId: candidate.contractId, status: "planned", cycleStart: { gte: current.endDate } }, data: { status: "cancelled" } });
         return true;
@@ -245,6 +246,7 @@ export class PrismaContractRepository {
         await tx.resident.updateMany({ where: { ownerId, residentId }, data: { residenceStatus: remaining ? "living" : "left" } });
       }
       await tx.parkingSlotAssignment.updateMany({ where: { ownerId, contractId, status: "active", startedAt: { lte: input.terminationDate } }, data: { status: "ended", endedAt: input.terminationDate } });
+      await tx.parkingSlotRequest.updateMany({ where: { ownerId, contractId, status: "pending" }, data: { status: "cancelled", reviewedAt: new Date(), reviewNote: "Hợp đồng đã kết thúc." } });
       await tx.amenitySubscription.updateMany({ where: { ownerId, contractId, status: { in: ["active", "cancellation_requested"] } }, data: { status: "contract_ended", effectiveEndAt: dateTime } });
       await tx.amenitySubscriptionCycle.updateMany({ where: { ownerId, contractId, status: "planned", cycleStart: { gte: dateTime } }, data: { status: "cancelled" } });
       await tx.contractChangeHistory.create({ data: {
@@ -301,10 +303,13 @@ export class PrismaContractRepository {
     if (overlap) throw new ApiError(409, "CONTRACT_DATE_OVERLAP", "Thời hạn hợp đồng bị trùng với hợp đồng đang hiệu lực.");
   }
   private async assertCapacity(tx: Tx, ownerId: bigint, roomId: bigint, capacity: number) {
-    const room = await tx.room.findFirst({ where: { ownerId, roomId }, select: { _count: { select: { roomResidents: { where: { status: "active" } }, parkingAssignments: { where: { status: "active" } } } } } });
+    const [room, pendingParkingRequests] = await Promise.all([
+      tx.room.findFirst({ where: { ownerId, roomId }, select: { _count: { select: { roomResidents: { where: { status: "active" } }, parkingAssignments: { where: { status: "active" } } } } } }),
+      tx.parkingSlotRequest.count({ where: { ownerId, roomId, status: "pending", expiresAt: { gt: new Date() } } }),
+    ]);
     if (!room) return;
     if (room._count.roomResidents > capacity) throw new ApiError(409, "ROOM_CAPACITY_EXCEEDED", "Sức chứa hợp đồng thấp hơn số cư dân đang ở.");
-    if (room._count.parkingAssignments > capacity) throw new ApiError(409, "PARKING_CAPACITY_EXCEEDED", "Sức chứa hợp đồng thấp hơn số slot xe đang hoạt động.");
+    if (room._count.parkingAssignments + pendingParkingRequests > capacity) throw new ApiError(409, "PARKING_CAPACITY_EXCEEDED", "Sức chứa hợp đồng thấp hơn số đăng ký và yêu cầu gửi xe đang hoạt động.");
   }
   private assertDates(start: Date, end: Date) { if (end <= start) throw new ApiError(400, "VALIDATION_ERROR", "end_date phải sau start_date."); }
   private assertRevision(actual: number, expected: number | undefined) { if (expected === undefined || actual !== expected) throw new ApiError(409, "CONTRACT_REVISION_CONFLICT", "Hợp đồng đã được cập nhật; hãy tải lại trước khi tiếp tục."); }

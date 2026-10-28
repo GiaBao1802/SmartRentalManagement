@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { notificationApi, type ResidentNotification } from "../../lib/api/notificationApi";
 
-type Category = "all" | "invoice_demo_payment" | "resident_feedback";
+type Category = "all" | "invoice_demo_payment" | "resident_feedback" | "parking_request";
 type ReadFilter = "all" | "unread" | "read";
 
 function dateLabel(value: string) { return new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" }).format(new Date(value)); }
@@ -23,8 +23,9 @@ export default function AdminNotificationBell() {
     void Promise.all([
       notificationApi.list({ page: 1, page_size: 1, unread: true, type: "invoice_demo_payment" }),
       notificationApi.list({ page: 1, page_size: 1, unread: true, type: "resident_feedback" }),
+      notificationApi.list({ page: 1, page_size: 1, unread: true, type: "parking_request" }),
     ])
-      .then(([invoice, feedback]) => { if (current) setUnreadCount(invoice.meta.total_items + feedback.meta.total_items); })
+      .then(([invoice, feedback, parking]) => { if (current) setUnreadCount(invoice.meta.total_items + feedback.meta.total_items + parking.meta.total_items); })
       .catch(() => { if (current) setUnreadCount(null); });
     return () => { current = false; };
   }, [open, rows.length]);
@@ -56,13 +57,13 @@ export default function AdminNotificationBell() {
     </button>
     {open && <section className="admin-notification-popover" aria-label="Thông báo quản trị">
       <header><div><small>HỘP THƯ QUẢN TRỊ</small><h2>Thông báo</h2></div><button type="button" aria-label="Đóng thông báo" onClick={() => setOpen(false)}>×</button></header>
-      <div className="admin-notification-filters"><label>Nhóm<select value={category} onChange={(event) => setCategory(event.target.value as Category)}><option value="all">Tất cả</option><option value="invoice_demo_payment">Hóa đơn</option><option value="resident_feedback">Phản hồi</option></select></label><label>Trạng thái<select value={readFilter} onChange={(event) => setReadFilter(event.target.value as ReadFilter)}><option value="all">Tất cả</option><option value="unread">Chưa đọc</option><option value="read">Đã đọc</option></select></label></div>
+      <div className="admin-notification-filters"><label>Nhóm<select value={category} onChange={(event) => setCategory(event.target.value as Category)}><option value="all">Tất cả</option><option value="invoice_demo_payment">Hóa đơn</option><option value="resident_feedback">Phản hồi</option><option value="parking_request">Parking</option></select></label><label>Trạng thái<select value={readFilter} onChange={(event) => setReadFilter(event.target.value as ReadFilter)}><option value="all">Tất cả</option><option value="unread">Chưa đọc</option><option value="read">Đã đọc</option></select></label></div>
       {error && <p className="admin-notification-error" role="alert">{error}</p>}{loading && <p className="admin-notification-empty">Đang tải…</p>}{!loading && !error && rows.length === 0 && <p className="admin-notification-empty">Chưa có thông báo phù hợp.</p>}
       {!loading && rows.length > 0 && <div className={`admin-notification-list${rows.length > 3 ? " is-scrollable" : ""}`}>{rows.map((row) => {
         const expanded = expandedNotificationId === row.notification_id;
         const canExpand = row.body.length > 110;
         return <article className={row.read_at ? "is-read" : "is-unread"} key={row.notification_id}>
-          <div><span>{row.notification_type === "invoice_demo_payment" ? "Hóa đơn" : row.notification_type === "resident_feedback" ? "Phản hồi" : "Thông báo"}</span>{!row.read_at && <b>Chưa đọc</b>}</div>
+          <div><span>{row.notification_type === "invoice_demo_payment" ? "Hóa đơn" : row.notification_type === "resident_feedback" ? "Phản hồi" : row.notification_type === "parking_request" ? "Parking" : "Thông báo"}</span>{!row.read_at && <b>Chưa đọc</b>}</div>
           <h3>{row.title}</h3>
           <p className={expanded ? "is-expanded" : undefined}>{row.body}</p>
           {canExpand && <button className={`admin-notification-more${expanded ? " is-expanded" : ""}`} type="button" aria-expanded={expanded} aria-label={expanded ? "Thu gọn nội dung thông báo" : "Xem đầy đủ nội dung thông báo"} title={expanded ? "Thu gọn" : "Xem đầy đủ"} onClick={() => setExpandedNotificationId(expanded ? null : row.notification_id)}>{expanded ? "Thu gọn" : "…"}</button>}

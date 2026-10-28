@@ -26,6 +26,7 @@
     "db:generate": "npm run db:generate --workspace=@goctro/backend",
     "db:migrate": "node scripts/database-v111.mjs migrate-v110",
     "db:migrate:v19": "node scripts/database-v111.mjs migrate-v19",
+    "db:migrate:v113": "node scripts/database-v111.mjs migrate-v113",
     "db:migrate:v18": "node scripts/database-v19.mjs migrate-v18",
     "db:seed": "node scripts/database-v111.mjs seed",
     "demo:advisor": "node scripts/room-advisor-demo/server.mjs",

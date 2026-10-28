@@ -29,6 +29,7 @@ function txWithBase(base = current()) {
     invoice: { findFirst: async () => null },
     roomResident: { findFirst: async () => null, findMany: async () => [], updateMany: async () => ({ count: 0 }) },
     parkingSlotAssignment: { updateMany: async () => ({ count: 0 }) },
+    parkingSlotRequest: { count: async () => 0, updateMany: async () => ({ count: 0 }) },
     amenitySubscription: { updateMany: async () => ({ count: 0 }) },
     amenitySubscriptionCycle: { updateMany: async () => ({ count: 0 }) },
   };
@@ -96,6 +97,7 @@ test("expiry synchronization is idempotent, timezone-aware and appends one offic
     },
     contractChangeHistory: { create: async ({ data }: any) => { histories.push(data); return data; } },
     parkingSlotAssignment: { updateMany: async () => { closures.push("parking"); return { count: 1 }; } },
+    parkingSlotRequest: { updateMany: async () => ({ count: 0 }) },
     amenitySubscription: { updateMany: async () => { closures.push("amenity"); return { count: 1 }; } },
     amenitySubscriptionCycle: { updateMany: async () => { closures.push("cycles"); return { count: 1 }; } },
   };
@@ -172,6 +174,7 @@ test("renewal starts a new meter continuity with empty initial readings", async 
     },
     resident: { findFirst: async () => ({ residentId: 201n }) },
     room: { findFirst: async () => ({ _count: { roomResidents: 1, parkingAssignments: 0 } }) },
+    parkingSlotRequest: { count: async () => 0 },
     invoice: { findFirst: async () => { throw new Error("Renewal must not inspect predecessor invoices"); } },
   };
   const repo = new PrismaContractRepository(client(tx));
@@ -254,6 +257,7 @@ test("termination failure after Resident recomputation rolls back Contract, occu
       },
       resident: { updateMany: async ({ where, data }: any) => { const row = staged.residents.find((item: any) => item.residentId === where.residentId); if (row) row.residenceStatus = data.residenceStatus; return { count: 1 }; } },
       parkingSlotAssignment: { updateMany: async () => ({ count: 0 }) },
+      parkingSlotRequest: { updateMany: async () => ({ count: 0 }) },
       amenitySubscription: { updateMany: async () => { throw new Error("simulated later side-effect failure"); } },
       amenitySubscriptionCycle: { updateMany: async () => ({ count: 0 }) },
       contractChangeHistory: { create: async ({ data }: any) => { staged.histories.push(data); return data; } },
