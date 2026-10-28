@@ -40,7 +40,10 @@ def handle_request(body,extract=id_v3.extract):
   return {'text':'Mình chưa hiểu đủ điều kiện để tìm trong tin phòng công khai. '+' '.join(parsed.get('questions',['Bạn hãy nói rõ khu vực, giá, diện tích hoặc số người.']))+'\nBạn có thể sửa yêu cầu rồi gửi lại.','source':'public_database','model':'qwen3:1.7b','status':'needs_clarification','context':None}
   # No catalog loading or retrieval before the guest explicitly confirms.
  if filters['amenities']:
-  return {'text':'API tin phòng công khai chưa có dữ liệu tiện ích để xác minh máy lạnh. Bạn có thể sửa yêu cầu để bỏ điều kiện này hoặc nêu tiêu chí khác.','source':'public_database','model':'qwen3:1.7b','status':'needs_clarification','context':None}
+  labels={'air_conditioning':'máy lạnh/điều hòa','parking':'bãi gửi xe','wifi':'wifi','elevator':'thang máy','washing_machine':'máy giặt','refrigerator':'tủ lạnh','water_heater':'máy nước nóng','private_kitchen':'bếp riêng','private_bathroom':'nhà vệ sinh riêng','balcony':'ban công','unspecified_amenity':'tiện ích','cats_allowed':'nuôi mèo','dogs_allowed':'nuôi chó'}
+  requested=', '.join(labels[x] for x in filters['amenities'])
+  summary=describe(filters).replace('Đang lọc: ','').rstrip('.')
+  return {'text':f'Mình hiểu yêu cầu: {summary}. Tuy nhiên, tin phòng công khai hiện chưa có dữ liệu đã xác minh cho tiện ích {requested}, nên mình chưa thể lọc hoặc khẳng định phòng nào có các tiện ích này. Hiện mình lọc được khu vực, giá thuê, diện tích và sức chứa. Bạn có thể chọn “Sửa yêu cầu” để bỏ tiện ích rồi tiếp tục.','source':'public_database','model':'qwen3:1.7b','status':'needs_clarification','context':None}
  text='Mình hiểu nhu cầu của bạn như sau:\n'+describe(filters).replace('Đang lọc: ','')+'\n\nSau khi bạn xác nhận, mình sẽ tìm trong các tin phòng đang công khai trên database. Giá là tiền thuê cả phòng, chưa gồm điện nước/phí.\nĐúng ý bạn chưa? Chọn “Đúng rồi, tìm phòng” hoặc “Sửa yêu cầu”.'
  return {'text':text,'source':'public_database','model':'qwen3:1.7b','status':'awaiting_confirmation','context':filters}
 

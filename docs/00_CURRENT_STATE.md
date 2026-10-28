@@ -12,7 +12,7 @@ Neon project `goctro-shared-dev` (`patient-scene-93926977`), default `production
 
 ### Guest Cloudy public database read — 2026-10-28
 
-After explicit guest confirmation, local development Cloudy queries the existing public rooms API using structured filters; no generated SQL or database writes. The preview links each room to detail and includes a second link to the full matching list with confirmed filters and normal pagination. The list loads up to 1,000 candidates and requests narrower filters above that bound. Live Qwen regressions cover abbreviated “TP. Hồ Chí Minh” and filter continuation. Production AI remains deferred; primary Exact Next Task below is unchanged. See the [Cloudy integration report](07_modules/public-marketplace/CLOUDY_LOCAL_AI_INTEGRATION_REPORT.md).
+After explicit guest confirmation, local development Cloudy queries the existing public rooms API using structured filters; no generated SQL or database writes. The preview links each room to detail and includes a second link to the full matching list with confirmed filters and normal pagination. The list loads up to 1,000 candidates and requests narrower filters above that bound. Qwen recognizes area phrasing and common amenity requests such as parking and air conditioning, but the public API cannot verify amenities and Cloudy explains that limit rather than guessing. Live Qwen regressions cover abbreviated “TP. Hồ Chí Minh”, filter continuation, area and amenity wording. Production AI remains deferred; primary Exact Next Task below is unchanged. See the [Cloudy integration report](07_modules/public-marketplace/CLOUDY_LOCAL_AI_INTEGRATION_REPORT.md).
 
 ### Resident Parking and V1.15 — applied locally 2026-10-28
 

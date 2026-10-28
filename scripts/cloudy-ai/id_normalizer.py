@@ -79,8 +79,15 @@ def normalize(question,raw):
     if v<=0 or int(v)!=v or filters['occupants'] is not None:raise ValueError('Số người không hợp lệ')
     filters['occupants']=int(v)
    elif field=='amenity':
-    t=re.sub(r'^(?:co|cho phep|cho)\s+','',t)
-    labels={'may lanh':'air_conditioning','nuoi meo':'cats_allowed','nuoi cho':'dogs_allowed'}
+    t=re.sub(r'^(?:co|cho phep)\s+','',t)
+    labels={
+     'may lanh':'air_conditioning','dieu hoa':'air_conditioning','may dieu hoa':'air_conditioning',
+     'bai gui xe':'parking','bai giu xe':'parking','bai do xe':'parking','bai dau xe':'parking','bai xe':'parking',
+     'cho de xe':'parking','cho dau xe':'parking','cho do xe':'parking','cho gui xe':'parking','khu de xe':'parking','khu gui xe':'parking','gui xe':'parking','dau xe':'parking','do xe':'parking',
+     'wifi':'wifi','thang may':'elevator','may giat':'washing_machine','tu lanh':'refrigerator','may nuoc nong':'water_heater','bep rieng':'private_kitchen','ve sinh rieng':'private_bathroom','ban cong':'balcony',
+     'tien ich':'unspecified_amenity','tien nghi':'unspecified_amenity',
+     'nuoi meo':'cats_allowed','nuoi cho':'dogs_allowed'
+    }
     if t not in labels:raise ValueError('Tiện ích/phủ định chưa hỗ trợ')
     filters['amenities'].append(labels[t])
    else:raise ValueError('Điều kiện chưa hỗ trợ')
@@ -88,7 +95,7 @@ def normalize(question,raw):
  rest=normalized(''.join(' ' if covered[i] else c for i,c in enumerate(question)))
  rest=re.sub(r'\bkhong\s*\?\s*$',' ',rest)
  # Only conversational glue may remain. Operators, numbers and unknown content block.
- allowed=set('minh toi em e anh chi ban tim kiem thue phong tro can muon co cho cho giup nho voi va nha nhe a nao duoc xin dang'.split())
+ allowed=set('minh toi em e anh chi ban tim kiem thue phong tro can muon co cho giup nho voi va nha nhe a nao gi duoc xin dang'.split())
  unknown=[w for w in re.findall(r'\w+',rest) if w not in allowed]
  if unknown:issues.append('Chưa xử lý hết câu: '+' '.join(dict.fromkeys(unknown)))
  for field in ['price','area']:

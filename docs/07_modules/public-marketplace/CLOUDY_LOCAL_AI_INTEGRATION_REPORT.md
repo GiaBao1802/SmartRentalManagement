@@ -30,6 +30,12 @@ Focused Cloudy tests and frontend typecheck pass. The link route and API are unc
 
 The preview now has a separate “Xem toàn bộ kết quả phòng” link. It carries the confirmed location, rent, area and capacity filters to `/rooms`; the existing list screen loads the matching public API pages, applies Cloudy's accent-insensitive province/address match, and provides regular pagination. The first assistant reply may still show five examples, while the full list can page through up to 1,000 candidate public rows; larger searches ask the guest to narrow the filters. Live local DB verification returned 26 matches and three 12-room pages for Đồng Nai, under 4,000,000 VND and capacity two. No new backend route or database change is needed.
 
+## Area and amenity wording — 2026-10-28
+
+The query parser now recognizes common area phrasing (for example, “diện tích ít nhất 25 m²” and “rộng trên 20 m²”) and amenity terms including bãi gửi/chỗ để xe, máy lạnh/điều hòa, wifi, thang máy, máy giặt, tủ lạnh, máy nước nóng, bếp riêng, nhà vệ sinh riêng, ban công and pets. Ten live Qwen3 1.7B checks covered area limits, parking synonyms, an AC synonym, a combined Đồng Nai + parking + AC + rent query, and the open-ended “có tiện ích gì?” question. All extracted the intended conditions. Focused Python regressions now pass 19/19; focused TypeScript regressions and typecheck pass.
+
+The guest API still cannot filter or verify these amenities: its public Room contract exposes rent, area, capacity and public location fields, not room amenities or parking. Cloudy now names the recognized amenity request and explains that data limit instead of presenting it as an unrecognized sentence. Actual amenity-based results require an approved public data/API contract and verified source fields; no amenity results are fabricated.
+
 ## Delivered
 
 The user requested integration into the existing mascot. Development now connects Cloudy to a Next route and a repository-contained Python worker using local Ollama Qwen3 1.7B. The model returns intent/candidate decisions as JSON; deterministic guards validate and filter the 300-room synthetic catalog. The frontend receives plain text, a synthetic-source flag, model name and result status. It never generates or executes SQL.

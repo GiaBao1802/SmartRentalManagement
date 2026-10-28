@@ -16,9 +16,9 @@ test("location matching ignores Vietnamese accents and filter order is stable",a
  const result=await searchPublicDatabaseRooms(noAccent,new AbortController().signal,(async()=>Response.json({data:[room],meta:{total_items:1,total_pages:1,page:1,page_size:100}})) as typeof fetch,"http://localhost:4000/api/v1");
  assert.equal(result.status,"preview");
 });
-test("unknown room amenities are never guessed from public descriptions",async()=>{
- let calls=0;const result=await searchPublicDatabaseRooms({...context,amenities:["air_conditioning"]},new AbortController().signal,(async()=>{calls++;throw Error();}) as typeof fetch,"http://localhost:4000/api/v1");
- assert.equal(result.status,"needs_clarification");assert.equal(result.context,null);assert.equal(calls,0);assert.match(result.text,/chưa có dữ liệu tiện ích/);
+test("recognized amenities and other filters are explained but never guessed from public descriptions",async()=>{
+ let calls=0;const result=await searchPublicDatabaseRooms({...context,area:[{op:"gte",value:20}],amenities:["air_conditioning","parking"]},new AbortController().signal,(async()=>{calls++;throw Error();}) as typeof fetch,"http://localhost:4000/api/v1");
+ assert.equal(result.status,"needs_clarification");assert.equal(result.context,null);assert.equal(calls,0);assert.match(result.text,/khu vực Đà Nẵng/);assert.match(result.text,/diện tích ≥ 20 m²/);assert.match(result.text,/máy lạnh\/điều hòa, bãi gửi xe/);assert.match(result.text,/diện tích và sức chứa/);
 });
 test("strict price/area constraints become safe integer API bounds",async()=>{
  let requested!:URL;const f={...context,location:null,price:[{op:"gt",value:3000000}],area:[{op:"lt",value:25.01}]};

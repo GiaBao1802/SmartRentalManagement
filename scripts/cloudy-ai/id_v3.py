@@ -6,6 +6,8 @@ Bạn phải đánh giá TỪNG cụm ứng viên, không chỉ chọn một c�
 intent=search_rooms nếu người dùng muốn tìm/thuê phòng; unknown nếu không liên quan hoặc không muốn tìm phòng.
 decisions: với mỗi ID, chọn include khi cụm là điều kiện được yêu cầu; exclude khi bị phủ định/loại bỏ; unclear khi mơ hồ. Địa điểm, giá, diện tích, số người và tiện ích đều quan trọng như nhau.
 “Phòng tại Huế có máy lạnh dưới 3 triệu”: cả địa điểm, máy lạnh, giá đều include.
+“Tìm phòng có bãi gửi xe, điều hòa, wifi”: mỗi tiện ích là một điều kiện cần include.
+“Diện tích ít nhất 25m²”: include điều kiện diện tích.
 “Phòng không có máy lạnh”: máy lạnh không được include như tiện ích bắt buộc.
 Không đổi số, không bịa điều kiện. Trả đúng JSON theo schema.'''
 

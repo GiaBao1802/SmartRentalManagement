@@ -34,12 +34,18 @@ function contextSummary(f: FilterContext) {
   if (f.location) parts.push(`khu vực ${f.location}`);
   for (const [field, label, unit] of [[f.price, "giá", "đ/tháng"], [f.area, "diện tích", "m²"]] as const) for (const c of field) parts.push(`${label} ${symbols[c.op]} ${c.value.toLocaleString("vi-VN")} ${unit}`);
   if (f.occupants) parts.push(`sức chứa từ ${f.occupants} người`);
+  const amenityLabels: Record<string, string> = { air_conditioning: "máy lạnh/điều hòa", parking: "bãi gửi xe", wifi: "wifi", elevator: "thang máy", washing_machine: "máy giặt", refrigerator: "tủ lạnh", water_heater: "máy nước nóng", private_kitchen: "bếp riêng", private_bathroom: "nhà vệ sinh riêng", balcony: "ban công", unspecified_amenity: "tiện ích", cats_allowed: "nuôi mèo", dogs_allowed: "nuôi chó" };
+  for (const amenity of f.amenities) parts.push(`có ${amenityLabels[amenity]}`);
   return parts.join("; ") || "mọi điều kiện đang hỗ trợ";
 }
 function empty(context: FilterContext) { return { text: `Hiện không có phòng đang công khai khớp toàn bộ điều kiện trên database. Mình chưa tự nới điều kiện.\n\nĐã xác nhận: ${contextSummary(context)}`, source: "public_database" as const, model: "qwen3:1.7b" as const, status: "no_matches" as const, context }; }
 export async function searchPublicDatabaseRooms(context: FilterContext, signal: AbortSignal, fetchImpl: Fetcher = fetch, configuredBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000/api/v1") {
   if (!isFilterContext(context)) throw new Error("Invalid filter context");
-  if (context.amenities.length) return { text: "API tin phòng công khai chưa có dữ liệu tiện ích để xác minh máy lạnh. Bạn có thể chọn “Sửa yêu cầu” để bỏ điều kiện này hoặc nêu tiêu chí khác.", source: "public_database" as const, model: "qwen3:1.7b" as const, status: "needs_clarification" as const, context: null };
+  if (context.amenities.length) {
+    const labels: Record<string, string> = { air_conditioning: "máy lạnh/điều hòa", parking: "bãi gửi xe", wifi: "wifi", elevator: "thang máy", washing_machine: "máy giặt", refrigerator: "tủ lạnh", water_heater: "máy nước nóng", private_kitchen: "bếp riêng", private_bathroom: "nhà vệ sinh riêng", balcony: "ban công", unspecified_amenity: "tiện ích", cats_allowed: "nuôi mèo", dogs_allowed: "nuôi chó" };
+    const requested = context.amenities.map(amenity => labels[amenity]).join(", ");
+    return { text: `Mình hiểu yêu cầu: ${contextSummary(context)}. Tuy nhiên, tin phòng công khai hiện chưa có dữ liệu đã xác minh cho tiện ích ${requested}, nên mình chưa thể lọc hoặc khẳng định phòng nào có các tiện ích này. Hiện mình lọc được khu vực, giá thuê, diện tích và sức chứa. Bạn có thể chọn “Sửa yêu cầu” để bỏ tiện ích rồi tiếp tục.`, source: "public_database" as const, model: "qwen3:1.7b" as const, status: "needs_clarification" as const, context: null };
+  }
   const base = new URL(configuredBase);
   if (!["localhost", "127.0.0.1", "[::1]"].includes(base.hostname) || !["http:", "https:"].includes(base.protocol) || base.username || base.password) throw new Error("Public API must use a loopback URL in the local demo");
   base.pathname = `${base.pathname.replace(/\/$/, "")}/`;
