@@ -6,8 +6,8 @@ import {CloudyOwnerRequests,type OwnerRequest} from './cloudy-owner-requests';
 import {propertyServiceApi} from '../../lib/api/propertyServiceApi';
 type Catalog={source?:string;tasks:Record<string,string>;rooms:string[];periods:string[];properties?:{property_id:string;name:string;province:string}[];asOf:string};
 type Result={summary:string;requests?:OwnerRequest[];cards:{id:string;room:string;property:string;status:string;total:number|null;details:string[];href?:string;amountLabel?:string}[]};
-type ServiceDraft={propertyId:string;name:string;unit:string;price:string;effectiveFrom:string};
-const emptyServiceDraft=():ServiceDraft=>({propertyId:'',name:'',unit:'',price:'',effectiveFrom:new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())});
+type ServiceDraft={kind:'free'|'paid'|null;propertyId:string;name:string;unit:string;price:string;effectiveFrom:string;location:string};
+const emptyServiceDraft=():ServiceDraft=>({kind:null,propertyId:'',name:'',unit:'',price:'',location:'',effectiveFrom:new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())});
 const normalized=(value:string)=>value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/gi,'d').toLowerCase();
 const requestsServiceCreation=(value:string)=>/\b(tao|them|dang ky|bo sung|mo)\b/.test(normalized(value))&&/\b(tien ich|dich vu|wifi|internet|rac|ve sinh)\b/.test(normalized(value));
 const serviceCode=(value:string)=>normalized(value).toUpperCase().replace(/[^A-Z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,60)||'DICH-VU-MOI';
@@ -16,17 +16,17 @@ export function CloudyOwnerAdvisor(){
  const [catalog,setCatalog]=useState<Catalog|null>(null),[question,setQuestion]=useState(''),[task,setTask]=useState(''),[period,setPeriod]=useState(''),[room,setRoom]=useState(''),[busy,setBusy]=useState(false),[note,setNote]=useState('Đang tải phòng của tài khoản…'),[result,setResult]=useState<Result|null>(null);
  const chatEnd=useRef<HTMLDivElement|null>(null);
  const [messages,setMessages]=useState<{role:string;text:string}[]>([]),[proposed,setProposed]=useState(false),[roomUnknown,setRoomUnknown]=useState(false);
- const [serviceStep,setServiceStep]=useState<'property'|'name'|'unit'|'price'|'date'|'confirm'|null>(null),[serviceDraft,setServiceDraft]=useState<ServiceDraft>(emptyServiceDraft),[serviceSaving,setServiceSaving]=useState(false);
+ const [serviceStep,setServiceStep]=useState<'type'|'property'|'name'|'location'|'unit'|'price'|'date'|'confirm'|null>(null),[serviceDraft,setServiceDraft]=useState<ServiceDraft>(emptyServiceDraft),[serviceSaving,setServiceSaving]=useState(false);
  const pending=useRef<AbortController|null>(null);
  const [reload,setReload]=useState(0),[loading,setLoading]=useState(true),[loadError,setLoadError]=useState('');
  useEffect(()=>{const controller=new AbortController();setLoading(true);setLoadError('');setCatalog(null);setServiceStep(null);setServiceDraft(emptyServiceDraft());fetch(OWNER_ADVISOR_ENDPOINT,{signal:controller.signal,cache:'no-store',credentials:'same-origin'}).then(async r=>{const data=await r.json();if(!r.ok)throw new Error(data.error||'Không tải được dữ liệu.');if(controller.signal.aborted)return;setCatalog(data);setNote(data.rooms.length?`${data.rooms.length} phòng từ ${data.source==='database'?'database hiện tại':'bộ mẫu'} của tài khoản. Ngày đối chiếu: ${data.asOf}.`:'Tài khoản này chưa có phòng trong dữ liệu quản lý.');}).catch(e=>{if(!controller.signal.aborted)setLoadError(e.message);}).finally(()=>{if(!controller.signal.aborted)setLoading(false);});return()=>{controller.abort();pending.current?.abort();};},[reload]);
  useEffect(()=>{chatEnd.current?.scrollIntoView({block:"nearest"});},[messages,proposed,busy]);
  function invalidate(){pending.current?.abort();pending.current=null;setBusy(false);setProposed(false);setResult(null);}
- function startServiceCreation(text:string){invalidate();setServiceDraft(emptyServiceDraft());setServiceStep('property');setQuestion('');setMessages(m=>[...m,{role:'user',text},{role:'cloudy',text:'Mình sẽ giúp tạo một tiện ích thu phí cố định cho khu trọ. Chọn khu trọ áp dụng nhé; hệ thống sẽ yêu cầu bạn xác nhận trước khi lưu.'}]);}
+ function startServiceCreation(text:string){invalidate();setServiceDraft(emptyServiceDraft());setServiceStep('type');setQuestion('');setMessages(m=>[...m,{role:'user',text},{role:'cloudy',text:'Bạn muốn tạo tiện ích chung miễn phí cho cư dân, hay dịch vụ cố định có thu phí theo kỳ?'}]);}
  function addServiceReply(text:string){
   const value=text.trim();if(!serviceStep||!catalog)return;
   setQuestion('');setMessages(m=>[...m,{role:'user',text:value}]);
-  if(['huy','huy bo','bo qua','dung tao nua'].includes(normalized(value))){setServiceStep(null);setMessages(m=>[...m,{role:'cloudy',text:'Mình đã hủy yêu cầu tạo tiện ích. Chưa có dữ liệu nào được ghi.'}]);return;}
+  if(['huy','huy tao','huy bo','bo qua','dung tao nua'].includes(normalized(value))){setServiceStep(null);setMessages(m=>[...m,{role:'cloudy',text:'Mình đã hủy yêu cầu tạo tiện ích. Chưa có dữ liệu nào được ghi.'}]);return;}
   if(serviceStep==='property'){
    const matches=(catalog.properties||[]).filter(p=>normalized(`${p.name} ${p.province}`).includes(normalized(value))||value===p.property_id);
    if(matches.length!==1){setMessages(m=>[...m,{role:'cloudy',text:'Mình chưa xác định được duy nhất khu trọ. Hãy chọn một khu trọ trong danh sách bên dưới.'}]);return;}
@@ -34,7 +34,11 @@ export function CloudyOwnerAdvisor(){
   }
   if(serviceStep==='name'){
    if(value.length>150){setMessages(m=>[...m,{role:'cloudy',text:'Tên tối đa 150 ký tự. Bạn nhập tên ngắn hơn nhé.'}]);return;}
-   setServiceDraft(d=>({...d,name:value}));setServiceStep('unit');setMessages(m=>[...m,{role:'cloudy',text:'Đơn vị tính là gì? Ví dụ “phòng/kỳ” cho tiện ích định kỳ, hoặc “tháng”.'}]);return;
+   setServiceDraft(d=>({...d,name:value}));setServiceStep(serviceDraft.kind==='free'?'location':'unit');setMessages(m=>[...m,{role:'cloudy',text:serviceDraft.kind==='free'?'Tiện ích này ở vị trí nào? Có thể ghi “toàn khu” nếu dùng chung.':'Đơn vị tính là gì? Ví dụ “phòng/kỳ” cho tiện ích định kỳ, hoặc “tháng”.'}]);return;
+  }
+  if(serviceStep==='location'){
+   if(value.length>200){setMessages(m=>[...m,{role:'cloudy',text:'Vị trí tối đa 200 ký tự. Bạn nhập ngắn hơn nhé.'}]);return;}
+   setServiceDraft(d=>({...d,location:value}));setServiceStep('confirm');setMessages(m=>[...m,{role:'cloudy',text:'Kiểm tra thông tin tiện ích miễn phí rồi xác nhận để lưu vào khu trọ.'}]);return;
   }
   if(serviceStep==='unit'){
    if(value.length>30){setMessages(m=>[...m,{role:'cloudy',text:'Đơn vị tối đa 30 ký tự. Bạn nhập ngắn hơn nhé.'}]);return;}
@@ -55,6 +59,12 @@ export function CloudyOwnerAdvisor(){
   if(!serviceStep||serviceStep!=='confirm'||serviceSaving||!serviceDraft.propertyId)return;
   setServiceSaving(true);
   try{
+   if(serviceDraft.kind==='free'){
+    const existing=await propertyServiceApi.listFacilities(serviceDraft.propertyId);
+    if(existing.items.some(item=>normalized(item.name)===normalized(serviceDraft.name)))throw new Error('Tên tiện ích miễn phí này đã có ở khu trọ. Mình chưa tạo trùng; hãy kiểm tra danh mục hoặc đổi tên.');
+    const facility=await propertyServiceApi.createFacility(serviceDraft.propertyId,{name:serviceDraft.name,location:serviceDraft.location});
+    setServiceStep(null);setServiceDraft(emptyServiceDraft());setMessages(m=>[...m,{role:'cloudy',text:`Đã thêm tiện ích chung miễn phí “${facility.name}” tại ${facility.location||'khu trọ'}. Không tạo khoản thu hay hóa đơn.`}]);return;
+   }
    const code=serviceCode(serviceDraft.name);
    const existing=await propertyServiceApi.list(serviceDraft.propertyId);
    if(existing.items.some(item=>item.code.toUpperCase()===code))throw new Error(`Mã tiện ích ${code} đã tồn tại ở khu trọ này. Mình chưa tạo thêm để tránh trùng; hãy kiểm tra danh mục hoặc đổi tên.`);
@@ -131,8 +141,10 @@ export function CloudyOwnerAdvisor(){
    <button type="button" disabled={busy} onClick={()=>{invalidate();setMessages(m=>[...m,{role:'cloudy',text:'Bạn mô tả lại giúp mình nhé. Có thể ghi rõ tháng và mã phòng.'}]);}}>Chưa đúng, sửa lại</button>
   </div>}
   {serviceStep&&<div className="cloudy-owner__bubble" aria-live="polite">
+   {serviceStep==='type'&&<><button type="button" disabled={serviceSaving} onClick={()=>{setServiceDraft(d=>({...d,kind:'free'}));setServiceStep('property');setMessages(m=>[...m,{role:'user',text:'Tiện ích chung miễn phí'},{role:'cloudy',text:'Chọn khu trọ áp dụng nhé.'}]);}}>Tiện ích chung miễn phí</button><button type="button" disabled={serviceSaving} onClick={()=>{setServiceDraft(d=>({...d,kind:'paid'}));setServiceStep('property');setMessages(m=>[...m,{role:'user',text:'Dịch vụ cố định có thu phí'},{role:'cloudy',text:'Chọn khu trọ áp dụng nhé.'}]);}}>Dịch vụ cố định có thu phí</button></>}
    {serviceStep==='property'&&<><p>Chọn khu trọ cho tiện ích:</p>{(catalog.properties||[]).map(property=><button key={property.property_id} type="button" disabled={serviceSaving} onClick={()=>{setServiceDraft(d=>({...d,propertyId:property.property_id}));setServiceStep('name');setMessages(m=>[...m,{role:'user',text:property.name},{role:'cloudy',text:'Tiện ích này tên là gì? Ví dụ: WiFi, vệ sinh phòng, thu gom rác.'}]);}}>{property.name} · {property.province}</button>)}</>}
-   {serviceStep==='confirm'&&<><p>Tiện ích cố định · {(catalog.properties||[]).find(p=>p.property_id===serviceDraft.propertyId)?.name}</p><p>Tên: {serviceDraft.name} · mã: {serviceCode(serviceDraft.name)}</p><p>Đơn vị: {serviceDraft.unit}</p><p>Giá: {new Intl.NumberFormat('vi-VN').format(Number(serviceDraft.price))} đ/{serviceDraft.unit}</p><p>Hiệu lực từ: {serviceDraft.effectiveFrom}</p><p>Tiện ích cố định áp dụng cho các phòng đủ điều kiện ở khu trọ này. Giá sẽ được ghi vào lịch sử giá và không thể sửa/xóa sau khi phát hành.</p><button type="button" disabled={serviceSaving} onClick={()=>void confirmServiceCreation()}>{serviceSaving?'Đang tạo…':'Xác nhận tạo tiện ích'}</button><button type="button" disabled={serviceSaving} onClick={()=>{setServiceStep('property');setServiceDraft(emptyServiceDraft());setMessages(m=>[...m,{role:'cloudy',text:'Mình đã bỏ thông tin vừa nhập. Hãy chọn khu trọ để bắt đầu lại.'}]);}}>Sửa lại</button></>}
+   {serviceStep==='confirm'&&serviceDraft.kind==='free'&&<><p>Tiện ích chung miễn phí · {(catalog.properties||[]).find(p=>p.property_id===serviceDraft.propertyId)?.name}</p><p>Tên: {serviceDraft.name}</p><p>Vị trí: {serviceDraft.location}</p><p>Tiện ích này không có giá, không tạo khoản thu hay hóa đơn.</p><button type="button" disabled={serviceSaving} onClick={()=>void confirmServiceCreation()}>{serviceSaving?'Đang lưu…':'Xác nhận thêm tiện ích miễn phí'}</button></>}
+   {serviceStep==='confirm'&&serviceDraft.kind==='paid'&&<><p>Dịch vụ cố định có thu phí · {(catalog.properties||[]).find(p=>p.property_id===serviceDraft.propertyId)?.name}</p><p>Tên: {serviceDraft.name} · mã: {serviceCode(serviceDraft.name)}</p><p>Đơn vị: {serviceDraft.unit}</p><p>Giá: {new Intl.NumberFormat('vi-VN').format(Number(serviceDraft.price))} đ/{serviceDraft.unit}</p><p>Hiệu lực từ: {serviceDraft.effectiveFrom}</p><p>Dịch vụ cố định áp dụng cho các phòng đủ điều kiện ở khu trọ này. Giá sẽ được ghi vào lịch sử giá và không thể sửa/xóa sau khi phát hành.</p><button type="button" disabled={serviceSaving} onClick={()=>void confirmServiceCreation()}>{serviceSaving?'Đang tạo…':'Xác nhận tạo tiện ích'}</button></>}
    <button type="button" disabled={serviceSaving} onClick={()=>{setServiceStep(null);setMessages(m=>[...m,{role:'cloudy',text:'Mình đã hủy yêu cầu tạo tiện ích.'}]);}}>Hủy tạo</button>
   </div>}
   {busy&&<p role="status">Cloudy đang xử lý…</p>}
@@ -143,7 +155,7 @@ export function CloudyOwnerAdvisor(){
   <div ref={chatEnd}/>
   <form className="cloudy-owner__composer" onSubmit={e=>{e.preventDefault();submitQuestion();}}>
    <label className="sr-only" htmlFor="cloudy-owner-question">Tin nhắn cho Cloudy</label>
-   <textarea id="cloudy-owner-question" value={question} maxLength={500} placeholder={serviceStep==='name'?'Tên tiện ích mới là gì?':serviceStep==='unit'?'Đơn vị tính là gì?':serviceStep==='price'?'Đơn giá VND bao nhiêu?':serviceStep==='date'?'Ngày hiệu lực YYYY-MM-DD hoặc hôm nay':serviceStep==='property'?'Chọn khu trọ ở phía trên':'Hỏi Cloudy hoặc yêu cầu tạo tiện ích: WiFi khu trọ'} onChange={e=>changeQuestion(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();e.currentTarget.form?.requestSubmit();}}}/>
+   <textarea id="cloudy-owner-question" value={question} maxLength={500} placeholder={serviceStep==='name'?'Tên tiện ích mới là gì?':serviceStep==='location'?'Vị trí tiện ích ở đâu?':serviceStep==='unit'?'Đơn vị tính là gì?':serviceStep==='price'?'Đơn giá VND bao nhiêu?':serviceStep==='date'?'Ngày hiệu lực YYYY-MM-DD hoặc hôm nay':serviceStep==='property'?'Chọn khu trọ ở phía trên':serviceStep==='type'?'Chọn miễn phí hoặc có thu phí ở phía trên':'Hỏi Cloudy hoặc yêu cầu tạo tiện ích: WiFi khu trọ'} onChange={e=>changeQuestion(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();e.currentTarget.form?.requestSubmit();}}}/>
    <button disabled={busy||!question.trim()}>Gửi</button>
   </form>
   </>}

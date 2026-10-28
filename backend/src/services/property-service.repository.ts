@@ -15,6 +15,7 @@ export type FlexibleServiceConfigurationInput = {
 };
 export type ServiceItemInput = { kind: ServiceKind; code: string; name: string; description: string | null; unit: string; serviceConfiguration?: FlexibleServiceConfigurationInput };
 export type ServicePriceInput = { effectiveFrom: Date; unitPrice: bigint; sourceName: string | null; sourceReference: string | null; reason: string | null };
+export type PropertyFacilityInput = { name: string; description: string | null; location: string | null };
 
 type FlexibleServiceConfigurationRow = {
   property_pricing_item_id: bigint;
@@ -206,6 +207,19 @@ function scheduleSlots(service: ResidentBookableServiceRow, serviceDate: string)
 
 export class PrismaPropertyServiceRepository {
   constructor(private readonly prisma: PrismaClient) {}
+
+  async listFacilities(ownerId: bigint, propertyId: bigint) {
+    const property = await this.prisma.property.findFirst({ where: { ownerId, propertyId }, select: { propertyId: true, name: true } });
+    if (!property) return null;
+    const items = await this.prisma.propertyFacility.findMany({ where: { ownerId, propertyId, active: true }, orderBy: [{ name: "asc" }, { propertyFacilityId: "asc" }], select: { propertyFacilityId: true, name: true, description: true, location: true, active: true, createdAt: true } });
+    return { property, items };
+  }
+
+  async createFacility(ownerId: bigint, propertyId: bigint, input: PropertyFacilityInput) {
+    const property = await this.prisma.property.findFirst({ where: { ownerId, propertyId }, select: { propertyId: true } });
+    if (!property) return null;
+    return this.prisma.propertyFacility.create({ data: { ownerId, propertyId, name: input.name, description: input.description, location: input.location }, select: { propertyFacilityId: true, name: true, description: true, location: true, active: true, createdAt: true } });
+  }
 
   async listResidentServices(ownerId: bigint, residentId: bigint, effectiveOn: Date) {
     const occupancies = await this.prisma.$queryRaw<Array<{ property_id: bigint }>>`

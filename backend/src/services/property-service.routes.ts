@@ -4,9 +4,9 @@ import type { AuthDependencies } from "../middleware/auth.js";
 import { authenticateRequest, foreignResourceNotFound, getAdminOwnerId, getResidentContext, requireAdmin, requireResident } from "../middleware/auth.js";
 import { ApiError, conflict, validationError } from "../middleware/api-error.js";
 import { parseBigIntId, sendJson } from "../utils/ids.js";
-import { servicePriceInputIsValid, type FlexibleServiceConfigurationInput, type PrismaPropertyServiceRepository, type ResidentServiceBookingDecisionInput, type ResidentServiceBookingInput, type ServiceKind, type ServicePriceInput } from "./property-service.repository.js";
+import { servicePriceInputIsValid, type FlexibleServiceConfigurationInput, type PrismaPropertyServiceRepository, type PropertyFacilityInput, type ResidentServiceBookingDecisionInput, type ResidentServiceBookingInput, type ServiceKind, type ServicePriceInput } from "./property-service.repository.js";
 
-type Repo = Pick<PrismaPropertyServiceRepository, "listItems" | "listResidentServices" | "listResidentServiceAvailability" | "bookResidentService" | "listResidentServiceBookings" | "cancelResidentServiceBooking" | "listAdminServiceBookings" | "decideAdminServiceBooking" | "createItem" | "saveFlexibleConfiguration" | "retireItem" | "publishPrice">;
+type Repo = Pick<PrismaPropertyServiceRepository, "listFacilities" | "createFacility" | "listItems" | "listResidentServices" | "listResidentServiceAvailability" | "bookResidentService" | "listResidentServiceBookings" | "cancelResidentServiceBooking" | "listAdminServiceBookings" | "decideAdminServiceBooking" | "createItem" | "saveFlexibleConfiguration" | "retireItem" | "publishPrice">;
 function id(value: unknown, label = "ID") { try { return parseBigIntId(value); } catch { throw validationError(`${label} không hợp lệ.`); } }
 function exactBody(body: unknown, fields: string[]) {
   if (!body || typeof body !== "object" || Array.isArray(body)) throw validationError("Dữ liệu dịch vụ không hợp lệ.");
@@ -129,6 +129,23 @@ export function createPropertyServiceRouter(auth: AuthDependencies, repository: 
   });
   const admin: RequestHandler[] = [authenticateRequest(auth), requireAdmin];
   const resident: RequestHandler[] = [authenticateRequest(auth), requireResident];
+  router.get("/properties/:property_id/facilities", ...admin, async (req, res, next) => {
+    try {
+      if (Object.keys(req.query).length) throw validationError("Danh sách tiện ích chung không nhận tham số.");
+      const result = await repository.listFacilities(getAdminOwnerId(req.auth!), id(req.params.property_id, "Khu vực"));
+      if (!result) { foreignResourceNotFound(); return; }
+      sendJson(res, 200, { data: { property: { property_id: String(result.property.propertyId), name: result.property.name }, items: result.items.map((item) => ({ facility_id: String(item.propertyFacilityId), name: item.name, description: item.description, location: item.location, active: item.active, created_at: item.createdAt.toISOString() })) } });
+    } catch (error) { next(error); }
+  });
+  router.post("/properties/:property_id/facilities", ...admin, async (req, res, next) => {
+    try {
+      const body = exactBody(req.body, ["name", "description", "location"]);
+      const input: PropertyFacilityInput = { name: text(body.name, "Tên tiện ích", 150)!, description: text(body.description, "Mô tả", 10_000, false), location: text(body.location, "Vị trí", 200, false) };
+      const result = await repository.createFacility(getAdminOwnerId(req.auth!), id(req.params.property_id, "Khu vực"), input);
+      if (!result) { foreignResourceNotFound(); return; }
+      sendJson(res, 201, { data: { facility_id: String(result.propertyFacilityId), name: result.name, description: result.description, location: result.location, active: result.active, created_at: result.createdAt.toISOString() } });
+    } catch (error) { mapWriteError(error, next, "Không thể tạo tiện ích chung."); }
+  });
   router.get("/me/services", ...resident, async (req, res, next) => {
     try {
       const context = getResidentContext(req.auth!);

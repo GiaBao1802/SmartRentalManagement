@@ -979,6 +979,17 @@ The following endpoints are mounted under `/api/v1` and are Admin-only. Owner is
 | `GET /properties/{property_id}/flexible-service-charges?page=&page_size=` | List Owner/Property-scoped events with safe service, Room, Contract and Resident labels, amount snapshots and `READY/INVOICED/VOID` status. |
 | `POST /properties/{property_id}/flexible-service-charges` | Record a Flexible event. Requires `Idempotency-Key`. Exact body: `room_id`, `contract_id`, optional nullable `resident_id`, `pricing_item_id`, positive `quantity` (up to 3 decimals), and timezone-qualified `occurred_at`. The server validates the Owner/Property/Room/Contract/Resident/item relation, Contract date range, and active Flexible item; resolves the latest published Property price on the `Asia/Ho_Chi_Minh` calendar date; and stores server-derived unit, unit-price/amount snapshots and a payload fingerprint. Same key and payload replays the original charge; same key with a different payload is `409`. New events start `READY`. |
 
+#### Property shared Facility catalog
+
+Facilities describe shared Property assets and have no pricing, billing, subscription or booking behavior. These Admin-only routes derive Owner from the authenticated session; a foreign or missing Property returns the normal hidden `404`. They reuse the existing `property_facilities` table and do not create/change database schema.
+
+| Method and path | Behavior |
+|---|---|
+| `GET /properties/{property_id}/facilities` | Return active shared Facilities ordered by name. Response: `{ "data": { "property": { "property_id": string, "name": string }, "items": [{ "facility_id": string, "name": string, "description": string|null, "location": string|null, "active": boolean, "created_at": ISO-8601 }] } }`. No query parameters are accepted. |
+| `POST /properties/{property_id}/facilities` | Create an active shared Facility. Exact body: `name` (required, max 150), optional `description` (max 10,000) and optional `location` (max 200). Duplicate name within the Property returns `409`; Owner/Property scope is server-derived. Success returns the created Facility DTO above with `201`. |
+
+Cloudy may create a free shared Facility only after the Owner reviews and confirms Property, name and location. That action never creates a Pricing Item or financial record. For a paid Fixed Service, Cloudy separately uses the Pricing Item and Price Version routes above after explicit confirmation. Neither chat flow creates Flexible bookings or service charges.
+
 #### Resident Flexible Service catalog read
 
 | Method and path | Behavior |
