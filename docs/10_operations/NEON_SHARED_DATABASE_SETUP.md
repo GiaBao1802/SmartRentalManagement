@@ -14,6 +14,8 @@ The local populated `Goctro_dev_v18` remains separate and unchanged. The Neon pr
 
 ## Developer setup
 
+For detailed first-time onboarding of a teammate who has never used Neon, follow [Neon teammate onboarding](NEON_TEAMMATE_ONBOARDING.md).
+
 Each developer needs their own Neon login and project-level **Editor** permission; pulling Git code does not grant cloud access. Prefer inviting a teammate as an organization Collaborator, then grant Editor only on `goctro-shared-dev`. Collaborators have no default project access, while Neon Viewer cannot see connection strings; Editor is needed for the CLI to pull `DATABASE_URL`. Each invited developer signs in with their own account. Do not put Neon credentials or connection strings in Git.
 
 After pulling the repository, open `setup.bat` and select **5. Dùng database chung Neon (cloud)**. The option:
