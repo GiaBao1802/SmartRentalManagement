@@ -1,5 +1,9 @@
 # Góc Trọ — Current State
 
+### Guest Cloudy public database read — 2026-10-28
+
+After explicit guest confirmation, local development Cloudy queries the existing public rooms API using structured filters; no generated SQL or database writes. Actual Qwen3 1.7B inference proposed the expected Đà Nẵng, below 4,000,000 VND and capacity 2 filters; the read-only API adapter returned one public match. Amenities are not exposed as structured public data and therefore require clarification. Production AI remains deferred. 22 focused TypeScript tests, 15 Python tests and frontend typecheck pass. The primary Exact Next Task below is unchanged. See the [Cloudy integration report](07_modules/public-marketplace/CLOUDY_LOCAL_AI_INTEGRATION_REPORT.md).
+
 ### Resident Parking and V1.15 — applied locally 2026-10-28
 
 Goctro_dev_v18 localhost:5433 upgraded from exact V1.14 to V1.15 after a verified 538-entry backup, successful restore/migration rehearsal, and unchanged fingerprints across all 46 predecessor tables. Read-only state and exact-catalog inspect pass. Parking requests, accepted vehicle type and slot entitlement fields are available. No seed/reset ran. Backup SHA-256: c63d31eaba270fb1d64d7b4c7b3462341aaa6ae723ae7128dda3673c41492a4b; full local evidence: `.local/setup-backups/parking-v115-evidence.json`. Authenticated Resident/Admin UI review remains pending. [Database record](DATABASE_CHANGELOG.md#database-v115--resident-parking-on-the-local-v114-branch-applied-locally-2026-10-28).

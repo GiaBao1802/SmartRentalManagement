@@ -23,7 +23,7 @@
 
 ## Cloudy local AI integration — 2026-10-28
 
-[Integration report](07_modules/public-marketplace/CLOUDY_LOCAL_AI_INTEGRATION_REPORT.md) — CURRENT, development-only Qwen3 1.7B on 300 synthetic rooms through the existing mascot. Guest confirmation now precedes retrieval (22 TypeScript / 14 Python tests PASS; no computer use). Includes user-selected new/continue filtering with validated session context; session isolation audit fixes same-account public-role transitions, 21/21 TypeScript checks PASS (no computer use; authenticated UI unverified); supersedes earlier mock-only and single-turn-only claims for development; production AI remains deferred. [Runbook](../scripts/cloudy-ai/README.md) — CURRENT. The [chat handoff](07_modules/public-marketplace/CLOUDY_CHAT_FRONTEND_HANDOFF.md) preserves historical mock evidence and links the active integration.
+[Integration report](07_modules/public-marketplace/CLOUDY_LOCAL_AI_INTEGRATION_REPORT.md) — CURRENT, development-only Qwen3 1.7B through the existing mascot. Guest confirmation now precedes read-only retrieval through the existing public rooms API (real local DB verified: one match for Đà Nẵng, under 4m VND, capacity 2; 22 focused TypeScript tests PASS). Rent, area, capacity and public province/address matching are supported; amenities require clarification. New/continue filtering and session isolation remain in place; production AI remains deferred. [Runbook](../scripts/cloudy-ai/README.md) — CURRENT. The [chat handoff](07_modules/public-marketplace/CLOUDY_CHAT_FRONTEND_HANDOFF.md) preserves historical mock evidence and links the active integration.
 
 ## JSON-only advisor launch — 2026-10-28
 

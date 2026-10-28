@@ -263,7 +263,7 @@ function CloudyChatPanel({ ownerMode, mascotRef, onClose, preview, messages, dra
     <section id="cloudy-chat-panel" ref={panelRef} className="cloudy-chat" role="dialog" aria-labelledby="cloudy-chat-title" aria-describedby="cloudy-chat-preview-note">
       <header className="cloudy-chat__header">
         <CloudyPortrait />
-        <div className="cloudy-chat__heading"><h2 id="cloudy-chat-title">Cloudy</h2><span>{preview ? ownerMode ? "Tư vấn chủ trọ · Dữ liệu quản lý" : "AI local · Phòng giả lập" : "Đang được hoàn thiện"}</span></div>
+        <div className="cloudy-chat__heading"><h2 id="cloudy-chat-title">Cloudy</h2><span>{preview ? ownerMode ? "Tư vấn chủ trọ · Dữ liệu quản lý" : "AI local · Database phòng công khai" : "Đang được hoàn thiện"}</span></div>
         <button ref={closeRef} className="cloudy-chat__close" type="button" onClick={onClose} aria-label="Đóng khung chat Cloudy">×</button>
       </header>
       {ownerMode && preview ? <div className="cloudy-chat__messages"><CloudyOwnerAdvisor /></div> : <>
@@ -273,7 +273,7 @@ function CloudyChatPanel({ ownerMode, mascotRef, onClose, preview, messages, dra
       }}>
         <div className="cloudy-chat__message-row cloudy-chat__message-row--cloudy">
           <CloudyPortrait />
-          <p className="cloudy-chat__message">Xin chào! Mình là Cloudy. {preview ? "Mình sẽ nhắc lại nhu cầu để bạn xác nhận trước khi tìm trong 300 phòng giả lập. Chọn Lọc mới để bắt đầu, hoặc Lọc tiếp để giữ điều kiện trước và thay đổi điều bạn muốn. Ví dụ: thêm máy lạnh, dưới 3 triệu, hoặc bỏ giới hạn giá." : "Khung trò chuyện đang được chuẩn bị."}</p>
+          <p className="cloudy-chat__message">Xin chào! Mình là Cloudy. {preview ? "Mình sẽ nhắc lại nhu cầu để bạn xác nhận trước khi tìm trong tin phòng công khai. Chọn Lọc mới để bắt đầu, hoặc Lọc tiếp để giữ điều kiện trước và thay đổi điều bạn muốn. Ví dụ: tìm cho 2 người, dưới 3 triệu, hoặc bỏ giới hạn giá." : "Khung trò chuyện đang được chuẩn bị."}</p>
         </div>
         {messages.map((message) => <div className={`cloudy-chat__message-row cloudy-chat__message-row--${message.role}`} key={message.id}>
           {message.role === "cloudy" && <CloudyPortrait />}
@@ -284,7 +284,7 @@ function CloudyChatPanel({ ownerMode, mascotRef, onClose, preview, messages, dra
       </div>
       <p className="cloudy-chat__status sr-only" role="status" aria-live="polite">{status === "pending" ? "Cloudy đang trả lời." : status === "error" ? "Phản hồi gặp lỗi. Có thể thử lại." : ""}</p>
       <form className="cloudy-chat__composer" onSubmit={handleSubmit}>
-        <p id="cloudy-chat-preview-note">{preview ? "Qwen3 1.7B · 300 phòng giả lập, không phải tin thật." : "Cloudy đang được hoàn thiện. Chưa thể gửi tin nhắn."}</p>
+        <p id="cloudy-chat-preview-note">{preview ? "Qwen3 1.7B · Dữ liệu phòng công khai; Cloudy sẽ hỏi xác nhận trước khi tìm." : "Cloudy đang được hoàn thiện. Chưa thể gửi tin nhắn."}</p>
         {preview && <div className="cloudy-chat__filter-mode" role="group" aria-label="Bạn muốn lọc tiếp hay lọc mới?">
           <span>Bạn muốn lọc tiếp hay lọc mới?</span>
           <div>

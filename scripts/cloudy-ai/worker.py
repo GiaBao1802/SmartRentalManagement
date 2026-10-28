@@ -30,19 +30,19 @@ def handle_request(body,extract=id_v3.extract):
  if not isinstance(body,dict):raise ValueError('Invalid request')
  if body.get('action')=='confirm':
   if set(body)!={'action','context'} or not valid_context(body['context']):raise ValueError('Invalid confirmation')
-  data,_=load_catalog()
-  result=retrieve(data,{'status':'ready','filters':body['context']})
-  return {'text':render(result)+'\n\n'+describe(body['context']),'synthetic':True,'model':'qwen3:1.7b','status':result['status'],'context':body['context']}
+  return {'error':'Confirmation is handled by the live public API'}
  if not set(body)<= {'message','mode','context','action'} or body.get('action','prepare')!='prepare':raise ValueError('Invalid request')
  message=body.get('message');mode=body.get('mode','new')
  if not isinstance(message,str) or not 1<=len(message.strip())<=500 or mode not in ['new','continue']:raise ValueError('Invalid input')
  parsed=understand(message.strip(),mode,body.get('context'),extract)
  filters=parsed.get('filters')
  if parsed.get('status')!='ready' or not valid_context(filters):
-  return {'text':render({'status':'needs_clarification','questions':parsed.get('questions',['Điều kiện chưa được hỗ trợ.'])}),'synthetic':True,'model':'qwen3:1.7b','status':'needs_clarification','context':None}
- # No catalog loading or retrieval before the guest explicitly confirms.
- text='Mình hiểu nhu cầu của bạn như sau:\n'+describe(filters).replace('Đang lọc: ','')+'\n\nGiá là tiền thuê cả phòng, chưa gồm điện nước/phí. Chỉ tìm trong dữ liệu phòng giả lập.\nĐúng ý bạn chưa? Chọn “Đúng rồi, tìm phòng” hoặc “Sửa yêu cầu”.'
- return {'text':text,'synthetic':True,'model':'qwen3:1.7b','status':'awaiting_confirmation','context':filters}
+  return {'text':'Mình chưa hiểu đủ điều kiện để tìm trong tin phòng công khai. '+' '.join(parsed.get('questions',['Bạn hãy nói rõ khu vực, giá, diện tích hoặc số người.']))+'\nBạn có thể sửa yêu cầu rồi gửi lại.','source':'public_database','model':'qwen3:1.7b','status':'needs_clarification','context':None}
+  # No catalog loading or retrieval before the guest explicitly confirms.
+ if filters['amenities']:
+  return {'text':'API tin phòng công khai chưa có dữ liệu tiện ích để xác minh máy lạnh. Bạn có thể sửa yêu cầu để bỏ điều kiện này hoặc nêu tiêu chí khác.','source':'public_database','model':'qwen3:1.7b','status':'needs_clarification','context':None}
+ text='Mình hiểu nhu cầu của bạn như sau:\n'+describe(filters).replace('Đang lọc: ','')+'\n\nSau khi bạn xác nhận, mình sẽ tìm trong các tin phòng đang công khai trên database. Giá là tiền thuê cả phòng, chưa gồm điện nước/phí.\nĐúng ý bạn chưa? Chọn “Đúng rồi, tìm phòng” hoặc “Sửa yêu cầu”.'
+ return {'text':text,'source':'public_database','model':'qwen3:1.7b','status':'awaiting_confirmation','context':filters}
 
 if __name__=='__main__':
  sys.stdin.reconfigure(encoding='utf-8');sys.stdout.reconfigure(encoding='utf-8')

@@ -2,6 +2,12 @@
 
 Status: CURRENT, local development demo; production AI remains deferred.
 
+## Public database read follow-up — 2026-10-28
+
+Per user request, guest confirmation now calls the existing public `GET /api/v1/public/rooms` endpoint against the configured local backend. It does not connect directly to PostgreSQL and does not write records. Qwen's prepare response remains a proposed filter set; only the separately confirmed structured filters reach the API. Price, area and capacity use API filters; location is matched against public province/address fields. The API has no structured amenity field, so those requests are clarified rather than guessed. Results show up to five public rooms, sorted by rent, and make no booking promise.
+
+Live read verification: the local public API reported two public rooms. Actual Qwen3 1.7B inference for “Tìm phòng ở Đà Nẵng dưới 4 triệu cho 2 người” returned `awaiting_confirmation` with the expected location, strict rent upper bound and capacity, without room records. Passing that context to the new Cloudy database adapter returned one match. No DB/API/backend schema writes, environment changes, or computer-use actions were made. Focused TypeScript tests: 22/22 passed; Python suite: 15/15 passed; frontend typecheck passed.
+
 ## Delivered
 
 The user requested integration into the existing mascot. Development now connects Cloudy to a Next route and a repository-contained Python worker using local Ollama Qwen3 1.7B. The model returns intent/candidate decisions as JSON; deterministic guards validate and filter the 300-room synthetic catalog. The frontend receives plain text, a synthetic-source flag, model name and result status. It never generates or executes SQL.

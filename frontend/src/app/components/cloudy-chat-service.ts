@@ -34,7 +34,7 @@ export function createLocalCloudyChatService(fetchImpl: typeof fetch = fetch): C
     if (!response.ok) throw new Error("Chưa kết nối được AI local. Kiểm tra Ollama rồi thử lại.");
     const reply = await response.json();
     if (signal.aborted) throw new DOMException("Aborted", "AbortError");
-    if (!reply || typeof reply.text !== "string" || !reply.text || reply.text.length > 16000 || reply.synthetic !== true || !["preview","no_matches","needs_clarification","awaiting_confirmation"].includes(reply.status) || (reply.status === "needs_clarification" ? reply.context !== null : !isFilterContext(reply.context))) throw new Error("Phản hồi không hợp lệ. Hãy thử lại.");
+    if (!reply || typeof reply.text !== "string" || !reply.text || reply.text.length > 16000 || reply.source !== "public_database" || !["preview","no_matches","needs_clarification","awaiting_confirmation"].includes(reply.status) || (reply.status === "needs_clarification" ? reply.context !== null : !isFilterContext(reply.context))) throw new Error("Phản hồi không hợp lệ. Hãy thử lại.");
     return reply;
   }
   return {

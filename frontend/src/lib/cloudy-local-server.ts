@@ -2,9 +2,11 @@ import { isFilterContext, type FilterContext, type FilterMode } from "./cloudy-f
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
+import { searchPublicDatabaseRooms } from "./cloudy-public-db-search";
 
-type Reply = { text: string; synthetic: true; model: "qwen3:1.7b"; status: string; context?: FilterContext | null };
+type Reply = { text: string; source: "public_database"; model: "qwen3:1.7b"; status: string; context?: FilterContext | null };
 type Runner = (message: string, signal: AbortSignal, options?: { mode?: FilterMode; context?: FilterContext; action?: "prepare" | "confirm" }) => Promise<Reply>;
+type DbSearch = typeof searchPublicDatabaseRooms;
 const state = globalThis as typeof globalThis & { cloudyLocalBusy?: boolean };
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 
@@ -38,7 +40,7 @@ export function runCloudyWorker(message: string, signal: AbortSignal, options?: 
       if (settled) return;
       try {
         const reply = JSON.parse(output) as Reply;
-        if (code !== 0 || typeof reply.text !== "string" || !reply.text || reply.text.length > 16_000 || reply.synthetic !== true || reply.model !== "qwen3:1.7b" || !["preview", "no_matches", "needs_clarification", "awaiting_confirmation"].includes(reply.status)) throw new Error();
+        if (code !== 0 || typeof reply.text !== "string" || !reply.text || reply.text.length > 16_000 || reply.source !== "public_database" || reply.model !== "qwen3:1.7b" || !["no_matches", "needs_clarification", "awaiting_confirmation"].includes(reply.status)) throw new Error();
         finish(undefined, reply);
       } catch { finish(new Error("unavailable")); }
     });
@@ -47,8 +49,8 @@ export function runCloudyWorker(message: string, signal: AbortSignal, options?: 
   });
 }
 
-export async function handleCloudyChat(request: Request, run: Runner = runCloudyWorker, mode = process.env.NODE_ENV): Promise<Response> {
-  // This route serves synthetic local data only, never authenticated business records.
+export async function handleCloudyChat(request: Request, run: Runner = runCloudyWorker, mode = process.env.NODE_ENV, dbSearch: DbSearch = searchPublicDatabaseRooms): Promise<Response> {
+  // Guest reads use only the existing public room API; this route never writes business records.
   if (mode !== "development") return json({ error: "NOT_ENABLED", message: "Chat AI local chưa bật trong bản triển khai này." }, 404);
   const url = new URL(request.url);
   if (!["localhost", "127.0.0.1", "[::1]"].includes(url.hostname) || request.headers.get("host") !== url.host || request.headers.get("origin") !== url.origin) return json({ error: "ORIGIN_REJECTED" }, 403);
@@ -78,7 +80,12 @@ export async function handleCloudyChat(request: Request, run: Runner = runCloudy
   }
   if (state.cloudyLocalBusy) return json({ error: "BUSY", message: "Cloudy đang xử lý yêu cầu khác. Bạn thử lại sau nhé." }, 429);
   state.cloudyLocalBusy = true;
-  try { return json(await run(message, request.signal, options)); }
-  catch { return json({ error: "AI_UNAVAILABLE", message: "Chưa nhận được phản hồi AI. Kiểm tra Ollama và model qwen3:1.7b, rồi thử lại." }, 503); }
+  try {
+    const reply = action === "confirm"
+      ? await dbSearch(input.context as FilterContext, request.signal)
+      : await run(message, request.signal, options);
+    return json(reply);
+  }
+  catch { return json({ error: "AI_UNAVAILABLE", message: "Chưa tìm được dữ liệu. Kiểm tra Ollama và API phòng công khai, rồi thử lại." }, 503); }
   finally { state.cloudyLocalBusy = false; }
 }

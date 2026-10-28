@@ -29,7 +29,7 @@ test("aborting a pending mock response prevents a late reply", async () => {
 });
 
 const context={price:[{op:"lt",value:4000000}],area:[],location:"Bến Nắng",occupants:null,amenities:[]};
-const response=(status="awaiting_confirmation", filters: unknown=context)=>Response.json({text:"PHÒNG GIẢ LẬP",synthetic:true,status,context:filters});
+const response=(status="awaiting_confirmation", filters: unknown=context)=>Response.json({text:"Tin phòng",source:"public_database",status,context:filters});
 const signal=()=>new AbortController().signal;
 
 test("prepare sends only current request and does not commit context before confirmation", async()=>{
@@ -64,7 +64,7 @@ test("new request invalidates previous proposal even when new request fails",asy
 });
 
 test("clarification and unexpected direct results cannot become confirmable",async()=>{
- for(const r of [response("needs_clarification",null),response("preview"),Response.json({text:"unlabelled"})]) {
+ for(const r of [response("needs_clarification",null),response("preview"),Response.json({text:"unlabelled",source:"public_database"})]) {
   const service=createLocalCloudyChatService((async()=>r) as typeof fetch);
   await service.send("phòng",[],signal()).catch(()=>{});
   assert.equal(service.hasProposal?.(),false);assert.equal(service.hasContext?.(),false);
