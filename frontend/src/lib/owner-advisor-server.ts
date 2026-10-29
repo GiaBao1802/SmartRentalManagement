@@ -27,6 +27,8 @@ export async function handleOwnerAdvisor(request:Request,{mode=process.env.NODE_
   if(!body||typeof body!=='object'||Array.isArray(body))return json({error:'Dữ liệu không hợp lệ.'},400);
   if(Object.keys(body).join()==='question'){
    if(typeof body.question==='string'&&body.question.length<=500&&/khieu nai|tien ich|yeu cau|phan anh|su co/.test(body.question.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').toLowerCase()))return json({task:'requests',source:'request_router',reviewRequired:true,message:'Chọn tháng gửi yêu cầu và phòng, rồi xác nhận để xem danh sách. Mọi quyết định cần bạn chọn và xác nhận riêng.'});
+   const plain=typeof body.question==='string'?body.question.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').toLowerCase():'';
+   if(source==='database'&&typeof body.question==='string'&&body.question.length<=500&&/thong ke|bao nhieu|so luong/.test(plain)&&/cu dan|nguoi o|nguoi dang o/.test(plain))return json({task:'residents',source:'request_router',reviewRequired:true,message:'Mình hiểu bạn muốn xem thống kê cư dân hiện tại. Chọn phòng nếu cần thu hẹp phạm vi, rồi xác nhận trước khi tra cứu.'});
    return json(await interpretImpl(body.question,{signal:request.signal}));
   }
   if(live&&Object.hasOwn(body,'action'))return json({error:'Mở màn quản lý để xác nhận xử lý yêu cầu thật.'},400);

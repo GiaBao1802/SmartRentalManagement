@@ -24,7 +24,8 @@ export const rejectClientAuthority: RequestHandler = (request, _response, next) 
   const isBillingWorkspace = request.method === "GET" && request.originalUrl.split("?")[0] === "/api/v1/billing/workspace";
   // These are allowlisted search filters on this exact GET, never identity authority.
   const isAccountList = request.method === "GET" && path === "/api/v1/accounts";
-  const queryHasAuthority = query && typeof query === "object" && Object.keys(query).some((key) => (forbiddenKeys.has(key) && !(key === "role" && isAccountList)) || (key === "resident_id" && !isInvoiceList && !isBillingWorkspace && !isAccountList));
+  const isPlatformPropertyList = request.method === "GET" && path === "/api/v1/platform/properties";
+  const queryHasAuthority = query && typeof query === "object" && Object.keys(query).some((key) => (forbiddenKeys.has(key) && !(key === "role" && isAccountList) && !(key === "owner_id" && isPlatformPropertyList)) || (key === "resident_id" && !isInvoiceList && !isBillingWorkspace && !isAccountList));
   if (bodyHasAuthority || queryHasAuthority || headerKeys.some((key) => request.headers[key] !== undefined)) {
     next(validationError("Không được gửi trường xác định vai trò hoặc phạm vi Owner/Resident."));
     return;
@@ -35,6 +36,9 @@ export const rejectClientAuthority: RequestHandler = (request, _response, next) 
 function resolveContext(account: CurrentAccountRecord): AuthContext | null {
   const safe = { email: account.email, phone: account.phone, status: "active" as const };
   if (account.status !== "active") return null;
+  if (account.role === "superadmin" && account.ownerId === null && account.residentId === null) {
+    return { accountId: account.accountId, role: "superadmin", ownerId: null, residentId: null, account: safe };
+  }
   if (account.role === "admin" && account.ownerId !== null && account.residentId === null && account.owner?.ownerId === account.ownerId) {
     return { accountId: account.accountId, role: "admin", ownerId: account.ownerId, residentId: null, account: safe, owner: account.owner };
   }
@@ -76,6 +80,7 @@ export function authenticateRequest(deps: AuthDependencies): RequestHandler {
       if (deps.config.nodeEnv === "production") cookieParts.push("Secure");
       response.append("Set-Cookie", cookieParts.join("; "));
       request.auth = context;
+      if (context.role === "superadmin") request.platformAuth = context;
       next();
     } catch (error) { next(error); }
   };
@@ -84,6 +89,7 @@ export function authenticateRequest(deps: AuthDependencies): RequestHandler {
 export const requireAuthenticated: RequestHandler = (request, _response, next) => request.auth ? next() : next(unauthenticated());
 export const requireAdmin: RequestHandler = (request, _response, next) => request.auth?.role === "admin" ? next() : request.auth ? next(forbidden()) : next(unauthenticated());
 export const requireResident: RequestHandler = (request, _response, next) => request.auth?.role === "resident" ? next() : request.auth ? next(forbidden()) : next(unauthenticated());
+export const requireSuperadmin: RequestHandler = (request, _response, next) => request.auth?.role === "superadmin" ? next() : request.auth ? next(forbidden()) : next(unauthenticated());
 
 export function getAdminOwnerId(context: AuthContext): bigint {
   if (context.role !== "admin") throw forbidden();

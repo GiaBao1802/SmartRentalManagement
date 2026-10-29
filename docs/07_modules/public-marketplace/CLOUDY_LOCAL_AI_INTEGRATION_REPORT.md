@@ -30,6 +30,12 @@ Focused Cloudy tests and frontend typecheck pass. The link route and API are unc
 
 The preview now has a separate “Xem toàn bộ kết quả phòng” link. It carries the confirmed location, rent, area and capacity filters to `/rooms`; the existing list screen loads the matching public API pages, applies Cloudy's accent-insensitive province/address match, and provides regular pagination. The first assistant reply may still show five examples, while the full list can page through up to 1,000 candidate public rows; larger searches ask the guest to narrow the filters. Live local DB verification returned 26 matches and three 12-room pages for Đồng Nai, under 4,000,000 VND and capacity two. No new backend route or database change is needed.
 
+## Area and amenity wording — 2026-10-28
+
+The query parser now recognizes common area phrasing (for example, “diện tích ít nhất 25 m²” and “rộng trên 20 m²”) and amenity terms including bãi gửi/chỗ để xe, máy lạnh/điều hòa, wifi, thang máy, máy giặt, tủ lạnh, máy nước nóng, bếp riêng, nhà vệ sinh riêng, ban công and pets. Ten live Qwen3 1.7B checks covered area limits, parking synonyms, an AC synonym, a combined Đồng Nai + parking + AC + rent query, and the open-ended “có tiện ích gì?” question. All extracted the intended conditions. Focused Python regressions now pass 19/19; focused TypeScript regressions and typecheck pass.
+
+The guest API still cannot filter or verify these amenities: its public Room contract exposes rent, area, capacity and public location fields, not room amenities or parking. Cloudy now names the recognized amenity request and explains that data limit instead of presenting it as an unrecognized sentence. Actual amenity-based results require an approved public data/API contract and verified source fields; no amenity results are fabricated.
+
 ## Delivered
 
 The user requested integration into the existing mascot. Development now connects Cloudy to a Next route and a repository-contained Python worker using local Ollama Qwen3 1.7B. The model returns intent/candidate decisions as JSON; deterministic guards validate and filter the 300-room synthetic catalog. The frontend receives plain text, a synthetic-source flag, model name and result status. It never generates or executes SQL.
@@ -80,3 +86,11 @@ Client proposal is separate from accepted context. Editing input or mode invalid
 22/22 focused TypeScript tests, 14/14 Python tests and frontend typecheck PASS. Worker tests explicitly fail if preparation loads or filters the catalog, and confirm that confirmation does not call the model. Client tests cover edits, stale results, aborted confirmation/retry, separate sessions and mismatched confirmation filters. No computer use or visual verification in this pass.
 
 Live worker verification with Qwen3 1.7B: Bến Nắng below 4 million returned awaiting_confirmation without room IDs; explicit confirmation returned 14 matches. Continuing with AC again returned awaiting_confirmation, then 9 matches only after confirmation. Production build completed on retry; the initial invocation stopped after successful compilation/typechecking due to the existing Next.js 16.4.0 security advisory. Upgrading the installed Next.js remains recommended; no dependency upgrade was made here. Next guest-demo task: unseen multi-turn correction/confirmation cases. Primary project Exact Next Task unchanged.
+
+## Structured Marketplace amenities and Neon V1.16 — 2026-10-28
+
+V1.16 added Owner-confirmed amenity codes to public Room list/detail, filtering and Cloudy. Neon shared-dev `production` was backed up and migrated from exact V1.15 after an expiring branch rehearsal. Exact V1.16 catalog validation passed; all 100 Room fingerprints were unchanged and their new arrays defaulted empty. Existing descriptions were not parsed or used to infer values.
+
+After restart, backend health, unfiltered public listing and amenity-filter endpoints returned HTTP 200. Live Qwen3 1.7B interpreted “Tìm phòng có máy lạnh, bãi gửi xe và diện tích từ 20 m2” as `air_conditioning`, `parking` and area ≥20 m², then requested guest confirmation. Confirmed unfiltered search returned 90 public rooms with room-detail and full-results links. The structured AC+parking API filter returned zero results because no Owner has yet verified/saved those amenity values. Local `Goctro_dev_v18` remains V1.15.
+
+The screenshot error exposed misleading client wording: all non-2xx responses were labeled as Ollama failures. Cloudy now distinguishes public API/database failure during confirmation from Ollama failure during model preparation. Focused Cloudy route/client tests **19/19 PASS**, frontend typecheck PASS. Next: Owner/Admin verifies structured amenities on intended demo Rooms, then reruns Cloudy amenity searches. No room data was written.

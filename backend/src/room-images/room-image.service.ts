@@ -59,6 +59,9 @@ export class RoomImageService {
   async readAdmin(ownerId: bigint, propertyId: bigint, roomId: bigint, imageId: bigint) {
     return this.repository.adminImage(ownerId, propertyId, roomId, imageId);
   }
+  async readResident(ownerId: bigint, residentId: bigint, imageId: bigint) {
+    return this.repository.residentImage(ownerId, residentId, imageId);
+  }
   async readPublic(imageId: bigint) { return this.repository.publicImage(imageId); }
   async get(key: string) { return this.storage.get(key); }
   async delete(key: string) { return this.storage.delete(key); }
@@ -90,6 +93,7 @@ export type RoomImageRepositoryPort = {
   add(ownerId: bigint, propertyId: bigint, roomId: bigint, key: string): Promise<RoomImageDtoRow | "missing" | "limit">;
   attachShared(ownerId: bigint, propertyId: bigint, roomIds: bigint[], key: string, expectedCount: number): Promise<number | "missing" | "not_empty" | "limit">;
   adminImage(ownerId: bigint, propertyId: bigint, roomId: bigint, imageId: bigint): Promise<{ storageKey: string } | null>;
+  residentImage(ownerId: bigint, residentId: bigint, imageId: bigint): Promise<{ storageKey: string } | null>;
   publicImage(imageId: bigint): Promise<{ storageKey: string } | null>;
   remove(ownerId: bigint, propertyId: bigint, roomId: bigint, imageId: bigint): Promise<{ deletedId: bigint; promotedId: bigint | null; cleanupKey: string | null } | "missing">;
 };

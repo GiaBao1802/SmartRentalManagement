@@ -40,7 +40,7 @@ const repo = {
   async addOccupancy(...args: unknown[]) { calls.push({ name: "addOccupancy", args }); return behavior.add ?? { occupancyId: 51n, startedAt: args[4] }; },
   async endOccupancy(...args: unknown[]) { calls.push({ name: "endOccupancy", args }); return behavior.end ?? { occupancyId: args[1], status: "ended", endedAt: args[2] }; },
   async transfer(...args: unknown[]) { calls.push({ name: "transfer", args }); return behavior.transfer ?? { sourceOccupancyId: args[2], destination: { occupancyId: 52n, startedAt: args[5] } }; },
-  async meRental(...args: unknown[]) { calls.push({ name: "meRental", args }); return behavior.rental === "missing" ? null : { occupancies: [{ occupancyId: 51n }], representativeContracts: [] }; },
+  async meRental(...args: unknown[]) { calls.push({ name: "meRental", args }); return behavior.rental === "missing" ? null : behavior.rental ?? { occupancies: [{ occupancyId: 51n }], representativeContracts: [] }; },
 } as unknown as PrismaResidentOccupancyRepository;
 let server: Server;
 let baseUrl = "";
@@ -204,8 +204,16 @@ test("transfer missing source occupancy or invalid effective date is rejected", 
 test("resident may have another active occupancy in a different Room", async () => {
   behavior.add = { occupancyId: 99n, roomId: 202n, residentId: 31n, status: "active" }; const result = await unsafe("/api/v1/rooms/202/residents", "POST", { resident_id: "31", started_at: "2026-10-01" }); assert.equal(result.response.status, 201);
 });
-test("resident self rental uses authenticated profile and admin is forbidden", async () => {
-  await login(residentUser.email); reset(); const result = await request("/api/v1/me/rental"); assert.equal(result.response.status, 200); assert.deepEqual(calls[0]?.args, [11n, 22n]); assert.equal(JSON.stringify(result.body).includes("Other Resident"), false);
+test("resident self rental returns safe room gallery using authenticated profile and admin is forbidden", async () => {
+  await login(residentUser.email); reset(); const occupancy = { occupancyId: 51n, room: { images: [{ roomImageId: 801n, isCover: true, sortOrder: 1, isIllustrative: true }, { roomImageId: 802n, isCover: false, sortOrder: 2, isIllustrative: false }], coverImage: { roomImageId: 801n, isCover: true, sortOrder: 1, isIllustrative: true } } }; behavior.rental = { resident: { roomResidents: [occupancy] }, occupancies: [occupancy], representativeContracts: [] };
+  const result = await request("/api/v1/me/rental"); assert.equal(result.response.status, 200); assert.deepEqual(calls[0]?.args, [11n, 22n]); assert.equal(JSON.stringify(result.body).includes("Other Resident"), false);
+  assert.deepEqual(result.body.data.occupancies[0].room.cover_image, { room_image_id: "801", is_cover: true, sort_order: 1, is_illustrative: true, url: "/api/v1/me/room-images/801" });
+  assert.deepEqual(result.body.data.occupancies[0].room.images, [
+    { room_image_id: "801", is_cover: true, sort_order: 1, is_illustrative: true, url: "/api/v1/me/room-images/801" },
+    { room_image_id: "802", is_cover: false, sort_order: 2, is_illustrative: false, url: "/api/v1/me/room-images/802" },
+  ]);
+  assert.equal(result.body.data.resident.room_residents[0].room.images[1].url, "/api/v1/me/room-images/802");
+  assert.equal(JSON.stringify(result.body).includes("storage_key"), false);
   assert.equal((await request("/api/v1/residents")).response.status, 403);
   assert.equal((await unsafe("/api/v1/rooms/201/residents", "POST", { resident_id: "31", started_at: "2026-10-01" })).response.status, 403);
   await login(admin.email); assert.equal((await request("/api/v1/me/rental")).response.status, 403);

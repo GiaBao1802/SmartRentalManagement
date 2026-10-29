@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { validationError } from "../middleware/api-error.js";
 import { parseBigIntId } from "../utils/ids.js";
 import { parseListQuery } from "../properties/property-room.validation.js";
+import { parseMarketplaceAmenityFilter, type MarketplaceAmenityCode } from "./marketplace-amenities.js";
 
 const isRecord = (value: unknown): value is Record<string, unknown> => Boolean(value && typeof value === "object" && !Array.isArray(value));
 
@@ -34,11 +35,23 @@ function area(value: string | undefined, key: string): Prisma.Decimal | undefine
 export type PublicRoomListQuery = {
   page: number; page_size: number; province?: string; address?: string;
   price_min?: bigint; price_max?: bigint; area_min?: Prisma.Decimal; area_max?: Prisma.Decimal;
-  capacity_min?: number; sort: "newest" | "price_asc" | "price_desc" | "area_asc" | "area_desc";
+  capacity_min?: number; amenities?: MarketplaceAmenityCode[]; property_facilities?: string[];
+  sort: "newest" | "price_asc" | "price_desc" | "area_asc" | "area_desc";
 };
 
+function propertyFacilities(value: unknown): string[] | undefined {
+  if (value === undefined) return undefined;
+  const values = Array.isArray(value) ? value : [value];
+  if (values.length > 10 || values.some((item) => typeof item !== "string")) throw validationError("property_facilities chỉ nhận tối đa 10 tiện ích hợp lệ.");
+  const names = values.map((item) => (item as string).trim());
+  if (names.some((name) => !name || name.length > 150) || new Set(names.map((name) => name.toLocaleLowerCase("vi"))).size !== names.length) {
+    throw validationError("property_facilities chứa tên trống, quá dài hoặc trùng lặp.");
+  }
+  return names;
+}
+
 export function parsePublicRoomListQuery(value: Record<string, unknown>): PublicRoomListQuery {
-  const allowed = ["page", "page_size", "province", "address", "price_min", "price_max", "area_min", "area_max", "capacity_min", "sort"];
+  const allowed = ["page", "page_size", "province", "address", "price_min", "price_max", "area_min", "area_max", "capacity_min", "amenities", "property_facilities", "sort"];
   const unknown = Object.keys(value).filter((key) => !allowed.includes(key));
   if (unknown.length) throw validationError(`Tham số không được hỗ trợ: ${unknown.join(", ")}.`);
   const pagination = parseListQuery({ page: value.page, page_size: value.page_size });
@@ -61,12 +74,17 @@ export function parsePublicRoomListQuery(value: Record<string, unknown>): Public
   }
   const sort = scalar(value, "sort") ?? "newest";
   if (!["newest", "price_asc", "price_desc", "area_asc", "area_desc"].includes(sort)) throw validationError("sort không được hỗ trợ.");
+  const amenitiesRaw = value.amenities;
+  const amenities = amenitiesRaw === undefined ? undefined : parseMarketplaceAmenityFilter(amenitiesRaw);
+  const property_facilities = propertyFacilities(value.property_facilities);
   return {
     ...pagination,
     ...(province ? { province } : {}), ...(address ? { address } : {}),
     ...(priceMin === undefined ? {} : { price_min: priceMin }), ...(priceMax === undefined ? {} : { price_max: priceMax }),
     ...(areaMin === undefined ? {} : { area_min: areaMin }), ...(areaMax === undefined ? {} : { area_max: areaMax }),
     ...(capacityMin === undefined ? {} : { capacity_min: capacityMin }),
+    ...(amenities === undefined ? {} : { amenities }),
+    ...(property_facilities === undefined ? {} : { property_facilities }),
     sort: sort as PublicRoomListQuery["sort"],
   };
 }

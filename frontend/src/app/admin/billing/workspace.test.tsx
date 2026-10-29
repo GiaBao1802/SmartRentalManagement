@@ -66,7 +66,7 @@ test("Fixed and Flexible blockers link to the matching Property service workspac
 
 test("Parking blockers link to Parking operations with the affected Property", () => {
   const html = renderToStaticMarkup(<WorkspaceRow row={{ ...base, missing_or_invalid: [{ code: "PARKING_PRICE_VERSION_MISSING", category: "parking", message: "Thiếu giá Parking." }] }} />);
-  assert.match(html, /Kiểm tra đăng ký và giá Parking/);
+  assert.match(html, /Kiểm tra đăng ký và mức phí gửi xe/);
   assert.match(html, /href="\/admin\/services\/parking\?property_id=4"/);
 });
 

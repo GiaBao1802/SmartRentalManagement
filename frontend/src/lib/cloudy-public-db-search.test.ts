@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { searchPublicDatabaseRooms, type LiveRoom } from "./cloudy-public-db-search";
 
 const context={price:[{op:"lt",value:4000000}],area:[],location:"Đà Nẵng",occupants:2,amenities:[]};
-const room:LiveRoom={room_id:"202",room_code:"C102",property:{name:"Nhà mẫu An Cư",province:"Đà Nẵng",address:"Đường Hoa"},default_rent:"3200000",area_m2:"23.00",default_capacity:2};
+const room:LiveRoom={room_id:"202",room_code:"C102",property:{name:"Nhà mẫu An Cư",province:"Đà Nẵng",address:"Đường Hoa"},default_rent:"3200000",area_m2:"23.00",default_capacity:2,amenities:[]};
 test("confirmed DB search maps filters to public API and renders real rows",async()=>{
  let requested!:URL;
  const result=await searchPublicDatabaseRooms(context,new AbortController().signal,(async input=>{requested=new URL(String(input));return Response.json({data:[room],meta:{total_items:1,total_pages:1,page:1,page_size:100}});}) as typeof fetch,"http://localhost:4000/api/v1");
@@ -16,9 +16,14 @@ test("location matching ignores Vietnamese accents and filter order is stable",a
  const result=await searchPublicDatabaseRooms(noAccent,new AbortController().signal,(async()=>Response.json({data:[room],meta:{total_items:1,total_pages:1,page:1,page_size:100}})) as typeof fetch,"http://localhost:4000/api/v1");
  assert.equal(result.status,"preview");
 });
-test("unknown room amenities are never guessed from public descriptions",async()=>{
- let calls=0;const result=await searchPublicDatabaseRooms({...context,amenities:["air_conditioning"]},new AbortController().signal,(async()=>{calls++;throw Error();}) as typeof fetch,"http://localhost:4000/api/v1");
- assert.equal(result.status,"needs_clarification");assert.equal(result.context,null);assert.equal(calls,0);assert.match(result.text,/chưa có dữ liệu tiện ích/);
+test("recognized amenities become exact backend filters and are shown from verified listing data",async()=>{
+ let requested!:URL;const filteredRoom={...room,amenities:["air_conditioning","parking"]};
+ const result=await searchPublicDatabaseRooms({...context,area:[{op:"gte",value:20}],amenities:["air_conditioning","parking"]},new AbortController().signal,(async input=>{requested=new URL(String(input));return Response.json({data:[filteredRoom],meta:{total_items:1,total_pages:1,page:1,page_size:100}});}) as typeof fetch,"http://localhost:4000/api/v1");
+ assert.equal(requested.searchParams.get("amenities"),"air_conditioning,parking");assert.equal(result.status,"preview");assert.match(result.text,/Tiện ích đã xác nhận: Máy lạnh, Bãi gửi xe/);assert.match(result.text,/khu vực Đà Nẵng/);assert.match(result.text,/diện tích ≥ 20 m²/);
+});
+test("unspecified amenity is clarified instead of queried or guessed",async()=>{
+ let calls=0;const result=await searchPublicDatabaseRooms({...context,amenities:["unspecified_amenity"]},new AbortController().signal,(async()=>{calls++;throw Error();}) as typeof fetch,"http://localhost:4000/api/v1");
+ assert.equal(result.status,"needs_clarification");assert.equal(result.context,null);assert.equal(calls,0);assert.match(result.text,/tiện ích cụ thể nào/);
 });
 test("strict price/area constraints become safe integer API bounds",async()=>{
  let requested!:URL;const f={...context,location:null,price:[{op:"gt",value:3000000}],area:[{op:"lt",value:25.01}]};

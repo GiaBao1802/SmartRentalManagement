@@ -90,10 +90,12 @@ function Get-TreeProcessIds([int] $RootPid, [object[]] $Snapshot) {
 
 function Get-ListenerPids([int] $Port) {
   try {
-    $pids = @((Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction Stop | Select-Object -ExpandProperty OwningProcess -Unique))
-    return ,$pids
+    $pids = @(Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction Stop |
+      Select-Object -ExpandProperty OwningProcess -Unique |
+      ForEach-Object { [int]$_ })
+    return $pids
   }
-  catch { return ,@() }
+  catch { return @() }
 }
 
 $snapshot = Get-ProcessSnapshot

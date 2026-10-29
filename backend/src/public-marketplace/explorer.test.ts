@@ -26,7 +26,7 @@ test("read-only live PostgreSQL explorer: province totals, filters, pagination a
     assert.equal(body.meta.total_pages, p.public_rooms);
     assert.equal(p.system_properties, null);
     for (const room of body.data) {
-      assert.deepEqual(Object.keys(room).sort(), ["room_id","room_code","property","default_rent","area_m2","default_capacity","status","public_description","cover_image"].sort());
+      assert.deepEqual(Object.keys(room).sort(), ["room_id","room_code","property","property_facilities","default_rent","area_m2","default_capacity","status","public_description","amenities","cover_image","images"].sort());
       assert.deepEqual(Object.keys(room.property).sort(), ["name","province","address"].sort());
       const filtered = await fetch(`${base}/rooms?province_code=${p.code}&price_min=${BigInt(room.default_rent)+1n}&price_max=${BigInt(room.default_rent)+1n}&page_size=1`);
       assert.equal(filtered.status,200);

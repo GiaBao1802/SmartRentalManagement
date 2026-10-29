@@ -1,0 +1,348 @@
+{
+  "version": 2,
+  "language": "vi",
+  "scope": "public_prospective_renter_room_search",
+  "status": "used_in_local_qwen3_candidate_training_only",
+  "description": "Curated Vietnamese room-search utterances and conversational updates with gold structured targets. The training_reference split is a future training candidate; holdout is reserved for evaluation. Neither split changes Cloudy or Qwen weights.",
+  "target_contract": {
+    "ready": "Return the complete filter object and ask the guest to confirm before querying public listings.",
+    "needs_clarification": "Ask one concrete clarification and wait; do not query listings or relax constraints.",
+    "context": "A continue example starts from filters the guest already accepted. A new search discards old filters."
+  },
+  "training_reference": [
+    {
+      "id": "train-001",
+      "category": "mixed_filters",
+      "mode": "new",
+      "message": "Tìm trọ ở Gò Vấp giá dưới 3 triệu, cho 2 người, có bếp riêng.",
+      "target": {"status": "ready", "filters": {"price": [{"op": "lt", "value": 3000000}], "area": [], "location": "Gò Vấp", "occupants": 2, "amenities": ["private_kitchen"]}, "next_action": "ask_guest_to_confirm"},
+      "boundary": "Giá là tiền thuê mỗi tháng; chưa truy vấn trước xác nhận."
+    },
+    {
+      "id": "train-002",
+      "category": "budget_shorthand_and_pets",
+      "mode": "new",
+      "message": "Mình cần phòng tại Đà Lạt, ngân sách 3tr2, nuôi mèo được, có ban công.",
+      "target": {"status": "ready", "filters": {"price": [{"op": "lte", "value": 3200000}], "area": [], "location": "Đà Lạt", "occupants": null, "amenities": ["balcony", "cats_allowed"]}, "next_action": "ask_guest_to_confirm"},
+      "boundary": "Không suy ra rằng được nuôi chó nếu chỉ hỏi nuôi mèo."
+    },
+    {
+      "id": "train-003",
+      "category": "area_capacity_parking",
+      "mode": "new",
+      "message": "Thuê phòng Hải Phòng, giá tối đa 4 triệu, diện tích ít nhất 18m², cho 1 người, có chỗ gửi xe.",
+      "target": {"status": "ready", "filters": {"price": [{"op": "lte", "value": 4000000}], "area": [{"op": "gte", "value": 18}], "location": "Hải Phòng", "occupants": 1, "amenities": ["parking"]}, "next_action": "ask_guest_to_confirm"},
+      "boundary": "Có chỗ gửi xe không khẳng định dịch vụ miễn phí."
+    },
+    {
+      "id": "train-004",
+      "category": "ranges_and_appliances",
+      "mode": "new",
+      "message": "Tìm phòng ở Cần Thơ giá từ 2 đến 3 triệu, rộng trên 20m2, có máy giặt.",
+      "target": {"status": "ready", "filters": {"price": [{"op": "gte", "value": 2000000}, {"op": "lte", "value": 3000000}], "area": [{"op": "gt", "value": 20}], "location": "Cần Thơ", "occupants": null, "amenities": ["washing_machine"]}, "next_action": "ask_guest_to_confirm"},
+      "boundary": "Giữ cả hai đầu của khoảng giá; không đổi thành giá trung bình."
+    },
+    {
+      "id": "train-005",
+      "category": "exact_price",
+      "mode": "new",
+      "message": "Cho mình phòng ở Bình Dương đúng 2.800.000 đồng/tháng, có tủ lạnh.",
+      "target": {"status": "ready", "filters": {"price": [{"op": "eq", "value": 2800000}], "area": [], "location": "Bình Dương", "occupants": null, "amenities": ["refrigerator"]}, "next_action": "ask_guest_to_confirm"},
+      "boundary": "Giá đúng không có nghĩa là giá tối đa."
+    },
+    {
+      "id": "train-006",
+      "category": "multiple_amenities",
+      "mode": "new",
+      "message": "Tìm trọ tại Nha Trang dưới 4tr5, có nhà vệ sinh riêng, Wi-Fi và thang máy.",
+      "target": {"status": "ready", "filters": {"price": [{"op": "lt", "value": 4500000}], "area": [], "location": "Nha Trang", "occupants": null, "amenities": ["elevator", "private_bathroom", "wifi"]}, "next_action": "ask_guest_to_confirm"},
+      "boundary": "Mỗi tiện ích là điều kiện cần; không suy ra chất lượng hay tốc độ Wi-Fi."
+    },
+    {
+      "id": "train-007",
+      "category": "area_range",
+      "mode": "new",
+      "message": "Tìm phòng tại Hà Nội cho 2 người, diện tích từ 18 đến 25m2, có máy lạnh.",
+      "target": {"status": "ready", "filters": {"price": [], "area": [{"op": "gte", "value": 18}, {"op": "lte", "value": 25}], "location": "Hà Nội", "occupants": 2, "amenities": ["air_conditioning"]}, "next_action": "ask_guest_to_confirm"},
+      "boundary": "Không tự thêm ngân sách khi khách chưa nêu."
+    },
+    {
+      "id": "train-008",
+      "category": "multiple_price_bounds",
+      "mode": "new",
+      "message": "Có phòng ở Huế, giá trên 2 triệu và không quá 4 triệu, cho 2 người.",
+      "target": {"status": "ready", "filters": {"price": [{"op": "gt", "value": 2000000}, {"op": "lte", "value": 4000000}], "area": [], "location": "Huế", "occupants": 2, "amenities": []}, "next_action": "ask_guest_to_confirm"},
+      "boundary": "Giữ đúng toán tử lớn hơn và không quá."
+    },
+    {
+      "id": "train-009",
+      "category": "area_max_and_price_max",
+      "mode": "new",
+      "message": "Tìm phòng ở Vũng Tàu diện tích tối đa 30m2, giá không vượt quá 5 triệu.",
+      "target": {"status": "ready", "filters": {"price": [{"op": "lte", "value": 5000000}], "area": [{"op": "lte", "value": 30}], "location": "Vũng Tàu", "occupants": null, "amenities": []}, "next_action": "ask_guest_to_confirm"},
+      "boundary": "Không đảo giới hạn tối đa thành tối thiểu."
+    },
+    {
+      "id": "train-010",
+      "category": "decimal_budget",
+      "mode": "new",
+      "message": "Tìm phòng ở Long An, ngân sách không quá 3,5 triệu.",
+      "target": {"status": "ready", "filters": {"price": [{"op": "lte", "value": 3500000}], "area": [], "location": "Long An", "occupants": null, "amenities": []}, "next_action": "ask_guest_to_confirm"},
+      "boundary": "Đọc dấu phẩy thập phân theo cách viết 3,5 triệu; không nhầm thành hàng nghìn."
+    },
+    {
+      "id": "train-011",
+      "category": "capacity_and_appliances",
+      "mode": "new",
+      "message": "Cần thuê phòng ở Cà Mau cho 3 người, có máy nước nóng và tủ lạnh.",
+      "target": {"status": "ready", "filters": {"price": [], "area": [], "location": "Cà Mau", "occupants": 3, "amenities": ["refrigerator", "water_heater"]}, "next_action": "ask_guest_to_confirm"},
+      "boundary": "Không tự đặt mức giá khi khách chưa nêu."
+    },
+    {
+      "id": "train-012",
+      "category": "unaccented_message",
+      "mode": "new",
+      "message": "Tim phong tai Vung Tau duoi 3tr co may lanh cho 2 nguoi",
+      "target": {"status": "ready", "filters": {"price": [{"op": "lt", "value": 3000000}], "area": [], "location": "Vung Tau", "occupants": 2, "amenities": ["air_conditioning"]}, "next_action": "ask_guest_to_confirm"},
+      "boundary": "Thiếu dấu không làm thay đổi ý nghĩa điều kiện."
+    },
+    {
+      "id": "train-013",
+      "category": "continue_add_filter",
+      "mode": "continue",
+      "context": {"price": [{"op": "lt", "value": 4000000}], "area": [], "location": "Đồng Nai", "occupants": null, "amenities": []},
+      "message": "Thêm máy lạnh với bãi gửi xe.",
+      "target": {"status": "ready", "filters": {"price": [{"op": "lt", "value": 4000000}], "area": [], "location": "Đồng Nai", "occupants": null, "amenities": ["air_conditioning", "parking"]}, "next_action": "ask_guest_to_confirm"},
+      "boundary": "Giữ điều kiện đã được xác nhận và hỏi xác nhận lại bộ mới."
+    },
+    {
+      "id": "train-014",
+      "category": "continue_replace_price",
+      "mode": "continue",
+      "context": {"price": [{"op": "lt", "value": 4000000}], "area": [], "location": "Đồng Nai", "occupants": 2, "amenities": ["wifi"]},
+      "message": "Dưới 3 triệu.",
+      "target": {"status": "ready", "filters": {"price": [{"op": "lt", "value": 3000000}], "area": [], "location": "Đồng Nai", "occupants": 2, "amenities": ["wifi"]}, "next_action": "ask_guest_to_confirm"},
+      "boundary": "Thay giá cũ, giữ địa điểm, số người và Wi-Fi."
+    },
+    {
+      "id": "train-015",
+      "category": "continue_replace_location",
+      "mode": "continue",
+      "context": {"price": [{"op": "lte", "value": 3500000}], "area": [], "location": "Đồng Nai", "occupants": 2, "amenities": []},
+      "message": "Đổi sang Bình Dương.",
+      "target": {"status": "ready", "filters": {"price": [{"op": "lte", "value": 3500000}], "area": [], "location": "Bình Dương", "occupants": 2, "amenities": []}, "next_action": "ask_guest_to_confirm"},
+      "boundary": "Chỉ thay khu vực; không xóa giá hoặc số người."
+    },
+    {
+      "id": "train-016",
+      "category": "continue_remove_price",
+      "mode": "continue",
+      "context": {"price": [{"op": "lt", "value": 4000000}], "area": [], "location": "Huế", "occupants": 1, "amenities": []},
+      "message": "Bỏ giới hạn giá đi.",
+      "target": {"status": "ready", "filters": {"price": [], "area": [], "location": "Huế", "occupants": 1, "amenities": []}, "next_action": "ask_guest_to_confirm"},
+      "boundary": "Bỏ riêng điều kiện giá được gọi tên."
+    },
+    {
+      "id": "train-017",
+      "category": "continue_replace_amenity",
+      "mode": "continue",
+      "context": {"price": [], "area": [], "location": "Hà Nội", "occupants": null, "amenities": ["air_conditioning"]},
+      "message": "Đổi sang Wi-Fi.",
+      "target": {"status": "ready", "filters": {"price": [], "area": [], "location": "Hà Nội", "occupants": null, "amenities": ["wifi"]}, "next_action": "ask_guest_to_confirm"},
+      "boundary": "Từ đổi thay tiện ích cũ; không giữ máy lạnh."
+    },
+    {
+      "id": "train-018",
+      "category": "continue_update_capacity",
+      "mode": "continue",
+      "context": {"price": [], "area": [], "location": "Nha Trang", "occupants": 1, "amenities": ["balcony"]},
+      "message": "Cho 2 người.",
+      "target": {"status": "ready", "filters": {"price": [], "area": [], "location": "Nha Trang", "occupants": 2, "amenities": ["balcony"]}, "next_action": "ask_guest_to_confirm"},
+      "boundary": "Thay số người cũ, giữ địa điểm và tiện ích."
+    },
+    {
+      "id": "train-019",
+      "category": "new_search_resets_context",
+      "mode": "new",
+      "context": {"price": [{"op": "lt", "value": 4000000}], "area": [], "location": "Huế", "occupants": 2, "amenities": ["wifi"]},
+      "message": "Lọc mới: tìm phòng ở Đà Nẵng cho 1 người.",
+      "target": {"status": "ready", "filters": {"price": [], "area": [], "location": "Đà Nẵng", "occupants": 1, "amenities": []}, "next_action": "ask_guest_to_confirm"},
+      "boundary": "Lọc mới xóa toàn bộ tiêu chí cũ."
+    },
+    {
+      "id": "train-020",
+      "category": "continue_add_area",
+      "mode": "continue",
+      "context": {"price": [{"op": "lte", "value": 5000000}], "area": [], "location": "Bình Thạnh", "occupants": 2, "amenities": []},
+      "message": "Diện tích ít nhất 24m2.",
+      "target": {"status": "ready", "filters": {"price": [{"op": "lte", "value": 5000000}], "area": [{"op": "gte", "value": 24}], "location": "Bình Thạnh", "occupants": 2, "amenities": []}, "next_action": "ask_guest_to_confirm"},
+      "boundary": "Bổ sung diện tích, giữ các trường cũ."
+    },
+    {
+      "id": "train-021",
+      "category": "ambiguous_price",
+      "mode": "new",
+      "message": "Tìm phòng ở Huế giá 3 triệu.",
+      "target": {"status": "needs_clarification", "clarification": "Hỏi giá 3 triệu là mức tối đa hay giá đúng; chưa tìm phòng."},
+      "boundary": "Không tự chọn toán tử cho số tiền đứng riêng."
+    },
+    {
+      "id": "train-022",
+      "category": "unsupported_distance",
+      "mode": "new",
+      "message": "Tìm phòng gần Đại học Bách Khoa, đi bộ 10 phút, dưới 4 triệu.",
+      "target": {"status": "needs_clarification", "clarification": "Nêu rõ chưa có lọc khoảng cách; hỏi tỉnh/thành hoặc khu vực địa chỉ thay thế."},
+      "boundary": "Không bịa khoảng cách hoặc thời gian đi bộ."
+    },
+    {
+      "id": "train-023",
+      "category": "negative_amenity",
+      "mode": "new",
+      "message": "Tìm phòng ở Đà Nẵng dưới 3 triệu nhưng không cần Wi-Fi.",
+      "target": {"status": "needs_clarification", "clarification": "Xác nhận cách xử lý yêu cầu loại trừ Wi-Fi vì bộ lọc hiện chỉ biểu diễn tiện ích phải có."},
+      "boundary": "Không biến phủ định thành yêu cầu bắt buộc có Wi-Fi."
+    },
+    {
+      "id": "train-024",
+      "category": "approximate_budget",
+      "mode": "new",
+      "message": "Tìm phòng ở Biên Hòa khoảng 3 triệu.",
+      "target": {"status": "needs_clarification", "clarification": "Hỏi khách muốn giá tối đa, giá đúng hay một khoảng cụ thể."},
+      "boundary": "Không biến khoảng giá xấp xỉ thành giá đúng hoặc giá tối đa."
+    },
+    {
+      "id": "train-025",
+      "category": "contradictory_budget",
+      "mode": "new",
+      "message": "Tìm phòng ở Huế dưới 2 triệu nhưng trên 3 triệu.",
+      "target": {"status": "needs_clarification", "clarification": "Nêu hai giới hạn mâu thuẫn và hỏi khách sửa lại ngân sách."},
+      "boundary": "Không tự bỏ một trong hai giới hạn."
+    },
+    {
+      "id": "train-026",
+      "category": "unspecified_location",
+      "mode": "new",
+      "message": "Muốn thuê trọ quanh đây dưới 3 triệu.",
+      "target": {"status": "needs_clarification", "clarification": "Hỏi tỉnh/thành hoặc khu vực cụ thể; không đoán vị trí hiện tại của khách."},
+      "boundary": "Không định vị người dùng nếu họ chưa cung cấp vị trí."
+    },
+    {
+      "id": "train-027",
+      "category": "unspecified_amenity",
+      "mode": "new",
+      "message": "Tìm phòng ở Huế có tiện ích.",
+      "target": {"status": "needs_clarification", "clarification": "Hỏi khách muốn tiện ích phòng nào hoặc tiện ích chung nào."},
+      "boundary": "Không tự chọn một tiện ích cụ thể."
+    },
+    {
+      "id": "train-028",
+      "category": "unverified_quality",
+      "mode": "new",
+      "message": "Tìm phòng yên tĩnh, an ninh, không ngập ở Thủ Đức.",
+      "target": {"status": "needs_clarification", "clarification": "Nêu rõ các yếu tố này chưa có dữ liệu xác minh; hỏi tiêu chí công khai khác hoặc đề nghị liên hệ chủ trọ."},
+      "boundary": "Không tạo điểm an ninh/ngập từ địa chỉ hoặc mô tả."
+    }
+  ],
+  "holdout": [
+    {
+      "id": "eval-001",
+      "category": "mixed_filters",
+      "mode": "new",
+      "message": "Kiếm giúp mình phòng trọ tại Quy Nhơn, dưới 4 triệu, 2 người ở, có máy nước nóng.",
+      "target": {"status": "ready", "filters": {"price": [{"op": "lt", "value": 4000000}], "area": [], "location": "Quy Nhơn", "occupants": 2, "amenities": ["water_heater"]}, "next_action": "ask_guest_to_confirm"},
+      "boundary": "Không tìm trước khi khách xác nhận bộ lọc."
+    },
+    {
+      "id": "eval-002",
+      "category": "all_filter_types",
+      "mode": "new",
+      "message": "Thuê phòng tại Hải Dương dưới 4tr, rộng từ 20 đến 26 mét vuông, cho 2 người, có bếp riêng và ban công.",
+      "target": {"status": "ready", "filters": {"price": [{"op": "lt", "value": 4000000}], "area": [{"op": "gte", "value": 20}, {"op": "lte", "value": 26}], "location": "Hải Dương", "occupants": 2, "amenities": ["balcony", "private_kitchen"]}, "next_action": "ask_guest_to_confirm"},
+      "boundary": "Không bỏ tiện ích vì câu có nhiều loại điều kiện."
+    },
+    {
+      "id": "eval-003",
+      "category": "spelled_out_budget",
+      "mode": "new",
+      "message": "Tìm trọ ở Phan Thiết, ngân sách tối đa hai triệu rưỡi, có Wi-Fi.",
+      "target": {"status": "ready", "filters": {"price": [{"op": "lte", "value": 2500000}], "area": [], "location": "Phan Thiết", "occupants": null, "amenities": ["wifi"]}, "next_action": "ask_guest_to_confirm"},
+      "boundary": "Đọc hai triệu rưỡi là 2.500.000 đồng/tháng."
+    },
+    {
+      "id": "eval-004",
+      "category": "intentional_open_search",
+      "mode": "new",
+      "message": "Cho mình xem tất cả phòng đang còn trống.",
+      "target": {"status": "ready", "filters": {"price": [], "area": [], "location": null, "occupants": null, "amenities": []}, "next_action": "ask_guest_to_confirm_all"},
+      "boundary": "Nói rõ đây là tất cả tin công khai còn khả dụng; chưa đặt phòng."
+    },
+    {
+      "id": "eval-005",
+      "category": "continue_add_wifi",
+      "mode": "continue",
+      "context": {"price": [{"op": "lte", "value": 4000000}], "area": [], "location": "Hà Nội", "occupants": 2, "amenities": ["air_conditioning"]},
+      "message": "Thêm Wi-Fi nữa nhé.",
+      "target": {"status": "ready", "filters": {"price": [{"op": "lte", "value": 4000000}], "area": [], "location": "Hà Nội", "occupants": 2, "amenities": ["air_conditioning", "wifi"]}, "next_action": "ask_guest_to_confirm"},
+      "boundary": "Thêm Wi-Fi và giữ máy lạnh cùng các tiêu chí cũ."
+    },
+    {
+      "id": "eval-006",
+      "category": "continue_remove_amenity",
+      "mode": "continue",
+      "context": {"price": [{"op": "lt", "value": 3500000}], "area": [], "location": "Nha Trang", "occupants": null, "amenities": ["air_conditioning"]},
+      "message": "Bỏ điều kiện máy lạnh.",
+      "target": {"status": "ready", "filters": {"price": [{"op": "lt", "value": 3500000}], "area": [], "location": "Nha Trang", "occupants": null, "amenities": []}, "next_action": "ask_guest_to_confirm"},
+      "boundary": "Bỏ riêng máy lạnh; giữ ngân sách và khu vực."
+    },
+    {
+      "id": "eval-007",
+      "category": "intent_out_of_scope",
+      "mode": "new",
+      "message": "Mình đang tìm việc làm thêm, có chỗ nào tuyển không?",
+      "target": {"status": "needs_clarification", "clarification": "Xác nhận Cloudy tìm phòng; hướng khách dùng đúng kênh nếu họ cần tìm việc."},
+      "boundary": "Không biến câu ngoài phạm vi thành tìm phòng."
+    },
+    {
+      "id": "eval-008",
+      "category": "unsupported_distance",
+      "mode": "new",
+      "message": "Tìm phòng cách chợ Bến Thành khoảng 2km, giá dưới 5 triệu.",
+      "target": {"status": "needs_clarification", "clarification": "Nêu rõ chưa tính được khoảng cách; hỏi khu vực địa chỉ thay thế."},
+      "boundary": "Không tự suy ra khoảng cách từ địa chỉ văn bản."
+    },
+    {
+      "id": "eval-009",
+      "category": "continue_new_location_and_price",
+      "mode": "continue",
+      "context": {"price": [{"op": "lt", "value": 4000000}], "area": [], "location": "Huế", "occupants": 1, "amenities": []},
+      "message": "Đổi sang Đà Nẵng, dưới 3 triệu.",
+      "target": {"status": "ready", "filters": {"price": [{"op": "lt", "value": 3000000}], "area": [], "location": "Đà Nẵng", "occupants": 1, "amenities": []}, "next_action": "ask_guest_to_confirm"},
+      "boundary": "Thay đúng hai trường được nêu; giữ số người."
+    },
+    {
+      "id": "eval-010",
+      "category": "continue_clarification_preserves_safety",
+      "mode": "continue",
+      "context": {"price": [{"op": "lte", "value": 4000000}], "area": [], "location": "Đồng Nai", "occupants": null, "amenities": []},
+      "message": "Rẻ hơn nữa.",
+      "target": {"status": "needs_clarification", "clarification": "Hỏi ngân sách tối đa cụ thể; không tự giảm giá và không truy vấn."},
+      "boundary": "Câu nối tiếp mơ hồ không thay đổi điều kiện đã được chấp nhận."
+    },
+    {
+      "id": "eval-011",
+      "category": "pet_choice_clarification",
+      "mode": "new",
+      "message": "Tìm phòng cho nuôi mèo hoặc chó ở Đà Lạt.",
+      "target": {"status": "needs_clarification", "clarification": "Hỏi cần cho mèo, chó hay cả hai vì tiện ích hiện kết hợp theo AND."},
+      "boundary": "Không biến lựa chọn OR thành yêu cầu đồng thời cả mèo lẫn chó."
+    },
+    {
+      "id": "eval-012",
+      "category": "bare_location_without_filter",
+      "mode": "new",
+      "message": "Tìm phòng ở Đà Nẵng nhé.",
+      "target": {"status": "ready", "filters": {"price": [], "area": [], "location": "Đà Nẵng", "occupants": null, "amenities": []}, "next_action": "ask_guest_to_confirm"},
+      "boundary": "Không yêu cầu ngân sách bắt buộc; nêu rõ chỉ lọc theo khu vực."
+    }
+  ]
+}

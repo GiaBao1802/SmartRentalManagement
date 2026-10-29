@@ -1,5 +1,18 @@
 # Góc Trọ V1 — Database changelog and audit
 
+## Shared Neon Cloudy V1.17 and Superadmin V1.18 — applied 2026-10-29
+
+The shared `goctro-shared-dev` / `production` / `neondb` target was verified as exact Marketplace V1.16, then upgraded with the canonical team Cloudy V1.16→V1.17 migration followed by the additive platform V1.17→V1.18 migration in one guarded transaction. A fresh protected backup restored into a new local PostgreSQL database; exact catalog, row counts and UTC-normalized contents matched for all 47 predecessor tables. Post-commit V1.18 has the exact 58-table catalog and passed the runtime validator; Cloudy feedback, Marketplace amenities, Parking, meter, room requests and old data were preserved. No seed/reset/account/grant was run. [Direct evidence](10_operations/NEON_PLATFORM_V118_APPLY_20261029.md). The integration source remains uncommitted and undistributed; the V1.17 candidate wording below is historical.
+
+## Platform V1.17 candidate after team V1.16 — 2026-10-29
+
+The team applied Marketplace amenities as V1.16 on shared Neon `production`. A fresh read-only comparison matched the exact committed V1.16 catalog. The separate Superadmin integration has therefore been rebased conceptually to an additive V1.16→V1.17 candidate in [`database/baselines/v1.17/`](../database/baselines/v1.17/). Local disposable clean and migration rehearsals matched a 56-table catalog and preserved all 47 predecessor table row counts/content apart from intentional new Property report codes. **V1.17 has not been applied to Neon.** Backup-content verification, team write pause and V1.16 source-provenance correction remain blockers; see [current preflight](10_operations/NEON_PLATFORM_V117_PREFLIGHT_20261029.md). The [older blocked preflight](10_operations/NEON_V116_DIRECT_UPGRADE_PREFLIGHT_BLOCKED_20261029.md) is historical evidence from before the team V1.16 source was fetched.
+
+## Database V1.16 — Marketplace amenities on Neon shared-dev — 2026-10-28
+
+Status: **APPLIED to Neon shared-dev `production`; local Goctro_dev_v18 remains V1.15**. Team commit `812b433` records `rooms.marketplace_amenities text[] NOT NULL DEFAULT '{}'`, a strict allowlist and GIN index. The team's [implementation report](07_modules/public-marketplace/MARKETPLACE_AMENITIES_V116_IMPLEMENTATION_REPORT.md) records its backup, clone rehearsal, transactional apply and post-apply checks. The fresh 2026-10-29 read-only catalog comparison corroborates exact V1.16 structure. The committed V1.16 `PROVENANCE.json` seed checksum differs from the committed seed bytes; this source-integrity defect is recorded in the platform preflight and must not be hidden by rewriting the applied team artifact.
+
+
 ## Neon shared synthetic residency and contracts — 2026-10-28
 
 At the user's request, completed the shared-dev Neon resident fixtures on project `goctro-shared-dev`, branch `production`, database `neondb`. Before writing, verified the exact V1.15 catalog (47 tables), the expected five Owners, 15 Accounts, 10 Properties, 100 Rooms and 10 Resident Accounts, and that `contracts`, `room_residents` and `contract_change_history` were empty. A verified ignored local snapshot of all affected pre-change rows is `.local/setup-backups/neon-before-demo-residency-1793184778068.json` (SHA-256 `ff8dc4d615be3d612274fadc1ffec49f9dd909dd89b1a6fe8b7747b59a603e73`).

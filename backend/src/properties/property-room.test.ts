@@ -119,6 +119,14 @@ test("room list scopes the parent property before listing", async () => {
   reset(); const result = await http("/api/v1/properties/101/rooms?page=1&page_size=15&is_public=true");
   assert.equal(result.response.status, 200); assert.equal(repositoryCalls[0]?.ownerId, 11n); assert.equal(repositoryCalls[0]?.propertyId, 101n);
 });
+test("Marketplace amenities are structured, owner-editable Room fields with a strict code allowlist", async () => {
+  reset();
+  const updated = await unsafe("/api/v1/rooms/201", "PATCH", { marketplace_amenities: ["air_conditioning", "parking"] });
+  assert.equal(updated.response.status, 200);
+  assert.deepEqual(repositoryCalls[0]?.data, { marketplaceAmenities: ["air_conditioning", "parking"] });
+  assert.equal((await unsafe("/api/v1/rooms/201", "PATCH", { marketplace_amenities: ["aircon"] })).response.status, 400);
+  assert.equal((await unsafe("/api/v1/rooms/201", "PATCH", { marketplace_amenities: ["parking", "parking"] })).response.status, 400);
+});
 test("room search accepts an exact room_code keyword", async () => {
   reset(); const result = await http("/api/v1/properties/101/rooms?search=DEV-SMOKE-R01");
   assert.equal(result.response.status, 200); assert.equal(repositoryCalls[0]?.data?.search, "DEV-SMOKE-R01");

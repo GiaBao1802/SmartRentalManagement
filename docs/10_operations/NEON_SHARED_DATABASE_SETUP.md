@@ -1,4 +1,20 @@
-# Neon shared database setup — 2026-10-28
+# Neon shared database setup — 2026-10-28, updated V1.18 source note 2026-10-29
+
+## Current integrated V1.18 source
+
+Shared `goctro-shared-dev / production / neondb` has the exact 58-table V1.18 catalog. The **isolated, uncommitted** source at `D:\codexapp\SmartRentalManagement-team-integration` has an updated option 5: verify V1.18 source provenance, use the teammate's own ignored `.env.neon`, verify the generated Prisma Client and regenerate only if its V1.18 mappings are missing, check the exact target/catalog with read-only SQL, then optionally start on ports 3000/4000 only when free. It does not fetch/switch Git branches, edit `backend/.env`, stop another process, migrate, seed or reset. `npm run dev:neon` also checks source provenance, generated client and exact target/catalog before startup. The existing `Get-ListenerPids` PowerShell 5.1 fix and UTF-8 BOM are retained.
+
+The old team checkout still has its older setup/47-table expectation. The team must receive and review the **complete integrated source**, including backend/frontend and V1.16–V1.18 artifacts, before using option 5 against V1.18; copying one validator or changing only its table count is unsafe. A new remote `main` commit `44bfe660` was observed but not fetched/merged into this candidate. Every team member needs their own Neon access and private `.env.neon`; do not share or commit connection strings. The source has not been committed, pushed or deployed.
+
+Superadmin Owner invitation/reset initiation is unavailable on Neon without a delivery provider even if option 5 starts a development process; it returns `DELIVERY_NOT_CONFIGURED` before creating a token. Demo-link controls are forced off by the Neon runner. No Superadmin account or audit permission was created by the V1.18 upgrade. Room-image metadata exists, but source files were not present at the checked local roots. The optional `ROOM_IMAGE_STORAGE_ROOT` must name an existing absolute private directory containing the matching files; it does not make a private store public. Without it, room images return 503 while cards and detail show fallbacks. See [runtime follow-up](NEON_V118_RUNTIME_READINESS_20261029.md).
+
+The 2026-10-28 V1.15 instructions and evidence below are retained as historical context; their `main` requirement, 47-table catalog and automatic process stop do not describe this integrated V1.18 source.
+
+> Current-state correction (2026-10-29): shared `production/neondb` now has exact Cloudy V1.17 + Superadmin V1.18 catalog. The isolated integration's read-only setup validator accepts V1.18; the old team checkout still checks for 47 tables and will reject the new catalog until code is distributed. No setup command auto-migrates Neon. See [direct promotion evidence](NEON_PLATFORM_V118_APPLY_20261029.md). The V1.16/V1.17 notes below are historical snapshots.
+
+> Current-state correction (2026-10-29): team Marketplace amenities V1.16 is applied and a fresh read-only exact-catalog comparison passed. Superadmin/platform V1.17 remains a local candidate and has not been applied. The V1.15 setup details below describe their 2026-10-28 snapshot; see [current preflight](NEON_PLATFORM_V117_PREFLIGHT_20261029.md). Setup still does not migrate Neon.
+
+> Historical preflight (earlier 2026-10-29): four `rooms.marketplace_amenities` objects were initially unexplained against V1.15. The later team commit and exact V1.16 comparison resolved their source. [Earlier evidence](NEON_V116_DIRECT_UPGRADE_PREFLIGHT_BLOCKED_20261029.md).
 
 ## Target and state
 

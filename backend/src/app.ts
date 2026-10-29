@@ -12,6 +12,8 @@ import { runtimeConfig } from "./config/env.js";
 import { PrismaAuthRepository } from "./auth/account-repository.js";
 import { PrismaPropertyRoomRepository } from "./properties/property-room.repository.js";
 import { PrismaResidentOccupancyRepository } from "./residents/resident.repository.js";
+import { PrismaResidentAvatarRepository } from "./residents/resident-avatar.repository.js";
+import { LocalResidentAvatarStorage } from "./residents/resident-avatar.storage.js";
 import { PrismaContractRepository } from "./contracts/contract.repository.js";
 import { ContractIdempotencyService, EnvironmentContractResponseKeyProvider } from "./contracts/contract-idempotency.js";
 import { UnconfiguredObjectStorage } from "./contract-documents/object-storage.js";
@@ -27,6 +29,8 @@ import { InvoiceZaloService } from "./zalo/invoice-zalo.service.js";
 import { UnconfiguredZaloProvider } from "./zalo/zalo-provider.js";
 import { PrismaRoomImageRepository } from "./room-images/room-image.repository.js";
 import { LocalRoomImageStorage } from "./room-images/storage.js";
+import { statSync } from "node:fs";
+import path from "node:path";
 import { PrismaPublicMarketplaceRepository } from "./public-marketplace/public-marketplace.repository.js";
 import { PrismaUtilityTariffManagementRepository } from "./services/utility-tariff-management.repository.js";
 import { PrismaPropertyServiceRepository } from "./services/property-service.repository.js";
@@ -34,8 +38,19 @@ import { PrismaParkingManagementRepository } from "./services/parking-management
 import { PrismaAccountManagementRepository } from "./accounts/account.repository.js";
 import { PrismaNotificationRepository } from "./notifications/notification.repository.js";
 import { DemoPaymentRepository, ResidentFeedbackRepository } from "./payments/demo-payment.repository.js";
+import { PrismaCloudyFeedbackRepository } from "./resident-assistant/cloudy-feedback.repository.js";
+import { PrismaOwnerOperationsReportRepository } from "./reports/owner-operations.repository.js";
 
 const app = express();
+
+// Production image bytes are private files, separate from the Neon metadata.
+// Require an explicit existing root; never expose a filesystem directory directly.
+const roomImageRoot = process.env.ROOM_IMAGE_STORAGE_ROOT;
+const requiresConfiguredImageRoot = runtimeConfig.nodeEnv === "production" || new URL(runtimeConfig.databaseUrl).hostname.endsWith(".neon.tech");
+if (requiresConfiguredImageRoot && roomImageRoot &&
+    (!path.isAbsolute(roomImageRoot) || !statSync(roomImageRoot, { throwIfNoEntry: false })?.isDirectory())) {
+  throw new Error("ROOM_IMAGE_STORAGE_ROOT must be an existing absolute directory");
+}
 
 app.use(requestIdMiddleware);
 app.use(helmet());
@@ -54,9 +69,12 @@ const objectStorage = new UnconfiguredObjectStorage();
 const invoiceRepository = new PrismaInvoiceRepository(prisma);
 const invoicePricing = new PrismaItemizedInvoicePricing();
 const billingWorkspaceRepository = new PrismaBillingWorkspaceRepository(prisma, invoicePricing);
+const cloudyFeedbackRepository = new PrismaCloudyFeedbackRepository(prisma, runtimeConfig.sessionSecret);
 app.use("/api/v1", createV1Router({
+  platformDb: prisma,
   roomRequestRepository: new RoomRequestRepository(prisma),
   meterSubmissionRepository: new MeterSubmissionRepository(prisma),
+  cloudyFeedbackRepository,
   config: runtimeConfig,
   repository: new PrismaAuthRepository(prisma),
   sessions,
@@ -64,9 +82,13 @@ app.use("/api/v1", createV1Router({
   enrollment: runtimeConfig.nodeEnv === "production" ? undefined : new EnrollmentService(new PrismaEnrollmentRepository(prisma), sessions, new UnconfiguredEnrollmentDelivery(), runtimeConfig.nodeEnv),
   propertyRoomRepository: new PrismaPropertyRoomRepository(prisma),
   roomImageRepository: new PrismaRoomImageRepository(prisma),
-  roomImageStorage: runtimeConfig.nodeEnv === "production" ? undefined : new LocalRoomImageStorage(),
+  roomImageStorage: requiresConfiguredImageRoot
+    ? roomImageRoot ? new LocalRoomImageStorage(roomImageRoot) : undefined
+    : new LocalRoomImageStorage(),
   publicMarketplaceRepository: new PrismaPublicMarketplaceRepository(prisma),
   residentOccupancyRepository: new PrismaResidentOccupancyRepository(prisma),
+  residentAvatarRepository: runtimeConfig.nodeEnv === "production" ? undefined : new PrismaResidentAvatarRepository(prisma),
+  residentAvatarStorage: runtimeConfig.nodeEnv === "production" ? undefined : new LocalResidentAvatarStorage(),
   contractRepository: new PrismaContractRepository(prisma),
   contractIdempotency: new ContractIdempotencyService(prisma, new EnvironmentContractResponseKeyProvider()),
   objectStorage,
@@ -81,6 +103,7 @@ app.use("/api/v1", createV1Router({
   notificationRepository: new PrismaNotificationRepository(prisma),
   demoPaymentRepository: new DemoPaymentRepository(prisma),
   feedbackRepository: new ResidentFeedbackRepository(prisma),
+  ownerOperationsReportRepository: new PrismaOwnerOperationsReportRepository(prisma),
   demoEnabled: runtimeConfig.nodeEnv !== "production",
 }));
 

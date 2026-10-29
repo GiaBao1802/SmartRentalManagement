@@ -2,7 +2,7 @@ import express, { type RequestHandler } from "express";
 import { Prisma } from "@prisma/client";
 import type { AuthDependencies } from "../middleware/auth.js";
 import { authenticateRequest, foreignResourceNotFound, getAdminOwnerId, getResidentContext, requireAdmin, requireResident } from "../middleware/auth.js";
-import { ApiError, conflict, validationError } from "../middleware/api-error.js";
+import { ApiError, conflict, forbidden, validationError } from "../middleware/api-error.js";
 import { parseBigIntId, sendJson } from "../utils/ids.js";
 import type { PrismaContractRepository } from "./contract.repository.js";
 import { parseContractId, parseRevisionMatch, validateContractCreate, validateContractListQuery, validateContractPatch, validateEmptyObject, validateIdempotencyKey, validateRenewal, validateTermination } from "./contract.validation.js";
@@ -116,6 +116,7 @@ export function createContractRouter(deps: Deps): express.Router {
       const contractId = parseContractId(request.params.contract_id);
       let result: any;
       const context = request.auth!;
+      if (context.role === "superadmin") throw forbidden();
       if (context.role === "admin") result = await deps.contractRepository.findForOwner(context.ownerId, contractId, context.accountId);
       else result = await deps.contractRepository.findForResident(context.ownerId, context.residentId, contractId, context.accountId);
       if (!result) { foreignResourceNotFound(); }
@@ -208,6 +209,7 @@ export function createContractRouter(deps: Deps): express.Router {
   router.get("/contracts/:contract_id/documents", authenticated, async (request, response, next) => {
     try {
       const contractId = parseContractId(request.params.contract_id); const context = request.auth!;
+      if (context.role === "superadmin") throw forbidden();
       const result = context.role === "admin"
         ? await deps.contractRepository.listDocuments(context.ownerId, contractId)
         : await deps.contractRepository.listDocuments(context.ownerId, contractId, context.residentId);
@@ -237,6 +239,7 @@ export function createContractRouter(deps: Deps): express.Router {
   router.get("/contract-documents/:document_id", authenticated, async (request, response, next) => {
     try {
       const context = request.auth!; const documentId = id(request.params.document_id);
+      if (context.role === "superadmin") throw forbidden();
       const result = context.role === "admin"
         ? await deps.contractDocumentService.read(context.ownerId, documentId)
         : await deps.contractDocumentService.read(context.ownerId, documentId, context.residentId);

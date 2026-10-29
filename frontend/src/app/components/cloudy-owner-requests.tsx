@@ -9,7 +9,7 @@ export function CloudyOwnerRequests({rows,busy,onDecision}:{rows:OwnerRequest[];
   <h3>Yêu cầu từ người thuê · mô phỏng</h3>
   <label>Loại yêu cầu<select value={kind} onChange={e=>setKind(e.target.value)}><option value="">Tất cả</option><option value="service">Đăng ký tiện ích</option><option value="complaint">Khiếu nại / sự cố</option></select></label>
   <label><input type="checkbox" checked={onlyOpen} onChange={e=>setOnlyOpen(e.target.checked)}/> Chỉ yêu cầu đang chờ / đang xử lý</label>
-  <p>{filtered.length} yêu cầu phù hợp.</p>
+  {rows.length===0?<p>Không có yêu cầu nào trong phạm vi tra cứu.</p>:filtered.length===0?<p>Không có yêu cầu nào khớp bộ lọc hiện tại. Thử đổi loại yêu cầu hoặc bỏ chọn “Chỉ yêu cầu đang chờ / đang xử lý”.</p>:<p>{filtered.length} yêu cầu phù hợp.</p>}
   {filtered.map(row=><article key={row.id}><h3>{row.room} · {row.title}</h3><p>{row.resident} · {labels[row.status]??row.status}</p><p>Gửi ngày {row.createdAt.slice(0,10)} · {row.id}</p><p>{row.content}</p>
    <div>{row.actions.map(action=><button key={action} type="button" disabled={busy} onClick={()=>{setSelection({id:row.id,action});setReason('');setConfirmed(false);}}>{row.actionLabels[action]}</button>)}</div>
    {selection?.id===row.id&&<form onSubmit={async e=>{e.preventDefault();if(confirmed&&await onDecision({requestId:row.id,action:selection.action,revision:row.revision,reason,confirmed:true})){setSelection(null);setReason('');setConfirmed(false);}}}>

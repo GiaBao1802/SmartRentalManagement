@@ -1,9 +1,9 @@
 import { apiRequest } from "./apiClient";
 
-export type Role = "admin" | "resident";
+export type Role = "admin" | "resident" | "superadmin";
 export type AuthUser = {
   account: { account_id: string; role: Role; email: string | null; phone: string | null; status: "active" };
-  profile: { owner_id: string; display_name: string } | { resident_id: string; full_name: string };
+  profile: { owner_id: string; display_name: string } | { resident_id: string; full_name: string } | { display_name: string };
 };
 type LoginResponse = AuthUser & { expires_at: string };
 

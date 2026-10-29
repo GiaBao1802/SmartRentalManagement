@@ -1,0 +1,20 @@
+{
+  "version": "1.17",
+  "predecessor": "database/baselines/v1.16",
+  "status": "REHEARSED_ON_DISPOSABLE_NEON_BRANCH",
+  "rehearsal": {
+    "provider": "Neon shared-dev project",
+    "parent": "production",
+    "branch": "goctro-cloudy-v117-test-20261029",
+    "branchId": "br-small-tree-a1mhsspy",
+    "expiresAt": "2026-11-05T00:00:00Z",
+    "database": "neondb",
+    "postgresVersionNum": "180006"
+  },
+  "sha256": {
+    "schema.sql": "d8bcfe3fede8296cd1cdb6c60c2b34efb0407429050f382be4c3ecb8eb692cf8",
+    "seed.sql": "914a3a80fe262e3e81ca9cca71ac47338c69131ae27b4c87f8d0d3c7e343ad26",
+    "expected-catalog.json": "c5b5d2e4b5e1d8a9c26037073b848621be2567194244a9d325fff3f631e80808",
+    "migrations/V1_16_to_V1_17_cloudy_unresolved_feedback.sql": "34d2c60a003eca030e52b1c593ea47ce607387c60bb25c1abd7b289c7143e50a"
+  }
+}

@@ -18,6 +18,8 @@ Object.assign(process.env, neonEnv);
 // PORT belongs to the backend's backend/.env (or its 4000 default). Keeping
 // the shared root PORT in the parent makes Next.js bind to the backend port.
 delete process.env.PORT;
+// A shared Neon development session must not render local demo-token controls.
+process.env.NEXT_PUBLIC_PLATFORM_DEMO_LINKS = '0';
 
 let target;
 try {
@@ -36,8 +38,31 @@ if (!['postgres:', 'postgresql:'].includes(target.protocol)
 }
 
 if (process.argv.includes('--check-env')) {
-  console.log(`Neon runtime environment OK: host=${target.hostname}; database=${database}; branch=${process.env.NEON_BRANCH}; root_port=${process.env.PORT ?? 'unset'}; frontend_port=3000; backend_port=4000`);
+  console.log(`Neon runtime environment OK: host=${target.hostname}; database=${database}; branch=${process.env.NEON_BRANCH}; root_port=${process.env.PORT ?? 'unset'}; frontend_port=3000; backend_port=4000; demo_links=${process.env.NEXT_PUBLIC_PLATFORM_DEMO_LINKS === '0' ? 'disabled' : 'enabled'}`);
   process.exit(0);
+}
+
+// Manual startup must pass the same exact, read-only V1.18 catalog guard as setup.
+const sourceCheck = spawnSync(process.execPath, [resolve(process.cwd(), 'scripts/verify-baseline-integrity.mjs')], {
+  cwd: process.cwd(), env: process.env, stdio: 'ignore', windowsHide: true,
+});
+if (sourceCheck.error || sourceCheck.status !== 0) {
+  console.error('NEON_START_FAILED: local V1.18 source artifacts or provenance are invalid; app was not started.');
+  process.exit(1);
+}
+const clientCheck = spawnSync(process.execPath, [resolve(process.cwd(), 'scripts/verify-prisma-client.mjs')], {
+  cwd: process.cwd(), env: process.env, stdio: 'ignore', windowsHide: true,
+});
+if (clientCheck.error || clientCheck.status !== 0) {
+  console.error('NEON_START_FAILED: Prisma Client is missing or stale; run npm run db:generate locally first.');
+  process.exit(1);
+}
+const catalogCheck = spawnSync(process.execPath, [resolve(process.cwd(), 'scripts/verify-neon-connection.mjs')], {
+  cwd: process.cwd(), env: process.env, stdio: 'inherit', windowsHide: true,
+});
+if (catalogCheck.error || catalogCheck.status !== 0) {
+  console.error('NEON_START_FAILED: target or V1.18 catalog verification failed; app was not started.');
+  process.exit(1);
 }
 
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';

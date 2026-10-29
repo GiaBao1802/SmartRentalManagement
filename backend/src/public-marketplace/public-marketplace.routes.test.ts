@@ -23,6 +23,7 @@ const sessions = new InMemorySessionStore();
 const auth: AuthDependencies = { config, repository: authRepository, sessions };
 const publicRoom = {
   roomId: 301n, roomCode: "A-01", defaultRent: 5_000_000n, areaM2: { toFixed: () => "25.50" }, defaultCapacity: 3, publicDescription: "Phòng sáng",
+  marketplaceAmenities: ["air_conditioning", "parking"],
   property: { name: "Khu A", province: "Hà Nội", address: "Đường X" },
   images: [{ roomImageId: 801n, isCover: true, sortOrder: 1 }],
   storageKey: "must-not-leak", ownerId: 101n, internalNote: "private",
@@ -31,6 +32,7 @@ const lead = (ownerId: bigint, status = "new") => ({ contactRequestId: 901n, pro
 const observed: Array<{ method: string; args: unknown[] }> = [];
 const repository: ContactRequestRepositoryPort = {
   async listPublicRooms(...args) { observed.push({ method: "listPublicRooms", args }); return { rows: [publicRoom], total: 1 }; },
+  async listPublicPropertyFacilities(...args) { observed.push({ method: "listPublicPropertyFacilities", args }); return []; },
   async findPublicRoom(...args) { observed.push({ method: "findPublicRoom", args }); return args[0] === 301n ? publicRoom : null; },
   async createContactRequest(...args) { observed.push({ method: "createContactRequest", args }); return { contactRequestId: 901n, status: "new" }; },
   async listContactRequests(...args) { observed.push({ method: "listContactRequests", args }); return { rows: [lead(args[0])], total: 1 }; },
@@ -66,23 +68,27 @@ after(async () => { await new Promise<void>((resolve, reject) => server.close((e
 
 test("public list accepts canonical filters and emits only the public allowlist", async () => {
   reset();
-  const result = await call("/api/v1/public/rooms?province=H%C3%A0%20N%E1%BB%99i&address=Duong%20X&price_min=1000000&price_max=6000000&area_min=20&area_max=30&capacity_min=2&sort=price_asc&page=2&page_size=15");
+  const result = await call("/api/v1/public/rooms?province=H%C3%A0%20N%E1%BB%99i&address=Duong%20X&price_min=1000000&price_max=6000000&area_min=20&area_max=30&capacity_min=2&amenities=air_conditioning%2Cparking&sort=price_asc&page=2&page_size=15");
   assert.equal(result.response.status, 200); assert.equal(result.body.meta.page, 2); assert.equal(result.body.meta.page_size, 15);
   const query = observed[0]?.args[0] as any;
   assert.equal(query.page, 2); assert.equal(query.page_size, 15); assert.equal(query.province, "Hà Nội"); assert.equal(query.address, "Duong X");
   assert.equal(query.price_min, 1_000_000n); assert.equal(query.price_max, 6_000_000n); assert.equal(query.area_min.toString(), "20"); assert.equal(query.area_max.toString(), "30"); assert.equal(query.capacity_min, 2); assert.equal(query.sort, "price_asc");
+  assert.deepEqual(query.amenities, ["air_conditioning", "parking"]);
   const dto = result.body.data[0]; assert.equal(dto.room_id, "301"); assert.equal(dto.cover_image.url, "/api/v1/public/room-images/801");
+  assert.deepEqual(dto.amenities, ["air_conditioning", "parking"]);
   assert.equal(JSON.stringify(result.body).includes("storageKey"), false); assert.equal(JSON.stringify(result.body).includes("ownerId"), false); assert.equal(JSON.stringify(result.body).includes("internalNote"), false);
 });
 
 test("public list rejects unsupported Property-name search and invalid ranges", async () => {
   assert.equal((await call("/api/v1/public/rooms?search=Khu%20A")).response.status, 400);
   assert.equal((await call("/api/v1/public/rooms?price_min=700&price_max=2")).response.status, 400);
+  assert.equal((await call("/api/v1/public/rooms?amenities=air_conditioning%2Cunknown")).response.status, 400);
+  assert.equal((await call("/api/v1/public/rooms?amenities=parking%2Cparking")).response.status, 400);
 });
 
 test("public detail uses generic not-found and ordered safe image DTO", async () => {
   const detail = await call("/api/v1/public/rooms/301"); assert.equal(detail.response.status, 200);
-  assert.deepEqual(detail.body.data.images, [{ image_id: "801", url: "/api/v1/public/room-images/801", is_cover: true, sort_order: 1 }]);
+  assert.deepEqual(detail.body.data.images, [{ image_id: "801", url: "/api/v1/public/room-images/801", is_cover: true, sort_order: 1, is_illustrative: false }]);
   assert.equal(JSON.stringify(detail.body).includes("storageKey"), false);
   for (const id of ["999", "9901", "9902", "9903", "9904", "9905"]) {
     const hidden = await call(`/api/v1/public/rooms/${id}`); assert.equal(hidden.response.status, 404); assert.equal(hidden.body.error.code, "NOT_FOUND");

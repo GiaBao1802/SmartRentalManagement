@@ -12,7 +12,7 @@ test("Service entry still redirects to utilities after overview removal", () => 
 
 test("Admin sidebar exposes one entry for the Service module and hides legacy bookings", () => {
   const group = ADMIN_NAV_GROUPS.find((item) => item.label === "Dịch vụ & Hỗ trợ");
-  assert.deepEqual(group?.items.map((item) => [item.href, item.label]), [["/admin/services", "Dịch vụ & Tiện ích"]]);
+  assert.deepEqual(group?.items.map((item) => [item.href, item.label]), [["/admin/requests", "Yêu cầu & Khiếu nại"], ["/admin/services", "Dịch vụ & Tiện ích"]]);
   const allRoutes = ADMIN_NAV_GROUPS.flatMap((item) => item.items.map((nav) => nav.href));
   assert.equal(allRoutes.includes("/admin/services/utilities"), false);
   assert.equal(allRoutes.includes("/admin/services/fixed"), false);
@@ -27,7 +27,7 @@ test("Service workspace gives direct access to all approved sections with busine
     ["utilities", "Điện & nước"],
     ["fixed", "Tiện ích cố định"],
     ["flexible", "Tiện ích phát sinh"],
-    ["parking", "Parking"],
+    ["parking", "Gửi xe"],
   ]);
   assert.deepEqual(SERVICE_WORKSPACE_SECTIONS.map(({ href }) => href), [
     "/admin/services/utilities",

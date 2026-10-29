@@ -6,6 +6,10 @@ export type FilterContext = {
   occupants: number | null;
   amenities: string[];
 };
+const supportedAmenityRequests = new Set([
+  "air_conditioning", "parking", "wifi", "elevator", "washing_machine", "refrigerator", "water_heater", "private_kitchen",
+  "private_bathroom", "balcony", "unspecified_amenity", "cats_allowed", "dogs_allowed",
+]);
 export function isFilterContext(value: unknown): value is FilterContext {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const f = value as FilterContext;
@@ -15,5 +19,5 @@ export function isFilterContext(value: unknown): value is FilterContext {
   }
   return (f.location === null || (typeof f.location === "string" && f.location.trim().length > 0 && f.location.length <= 100))
     && (f.occupants === null || (Number.isInteger(f.occupants) && f.occupants >= 1 && f.occupants <= 100))
-    && Array.isArray(f.amenities) && f.amenities.length <= 1 && f.amenities.every(x => x === "air_conditioning");
+    && Array.isArray(f.amenities) && f.amenities.length <= 8 && f.amenities.every(x => typeof x === "string" && supportedAmenityRequests.has(x));
 }

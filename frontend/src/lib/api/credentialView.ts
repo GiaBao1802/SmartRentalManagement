@@ -4,13 +4,15 @@ export function passwordErrors(password: string, confirmation: string) {
     confirmation: password !== confirmation ? "Mật khẩu xác nhận chưa khớp." : "",
   };
 }
-export function loginTarget(role: "admin" | "resident", requested: string | null, origin: string) {
-  const fallback = role === "admin" ? "/admin/properties" : "/tenant";
+export function loginTarget(role: "admin" | "resident" | "superadmin", requested: string | null, origin: string) {
+  const fallback = role === "admin" ? "/admin/properties" : role === "resident" ? "/tenant" : "/platform";
   if (!requested?.startsWith("/")) return fallback;
   try {
     const parsed = new URL(requested, origin);
     if (parsed.origin !== origin || requested.startsWith("//")) return fallback;
     if (role === "resident" && parsed.pathname !== "/tenant") return fallback;
+    if (role === "superadmin" && !parsed.pathname.startsWith("/platform")) return fallback;
+    if (role === "admin" && !parsed.pathname.startsWith("/admin")) return fallback;
     return parsed.pathname + parsed.search + parsed.hash;
   } catch { return fallback; }
 }

@@ -1083,6 +1083,8 @@ tbody tr:hover td { background: #fffcf8; }
 .invoice-detail-link .subtext { color: var(--color-text-secondary); font-size: 11px; font-weight: 500; }
 .invoice-status-cell { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
 .invoice-overdue-chip { border-color: #f0b2a8; background: #fff0ed; color: #a83222; }
+.invoice-due-chip { border-color: #c9d9e5; background: #f1f7fa; color: #315366; }
+.invoice-detail-status { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; }
 .invoice-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 14px; color: var(--color-text-secondary); font-size: 12px; }
 .invoice-pagination nav { display: flex; align-items: center; gap: 8px; }
 .invoice-pagination .button { min-height: 34px; }
@@ -2448,6 +2450,9 @@ body:has(.explore-results.is-expanded) .cloudy-2d--explorer { visibility: hidden
 .cloudy-chat__filter-mode { display: grid; gap: 6px; margin-bottom: 8px; font-size: 12px; }
 .cloudy-chat__filter-mode > div { display: flex; gap: 8px; }
 .cloudy-chat__composer .cloudy-chat__filter-mode button { height: 34px; border: 1px solid #cbd5e1; border-radius: 12px; padding: 6px 14px; background: white; color: #334155; cursor: pointer; }
+.admin-notification-list article > a.admin-notification-action { display: inline-block; margin: 7px 10px 0 0; color: var(--color-brand-green); font-size: 9px; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+.admin-notification-list > button.admin-notification-load-more { width: 100%; min-height: 36px; border: 1px solid var(--color-border); border-radius: 9px; background: #fff; color: var(--color-brand-green); font: inherit; font-size: 10px; font-weight: 700; cursor: pointer; }
+.admin-notification-list > button.admin-notification-load-more:disabled { cursor: wait; opacity: .65; }
 .cloudy-chat__composer .cloudy-chat__filter-mode button[aria-pressed="true"] { background: #0e5a4f; border-color: #0e5a4f; color: white; font-weight: 700; }
 .cloudy-chat__composer .cloudy-chat__filter-mode button:disabled { opacity: .45; cursor: default; }
 .cloudy-chat__filter-mode small { color: #64748b; }

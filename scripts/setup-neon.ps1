@@ -40,70 +40,37 @@ function Set-EnvDefault([string] $name, [string] $value) {
   Add-Content -LiteralPath $envFile -Value "$name=$value" -Encoding UTF8
 }
 
-function Remove-LocalDatabaseLink {
-  $backendEnv = Join-Path $root 'backend/.env'
-  if (-not (Test-Path -LiteralPath $backendEnv)) { return }
-  $content = [IO.File]::ReadAllText($backendEnv, [Text.Encoding]::UTF8)
-  $updated = [regex]::Replace($content, '(?m)^\s*DATABASE_URL\s*=.*(?:\r?\n|$)', '')
-  if ($updated -cne $content) {
-    [IO.File]::WriteAllText($backendEnv, $updated, [Text.UTF8Encoding]::new($false))
-    Write-Host 'Đã gỡ dòng DATABASE_URL local khỏi backend/.env; database local và dữ liệu của nó vẫn nguyên.'
-  } else {
-    Write-Host 'backend/.env không có liên kết DATABASE_URL local cần gỡ.'
-  }
-}
-
 function Get-ListenerPids([int] $Port) {
   try {
-    return ,@((Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction Stop | Select-Object -ExpandProperty OwningProcess -Unique))
+    Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction Stop | Select-Object -ExpandProperty OwningProcess -Unique
   } catch {
-    if ($_.Exception.Message -match 'No MSFT_NetTCPConnection objects found|No matching MSFT_NetTCPConnection') { return ,@() }
+    if ($_.Exception.Message -match 'No MSFT_NetTCPConnection objects found|No matching MSFT_NetTCPConnection') { return }
     throw "Không xác minh được process đang giữ cổng $Port; dừng để tránh kill nhầm process."
   }
 }
 
-function Stop-ExistingProjectServers {
-  Write-Host 'Đang dừng frontend/backend cũ đã xác minh thuộc Góc Trọ...'
-  & (Join-Path $PSScriptRoot 'dev-stop.ps1')
-  if ($LASTEXITCODE -ne 0) { throw 'Không dừng được server Góc Trọ cũ; chưa khởi động phiên mới.' }
-
+function Assert-AvailableProjectPorts {
   foreach ($port in @(3000, 4000)) {
     $pids = @(Get-ListenerPids $port)
     if ($pids.Count -gt 0) {
       $owners = ($pids -join ', ')
-      throw "Cổng $port vẫn được giữ bởi PID $owners. Các process này không xác minh thuộc Góc Trọ nên được giữ nguyên; hãy đóng đúng ứng dụng đang dùng cổng rồi chạy lại option 5."
+      throw "Cổng $port đang được giữ bởi PID $owners. Setup không tự dừng process; hãy xác minh và đóng đúng ứng dụng trước khi chạy lại option 5."
     }
   }
   Write-Host 'Cổng 3000 và 4000 đã sẵn sàng.'
 }
 
-function Assert-LatestMainBranch {
-  if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
-    throw 'Option 5 chỉ chạy từ nhánh Git main mới nhất. Cài Git, lấy code từ main rồi chạy lại.'
-  }
-  $gitBranch = (& git branch --show-current 2>$null | Out-String).Trim()
-  if ($LASTEXITCODE -ne 0 -or $gitBranch -cne 'main') {
-    throw "Option 5 chỉ chạy trên nhánh Git main. Nhánh hiện tại='$gitBranch'. Hãy giữ/lưu công việc rồi chạy: git switch main; git pull --ff-only origin main"
-  }
-
-  & git fetch --quiet origin main
-  if ($LASTEXITCODE -ne 0) {
-    throw 'Không kiểm tra được origin/main. Hãy kiểm tra mạng/quyền Git, chạy git fetch origin main rồi thử lại.'
-  }
-  $localHead = (& git rev-parse HEAD 2>$null | Out-String).Trim()
-  $remoteMain = (& git rev-parse FETCH_HEAD 2>$null | Out-String).Trim()
-  if ($LASTEXITCODE -ne 0 -or -not $localHead -or -not $remoteMain -or $localHead -cne $remoteMain) {
-    throw 'Nhánh main trên máy chưa đúng commit mới nhất của origin/main. Giữ/lưu thay đổi trước, rồi chạy git pull --ff-only origin main và thử lại.'
-  }
-  Write-Host 'Git: main khớp origin/main mới nhất.'
+function Assert-SourceCatalog {
+  & node (Join-Path $PSScriptRoot 'verify-baseline-integrity.mjs') *> $null
+  if ($LASTEXITCODE -ne 0) { throw 'Source V1.18 hoặc provenance không khớp; không khởi động ứng dụng.' }
+  Write-Host 'Source: baseline V1.18 và provenance đã xác minh; không đổi nhánh Git.'
 }
 
 try {
   Write-Host 'Neon shared Postgres — project goctro-shared-dev / branch production'
-  Write-Host 'Mã ứng dụng phải chạy từ nhánh Git main mới nhất; database dùng nhánh Neon production.'
-  Assert-LatestMainBranch
+  Write-Host 'Dùng source tích hợp V1.18 hiện có; database dùng nhánh Neon production.'
   Write-Host 'Cảnh báo: đây là database cloud dùng chung. Mọi người trong nhóm có thể nhìn thấy thay đổi của nhau.' -ForegroundColor Yellow
-  Write-Host 'Database dùng chung hiện có schema V1.15 và bộ dữ liệu demo tổng hợp; mọi thay đổi ứng dụng sẽ được cả nhóm nhìn thấy.'
+  Write-Host 'Database dùng chung hiện có schema V1.18 và bộ dữ liệu demo tổng hợp; mọi thay đổi ứng dụng sẽ được cả nhóm nhìn thấy.'
   Write-Host 'Setup chỉ kiểm tra kết nối/schema; không seed, import, reset hoặc migrate database cloud.'
   $confirm = (Read-Host 'Nhập DUNG để tiếp tục').Trim()
   if ($confirm -cne 'DUNG') { throw 'Đã hủy trước khi lấy cấu hình hoặc kết nối database.' }
@@ -113,6 +80,7 @@ try {
   }
   & node -e "const [a,b]=process.versions.node.split('.').map(Number);process.exit(a<24||(a===24&&b<11)?1:0)"
   if ($LASTEXITCODE -ne 0) { throw 'Cần Node.js 24.11 trở lên.' }
+  Assert-SourceCatalog
 
   $script:neonCommand = if (Get-Command neon.cmd -ErrorAction SilentlyContinue) { 'neon.cmd' } else { 'npx.cmd' }
   if ($script:neonCommand -eq 'npx.cmd') { Write-Host 'Neon CLI chưa cài toàn cục; sẽ dùng npx neon@latest.' }
@@ -130,7 +98,7 @@ try {
     if (-not $authenticated) { throw 'Neon CLI chưa xác nhận được tài khoản. Đăng nhập bằng neon.cmd login rồi chạy lại mục này.' }
   }
 
-  Write-Host 'Liên kết workspace với đúng project/branch; cấu hình local chỉ được gỡ sau khi Neon kết nối thành công.'
+  Write-Host 'Liên kết workspace với đúng project/branch; không sửa backend/.env local.'
   Invoke-Neon @('link','--org-id',$orgId,'--project-id',$projectId,'--branch',$branch,'--no-env-pull','--no-config','-y')
   Invoke-Neon @('env','pull','--project-id',$projectId,'--branch',$branch,'--service','postgres','--file','.env.neon')
   if (-not (Test-Path -LiteralPath $envFile)) { throw 'Neon CLI không tạo được .env.neon.' }
@@ -162,14 +130,20 @@ try {
     & npm.cmd ci --include=dev
     if ($LASTEXITCODE -ne 0) { throw 'npm ci thất bại; kiểm tra mạng hoặc npm rồi chạy lại.' }
   }
+  & node (Join-Path $PSScriptRoot 'verify-prisma-client.mjs') *> $null
+  if ($LASTEXITCODE -ne 0) {
+    Write-Host 'Prisma Client thiếu hoặc chưa có mapping V1.18; tạo lại từ schema source (không sửa Neon)...'
+    & npm.cmd run db:generate
+    if ($LASTEXITCODE -ne 0) { throw 'Không tạo được Prisma Client V1.18. Đóng đúng ứng dụng đang dùng client rồi chạy lại; setup không tự dừng process.' }
+    & node (Join-Path $PSScriptRoot 'verify-prisma-client.mjs') *> $null
+    if ($LASTEXITCODE -ne 0) { throw 'Prisma Client sau khi tạo vẫn không khớp V1.18; chưa khởi động app.' }
+  }
   Write-Host 'Kiểm tra kết nối PostgreSQL Neon bằng câu SELECT chỉ đọc...'
   & node --env-file=.env.neon (Join-Path $PSScriptRoot 'verify-neon-connection.mjs')
   if ($LASTEXITCODE -ne 0) { throw 'Không kết nối hoặc schema cloud chưa sẵn sàng. Không chạy migration/seed/reset.' }
-  Remove-LocalDatabaseLink
-
   $start = (Read-Host 'Nhập CHAY để khởi động app bằng database chung').Trim()
-  if ($start -cne 'CHAY') { Write-Host 'Đã kiểm tra Neon và gỡ liên kết DB local khỏi backend/.env. Khi sẵn sàng, chạy: npm run dev:neon'; exit 0 }
-  Stop-ExistingProjectServers
+  if ($start -cne 'CHAY') { Write-Host 'Đã kiểm tra Neon. Khi sẵn sàng, chạy: npm run dev:neon'; exit 0 }
+  Assert-AvailableProjectPorts
   Write-Host 'Đang khởi động frontend + backend trên Neon. Nhấn Ctrl+C để dừng.'
   & npm.cmd run dev:neon
   if ($LASTEXITCODE -ne 0) { throw 'Ứng dụng không khởi động thành công; kiểm tra lỗi cổng hoặc log phía trên.' }

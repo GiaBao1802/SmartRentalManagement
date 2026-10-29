@@ -10,11 +10,14 @@ const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 // No database client, environment file or connection configuration is loaded.
 export async function verifyBaselineArtifacts() {
   let failed = false;
-  for (const version of ['1.8', '1.9', '1.10', '1.11', '1.12', '1.13', '1.14', '1.15']) {
+  for (const version of ['1.8', '1.9', '1.10', '1.11', '1.12', '1.13', '1.14', '1.15', '1.16', '1.17', '1.18']) {
     const relativeDirectory = `database/baselines/v${version}/`;
     const manifest = JSON.parse(await readFile(path.join(root, relativeDirectory, 'PROVENANCE.json'), 'utf8'));
     if (manifest.version !== version) throw new Error(`Phiên bản baseline không phải V${version}.`);
-    const candidateStatus = ['1.12', '1.13', '1.14', '1.15'].includes(version) && ['PENDING_LOCAL_CANDIDATE', 'PROMOTED_LOCAL_PENDING_SOURCE_COMMIT', 'PROMOTED_LOCAL', 'REHEARSED_NOT_APPLIED'].includes(manifest.status);
+    const candidateStatus = ['1.12', '1.13', '1.14', '1.15', '1.16', '1.17', '1.18'].includes(version) && ['PENDING_LOCAL_CANDIDATE', 'PROMOTED_LOCAL_PENDING_SOURCE_COMMIT', 'PROMOTED_LOCAL', 'REHEARSED_NOT_APPLIED', 'APPLIED_TO_NEON_SHARED_DEV_LOCAL_REHEARSED_NOT_APPLIED', 'REHEARSED_ON_DISPOSABLE_NEON_BRANCH', 'APPLIED_SHARED_NEON_20261029'].includes(manifest.status);
+    if (version === '1.16' && (manifest.status !== 'APPLIED_TO_NEON_SHARED_DEV_LOCAL_REHEARSED_NOT_APPLIED' || manifest.predecessor !== 'database/baselines/v1.15')) throw new Error('V1.16 must match the team Marketplace amenities baseline.');
+    if (version === '1.17' && (manifest.status !== 'REHEARSED_ON_DISPOSABLE_NEON_BRANCH' || manifest.predecessor !== 'database/baselines/v1.16')) throw new Error('V1.17 must be the team Cloudy feedback candidate.');
+    if (version === '1.18' && (manifest.status !== 'APPLIED_SHARED_NEON_20261029' || manifest.predecessor !== 'database/baselines/v1.17')) throw new Error('V1.18 must be the V1.17-based platform baseline applied to shared Neon.');
     if (version === '1.12' && !candidateStatus) throw new Error('V1.12 source cần trạng thái candidate/promoted-local trước khi được kiểm tra.');
     if (version === '1.13' && !candidateStatus) throw new Error('V1.13 source cần trạng thái candidate/promoted-local trước khi được kiểm tra.');
     for (const [filename, expected] of Object.entries(manifest.sha256)) {

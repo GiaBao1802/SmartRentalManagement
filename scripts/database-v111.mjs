@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
@@ -18,6 +19,9 @@ import {
 
 export const baselineDirectory = fileURLToPath(new URL('../database/baselines/v1.11/', import.meta.url));
 const v115Directory = fileURLToPath(new URL('../database/baselines/v1.15/', import.meta.url));
+const v116Directory = fileURLToPath(new URL('../database/baselines/v1.16/', import.meta.url));
+const v117Directory = fileURLToPath(new URL('../database/baselines/v1.17/', import.meta.url));
+const v118Directory = fileURLToPath(new URL('../database/baselines/v1.18/', import.meta.url));
 const v114Directory = fileURLToPath(new URL('../database/baselines/v1.14/', import.meta.url));
 const v112Directory = fileURLToPath(new URL('../database/baselines/v1.12/', import.meta.url));
 const v113Directory = fileURLToPath(new URL('../database/baselines/v1.13/', import.meta.url));
@@ -25,6 +29,26 @@ const v110Directory = fileURLToPath(new URL('../database/baselines/v1.10/', impo
 const v19Directory = fileURLToPath(new URL('../database/baselines/v1.9/', import.meta.url));
 const v18Directory = fileURLToPath(new URL('../database/baselines/v1.8/', import.meta.url));
 const quote = (value) => '"' + value.replaceAll('"', '""') + '"';
+async function loadV116Catalog() {
+  const manifest = JSON.parse(await readFile(path.join(v116Directory, 'PROVENANCE.json'), 'utf8'));
+  if (manifest.version !== '1.16' || manifest.predecessor !== 'database/baselines/v1.15') throw new SetupError('V1.16 Marketplace provenance is invalid.', 'schema');
+  for (const filename of ['schema.sql', 'seed.sql', 'expected-catalog.json', 'migrations/V1_15_to_V1_16_marketplace_amenities.sql']) {
+    const bytes = await readFile(path.join(v116Directory, filename));
+    if (createHash('sha256').update(bytes).digest('hex') !== manifest.sha256[filename]) throw new SetupError(`V1.16 artifact mismatch: ${filename}`, 'schema');
+  }
+  // The V1.16 seed uses the exact V1.15 source bytes pinned by team provenance;
+  // .gitattributes prevents another line-ending rewrite in this integration.
+  return { catalog: JSON.parse(await readFile(path.join(v116Directory, 'expected-catalog.json'), 'utf8')) };
+}
+async function loadV118Catalog() {
+  const manifest = JSON.parse(await readFile(path.join(v118Directory, 'PROVENANCE.json'), 'utf8'));
+  if (manifest.version !== '1.18' || manifest.predecessor !== 'database/baselines/v1.17' || manifest.status !== 'APPLIED_SHARED_NEON_20261029') throw new SetupError('V1.18 applied provenance is invalid.', 'schema');
+  for (const [filename, expected] of Object.entries(manifest.sha256)) {
+    const bytes = await readFile(path.join(v118Directory, filename));
+    if (createHash('sha256').update(bytes).digest('hex') !== expected) throw new SetupError(`V1.18 artifact mismatch: ${filename}`, 'schema');
+  }
+  return { catalog: JSON.parse(await readFile(path.join(v118Directory, 'expected-catalog.json'), 'utf8')) };
+}
 const without = (catalog, phrase) => Object.fromEntries(Object.entries(catalog).map(([key, rows]) => [
   key,
   rows.filter((row) => !JSON.stringify(row).includes(phrase)),
@@ -82,7 +106,7 @@ async function applyDatabase(client, mode, current) {
 
 async function applyMigration(client, database, expected, next, migrationPath, version, afterCheck = null, allowProtectedTarget = false) {
   if (database === 'Goctro_test3' && !allowProtectedTarget) throw new SetupError('Schema migration is blocked for Goctro_test3 without the dedicated backup-confirmed upgrade path.', 'target');
-  if (['V1.12', 'V1.13', 'V1.14', 'V1.15'].includes(version) && ['Goctro_test3', 'Goctro_dev_v18'].includes(database) && !allowProtectedTarget) throw new SetupError(`${version} migration is blocked for ${database} without the dedicated backup-confirmed upgrade path.`, 'target');
+  if (['V1.12', 'V1.13', 'V1.14', 'V1.15', 'V1.16'].includes(version) && ['Goctro_test3', 'Goctro_dev_v18'].includes(database) && !allowProtectedTarget) throw new SetupError(`${version} migration is blocked for ${database} without the dedicated backup-confirmed upgrade path.`, 'target');
   await client.query('BEGIN');
   try {
     await client.query("SET LOCAL search_path=public,pg_catalog; SET LOCAL lock_timeout='10s'; SET LOCAL statement_timeout='120s'");
@@ -169,6 +193,11 @@ export async function migrateV1_14ToV1_15(client, database, previous, next, allo
     path.join(v115Directory, 'migrations/V1_14_to_V1_15_resident_parking_requests.sql'), 'V1.15', null, allowProtectedTarget);
 }
 
+export async function migrateV1_15ToV1_16(client, database, previous, next, allowProtectedTarget = false) {
+  return applyMigration(client, database, (actual) => catalogsMatch(actual, previous.catalog), next,
+    path.join(v116Directory, 'migrations/V1_15_to_V1_16_marketplace_amenities.sql'), 'V1.16', null, allowProtectedTarget);
+}
+
 export async function migrateV1_13ToV1_14(client, database, previous, next, allowProtectedTarget = false) {
   return applyMigration(client, database, (actual) => catalogsMatch(actual, previous.catalog), next,
     path.join(v114Directory, 'migrations/V1_13_to_V1_14_room_requests.sql'), 'V1.14', null, allowProtectedTarget);
@@ -179,12 +208,15 @@ export async function runCommand(args, env = process.env) {
   if (mode === 'block-legacy-migrate') {
     throw new SetupError('db:migrate legacy is blocked: database/migrations is LEGACY/demo history. Use the versioned setup path through V1.13 after verifying a backup.');
   }
-  const allowed = ['bootstrap', 'seed', 'inspect', 'state', 'migrate-v19', 'migrate-v110', 'migrate-v110-booking-branch', 'migrate-v112', 'migrate-v113', 'migrate-v114', 'migrate-v115'];
+  const allowed = ['bootstrap', 'seed', 'inspect', 'state', 'migrate-v19', 'migrate-v110', 'migrate-v110-booking-branch', 'migrate-v112', 'migrate-v113', 'migrate-v114', 'migrate-v115', 'migrate-v116'];
   if (!allowed.includes(mode) || flag !== '--database' || extra.length) {
-    throw new SetupError('Usage: database-v111.mjs bootstrap|seed|inspect|state|migrate-v19|migrate-v110|migrate-v110-booking-branch|migrate-v112|migrate-v113|migrate-v114|migrate-v115 --database NAME');
+    throw new SetupError('Usage: database-v111.mjs bootstrap|seed|inspect|state|migrate-v19|migrate-v110|migrate-v110-booking-branch|migrate-v112|migrate-v113|migrate-v114|migrate-v115|migrate-v116 --database NAME');
   }
   const target = parseTarget(env.GOCTRO_SETUP_DATABASE_URL, database);
   const current = await loadBaseline(baselineDirectory, '1.11');
+  const v118 = await loadV118Catalog();
+  const v117 = await loadBaseline(v117Directory, '1.17');
+  const v116 = await loadV116Catalog();
   const v115 = await loadBaseline(v115Directory, '1.15');
   const v114 = await loadBaseline(v114Directory, '1.14');
   const v113 = await loadBaseline(v113Directory, '1.13');
@@ -193,6 +225,9 @@ export async function runCommand(args, env = process.env) {
   const v19 = await loadBaseline(v19Directory, '1.9');
   const v18 = await loadBaseline(v18Directory, '1.8');
   const baselines = [
+    { key: 'v118', baseline: v118 },
+    { key: 'v117', baseline: v117 },
+    { key: 'v116', baseline: v116 },
     { key: 'v115', baseline: v115 },
     { key: 'v114', baseline: v114 },
     { key: 'v113', baseline: v113 },
@@ -216,8 +251,8 @@ export async function runCommand(args, env = process.env) {
       const actual = await readCatalog(client);
       const match = baselines.find((entry) => catalogsMatch(actual, entry.baseline.catalog)
         && (entry.key !== 'v110_booking_branch' || target.database === 'Goctro_dev_v18'));
-      if (!match) throw new SetupError('Schema differs from reviewed V1.15/V1.14/V1.13/V1.12/V1.11/V1.10/V1.9/V1.8 catalogs; no write was attempted.', 'schema');
-      const label = { v115: 'V1.15', v114: 'V1.14', v113: 'V1.13', v112: 'V1.12', v111: 'V1.11', v110: 'V1.10', v110_booking_branch: 'local V1.10 booking-first recovery branch', v19: 'V1.9', v18: 'V1.8' }[match.key];
+      if (!match) throw new SetupError('Schema differs from reviewed V1.18/V1.17/V1.16/V1.15/V1.14/V1.13/V1.12/V1.11/V1.10/V1.9/V1.8 catalogs; no write was attempted.', 'schema');
+      const label = { v118: 'V1.18 platform applied', v117: 'V1.17 Cloudy feedback', v116: 'V1.16 Marketplace amenities', v115: 'V1.15', v114: 'V1.14', v113: 'V1.13', v112: 'V1.12', v111: 'V1.11', v110: 'V1.10', v110_booking_branch: 'local V1.10 booking-first recovery branch', v19: 'V1.9', v18: 'V1.8' }[match.key];
       console.log(`Database ${label} inspect: PASS; database=${target.database}; host=${target.host}; port=${target.port}. Chỉ đọc.`);
       await client.query('ROLLBACK');
     } else if (mode === 'state') {
@@ -254,6 +289,12 @@ export async function runCommand(args, env = process.env) {
       if (protectedTarget && !allowProtectedTarget) throw new SetupError(`V1.15 migration requires a verified backup confirmation for ${target.database}.`, 'target');
       await migrateV1_14ToV1_15(client, target.database, v114, v115, allowProtectedTarget);
       console.log(`Database V1.14→V1.15 migration: PASS; database=${target.database}; host=${target.host}; port=${target.port}. Added Resident Parking requests; credentials hidden.`);
+    } else if (mode === 'migrate-v116') {
+      const protectedTarget = ['Goctro_test3', 'Goctro_dev_v18'].includes(target.database);
+      const allowProtectedTarget = protectedTarget && env.GOCTRO_V116_BACKUP_VERIFIED === target.database;
+      if (protectedTarget && !allowProtectedTarget) throw new SetupError(`V1.16 migration requires a verified backup confirmation for ${target.database}.`, 'target');
+      await migrateV1_15ToV1_16(client, target.database, v115, v116, allowProtectedTarget);
+      console.log(`Database V1.15→V1.16 migration: PASS; database=${target.database}; host=${target.host}; port=${target.port}. Added structured Marketplace amenities; credentials hidden.`);
     } else if (mode === 'migrate-v114') {
       const protectedTarget = ['Goctro_test3', 'Goctro_dev_v18'].includes(target.database);
       const allowProtectedTarget = protectedTarget && env.GOCTRO_V114_BACKUP_VERIFIED === target.database;

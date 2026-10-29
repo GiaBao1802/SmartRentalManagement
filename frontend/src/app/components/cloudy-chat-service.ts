@@ -31,7 +31,11 @@ export function createLocalCloudyChatService(fetchImpl: typeof fetch = fetch): C
   async function request(body: unknown, signal: AbortSignal) {
     const response = await fetchImpl("/api/cloudy/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal, cache: "no-store" });
     if (response.status === 429) throw new Error("Cloudy đang xử lý yêu cầu khác. Bạn thử lại sau nhé.");
-    if (!response.ok) throw new Error("Chưa kết nối được AI local. Kiểm tra Ollama rồi thử lại.");
+    if (!response.ok) {
+      const failure = await response.json().catch(() => null) as { message?: unknown } | null;
+      if (typeof failure?.message === "string" && failure.message.trim() && failure.message.length <= 500) throw new Error(failure.message);
+      throw new Error("Cloudy chưa xử lý được yêu cầu. Hãy thử lại.");
+    }
     const reply = await response.json();
     if (signal.aborted) throw new DOMException("Aborted", "AbortError");
     if (!reply || typeof reply.text !== "string" || !reply.text || reply.text.length > 16000 || reply.source !== "public_database" || !["preview","no_matches","needs_clarification","awaiting_confirmation"].includes(reply.status) || (reply.status === "needs_clarification" ? reply.context !== null : !isFilterContext(reply.context))) throw new Error("Phản hồi không hợp lệ. Hãy thử lại.");

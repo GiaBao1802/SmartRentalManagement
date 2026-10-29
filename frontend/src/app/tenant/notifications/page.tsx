@@ -2,6 +2,7 @@
 
 import BrandLogo from "../../components/brand-logo";
 import ResidentPrimaryNavigation from "../resident-primary-navigation";
+import ResidentAccountMenu from "../resident-account-menu";
 import { useAuth } from "../../components/auth-provider";
 import { displayName } from "../../../lib/api/authApi";
 import { ApiError } from "../../../lib/api/errors";
@@ -44,6 +45,7 @@ function typeLabel(type: string) {
     service_booking_cancelled: "Lịch tiện ích đã hủy",
     invoice_demo_payment: "Thanh toán hóa đơn",
     resident_feedback: "Phản hồi cư dân",
+    owner_room_reminder: "Nhắc nhở từ chủ trọ",
   };
   return labels[type] ?? type.replaceAll("_", " ");
 }
@@ -228,14 +230,13 @@ export default function ResidentNotificationsPage() {
   }
 
   const name = displayName(user);
-  const nameInitials = name.trim().split(/\s+/).slice(-2).map((part) => part.charAt(0)).join("").toUpperCase();
   const hasPreferenceChanges = Boolean(preferences && draftPreferences && preferenceOptions.some(({ key }) => preferences[key] !== draftPreferences[key]));
 
   return <main className="tenant-page resident-home resident-notifications-page">
     <header className="tenant-header resident-topbar">
       <a href="/" aria-label="Trang chủ Góc trọ"><BrandLogo /></a>
       <ResidentPrimaryNavigation active="notifications" unreadCount={unreadCount} />
-      <div className="resident-topbar-actions"><span className="resident-user-avatar" aria-hidden="true">{nameInitials}</span><div className="resident-user-copy"><strong>{name}</strong><span>Cư dân</span></div><button className="resident-logout-button" type="button" disabled={logoutPending} onClick={() => void handleLogout()}>{logoutPending ? "Đang đăng xuất…" : "Đăng xuất"}</button></div>
+      <div className="resident-topbar-actions"><ResidentAccountMenu name={name} email={user?.account.email ?? null} logoutPending={logoutPending} onLogout={() => void handleLogout()} /></div>
     </header>
     <div className="tenant-content resident-layout resident-notice-layout">
       <section className="resident-notice-hero" aria-labelledby="resident-notice-title">

@@ -32,6 +32,7 @@ const repository: any = {
   async reorder(...args: unknown[]) { observed.push({ method: "reorder", args }); return [row]; },
   async setCover(...args: unknown[]) { observed.push({ method: "setCover", args }); return row; },
   async adminImage(...args: unknown[]) { observed.push({ method: "adminImage", args }); return args[1] === 101n ? { storageKey: "room-images/2026/00000000-0000-4000-8000-000000000001.jpg" } : null; },
+  async residentImage(...args: unknown[]) { observed.push({ method: "residentImage", args }); return args[0] === 101n && args[1] === 201n ? { storageKey: "room-images/2026/00000000-0000-4000-8000-000000000001.jpg" } : null; },
   async publicImage(...args: unknown[]) { observed.push({ method: "publicImage", args }); return { storageKey: "room-images/2026/00000000-0000-4000-8000-000000000001.jpg" }; },
   async remove(...args: unknown[]) { observed.push({ method: "remove", args }); return { deletedId: 801n, promotedId: null, cleanupKey: null }; },
 };
@@ -80,6 +81,18 @@ test("Admin gallery list is owner-scoped and omits storage key", async () => {
 test("foreign Owner image content is concealed as generic 404", async () => {
   const result = await call("/api/v1/properties/999/rooms/201/images/801/content");
   assert.equal(result.response.status, 404); assert.equal(result.body.error.code, "NOT_FOUND");
+});
+
+test("resident image content is available only to an authenticated resident linked to that room", async () => {
+  const own = await call("/api/v1/me/room-images/801", "resident");
+  assert.equal(own.response.status, 200); assert.deepEqual(own.bytes, imageBytes);
+  assert.deepEqual(observed.at(-1), { method: "residentImage", args: [101n, 201n, 801n] });
+  const adminDenied = await call("/api/v1/me/room-images/801", "admin"); assert.equal(adminDenied.response.status, 403);
+  const foreignResident = { ...resident, accountId: 13n, residentId: 202n, email: "other-resident@test.invalid", resident: { residentId: 202n, ownerId: 101n, fullName: "Other resident" } };
+  accounts.push(foreignResident);
+  await install(foreignResident, "foreignResident");
+  const foreign = await call("/api/v1/me/room-images/801", "foreignResident");
+  assert.equal(foreign.response.status, 404); assert.equal(foreign.body.error.code, "NOT_FOUND");
 });
 
 test("Admin upload requires CSRF, accepts a single validated file and returns safe DTO", async () => {

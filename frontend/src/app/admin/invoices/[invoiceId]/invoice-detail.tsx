@@ -7,13 +7,12 @@ import { ApiError } from "../../../../lib/api/errors";
 import { invoiceApi, type DraftMeterReadings, type InvoiceDetailResponse } from "../../../../lib/api/invoiceApi";
 import { residentApi } from "../../../../lib/api/residentApi";
 import { formatAdminDate, formatAdminMoney } from "../../../../lib/ui/admin-presentation";
+import { businessDateToday, invoiceDueStateLabel, invoiceLifecycleLabel } from "../../../../lib/invoice-status";
 import { invoiceMeterUsage, invoiceReadiness, validateInvoiceMeterReadings } from "./invoice-detail.logic";
 import { InvoiceBreakdown } from "./invoice-breakdown";
 
 function statusText(invoice: InvoiceDetailResponse) {
-  if (invoice.status === "draft") return "Đang chuẩn bị";
-  if (invoice.status === "paid") return "Đã thanh toán";
-  return invoice.is_overdue ? "Quá hạn" : "Chưa thanh toán";
+  return invoiceLifecycleLabel(invoice.status);
 }
 
 function messageFor(error: unknown) {
@@ -60,6 +59,8 @@ export default function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
   }, [invoice?.contract?.representative_resident_id]);
 
   const editable = invoice?.status === "draft" && invoice.snapshot_kind === "NOT_FINALIZED";
+  const dueState = invoice ? invoiceDueStateLabel(invoice.status, invoice.is_overdue, invoice.due_date, businessDateToday()) : null;
+  const dueStateTone = dueState === "Quá hạn" || dueState === "Cần kiểm tra hạn" || dueState === "Thiếu hạn thanh toán" ? "invoice-overdue-chip" : "invoice-due-chip";
   const readiness = editable && invoice ? invoiceReadiness({
     contractNo: invoice.contract?.contract_no ?? null,
     rentAmount: invoice.rent_amount,
@@ -102,7 +103,7 @@ export default function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
     {error && <div className="notice invoice-detail-alert" role="alert">{error}<button className="button" type="button" disabled={loading || saving || finalizing} onClick={() => void load()}>Tải lại</button></div>}
     {notice && <p className="notice invoice-detail-success" role="status">{notice}</p>}
     {loading && !invoice ? <section className="admin-card invoice-detail-card"><p role="status">Đang tải chi tiết hóa đơn…</p></section> : !invoice ? <section className="admin-card invoice-detail-card"><p>Không có dữ liệu hóa đơn.</p></section> : <>
-      <section className="admin-card invoice-detail-card invoice-detail-summary"><div className="invoice-detail-title"><div><span className="eyebrow">HÓA ĐƠN</span><h2>{invoice.invoice_no}</h2></div><span className={`chip ${invoice.status === "paid" ? "success" : invoice.status === "draft" ? "neutral" : "warning"}`}>{statusText(invoice)}</span></div>
+      <section className="admin-card invoice-detail-card invoice-detail-summary"><div className="invoice-detail-title"><div><span className="eyebrow">HÓA ĐƠN</span><h2>{invoice.invoice_no}</h2></div><div className="invoice-detail-status" aria-label={`Trạng thái hóa đơn: ${statusText(invoice)}${dueState ? `; hạn thanh toán: ${dueState}` : ""}`}><span className={`chip ${invoice.status === "paid" ? "success" : invoice.status === "draft" ? "neutral" : "warning"}`}>{statusText(invoice)}</span>{dueState&&<span className={`chip ${dueStateTone}`}>{dueState}</span>}</div></div>
         <div className="invoice-detail-grid"><div><span>Tòa nhà / Khu trọ</span><strong>{invoice.contract?.property?.name ?? "—"}</strong></div><div><span>Phòng</span><strong>{invoice.contract?.room_code ? `Phòng ${invoice.contract.room_code}` : "—"}</strong></div><div><span>Người thuê</span><strong>{invoice.contract?.representative_resident_id ? residentName || "Đang tải thông tin người thuê…" : "Chưa gán người thuê đại diện"}</strong></div><div><span>Hợp đồng</span><strong>{invoice.contract?.contract_no ?? "—"}</strong></div><div><span>Kỳ hóa đơn</span><strong>{formatAdminDate(invoice.period_start)} – {formatAdminDate(invoice.period_end)}</strong></div><div><span>Hạn thanh toán</span><strong>{formatAdminDate(invoice.due_date)}</strong></div><div><span>Ngày chốt</span><strong>{formatAdminDate(invoice.finalized_at)}</strong></div><div><span>Tổng tiền</span><strong>{formatAdminMoney(invoice.total_amount)}{invoice.amount_provisional && <small className="invoice-detail-subtext">Tạm tính · chưa phải số tiền phải trả</small>}</strong></div></div>
         {editable && <div className="invoice-readiness"><strong>Tình trạng dữ liệu</strong><p>{readingsComplete ? "Đã nhập đủ chỉ số cuối kỳ. Các giá và khoản dịch vụ sẽ được hệ thống kiểm tra khi chốt." : "Chưa đủ dữ liệu chỉ số để gửi yêu cầu chốt hóa đơn."}</p><ul className="invoice-readiness-list">{readiness.map((item) => <li key={item.label} className={`invoice-readiness-item ${item.state}`}><span aria-hidden="true">{item.state === "known" ? "✓" : item.state === "attention" ? "!" : "i"}</span><div><b>{item.label}</b><small>{item.detail}</small></div></li>)}</ul></div>}
       </section>

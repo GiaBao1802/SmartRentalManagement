@@ -1,6 +1,7 @@
 import type { Property } from "../../../lib/api/propertyApi";
 import type { Room } from "../../../lib/api/roomApi";
 import type { Resident } from "../../../lib/api/residentApi";
+import { invoiceLifecycleLabel } from "../../../lib/invoice-status";
 
 export type BusinessOption = { id: string; label: string; description?: string };
 
@@ -53,7 +54,5 @@ export function filtersForInvoiceApi(input: {
 }
 
 export function statusLabel(status: "draft" | "unpaid" | "paid") {
-  if (status === "draft") return "Đang chuẩn bị";
-  if (status === "paid") return "Đã thanh toán";
-  return "Chưa thanh toán";
+  return invoiceLifecycleLabel(status);
 }

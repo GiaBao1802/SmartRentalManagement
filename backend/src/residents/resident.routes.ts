@@ -124,7 +124,16 @@ export function createResidentOccupancyRouter(auth: AuthDependencies, repository
       const context = getResidentContext(request.auth!);
       const result = await repository.meRental(context.ownerId, context.residentId);
       if (!result) foreignResourceNotFound();
-      sendJson(response, 200, { data: serialize(result) });
+      const data = serialize(result) as any;
+      const attachPrivateImageUrls = (occupancies: any[]) => {
+        for (const occupancy of occupancies) {
+          if (occupancy.room?.cover_image) occupancy.room.cover_image.url = `/api/v1/me/room-images/${occupancy.room.cover_image.room_image_id}`;
+          for (const image of occupancy.room?.images ?? []) image.url = `/api/v1/me/room-images/${image.room_image_id}`;
+        }
+      };
+      attachPrivateImageUrls(data.occupancies ?? []);
+      attachPrivateImageUrls(data.resident?.room_residents ?? []);
+      sendJson(response, 200, { data });
     } catch (error) { next(error); }
   });
 

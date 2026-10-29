@@ -7,6 +7,7 @@ export const ADMIN_NAV_GROUPS: NavGroup[] = [
     { href: "/admin/tenants", label: "Cư dân", icon: "M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2m6-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8m6-7h6m-3-3v6" },
     { href: "/admin/contracts", label: "Hợp đồng", icon: "M7 3h7l5 5v13H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2m7 0v5h5M9 13h6m-6 4h6" },
     { href: "/admin/billing", label: "Vận hành hóa đơn", icon: "M4 5h16M4 12h16M4 19h10M7 2v6m10-6v6m-8 7 2 2 4-5" },
+    { href: "/admin/reports", label: "Báo cáo vận hành", icon: "M4 19V5m0 14h16M8 15v-4m4 4V7m4 8V9" },
     { href: "/admin/invoices", label: "Hóa đơn", icon: "M5 3h14v18l-3-2-4 2-4-2-3 2V3m4 5h6m-6 4h6m-6 4h4" },
     { href: "/admin/contact-requests", label: "Khách quan tâm", icon: "M4 5h16v12H8l-4 4V5m4 4h8m-8 4h5" },
   ] },

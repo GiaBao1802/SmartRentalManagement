@@ -40,7 +40,7 @@ export function createExplorerRouter(prisma: PrismaClient) {
       const names = await prisma.property.findMany({ where: { status: "active", rooms: { some: publicAvailableRoomWhere() } }, distinct: ["province"], select: { province: true } });
       const provinceNames = names.filter(p => provinceCode(p.province) === province_code).map(p => p.province);
       const result = await repository.listPublicRooms({ ...query, provinceNames });
-      res.json({ data: result.rows.map(row => serializePublicRoom(row, false)), meta: {
+      res.json({ data: result.rows.map(row => serializePublicRoom(row)), meta: {
         page: query.page, page_size: query.page_size, total_items: result.total, total_pages: Math.ceil(result.total / query.page_size),
       } });
     } catch (error) { next(error); }

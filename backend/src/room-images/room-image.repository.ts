@@ -128,6 +128,13 @@ export class PrismaRoomImageRepository {
     return this.prisma.roomImage.findFirst({ where: { roomImageId: imageId, roomId, room: { propertyId, ownerId } }, select: { storageKey: true } });
   }
 
+  async residentImage(ownerId: bigint, residentId: bigint, imageId: bigint): Promise<{ storageKey: string } | null> {
+    return this.prisma.roomImage.findFirst({
+      where: { roomImageId: imageId, room: { roomResidents: { some: { ownerId, residentId } } } },
+      select: { storageKey: true },
+    });
+  }
+
   private dtoSelect() { return { roomImageId: true, isCover: true, sortOrder: true, createdAt: true } satisfies Prisma.RoomImageSelect; }
   private retryConflict() { return new ApiError(409, "ROOM_IMAGE_RETRY_REQUIRED", "Thư viện ảnh vừa được cập nhật đồng thời. Vui lòng thử lại.", { retryable: true }); }
 }

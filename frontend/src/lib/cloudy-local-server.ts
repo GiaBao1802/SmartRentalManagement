@@ -86,6 +86,10 @@ export async function handleCloudyChat(request: Request, run: Runner = runCloudy
       : await run(message, request.signal, options);
     return json(reply);
   }
-  catch { return json({ error: "AI_UNAVAILABLE", message: "Chưa tìm được dữ liệu. Kiểm tra Ollama và API phòng công khai, rồi thử lại." }, 503); }
+  catch {
+    return action === "confirm"
+      ? json({ error: "PUBLIC_API_UNAVAILABLE", message: "Không kết nối được API phòng công khai hoặc database. Hãy kiểm tra backend rồi thử lại." }, 503)
+      : json({ error: "AI_UNAVAILABLE", message: "Chưa kết nối được AI local. Hãy kiểm tra Ollama rồi thử lại." }, 503);
+  }
   finally { state.cloudyLocalBusy = false; }
 }

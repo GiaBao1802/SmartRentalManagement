@@ -2,7 +2,7 @@ import express, { type RequestHandler } from "express";
 import { Prisma } from "@prisma/client";
 import type { AuthDependencies } from "../middleware/auth.js";
 import { authenticateRequest, foreignResourceNotFound, getAdminOwnerId, getResidentContext, requireAdmin, requireResident } from "../middleware/auth.js";
-import { ApiError, conflict, validationError } from "../middleware/api-error.js";
+import { ApiError, conflict, forbidden, validationError } from "../middleware/api-error.js";
 import { parseBigIntId, sendJson } from "../utils/ids.js";
 import type { InvoicePricing, PrismaInvoiceRepository } from "./invoice.repository.js";
 import { validateBillingWorkspaceQuery, validateCreateInvoice, validateDraftPatch, validateEmptyInvoiceCommand, validateIdempotencyKey, validateInvoicePageQuery } from "./invoice.validation.js";
@@ -88,6 +88,7 @@ export function createInvoiceRouter(deps: Deps): express.Router {
   router.get("/invoices", authenticated, async (request, response, next) => {
     try {
       const context = request.auth!;
+      if (context.role === "superadmin") throw forbidden();
       const filter = validateInvoicePageQuery(request.query as Record<string, unknown>, context.role);
       const result = await deps.invoiceRepository.list(context.ownerId, filter, context.role === "resident" ? context.residentId : undefined);
       page(response, result.rows, result.total, filter.page, filter.pageSize, context.role === "resident");
@@ -114,6 +115,7 @@ export function createInvoiceRouter(deps: Deps): express.Router {
   router.get("/invoices/:invoice_id", authenticated, async (request, response, next) => {
     try {
       const context = request.auth!;
+      if (context.role === "superadmin") throw forbidden();
       const invoiceId = parseId(request.params.invoice_id, "invoice_id");
       const result = context.role === "admin"
         ? await deps.invoiceRepository.findForOwner(context.ownerId, invoiceId)
@@ -156,6 +158,7 @@ export function createInvoiceRouter(deps: Deps): express.Router {
   router.get("/invoices/:invoice_id/zalo-send-logs", authenticated, async (request, response, next) => {
     try {
       const context = request.auth!;
+      if (context.role === "superadmin") throw forbidden();
       const result = await deps.invoiceRepository.listSendLogs(context.ownerId, parseId(request.params.invoice_id, "invoice_id"), context.role === "resident" ? context.residentId : undefined);
       if (!result) return foreignResourceNotFound();
       sendJson(response, 200, { data: jsonValue(result) });

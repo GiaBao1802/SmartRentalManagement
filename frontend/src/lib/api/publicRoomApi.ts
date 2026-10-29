@@ -1,20 +1,23 @@
 import { apiRequest } from "./apiClient";
 import type { PageMeta } from "./propertyApi";
 
-export type PublicRoomImage = { image_id: string; url: string; is_cover?: boolean; sort_order?: number };
+export type PublicRoomImage = { image_id: string; url: string; is_cover?: boolean; sort_order?: number; is_illustrative: boolean };
 export type PublicRoomListItem = {
   room_id: string;
   room_code: string;
   property: { name: string; province: string; address: string };
+  property_facilities: string[];
   default_rent: string;
   area_m2: string;
   default_capacity: number;
   status: "available";
   public_description: string | null;
-  cover_image: { image_id: string; url: string } | null;
+  amenities: string[];
+  cover_image: { image_id: string; url: string; is_illustrative: boolean } | null;
+  images: PublicRoomImage[];
 };
 export type PublicRoomDetail = Omit<PublicRoomListItem, "cover_image"> & {
-  cover_image: { image_id: string; url: string } | null;
+  cover_image: { image_id: string; url: string; is_illustrative: boolean } | null;
   images: PublicRoomImage[];
 };
 export type PublicRoomListResponse = { data: PublicRoomListItem[]; meta: PageMeta };
@@ -28,6 +31,8 @@ export type PublicRoomFilters = {
   area_min?: string;
   area_max?: string;
   capacity_min?: string;
+  amenities?: string[];
+  property_facilities?: string[];
   sort?: "newest" | "price_asc" | "price_desc" | "area_asc" | "area_desc";
   page?: number;
   page_size?: number;
@@ -72,6 +77,8 @@ export function serializePublicRoomFilters(filters: PublicRoomFilters): URLSearc
     const value = filters[key];
     if (typeof value === "string" && value.trim()) query.set(key, value.trim());
   }
+  if (filters.amenities?.length) query.set("amenities", [...new Set(filters.amenities)].sort().join(","));
+  if (filters.property_facilities?.length) [...new Set(filters.property_facilities)].sort((a, b) => a.localeCompare(b, "vi")).forEach((name) => query.append("property_facilities", name));
   return query;
 }
 
@@ -128,7 +135,11 @@ export function createPublicContactRequest(input: PublicContactRequestInput) {
   return apiRequest<PublicContactRequestAck>("/public/contact-requests", { method: "POST", authRequired: false, body: JSON.stringify(input) });
 }
 
-export const publicRoomApi = { list: listPublicRooms, get: getPublicRoom, contact: createPublicContactRequest };
+export function listPublicPropertyFacilities() {
+  return apiRequest<string[]>("/public/property-facilities", { authRequired: false });
+}
+
+export const publicRoomApi = { list: listPublicRooms, get: getPublicRoom, contact: createPublicContactRequest, facilities: listPublicPropertyFacilities };
 
 export const adminContactRequestApi = {
   list(filters: AdminContactRequestFilters = {}) {

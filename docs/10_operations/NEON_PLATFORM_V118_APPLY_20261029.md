@@ -1,0 +1,28 @@
+# Neon Cloudy V1.17 + Superadmin V1.18 promotion — 2026-10-29
+
+Status: **APPLIED AND VERIFIED ON SHARED NEON**. This report records direct checks from this run. Historical V1.17 collision and blocked preflight reports remain historical.
+
+## Target and source
+
+- Team remote `main` was checked again at `6ad69f89671bfaae41afc31463750ff9cb0b6df2`; no newer remote commit was found. The isolated, uncommitted integration is `D:\codexapp\SmartRentalManagement-team-integration`, branch `codex/team-superadmin-explorer-20261028` at `0e409708fbb98b43cbc3af6961566d86f75bc802` plus working changes.
+- Read-only preflight verified project `goctro-shared-dev` (`patient-scene-93926977`), branch `production`, database `neondb`, PostgreSQL 18.6 and **exact V1.16 Marketplace catalog (47 tables)**. The four checked identity-conflict counts were zero. The owner confirmed a fresh group write pause before backup.
+- The team Cloudy V1.17 canonical migration and its two feedback tables were kept. The Superadmin migration was moved to V1.18 and guarded against the exact V1.17 predecessor. No historical migration was rewritten.
+
+## Backup and migration
+
+- Fresh custom-format backup: `D:\codexapp\SmartRentalManagement-team-integration\.local\neon-v118-backup-20261029-104944\neon-production-pre-v118-2026-10-29T03-56-48.565Z.dump` (340,973 bytes, SHA-256 `d12f34b1b13a193915ec5b989175b8b03b27afaa82743474b1ca0fdcff643a53`). Directory ACL allows only the current Windows user and SYSTEM; the file remains outside Git. Two earlier failed-restore-attempt dumps are retained in the same protected directory; only the named backup has PASS evidence.
+- The named backup restored successfully into a **new temporary local PostgreSQL 18.6 database**, then was compared with the source: exact V1.16 catalog and row counts/content hashes of all 47 predecessor tables matched. Timestamps were rendered in UTC on both connections for comparable JSON fingerprints. The first restore attempt needed `--clean --if-exists` because a new PostgreSQL database already contains schema `public`; this option was used only on the disposable restore database. No local application database was changed.
+- `scripts/v118-neon-apply.mjs` checked the backup hash and fresh source fingerprints, then applied canonical V1.16→Cloudy V1.17 and V1.17→Superadmin V1.18 SQL inside one transaction. It checked exact catalog after each step. The final **58-table V1.18 catalog** and runtime validator passed before and after commit. Row counts and contents of all 47 V1.16 tables remained unchanged, excluding only the intentional new `accounts.cloudy_feedback_opt_in_at` and `properties.public_report_code` columns. The two Cloudy and nine platform tables started empty; report codes were non-null and unique. No seed, reset, account, grant, test business data or recovery overwrite was performed. Evidence is in protected `restore-evidence.json` and `apply-evidence.json` beside the backup.
+
+## Source and HTTP checks
+
+- Backend TypeScript build passed. Frontend production build and TypeScript passed with API base `http://127.0.0.1:4100/api/v1`; the initial sandboxed build had an `EPERM` on generated `.next` files, and the authorized rerun passed. Auth 21/21, public Marketplace 7/7, Cloudy feedback 7/7 tests passed with dummy local test URL. No test used Neon credentials.
+- Integrated frontend runs locally at `http://127.0.0.1:3100`; integrated API runs at `http://127.0.0.1:4100` using a loopback-only GET/HEAD listener without billing or feedback retention schedulers. A POST probe returned 405 without reaching the app. API health, DB health, public rooms (85 available), public property facilities (13) and Explorer returned HTTP 200. The platform public middleware was narrowed so its production demo guard no longer blocks ordinary public room routes.
+- Playwright checked the live Neon-backed Explorer: two provinces with 85 rooms, Hồ Chí Minh list with 12 cards on page 1, room-detail link, room detail, mobile 390 px with no horizontal overflow, and Cloudy-style filtered list URL with working map/room links. This did not validate real room coordinates. Stored room image requests returned HTTP 503 under the production configuration; text data and detail still loaded. An unauthenticated `/auth/me` request returned expected 401.
+- Team source was probed separately through a temporary no-scheduler listener on port 4200 without changing its files: health, DB health and public rooms returned 200; its property-facilities route returned 409 because the current team route order reaches an Invoice catch-all. The team setup's `verify-neon-connection.mjs` still requires 47 tables and therefore rejects V1.18; the isolated integration validator now accepts the exact V1.18 catalog. The old team checkout was not modified or restarted. No listeners were found at 3000/4000 when checked. The port 4200 probe was stopped. The disposable restore database was dropped after the successful comparison; a read-only check found zero remaining `goctro_v118_restore_%` databases.
+
+## Operational limits and next task
+
+Production Superadmin endpoints deliberately return `503 DEMO_ONLY` until a real delivery and operating design is approved; no Superadmin account or audit grant was created on Neon. Existing Admin/Resident signed-in flows were not exercised against live accounts in this run. The integration source is local and **not committed, pushed or distributed**. The group can end the write pause for the upgraded database, but members using the old setup will hit its 47-table guard.
+
+Exact next task: **review and approve distribution of the V1.18 integration source and updated setup validator to the team**.

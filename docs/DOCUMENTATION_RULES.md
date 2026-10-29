@@ -6,7 +6,7 @@
 2. Với tài liệu thật sự liên miền/toàn dự án, chọn nhóm theo loại: audit ở `08_audits/`, test ở `09_testing/`, vận hành ở `10_operations/`, báo cáo tổng hợp ở `11_project-reports/`, quyết định ở `12_decisions/`.
 3. Phân nhóm theo `DOCUMENT_CATALOG.md`. Không tạo thư mục mới nếu đã có nhóm phù hợp.
 4. Không đặt task report ở root `docs/`. Root chỉ dành cho `README.md`, `DOCUMENT_CATALOG.md`, `DOCUMENTATION_RULES.md` và canonical document nếu chủ dự án quyết định lưu canonical tại đây.
-5. Canonical Requirement/API/database authority được quản lý trong repository này tại `docs/01_REQUIREMENTS.md`, `docs/04_API_SPEC.md`, `docs/DATABASE_CHANGELOG.md` và `database/baselines/v1.11/`. V1.10 và các nguồn sibling cũ được giữ như provenance/lịch sử, không phải authority hiện hành.
+5. Canonical Requirement/API/database authority được quản lý trong repository này tại `docs/01_REQUIREMENTS.md`, `docs/04_API_SPEC.md`, `docs/DATABASE_CHANGELOG.md` và `database/baselines/v1.18/` cho catalog hiện hành trên Neon. Ngày 2026-10-29, Neon đã được xác minh từ Marketplace V1.16 qua Cloudy V1.17 tới Superadmin V1.18; các baseline trước V1.18 là tiền nhiệm lịch sử, không sửa migration đã áp dụng.
 
 ## Tạo và cập nhật report
 

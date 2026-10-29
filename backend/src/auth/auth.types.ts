@@ -22,7 +22,15 @@ export type ResidentAuthContext = {
   resident: { residentId: bigint; ownerId: bigint; fullName: string };
 };
 
-export type AuthContext = AdminAuthContext | ResidentAuthContext;
+export type SuperadminAuthContext = {
+  accountId: bigint;
+  role: "superadmin";
+  ownerId: null;
+  residentId: null;
+  account: AccountSafe;
+};
+
+export type AuthContext = AdminAuthContext | ResidentAuthContext | SuperadminAuthContext;
 
 export type LoginAccountRecord = {
   accountId: bigint;

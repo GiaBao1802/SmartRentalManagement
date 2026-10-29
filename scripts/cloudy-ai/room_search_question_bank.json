@@ -1,0 +1,170 @@
+{
+  "version": 1,
+  "purpose": "Regression and live-evaluation questions for the local public room-search Cloudy flow.",
+  "model": "qwen3:1.7b",
+  "database": "not used",
+  "cases": [
+    {
+      "id": "thuduc_example_all_filters",
+      "category": "many_filters_location_without_preposition",
+      "question": "Tìm phòng Thủ Đức dưới 4 triệu, có máy lạnh, cho 2 người.",
+      "expected_status": "ready",
+      "expected_filters": {
+        "price": [{"op": "lt", "value": 4000000}],
+        "area": [],
+        "location": "Thủ Đức",
+        "occupants": 2,
+        "amenities": ["air_conditioning"]
+      }
+    },
+    {
+      "id": "natural_max_budget_decimal_shorthand",
+      "category": "natural_language_and_price_shorthand",
+      "question": "Mình cần thuê phòng ở Đà Nẵng, tối đa 3 triệu rưỡi cho 2 người, có Wi-Fi.",
+      "expected_status": "ready",
+      "expected_filters": {
+        "price": [{"op": "lte", "value": 3500000}],
+        "area": [],
+        "location": "Đà Nẵng",
+        "occupants": 2,
+        "amenities": ["wifi"]
+      }
+    },
+    {
+      "id": "city_abbreviation_and_ranges",
+      "category": "location_abbreviation_and_ranges",
+      "question": "Tìm trọ tại TP. Hồ Chí Minh giá từ 2 đến 3 triệu, diện tích từ 20 đến 30 mét vuông.",
+      "expected_status": "ready",
+      "expected_filters": {
+        "price": [{"op": "gte", "value": 2000000}, {"op": "lte", "value": 3000000}],
+        "area": [{"op": "gte", "value": 20}, {"op": "lte", "value": 30}],
+        "location": "TP. Hồ Chí Minh",
+        "occupants": null,
+        "amenities": []
+      }
+    },
+    {
+      "id": "multiple_amenities_and_single_occupant",
+      "category": "multiple_amenities",
+      "question": "Tìm phòng tại Nha Trang dưới 4tr5, có bãi gửi xe và thang máy, cho 1 người.",
+      "expected_status": "ready",
+      "expected_filters": {
+        "price": [{"op": "lt", "value": 4500000}],
+        "area": [],
+        "location": "Nha Trang",
+        "occupants": 1,
+        "amenities": ["elevator", "parking"]
+      }
+    },
+    {
+      "id": "unaccented_full_query",
+      "category": "unaccented_vietnamese",
+      "question": "Tim phong tai Da Nang duoi 3tr5 co wifi cho 2 nguoi",
+      "expected_status": "ready",
+      "expected_filters": {
+        "price": [{"op": "lt", "value": 3500000}],
+        "area": [],
+        "location": "Da Nang",
+        "occupants": 2,
+        "amenities": ["wifi"]
+      }
+    },
+    {
+      "id": "room_search_shorthand_and_max_price",
+      "category": "location_without_preposition",
+      "question": "Thuê phòng Thủ Đức không quá 4 triệu, có ban công, cho 2 người.",
+      "expected_status": "ready",
+      "expected_filters": {
+        "price": [{"op": "lte", "value": 4000000}],
+        "area": [],
+        "location": "Thủ Đức",
+        "occupants": 2,
+        "amenities": ["balcony"]
+      }
+    },
+    {
+      "id": "budget_appliances_and_location",
+      "category": "multiple_amenities_and_budget",
+      "question": "Tôi muốn thuê phòng ở Bình Thạnh, ngân sách 2tr8 cho 2 người, có tủ lạnh và máy nước nóng.",
+      "expected_status": "ready",
+      "expected_filters": {
+        "price": [{"op": "lte", "value": 2800000}],
+        "area": [],
+        "location": "Bình Thạnh",
+        "occupants": 2,
+        "amenities": ["refrigerator", "water_heater"]
+      }
+    },
+    {
+      "id": "area_and_price_comparators",
+      "category": "multiple_comparators",
+      "question": "Tìm phòng ở Huế diện tích từ 19 đến 25m², giá trên 2 triệu và không quá 4 triệu, có ban công.",
+      "expected_status": "ready",
+      "expected_filters": {
+        "price": [{"op": "gt", "value": 2000000}, {"op": "lte", "value": 4000000}],
+        "area": [{"op": "gte", "value": 19}, {"op": "lte", "value": 25}],
+        "location": "Huế",
+        "occupants": null,
+        "amenities": ["balcony"]
+      }
+    },
+    {
+      "id": "no_budget_still_searchable",
+      "category": "optional_filters",
+      "question": "Tìm phòng ở Hà Nội cho 2 người, có máy lạnh và Wi-Fi.",
+      "expected_status": "ready",
+      "expected_filters": {
+        "price": [],
+        "area": [],
+        "location": "Hà Nội",
+        "occupants": 2,
+        "amenities": ["air_conditioning", "wifi"]
+      }
+    },
+    {
+      "id": "large_amount_with_grouping",
+      "category": "formatted_currency",
+      "question": "Tìm phòng ở Cần Thơ giá dưới 2.800.000 đồng/tháng, cho 3 người.",
+      "expected_status": "ready",
+      "expected_filters": {
+        "price": [{"op": "lt", "value": 2800000}],
+        "area": [],
+        "location": "Cần Thơ",
+        "occupants": 3,
+        "amenities": []
+      }
+    },
+    {
+      "id": "nearby_distance_must_clarify",
+      "category": "unsupported_distance",
+      "question": "Tìm phòng gần trường đại học, đi bộ 10 phút, giá dưới 4 triệu.",
+      "expected_status": "needs_clarification"
+    },
+    {
+      "id": "bare_amount_needs_comparison",
+      "category": "ambiguous_price",
+      "question": "Tìm phòng ở Huế giá 2tr.",
+      "expected_status": "needs_clarification",
+      "required_hint": {"type": "price_operator", "value": 2000000}
+    },
+    {
+      "id": "conflicting_price_bounds_must_clarify",
+      "category": "contradictory_filters",
+      "question": "Tìm phòng ở Huế dưới 2 triệu nhưng trên 3 triệu.",
+      "expected_status": "needs_clarification"
+    },
+    {
+      "id": "negative_amenity_must_clarify",
+      "category": "negative_amenity",
+      "question": "Tìm phòng ở Đà Nẵng dưới 4 triệu nhưng không cần máy lạnh.",
+      "expected_status": "needs_clarification"
+    },
+    {
+      "id": "approximate_bounds_must_clarify",
+      "category": "vague_bounds",
+      "question": "Tìm phòng ở Bình Thạnh khoảng 3 triệu, rộng tầm 20m2.",
+      "expected_status": "needs_clarification",
+      "expected_draft_filters": {"location": "Bình Thạnh"}
+    }
+  ]
+}

@@ -1,4 +1,6 @@
 import pg from 'pg';
+import { readFile } from 'node:fs/promises';
+import { assertCatalog, readCatalog } from './database-v19.mjs';
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
@@ -10,7 +12,7 @@ try { target = new URL(databaseUrl); } catch {
   console.error('NEON_CHECK_FAILED: DATABASE_URL is invalid.');
   process.exit(1);
 }
-if (!target.hostname.endsWith('.neon.tech') || process.env.NEON_BRANCH !== 'production') {
+if (target.hostname !== 'ep-polished-field-a1z99rb7-pooler.ap-southeast-1.aws.neon.tech' || target.pathname !== '/neondb' || process.env.NEON_BRANCH !== 'production') {
   console.error('NEON_CHECK_FAILED: refusing to check a non-Neon or non-production target.');
   process.exit(1);
 }
@@ -19,18 +21,15 @@ const client = new pg.Client({ connectionString: databaseUrl, connectionTimeoutM
 try {
   await client.connect();
   await client.query('BEGIN READ ONLY');
-  const result = await client.query(`
-    SELECT current_database() AS database,
-           count(*)::int AS public_tables
-      FROM information_schema.tables
-     WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
-  `);
+  const result = await client.query('SELECT current_database() AS database');
+  const expected = JSON.parse(await readFile('database/baselines/v1.18/expected-catalog.json', 'utf8'));
+  assertCatalog(await readCatalog(client), expected);
   await client.query('ROLLBACK');
   const row = result.rows[0];
-  if (row.database !== 'neondb' || row.public_tables !== 47) {
-    throw new Error(`Unexpected target/schema: database=${row.database}; public_tables=${row.public_tables}`);
+  if (row.database !== 'neondb') {
+    throw new Error(`Unexpected target/schema: database=${row.database}`);
   }
-  console.log(`Neon connection OK: database=${row.database}; public_tables=${row.public_tables}; branch=${process.env.NEON_BRANCH || 'production'}`);
+  console.log(`Neon connection OK: database=${row.database}; catalog=V1.18 exact; branch=${process.env.NEON_BRANCH || 'production'}`);
 } catch (error) {
   try { await client.query('ROLLBACK'); } catch { }
   console.error(`NEON_CHECK_FAILED: ${error?.message || 'database query failed'}`);

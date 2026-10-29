@@ -43,6 +43,7 @@ test('request HTTP list/decision cannot bypass confirmation or inject owner; rou
  const list=await (await handleOwnerAdvisor(request('gt_session=admin',body),options)).json();assert.equal(list.requests.length,20);
  const other=await (await handleOwnerAdvisor(request('gt_session=other',body),options)).json();assert.equal(other.requests.length,0);
  const proposal=await (await handleOwnerAdvisor(request('gt_session=admin',{question:'Duyệt yêu cầu tiện ích'}),options)).json();assert.equal(proposal.task,'requests');assert.equal(proposal.reviewRequired,true);
+ const residentProposal=await (await handleOwnerAdvisor(request('gt_session=admin',{question:'Thống kê cư dân đang ở phòng P101'}),{...options,source:'database'})).json();assert.equal(residentProposal.task,'residents');assert.equal(residentProposal.source,'request_router');assert.equal(residentProposal.reviewRequired,true);
  const action={requestId:'SYN-REQ-003',action:'reject',revision:0,reason:'Thử nghiệm',confirmed:true};
  assert.equal((await handleOwnerAdvisor(request('gt_session=other',action),options)).status,404);
  assert.equal((await handleOwnerAdvisor(request('gt_session=admin',{...action,ownerId:'1'}),options)).status,400);

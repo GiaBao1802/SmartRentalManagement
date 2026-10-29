@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ApiError } from "../../../lib/api/errors";
 import { getPublicRoom, type PublicRoomDetail } from "../../../lib/api/publicRoomApi";
+import { marketplaceAmenityLabels } from "../../../lib/api/roomApi";
 import { PublicRoomGallery } from "./public-room-gallery";
 import { PublicContactForm } from "./public-contact-form";
 
@@ -38,6 +39,7 @@ export default function PublicRoomDetailPage({ roomId }: { roomId: string }) {
         <div className="public-detail-layout"><div className="public-detail-main"><PublicRoomGallery roomCode={room.room_code} propertyName={room.property.name} images={room.images} />
           <article className="public-detail-content"><span className="public-available-label"><i aria-hidden="true" /> Đang khả dụng</span><span className="public-detail-location">{room.property.province} · {room.property.address}</span><h1>{room.property.name} · Phòng {room.room_code}</h1><strong className="public-detail-price">{money(room.default_rent)}<small>/ tháng</small></strong>
             <div className="public-detail-facts"><div><span>Diện tích</span><strong>{room.area_m2} m²</strong></div><div><span>Sức chứa</span><strong>Tối đa {room.default_capacity} người</strong></div><div><span>Tình trạng</span><strong>Còn phòng</strong></div></div>
+            {room.amenities.length > 0 && <section className="public-description"><h2>Tiện ích đã xác nhận</h2><div className="room-tags">{room.amenities.map(code => <span key={code}>{marketplaceAmenityLabels[code] ?? code}</span>)}</div></section>}
             <section className="public-description"><h2>Thông tin phòng</h2><p>{room.public_description || "Chủ trọ chưa bổ sung mô tả công khai cho phòng này."}</p></section>
           </article>
         </div><aside className="public-contact-panel" id="lien-he"><span className="eyebrow">Quan tâm căn phòng này?</span><h2>Để chủ trọ liên hệ với bạn</h2><p>Gửi thông tin liên hệ để chủ trọ phản hồi. Đây chưa phải xác nhận đặt phòng.</p><PublicContactForm roomId={room.room_id} roomLabel={`${room.property.name} · ${room.room_code}`} /></aside></div>

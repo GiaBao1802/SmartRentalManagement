@@ -61,7 +61,7 @@ export default function ContractDetail({ contractId }: { contractId: string }) {
     if (historyResult.status === "fulfilled") { setHistory(historyResult.value.data); setHistoryMeta(historyResult.value.meta); }
     else setHistoryError(safeMessage(historyResult.reason, "Không tải được lịch sử hợp đồng."));
     if (documentsResult.status === "fulfilled") setDocuments(documentsResult.value);
-    else setDocumentError(safeMessage(documentsResult.reason, "Không tải được metadata tài liệu."));
+    else setDocumentError(safeMessage(documentsResult.reason, "Chưa thể tải danh sách tài liệu. Vui lòng thử lại."));
     if (residentsResult.status === "fulfilled") setResidents(residentsResult.value);
     setLoading(false);
   }, [contractId, historyPage]);
@@ -75,7 +75,7 @@ export default function ContractDetail({ contractId }: { contractId: string }) {
     if (historyResult.status === "fulfilled") { setHistory(historyResult.value.data); setHistoryMeta(historyResult.value.meta); }
     else setHistoryError(safeMessage(historyResult.reason, "Không tải được lịch sử hợp đồng."));
     if (documentsResult.status === "fulfilled") setDocuments(documentsResult.value);
-    else setDocumentError(safeMessage(documentsResult.reason, "Không tải được metadata tài liệu."));
+    else setDocumentError(safeMessage(documentsResult.reason, "Chưa thể tải danh sách tài liệu. Vui lòng thử lại."));
   }
 
   async function activate() {
@@ -151,7 +151,7 @@ export default function ContractDetail({ contractId }: { contractId: string }) {
     const file = (form.elements.namedItem("contract-file") as HTMLInputElement | null)?.files?.[0];
     if (!file) { setDocumentError("Chọn tệp cần gửi."); return; }
     setSaving(true); setDocumentError(""); setNotice("");
-    try { const uploaded = await contractApi.uploadDocument(contract.contract_id, file, documentType); setDocuments((current) => [uploaded, ...current]); setNotice("Đã lưu metadata phiên bản tài liệu."); form.reset(); }
+    try { const uploaded = await contractApi.uploadDocument(contract.contract_id, file, documentType); setDocuments((current) => [uploaded, ...current]); setNotice("Đã lưu thông tin tài liệu."); form.reset(); }
     catch (reason) { setDocumentError(safeMessage(reason, "Không thể tải tài liệu lên.")); }
     finally { setSaving(false); }
   }

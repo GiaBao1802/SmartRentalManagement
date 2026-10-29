@@ -7,6 +7,9 @@
 /database/baselines/v1.13/** -text
 /database/baselines/v1.14/** -text
 /database/baselines/v1.15/** -text
+/database/baselines/v1.16/** -text
+/database/baselines/v1.17/** -text
+/database/baselines/v1.18/** -text
 /database/parallel-baselines/parking-v1.13/** -text
 
 # AI dataset manifests hash exact bytes across Windows/Linux checkouts.

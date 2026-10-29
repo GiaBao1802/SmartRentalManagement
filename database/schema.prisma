@@ -74,6 +74,7 @@ model Room {
   isActive          Boolean  @default(true) @map("is_active")
   isPublic          Boolean  @default(false) @map("is_public")
   publicDescription String?  @map("public_description") @db.Text
+  marketplaceAmenities String[] @default([]) @map("marketplace_amenities")
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
 
@@ -139,6 +140,7 @@ model Account {
   passwordHash String    @map("password_hash") @db.Text
   status       String    @default("active") @db.VarChar(16)
   lastLoginAt  DateTime? @map("last_login_at") @db.Timestamptz(6)
+  cloudyFeedbackOptInAt DateTime? @map("cloudy_feedback_opt_in_at") @db.Timestamptz(6)
   createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
 
@@ -157,6 +159,8 @@ model Account {
   createdPropertyPriceVersions   PropertyPriceVersion[]       @relation("PropertyPriceVersionCreator")
   flexibleServiceCharges         FlexibleServiceCharge[]
   meterReadings                  MeterReading[]
+  cloudyFeedbackLatestReviews    CloudyUnresolvedFeedback[] @relation("CloudyFeedbackLatestReviewer")
+  cloudyFeedbackReviews          CloudyUnresolvedFeedbackReview[] @relation("CloudyFeedbackReviewActor")
 
   @@unique([accountId, ownerId], map: "accounts_id_owner_unique")
   @@index([status, role], map: "accounts_by_status_role")
@@ -1087,4 +1091,49 @@ model InvoiceItemElectricityTier {
   @@unique([invoiceItemId, tierNo])
   @@unique([invoiceItemId, utilityTariffVersionId])
   @@map("invoice_item_electricity_tiers")
+}
+
+model CloudyUnresolvedFeedback {
+  feedbackId                BigInt    @id @default(autoincrement()) @map("feedback_id")
+  messageDigest             String    @unique(map: "cloudy_unresolved_feedback_message_digest_key") @map("message_digest") @db.VarChar(64)
+  sanitizedMessage          String    @map("sanitized_message") @db.VarChar(500)
+  source                    String    @db.VarChar(32)
+  predictedIntent           String    @map("predicted_intent") @db.VarChar(16)
+  curatedIntent             String?   @map("curated_intent") @db.VarChar(24)
+  status                    String    @default("new") @db.VarChar(24)
+  modelVersion              String    @map("model_version") @db.VarChar(64)
+  occurrenceCount           Int       @default(1) @map("occurrence_count")
+  firstSeenAt               DateTime  @default(now()) @map("first_seen_at") @db.Timestamptz(6)
+  lastSeenAt                DateTime  @default(now()) @map("last_seen_at") @db.Timestamptz(6)
+  latestReviewedByAccountId BigInt?   @map("latest_reviewed_by_account_id")
+  latestReviewedAt          DateTime? @map("latest_reviewed_at") @db.Timestamptz(6)
+  evaluationSetVersion      String?   @map("evaluation_set_version") @db.VarChar(64)
+  updatedAt                 DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  latestReviewer Account?                         @relation("CloudyFeedbackLatestReviewer", fields: [latestReviewedByAccountId], references: [accountId], onDelete: Restrict)
+  reviews        CloudyUnresolvedFeedbackReview[]
+
+  @@index([status, lastSeenAt(sort: Desc), feedbackId(sort: Desc)], map: "cloudy_unresolved_feedback_review_queue_idx")
+  @@index([firstSeenAt], map: "cloudy_unresolved_feedback_retention_idx")
+  @@map("cloudy_unresolved_feedback")
+}
+
+model CloudyUnresolvedFeedbackReview {
+  reviewId            BigInt   @id @default(autoincrement()) @map("review_id")
+  feedbackId          BigInt   @map("feedback_id")
+  reviewerAccountId   BigInt   @map("reviewer_account_id")
+  action              String   @db.VarChar(24)
+  previousStatus      String?  @map("previous_status") @db.VarChar(24)
+  nextStatus          String?  @map("next_status") @db.VarChar(24)
+  previousIntent      String?  @map("previous_intent") @db.VarChar(24)
+  nextIntent          String?  @map("next_intent") @db.VarChar(24)
+  previousEvaluationSetVersion String? @map("previous_evaluation_set_version") @db.VarChar(64)
+  nextEvaluationSetVersion     String? @map("next_evaluation_set_version") @db.VarChar(64)
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  feedback CloudyUnresolvedFeedback @relation(fields: [feedbackId], references: [feedbackId], onDelete: Cascade)
+  reviewer Account                 @relation("CloudyFeedbackReviewActor", fields: [reviewerAccountId], references: [accountId], onDelete: Restrict)
+
+  @@index([feedbackId, createdAt, reviewId], map: "cloudy_unresolved_feedback_reviews_by_feedback_idx")
+  @@map("cloudy_unresolved_feedback_reviews")
 }

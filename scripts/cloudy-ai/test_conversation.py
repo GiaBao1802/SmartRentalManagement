@@ -11,6 +11,14 @@ class ConversationTests(unittest.TestCase):
   self.assertEqual(r['filters']['location'],'Bến Nắng');self.assertEqual(r['filters']['price'],self.context['price'])
   r2=understand('dưới 3 triệu','continue',r['filters'],lambda q:self.parsed(price=[{'op':'lt','value':3000000}]))
   self.assertEqual(r2['filters']['price'],[{'op':'lt','value':3000000}]);self.assertEqual(r2['filters']['amenities'],['air_conditioning'])
+ def test_adding_amenity_keeps_existing_amenities(self):
+  context={**self.context,'amenities':['air_conditioning']}
+  r=understand('thêm Wi-Fi','continue',context,lambda q:self.parsed(amenities=['wifi']))
+  self.assertEqual(r['filters']['amenities'],['air_conditioning','wifi'])
+ def test_changing_amenity_replaces_existing_amenity(self):
+  context={**self.context,'amenities':['air_conditioning']}
+  r=understand('đổi sang Wi-Fi','continue',context,lambda q:self.parsed(amenities=['wifi']))
+  self.assertEqual(r['filters']['amenities'],['wifi'])
  def test_new_drops_context(self):
   r=understand('phòng','new',self.context,lambda q:self.parsed(location='Dương Mơ'))
   self.assertEqual(r['filters']['price'],[])

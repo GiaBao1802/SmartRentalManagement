@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { PageMeta } from "../../../lib/api/propertyApi";
 import type { InvoiceResource } from "../../../lib/api/invoiceApi";
 import { formatAdminDate, formatAdminMoney } from "../../../lib/ui/admin-presentation";
+import { businessDateToday, invoiceDueStateLabel } from "../../../lib/invoice-status";
 import { invoiceResidentLabel, statusLabel } from "./invoice-list.logic";
 
 function invoicePeriod(invoice: InvoiceResource) {
@@ -22,9 +23,10 @@ function invoiceResident(invoice: InvoiceResource, residents: Array<{ resident_i
 }
 
 function invoiceStatus(invoice: InvoiceResource): ReactNode {
+  const dueState = invoiceDueStateLabel(invoice.status, invoice.is_overdue, invoice.due_date, businessDateToday());
   return <>
     <span className={`chip ${invoice.status === "paid" ? "success" : invoice.status === "draft" ? "neutral" : "warning"}`}>{statusLabel(invoice.status)}</span>
-    {invoice.status === "unpaid" && invoice.is_overdue && <span className="chip invoice-overdue-chip">Quá hạn</span>}
+    {dueState && <span className={`chip ${dueState === "Quá hạn" || dueState === "Cần kiểm tra hạn" || dueState === "Thiếu hạn thanh toán" ? "invoice-overdue-chip" : "invoice-due-chip"}`}>{dueState}</span>}
     {invoice.snapshot_kind === "LEGACY_AGGREGATE" && <span className="chip invoice-legacy-chip">Hóa đơn cũ</span>}
   </>;
 }

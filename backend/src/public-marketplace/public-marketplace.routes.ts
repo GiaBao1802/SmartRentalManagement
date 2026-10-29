@@ -3,6 +3,7 @@ import { authenticateRequest, foreignResourceNotFound, getAdminOwnerId, requireA
 import { ApiError, validationError } from "../middleware/api-error.js";
 import { parseBigIntId, sendJson } from "../utils/ids.js";
 import type { ContactListQuery, ContactRequestRepositoryPort } from "./public-marketplace.repository.js";
+import { illustrativeRoomImageKeys } from "../room-images/illustrative-room-image-keys.js";
 import { parseContactListQuery, parsePublicRoomListQuery, validateContactRequest, validateContactStatusPatch } from "./public-marketplace.validation.js";
 
 type ContactRateBucket = { count: number; resetsAt: number };
@@ -32,19 +33,21 @@ function pageResponse(rows: unknown[], total: number, query: { page: number; pag
 }
 
 function imageUrl(imageId: bigint) { return `/api/v1/public/room-images/${imageId.toString()}`; }
-function serializePublicImage(image: { roomImageId: bigint; isCover: boolean; sortOrder: number }) {
-  return { image_id: image.roomImageId.toString(), url: imageUrl(image.roomImageId), is_cover: image.isCover, sort_order: image.sortOrder };
+function serializePublicImage(image: { roomImageId: bigint; isCover: boolean; sortOrder: number; storageKey?: string }) {
+  return { image_id: image.roomImageId.toString(), url: imageUrl(image.roomImageId), is_cover: image.isCover, sort_order: image.sortOrder, is_illustrative: image.storageKey ? illustrativeRoomImageKeys.has(image.storageKey) : false };
 }
-export function serializePublicRoom(row: any, detail: boolean) {
+export function serializePublicRoom(row: any) {
   const images = Array.isArray(row.images) ? row.images.map(serializePublicImage) : [];
+  const propertyFacilities = Array.isArray(row.property?.propertyFacilities) ? row.property.propertyFacilities.map((facility: { name: string }) => facility.name) : [];
   const cover = images.find((image: { is_cover: boolean }) => image.is_cover) ?? null;
   return {
     room_id: row.roomId.toString(), room_code: row.roomCode,
     property: { name: row.property.name, province: row.property.province, address: row.property.address },
+    property_facilities: propertyFacilities,
     default_rent: row.defaultRent.toString(), area_m2: row.areaM2.toFixed(2), default_capacity: row.defaultCapacity,
-    status: "available", public_description: row.publicDescription,
-    cover_image: cover ? { image_id: cover.image_id, url: cover.url } : null,
-    ...(detail ? { images } : {}),
+    status: "available", public_description: row.publicDescription, amenities: row.marketplaceAmenities ?? [],
+    cover_image: cover ? { image_id: cover.image_id, url: cover.url, is_illustrative: cover.is_illustrative } : null,
+    images,
   };
 }
 
@@ -73,7 +76,15 @@ export function createPublicMarketplaceRouter(auth: AuthDependencies, repository
       const query = parsePublicRoomListQuery(request.query as Record<string, unknown>);
       const result = await repository.listPublicRooms(query);
       response.setHeader("Cache-Control", "no-store");
-      sendJson(response, 200, pageResponse(result.rows.map((row) => serializePublicRoom(row, false)), result.total, query));
+      sendJson(response, 200, pageResponse(result.rows.map((row) => serializePublicRoom(row)), result.total, query));
+    } catch (error) { next(error); }
+  });
+
+  router.get("/public/property-facilities", async (_request, response, next) => {
+    try {
+      const facilities = await repository.listPublicPropertyFacilities();
+      response.setHeader("Cache-Control", "no-store");
+      sendJson(response, 200, { data: facilities });
     } catch (error) { next(error); }
   });
 
@@ -82,7 +93,7 @@ export function createPublicMarketplaceRouter(auth: AuthDependencies, repository
       const row = await repository.findPublicRoom(parseId(request.params.room_id));
       if (!row) { foreignResourceNotFound(); }
       response.setHeader("Cache-Control", "no-store");
-      sendJson(response, 200, { data: serializePublicRoom(row, true) });
+      sendJson(response, 200, { data: serializePublicRoom(row) });
     } catch (error) { next(error); }
   });
 

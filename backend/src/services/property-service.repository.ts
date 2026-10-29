@@ -262,6 +262,12 @@ export class PrismaPropertyServiceRepository {
       },
     });
 
+    const facilities = await this.prisma.propertyFacility.findMany({
+      where: { ownerId, propertyId: { in: properties.map((property) => property.propertyId) }, active: true },
+      orderBy: [{ propertyId: "asc" }, { name: "asc" }, { propertyFacilityId: "asc" }],
+      select: { propertyFacilityId: true, propertyId: true, name: true, description: true, location: true },
+    });
+
     const configurations = new Map<string, FlexibleServiceConfigurationRow>();
     await Promise.all(properties.map(async (property) => {
       const rows = await readFlexibleConfigurations(this.prisma, ownerId, property.propertyId);
@@ -270,6 +276,7 @@ export class PrismaPropertyServiceRepository {
 
     return properties.map((property) => ({
       property,
+      facilities: facilities.filter((facility) => facility.propertyId === property.propertyId),
       services: items.filter((item) => item.propertyId === property.propertyId).map((item) => ({
         ...item,
         flexibleServiceConfiguration: configurations.get(item.propertyPricingItemId.toString()) ?? null,
@@ -387,6 +394,13 @@ export class PrismaPropertyServiceRepository {
           body: `${service.service_name} · ${input.serviceDate} · ${slot.start}–${slot.end}. Yêu cầu đang chờ chủ trọ duyệt.`,
         },
       });
+      const admins = await tx.account.findMany({ where: { ownerId, role: "admin", status: "active" }, select: { accountId: true } });
+      if (admins.length) await tx.notification.createMany({ data: admins.map(({ accountId: adminAccountId }) => ({
+        accountId: adminAccountId,
+        notificationType: "service_booking_requested",
+        title: "Cư dân gửi yêu cầu đặt tiện ích",
+        body: `${service.service_name} · ${input.serviceDate} · ${slot.start}–${slot.end}. Vui lòng xem mục Tiện ích phát sinh để duyệt yêu cầu.`,
+      })) });
       return { booking, created: true };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
   }

@@ -19,10 +19,16 @@ test("does not linkify user text or nonnumeric route markers", () => {
 });
 
 test("creates a same-site all-results link with only bounded public search filters", () => {
-  const encoded = encodeURIComponent("location=Biên Hòa&price_max=3999999&page=1&page_size=12&sort=price_asc");
+  const encoded = encodeURIComponent("location=Biên Hòa&price_max=3999999&page=1&page_size=12&sort=price_asc&amenities=air_conditioning");
   assert.deepEqual(parseCloudyRoomLinks(`[[results:${encoded}]]`, true), [
-    { text: "Xem toàn bộ kết quả phòng", href: "/rooms?location=Bi%C3%AAn+H%C3%B2a&price_max=3999999&page=1&page_size=12&sort=price_asc" },
+    { text: "Xem toàn bộ kết quả phòng", href: "/tim-phong?location=Bi%C3%AAn+H%C3%B2a&price_max=3999999&page=1&page_size=12&sort=price_asc&amenities=air_conditioning" },
   ]);
+  const invalidAmenity = encodeURIComponent("page=1&page_size=12&sort=price_asc&amenities=unknown");
+  const invalidSegments = parseCloudyRoomLinks(`Kết quả. [[results:${invalidAmenity}]]`, true);
+  assert.equal(invalidSegments.map(segment => segment.text).join(""), "Kết quả. ");
+  assert.equal(invalidSegments.map(segment => segment.text).join("").includes("[[results:"), false);
   const externalLike = encodeURIComponent("https://evil.example/");
-  assert.equal(parseCloudyRoomLinks(`[[results:${externalLike}]]`, true)[0]?.href, undefined);
+  const externalSegments = parseCloudyRoomLinks(`[[results:${externalLike}]]`, true);
+  assert.equal(externalSegments[0]?.href, undefined);
+  assert.equal(externalSegments.map(segment => segment.text).join(""), "");
 });

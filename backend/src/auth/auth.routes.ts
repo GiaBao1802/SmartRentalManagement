@@ -45,6 +45,9 @@ function clearCookie(response: express.Response, name: string, config: RuntimeCo
 }
 
 function safeProfile(account: CurrentAccountRecord | LoginAccountRecord) {
+  if (account.role === "superadmin" && account.ownerId === null && account.residentId === null) {
+    return { display_name: "Superadmin" };
+  }
   if (account.role === "admin" && account.owner && account.ownerId !== null && account.residentId === null && account.ownerId === account.owner.ownerId) {
     return { owner_id: account.owner.ownerId.toString(), display_name: account.owner.displayName };
   }
@@ -133,7 +136,9 @@ export function createAuthRouter(deps: AuthDependencies): express.Router {
     };
     const profile = context.role === "admin"
       ? { owner_id: context.owner.ownerId.toString(), display_name: context.owner.displayName }
-      : { resident_id: context.resident.residentId.toString(), full_name: context.resident.fullName };
+      : context.role === "resident"
+        ? { resident_id: context.resident.residentId.toString(), full_name: context.resident.fullName }
+        : { display_name: "Superadmin" };
     sendJson(response, 200, { data: { account, profile } });
   });
 

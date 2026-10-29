@@ -1,0 +1,11 @@
+{
+  "version": "1.18",
+  "predecessor": "database/baselines/v1.17",
+  "status": "APPLIED_SHARED_NEON_20261029",
+  "sha256": {
+    "schema.sql": "67afca979df94617ba193371c7efb18bab287454aae76b6781a3981094a1a21c",
+    "expected-catalog.json": "79c3757d827e910a2636285447cb31f3d24d16648b63588f5e68b83e1a0cf8d8",
+    "runtime_validator.sql": "5fbc89e38cc3443407fd7b4c9206dc4f74d3dd1eeb41a5d2d45ceb2a8c10f833",
+    "migrations/V1_17_to_V1_18_platform.sql": "a939ba496d042477d31f798fe5e9bb0dc4ac5a59a6ec4cb670fdb40e5b1f949c"
+  }
+}

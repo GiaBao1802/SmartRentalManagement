@@ -12,7 +12,7 @@ def candidates(question):
  words=list(re.finditer(r'\S+',question));items=[]
  # Candidate discovery uses the same deterministic grammar as normalization.
  # It is not a measurement of raw model extraction ability.
- starts=r'^(?:gia|tien thue|ngan sach|budget|dien tich|rong|khoang dien tich|khong|toi da|toi thieu|it nhat|tu|duoi|tren|dung|bang|nho hon|lon hon|thap hon|cao hon|may lanh|nuoi|mot minh|\d|mot nguoi|hai nguoi|ba nguoi|bon nguoi|nam nguoi)'
+ starts=r'^(?:gia|tien thue|ngan sach|budget|dien tich|rong|khoang dien tich|khong|toi da|toi thieu|it nhat|tu|duoi|tren|dung|bang|nho hon|lon hon|thap hon|cao hon|may lanh|may dieu hoa|dieu hoa|bai gui xe|bai giu xe|bai do xe|bai dau xe|bai xe|cho de xe|cho dau xe|cho do xe|cho gui xe|khu de xe|khu gui xe|gui xe|dau xe|do xe|wifi|thang may|may giat|tu lanh|may nuoc nong|bep rieng|ve sinh rieng|ban cong|tien ich|tien nghi|nuoi|mot minh|\d|mot nguoi|hai nguoi|ba nguoi|bon nguoi|nam nguoi)'
  for i,w in enumerate(words):
   for end in words[i:i+12]:
    a,b=w.start(),end.end()

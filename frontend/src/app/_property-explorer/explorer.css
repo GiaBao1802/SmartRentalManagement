@@ -291,3 +291,61 @@
   .explore-header-actions { grid-column: 3; }
   .explore-mode { grid-row: 3; grid-column: 1 / -1; margin: 0; max-width: none; }
 }
+
+/* The list is a full browsing surface; the map remains mounted behind it. */
+.explore-header-actions button[aria-pressed="true"],
+.explore-results-view-switch button[aria-pressed="true"] { background: var(--ex-secondary); border-color: var(--ex-secondary); color: #fff; }
+.explore-results-view-switch { display: flex; flex-shrink: 0; gap: 7px; }
+.explore-results-view-switch button { min-width: 84px; }
+.explore-results.is-expanded {
+  position: fixed; inset: 16px 22px; z-index: 40; display: flex; flex-direction: column;
+  border-radius: 18px; background: #fff; box-shadow: 0 20px 70px #0b2b2a38;
+}
+.explore-results.is-expanded .explore-results-heading { flex-shrink: 0; min-height: 88px; padding: 14px 24px; }
+.explore-results.is-expanded .explore-results-heading h2 { font-size: clamp(18px, 2vw, 26px); }
+.explore-results.is-expanded .explore-results-body {
+  flex: 1; min-height: 0; max-height: none; overflow-x: hidden; overflow-y: auto;
+  overscroll-behavior: contain; padding: 0 24px 28px;
+}
+.explore-filter-disclosure { border-bottom: 1px solid var(--ex-line); }
+.explore-filter-disclosure summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: fit-content; min-height: 48px; color: var(--ex-secondary); font-weight: 600; cursor: pointer; list-style: none; }
+.explore-filter-disclosure summary::-webkit-details-marker { display: none; }
+.explore-filter-disclosure[open] summary span { transform: rotate(180deg); }
+.explore-filter-disclosure .explore-inline-filters { border-bottom: 0; padding-top: 0; }
+.explore-results.is-expanded .explore-results-toolbar { position: sticky; top: 0; z-index: 2; flex-wrap: wrap; gap: 12px 18px; background: #fff; border-bottom: 1px solid var(--ex-line); padding: 12px 0; }
+.explore-results.is-expanded .explore-results-toolbar select { min-height: 42px; font-size: 14px; }
+.explore-results.is-expanded .explore-room-list {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: 20px; overflow: visible; padding: 20px 2px 4px; scroll-snap-type: none;
+}
+.explore-results.is-expanded .explore-result-card { min-width: 0; width: auto; height: 100%; border-radius: 14px; box-shadow: 0 5px 20px #0b2b2a12; scroll-snap-align: none; }
+.explore-results.is-expanded .room-listing,
+.explore-results.is-expanded .explore-demo-room { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.explore-results.is-expanded .room-cover-image,
+.explore-results.is-expanded .room-art,
+.explore-results.is-expanded .explore-demo-art { width: 100%; height: 210px; min-height: 210px; object-fit: cover; }
+.explore-results.is-expanded .room-info,
+.explore-results.is-expanded .explore-demo-room > div:last-child { display: flex; flex: 1; flex-direction: column; padding: 18px; }
+.explore-results.is-expanded .room-info h3,
+.explore-results.is-expanded .explore-demo-room h3 { font-size: 18px; line-height: 1.45; }
+.explore-results.is-expanded .room-info > p:nth-of-type(n+2) { display: block; }
+.explore-results.is-expanded .room-listing-bottom,
+.explore-results.is-expanded .explore-demo-room footer { margin-top: auto; padding-top: 18px; }
+.explore-results.is-expanded .room-listing-bottom strong,
+.explore-results.is-expanded .explore-demo-room strong { font-size: 18px; }
+.explore-results.is-expanded .room-listing-bottom a { padding: 10px 0 10px 10px; font-size: 14px; font-weight: 600; }
+.explore-results.is-expanded .explore-locate { display: none; }
+@media (max-width: 760px) {
+  .explore-results.is-expanded { inset: 0; border: 0; border-radius: 0; }
+  .explore-results.is-expanded .explore-results-heading { min-height: 84px; padding: max(12px, env(safe-area-inset-top)) 16px 12px; gap: 9px; }
+  .explore-results.is-expanded .explore-results-heading h2 { font-size: 17px; }
+  .explore-results.is-expanded .explore-results-heading small { font-size: 11px; }
+  .explore-results-view-switch { gap: 4px; }
+  .explore-results-view-switch button { min-width: 0; padding: 7px 8px; font-size: 12px; }
+  .explore-results.is-expanded .explore-results-body { max-height: none; padding: 0 14px max(24px, env(safe-area-inset-bottom)); }
+  .explore-results.is-expanded .explore-results-toolbar { gap: 10px; }
+  .explore-results.is-expanded .explore-room-list { grid-template-columns: minmax(0, 1fr); gap: 16px; padding-top: 16px; }
+  .explore-results.is-expanded .room-cover-image,
+  .explore-results.is-expanded .room-art,
+  .explore-results.is-expanded .explore-demo-art { height: 200px; min-height: 200px; }
+}
