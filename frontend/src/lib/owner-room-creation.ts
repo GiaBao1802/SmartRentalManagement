@@ -28,7 +28,7 @@ export function validateOwnerRoomCreateValue(step:OwnerRoomCreateStep,value:stri
  }
  if(step==='rent')return !/^\d{1,18}$/.test(value.replace(/[.,\sđ₫]/gi,''))?'Giá thuê cần là số nguyên VND, ví dụ 2500000.':'';
  if(step==='capacity'){
-  const capacity=Number(normalized(value));
+  const capacity=Number(normalized(value).match(/^\d+/)?.[0]);
   return !/^\d+(?:\s*nguoi)?$/.test(normalized(value))||!Number.isSafeInteger(capacity)||capacity<1||capacity>1_000_000?'Sức chứa phải là số nguyên từ 1 đến 1.000.000 người.':'';
  }
  return '';

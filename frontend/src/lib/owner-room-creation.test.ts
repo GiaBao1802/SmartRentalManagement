@@ -26,5 +26,6 @@ test('validates and normalizes room creation fields without inventing area or re
  assert.match(validateOwnerRoomCreateValue('rent','2.5 triệu'),/số nguyên VND/);
  assert.equal(normalizeOwnerRoomCreateValue('rent','2.500.000 đ'),'2500000');
  assert.match(validateOwnerRoomCreateValue('capacity','0'),/từ 1/);
+ assert.equal(validateOwnerRoomCreateValue('capacity','2 người'),'');
  assert.equal(normalizeOwnerRoomCreateValue('capacity','2 người'),'2');
 });

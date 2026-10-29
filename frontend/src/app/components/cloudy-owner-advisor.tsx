@@ -283,7 +283,7 @@ export function CloudyOwnerAdvisor(){
   <p role="status">{loading?'Đang tải danh sách phòng…':loadError?'Chưa tải được dữ liệu chủ trọ.':note}</p>
   {loadError&&<div role="alert"><p>{loadError}</p><button type="button" onClick={()=>{invalidate();setReload(n=>n+1);}}>Tải lại dữ liệu</button></div>}
   {catalog&&(catalog.rooms.length>0||(catalog.properties?.length||0)>0)&&<>
-  <div className="cloudy-owner__message-row cloudy-owner__message-row--cloudy"><span className="cloudy-owner__avatar"><CloudyPortrait/></span><p className="cloudy-owner__bubble">Bạn muốn mình kiểm tra gì hôm nay, tạo tiện ích, hay gửi nhắc nhở cho cư dân? Ví dụ: “Nhắc phòng 302 khóa cửa”. Mình sẽ cho bạn xem đúng phòng và nội dung trước khi gửi thông báo trong ứng dụng.</p></div>
+  <div className="cloudy-owner__message-row cloudy-owner__message-row--cloudy"><span className="cloudy-owner__avatar"><CloudyPortrait/></span><p className="cloudy-owner__bubble">Bạn muốn mình kiểm tra gì hôm nay, tạo phòng hoặc tiện ích, hay gửi nhắc nhở cho cư dân? Ví dụ: “Thêm phòng A06 vào khu trọ…” hoặc “Nhắc phòng 302 khóa cửa”. Mình sẽ hỏi thông tin còn thiếu và chờ bạn xác nhận trước khi lưu.</p></div>
   {messages.map((m,i)=><div key={i} className={`cloudy-owner__message-row cloudy-owner__message-row--${m.role}`}>
    {m.role==='cloudy'&&<span className="cloudy-owner__avatar"><CloudyPortrait/></span>}
    <p className={`cloudy-owner__bubble cloudy-owner__bubble--${m.role}`}>{m.text}</p>
