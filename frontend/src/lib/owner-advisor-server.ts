@@ -36,7 +36,7 @@ export async function handleOwnerAdvisor(request:Request,{mode=process.env.NODE_
   if(live&&Object.hasOwn(body,'action'))return json({error:'Mở màn quản lý để xác nhận xử lý yêu cầu thật.'},400);
   if(Object.keys(body).sort().join()==='action,confirmed,reason,requestId,revision')return json(ownerRequestDemo.decide(identity.ownerId,identity.accountId,body));
   const keys=Object.keys(body).sort().join();
-  const readOnlyTasks=['unpaid','paid','utilities','missing','overview','requests','feedback_messages','residents','available_rooms','vehicle_counts','electricity_ranking','frequent_requests'];
+  const readOnlyTasks=['invoices','unpaid','paid','utilities','missing','overview','requests','open_requests','actionable_requests','amenity_requests','common_area_requests','feedback_messages','residents','resident_ranking','resident_registration_by_room','available_rooms','vehicle_counts','vehicle_total','property_total','electricity_ranking','electricity_lowest','water_ranking','frequent_requests'];
   const directRead=readOnlyTasks.includes(body.task)&&keys==='period,room,task'||body.task==='transaction_lookup'&&keys==='period,room,task,transactionCode'&&typeof body.transactionCode==='string';
   const confirmedRead=keys==='confirmed,period,room,task'&&body.confirmed===true;
   if(!directRead&&!confirmedRead)return json({error:'Phạm vi tra cứu không hợp lệ hoặc thiếu xác nhận.'},400);

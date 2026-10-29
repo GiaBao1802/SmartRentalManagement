@@ -4,6 +4,14 @@ const query={task:'unpaid',period:'2026-10',room:''};
 test('unpaid excludes drafts, paid and other owner; due today is not overdue',()=>{
  const r=answer(query);assert.deepEqual(r.cards.map(x=>x.id),['DEMO-I01','DEMO-I02','DEMO-I05']);assert.match(r.summary,/10.215.000/);assert.equal(r.cards[0].status,'Quá hạn');assert.equal(r.cards[1].status,'Đến hạn hôm nay');assert.equal(r.cards[2].status,'Chưa đến hạn');
 });
+test('general invoice listing includes all statuses and labels drafts as not receivable',()=>{
+ const result=answer({...query,task:'invoices'});
+ assert.ok(result.cards.some(card=>card.status.includes('Bản nháp')));
+ assert.ok(result.cards.some(card=>card.status==='Quá hạn'));
+ assert.ok(result.cards.some(card=>card.status==='Đã thanh toán'));
+ assert.equal(result.cards.find(card=>card.status.includes('Bản nháp')).total,null);
+ assert.match(result.summary,/bản nháp chưa phải khoản phải thu/);
+});
 test('scope cannot be supplied by client and resident is denied',()=>{
  assert.throws(()=>answer({...query,ownerId:'DEMO-OWNER-B'}));assert.throws(()=>answer(query,{...context,role:'resident'}));assert.equal(answer({...query,period:'2026-09'}).cards.length,0);assert.equal(answer({...query,room:'A02'}).cards.length,1);
 });
@@ -20,7 +28,7 @@ test('fixture finalization is after period end with five-day due date',()=>{
  for(const row of invoices.filter(r=>r.finalizedAt)){assert.ok(row.finalizedAt>=row.periodEnd);assert.equal((Date.parse(row.dueDate)-Date.parse(row.finalizedAt))/86400000,5);}
 });
 test('model uses Vietnamese examples and only returns an allowlisted intent',async()=>{
- const fetchImpl=async(url,options)=>{const body=JSON.parse(options.body);assert.equal(body.model,'qwen3:1.7b');assert.ok(!options.body.includes('DEMO-I01'));assert.ok(body.messages.some(m=>m.role==='user'&&m.content==='Sao tiền điện kỳ này cao vậy?'));assert.ok(body.messages.some(m=>m.role==='user'&&m.content==='Giúp tôi hiểu cách tính tiền điện nước tháng này.'));assert.ok(body.messages.some(m=>m.role==='user'&&m.content==='Những hóa đơn nháp nào chưa có số nước?'));return Response.json({done_reason:'stop',message:{content:'{"task":"unpaid"}'}});};
+ const fetchImpl=async(url,options)=>{const body=JSON.parse(options.body);assert.equal(body.model,'qwen3:1.7b');assert.ok(!options.body.includes('DEMO-I01'));assert.ok(body.messages.some(m=>m.role==='user'&&m.content==='Sao tiền điện kỳ này cao vậy?'));assert.ok(body.messages.some(m=>m.role==='user'&&m.content==='Giúp tôi hiểu cách tính tiền điện nước tháng này.'));assert.ok(body.messages.some(m=>m.role==='user'&&m.content==='Cho tôi hóa đơn tháng 9'));assert.ok(body.messages.some(m=>m.role==='user'&&m.content==='Những hóa đơn nháp nào chưa có số nước?'));return Response.json({done_reason:'stop',message:{content:'{"task":"unpaid"}'}});};
  assert.equal((await interpret('Phòng nào chưa đóng tiền?',{fetchImpl})).task,'unpaid');
  for(const content of ['{"task":"delete"}','{"task":"unpaid","ownerId":"B"}'])await assert.rejects(interpret('x',{fetchImpl:async()=>Response.json({done_reason:'stop',message:{content}})}));
 });
@@ -28,6 +36,7 @@ test('explicit rental search and mutation requests are routed out without model 
  for(const question of ['Tìm phòng giá rẻ','Đánh dấu A01 đã trả','Gửi nhắc tiền A01','Xử lý hết mấy việc đó giúp tôi']){
  const r=await interpret(question,{fetchImpl:()=>{throw new Error('must not call');}});assert.equal(r.task,'clarify');assert.equal(r.source,'scope_guard');
  }
+ const contract=await interpret('Hợp đồng nào đã hết hạn?',{fetchImpl:()=>{throw new Error('contract routing should bypass Qwen');}});assert.equal(contract.task,'contract_management');assert.equal(contract.source,'scope_guard');
 });
 test('HTTP confirms scope, rejects foreign origin, writes, oversized and forged owner',async()=>{
  const server=createOwnerServer({authorize:async()=>({role:'admin',ownerId:'1'}),interpretImpl:async()=>({task:'unpaid'})});server.listen(0,'127.0.0.1');await once(server,'listening');const url=`http://127.0.0.1:${server.address().port}`;

@@ -1,5 +1,25 @@
 # Góc Trọ — Current State
 
+### Owner Cloudy query coverage follow-up — 2026-10-29
+
+Extended deterministic Owner Cloudy routes for room vehicle counts, minimum electricity ranking, resident-identity refusal, invoice status/paid/unpaid lookup, property count, billing data gaps, billing-readiness checks, actionable requests by optional month, amenity requests, and common-area feedback. `overview` now uses backend Billing Workspace readiness states instead of listing all unpaid/draft invoices. Billing Workspace reads use 20-row pages and 30-second request timeout; safe backend error text/request IDs are preserved. Request details redact phone numbers, identity numbers, and email addresses. Focused intent/server/live tests pass 37/37; frontend typecheck and `git diff --check` pass. No API route, schema, database, seed, or business record changed. Authenticated UI and account-data review remain. Exact Next Task remains the V1.17 rollout after verified Superadmin email and target authorization.
+
+### Owner Cloudy intent and aggregate query fixes — 2026-10-29
+
+Fixed the observed Owner Cloudy misroutes for vacant rooms, water-use rankings, open requests, room-level residence-registration counts, total active vehicles, and resident counts by room. Open requests now include only `pending`/`in_progress`; completed and rejected rows are excluded. Water rankings use valid readings from finalized invoices. Resident answers expose only aggregate counts, never identities. Focused intent/server/live-adapter tests pass 34/34, frontend typecheck and `git diff --check` pass. No API, database, seed, or business records changed. Authenticated UI review remains. Exact Next Task remains the V1.17 rollout after verified Superadmin email and target authorization.
+
+### Owner Cloudy sensitive-data refusal — 2026-10-29
+
+Owner Cloudy now refuses chat requests to add, collect, update, look up, or display personal/sensitive fields such as resident phone, CCCD/CMND, email, birth date, private address, and financial details. The UI intercepts these before other chat flows, clears the input, and stores only a generic user message; the deterministic server router also bypasses the model. Focused intent/server tests, frontend typecheck, and diff check pass. No management API, database, or stored resident record changed; the authorized Resident management form remains the place for necessary data entry. Exact Next Task remains the V1.17 rollout after verified Superadmin email and target authorization.
+
+### Owner Cloudy contract-question routing — 2026-10-29
+
+Questions mentioning “hợp đồng” now take a deterministic navigation-only path instead of being sent to the invoice classifier. Cloudy explains that contract details are not queried in chat and offers links to Contract Management and the operating report's 30-day expiry count. This avoids calling `GET /contracts`, which synchronizes expired lifecycle states during reads. Owner intent/route/live-adapter tests pass 32/32, synthetic owner-demo tests 10/10, frontend typecheck and `git diff --check` pass. No API, database, seed, or business data changed. Direct UI visual review remains. Exact primary Next Task remains unchanged.
+
+### Owner Cloudy general invoice lookup — 2026-10-29
+
+Owner Cloudy deterministically routes “cho tôi hóa đơn tháng 9” to a read-only invoice list for September 2026 when that period exists in the signed-in Owner's catalog. The list includes draft, finalized unpaid, and paid invoices, clearly marks drafts as not receivable, and uses backend status and amounts; payment-specific questions retain their narrower filters. Focused intent/route/live-adapter tests pass 32/32, synthetic owner demo tests pass 10/10, and frontend typecheck and `git diff --check` pass. No backend API, database, seed, or business data changed. Authenticated visual review remains. Exact primary Next Task remains unchanged.
+
 ### Cloudy Owner guided room creation — 2026-10-29
 
 Cloudy Admin now recognizes direct add-room requests such as “Thêm 1 phòng A06 vào khu vực An Bình Biên Hòa” and opens a guided flow. It prefills a uniquely matched Property/room code, asks for missing area, monthly rent and capacity, validates inputs, then shows a confirmation summary before calling the existing Owner-scoped create endpoint. New rooms are active/available and hidden from Marketplace. Focused Owner Cloudy tests pass 35/35, frontend typecheck and production build pass. No database/seed/record change; authenticated visual review remains. Exact primary Next Task remains unchanged. See [Owner advisor report](07_modules/invoice-zalo/OWNER_ADVISOR_DEMO_REPORT.md).
@@ -12,7 +32,7 @@ Owner Cloudy now deterministically recognizes questions such as “có bao nhiê
 
 Trained a local CPU QLoRA NF4 adapter for one epoch on 84 synthetic Guest/Resident/Owner examples; reserved 36 holdouts. Teacher-forced answer-token accuracy improved 48.5%→65.2%, but exact answers remain 0/36 and free-generation smoke is 0/3 for both base and adapter; the adapter also misroutes a Resident invoice question and repeats an Owner JSON key. The candidate is **not cleared for runtime**. Adapter and checksums are in `%LOCALAPPDATA%\GocTro\cloudy-qwen3-candidate-20261029`; app runtime, Ollama and databases are unchanged. Primary Exact Next Task remains the V1.17 rollout after a verified Superadmin email and target authorization. See [fine-tuning report](11_project-reports/CLOUDY_QWEN3_FINETUNE_PREPARATION_20261029.md).
 
-Follow-up Owner-only iterations improved the fixed Owner holdout: V2 free-generation exact objects 6/12 vs base 4/12, schema-valid task/action 11/12 vs 9/12, and bare JSON 12/12 vs 11/12. One explicit invoice-write request and one ambiguous request still fail expected classification, so no adapter is promoted. The Owner V2 candidate is at `%LOCALAPPDATA%\GocTro\cloudy-qwen3-owner-balanced-fast-candidate-20261029`; see [iteration report](11_project-reports/CLOUDY_QWEN3_FINETUNE_ITERATION_20261029.md). The synthetic corpus is not a substitute for human-reviewed examples.
+Owner-only iterations expanded the synthetic corpus to 120 train / 12 unchanged holdout. Latest V6 free-generation exact objects are 9/12 vs base 4/12, schema-valid task/action 12/12 vs 9/12, and bare JSON 12/12 vs 11/12. The explicit request to mark an invoice paid still routes to a read-only unpaid query, so the candidate fails the safety gate and is not promoted. Adapter: `%LOCALAPPDATA%\GocTro\cloudy-qwen3-owner-v6-final-20261029`; checksum and V2/V4/V5/V6 metrics are in the [iteration report](11_project-reports/CLOUDY_QWEN3_FINETUNE_ITERATION_20261029.md). Stop synthetic-only training pending human-reviewed labels; runtime, Ollama and databases unchanged.
 
 ### Owner rent and profitability dashboard — 2026-10-29
 

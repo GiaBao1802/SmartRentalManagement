@@ -4,7 +4,7 @@
 
 [Qwen3 1.7B local fine-tuning](11_project-reports/CLOUDY_QWEN3_FINETUNE_PREPARATION_20261029.md) — TRAINED, NOT PROMOTED: one CPU QLoRA NF4 epoch on 84 synthetic examples; 36 untouched holdouts improved on teacher-forced token accuracy (48.5%→65.2%), but exact matches were 0/36 and free-generation smoke 0/3 for both base and adapter. Adapter misroutes a Resident invoice question and repeats Owner JSON keys. Local artifact checksum recorded; runtime, database, Ollama and production unchanged.
 
-[Owner-only fine-tuning iterations](11_project-reports/CLOUDY_QWEN3_FINETUNE_ITERATION_20261029.md) — CANDIDATE, NOT PROMOTED: synthetic Owner V2 QLoRA improved free-generation exact objects 4/12→6/12, schema-valid task/action pairs 9/12→11/12, and bare JSON 11/12→12/12 on the same fixed holdout. Explicit invoice-write intent and ambiguous request errors remain. 68 train / 12 untouched holdout; 66/66 Python Cloudy tests pass. Adapter SHA-256 and local artifact location are in the report; no app runtime, database, or Ollama change.
+[Owner-only fine-tuning iterations](11_project-reports/CLOUDY_QWEN3_FINETUNE_ITERATION_20261029.md) — CANDIDATE, NOT PROMOTED: V6 trained on 120 synthetic Owner examples and the same untouched 12 holdouts; free-generation exact objects 4/12→9/12, schema-valid task/action pairs 9/12→12/12, and bare JSON 11/12→12/12. The explicit invoice-write request still routes to a read-only unpaid query, failing the safety gate. Stop synthetic-only iterations pending human-reviewed labels. Python Cloudy tests 71/71; local adapter SHA-256 and path in report. Runtime, database, and Ollama unchanged.
 
 ## Báo cáo vận hành chủ trọ — 2026-10-29
 

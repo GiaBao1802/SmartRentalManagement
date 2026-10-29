@@ -1,8 +1,15 @@
 export type OwnerCatalog={tasks:Record<string,string>;rooms:string[];periods:string[];asOf:string};
 export type OwnerIntent={task:string;period:string;room:string|null};
 export type OwnerResidentRequest={kind:'create'|'search';name:string|null};
-export const ownerPeriodFreeTasks=new Set(['residents','available_rooms','vehicle_counts','transaction_lookup']);
+export const ownerPeriodFreeTasks=new Set(['residents','resident_ranking','resident_registration_by_room','available_rooms','vehicle_counts','vehicle_total','property_total','open_requests','actionable_requests','amenity_requests','common_area_requests','transaction_lookup']);
 const normalizeOwnerQuestion=(question:string)=>question.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/gi,'d').toLowerCase();
+const ownerSensitiveDataFieldPattern=/\b(sdt|so dien thoai|dien thoai|cccd|cmnd|can cuoc|so dinh danh|giay to tuy than|thong tin nhay cam|du lieu nhay cam|thong tin ca nhan|du lieu ca nhan|thong tin rieng tu|ngay sinh|dia chi rieng|dia chi nha|dia chi cu dan|tai khoan ngan hang|so tai khoan|ho chieu|email ca nhan|mat khau|ma xac thuc|ma otp|token truy cap|ho so suc khoe|thong tin suc khoe)\b/;
+const ownerSensitiveDataActionPattern=/\b(them|tao|bo sung|nhap|ghi|luu|cap nhat|sua|doi|thu thap|thu|lay|tim|tra|tra cuu|xem|doc|dua|hien thi|xuat|in|cho xem|cung cap|gui|xin|yeu cau|luu lai|cho toi)\b/;
+export const ownerSensitiveDataRefusalMessage='Vì bảo vệ dữ liệu cá nhân, Cloudy không thể nhận, thêm, cập nhật hoặc hiển thị số điện thoại, CCCD/CMND, email, ngày sinh, địa chỉ riêng, thông tin tài chính, mật khẩu hay dữ liệu nhạy cảm khác qua chat. Đừng gửi giá trị thật ở đây. Nếu nghiệp vụ bắt buộc, hãy tự nhập trực tiếp vào biểu mẫu quản lý có quyền truy cập và chỉ cung cấp trường thật sự cần thiết.';
+export function isOwnerSensitiveDataRequest(question:string){
+ const text=normalizeOwnerQuestion(question);
+ return ownerSensitiveDataFieldPattern.test(text)&&ownerSensitiveDataActionPattern.test(text);
+}
 export function parseOwnerResidentRequest(question:string):OwnerResidentRequest|null{
  const text=normalizeOwnerQuestion(question);
  if(!/\b(cu dan|nguoi thue|khach thue|ho so cu dan)\b/.test(text))return null;
@@ -16,23 +23,39 @@ export function parseOwnerResidentRequest(question:string):OwnerResidentRequest|
 }
 export function isOwnerAvailableRoomsQuestion(question:string){
  const text=normalizeOwnerQuestion(question);
- return /\b(phong|danh sach)\b/.test(text)&&/\b(con trong|phong trong|chua co (?:nguoi|ai) thue|chua duoc thue|chua cho thue|chua ai thue)\b/.test(text);
+ return /\b(phong|danh sach)\b/.test(text)&&/\b(con trong|dang trong|trong de cho thue|phong trong|con phong cho thue|chua co (?:nguoi|ai) thue|chua duoc thue|chua cho thue|chua ai thue)\b/.test(text);
 }
 export function ownerQuestionTask(question:string):string|null{
  const text=normalizeOwnerQuestion(question);
+ if(isOwnerSensitiveDataRequest(question))return 'sensitive_data_refusal';
+ if(/\b(truoc khi chot hoa don|chot hoa don can kiem tra|viec can kiem tra trong ky hoa don|can kiem tra gi truoc khi chot)\b/.test(text))return 'overview';
  if(/\b(danh dau|cap nhat|chot hoa don|xoa hoa don|gui nhac|gui tin|xu ly het|xu ly luon|giai quyet het|hoan tat het)\b/.test(text))return null;
  if(/\bDEMO-\d{10,}-[A-F0-9]{8}\b/i.test(question))return 'transaction_lookup';
  if(/\b(ten|danh tinh|so dien thoai|cccd)\b/.test(text)&&/\b(cu dan|nguoi thue|khach thue)\b/.test(text))return 'resident_identity_help';
+ if(/\b(ai|nguoi nao)\b/.test(text)&&/\b(dang thue|dang o|thue phong|o phong)\b/.test(text)&&/\bphong\b/.test(text))return 'resident_identity_help';
  if(isOwnerAvailableRoomsQuestion(question))return 'available_rooms';
- if(/\b(xe|phuong tien|bai xe)\b/.test(text)&&/(nhieu nhat|nhieu xe|bao nhieu xe|xe nao|phong nao.*xe)/.test(text))return 'vehicle_counts';
+ if(/\b(khach|cu dan|nguoi thue|khach thue)\b/.test(text)&&/\b(yeu cau|de nghi|phan anh|bao)\b/.test(text)&&/\b(tien ich|thiet bi|bo sung|do dung)\b/.test(text))return 'amenity_requests';
+ if(/\b(yeu cau|khieu nai|phan anh|gop y)\b/.test(text)&&/\b(khu vuc chung|khong gian chung|hanh lang|san chung|cong chung|cau thang|khu de xe chung)\b/.test(text))return 'common_area_requests';
+ if(/\b(hoa don|bill)\b/.test(text)&&/\b(da chot chua|chot chua|duoc chot chua|hoan tat chua|trang thai hoa don)\b/.test(text))return 'invoices';
+ if(/\b(yeu cau nao|yeu cau gi|liet ke|danh sach|cac yeu cau)\b/.test(text)&&/\b(can xu ly|cho xu ly|dang xu ly|chua xu ly|chua giai quyet|dang mo)\b/.test(text)&&/\b(yeu cau|khieu nai|phan anh)\b/.test(text))return 'actionable_requests';
+ if(/\b(yeu cau|khieu nai|phan anh)\b/.test(text)&&/\b(bao nhieu|so luong|dem)\b/.test(text)&&/\b(dang cho|cho xu ly|dang xu ly|chua xu ly|chua giai quyet|dang mo)\b/.test(text))return 'open_requests';
+ if(/\b(bao nhieu|so luong|dem)\b/.test(text)&&/\b(khu tro|nha tro|toa nha|co so)\b/.test(text))return 'property_total';
+ if(/\b(tong|tong cong|toan bo|tat ca)\b/.test(text)&&/\b(xe|phuong tien)\b/.test(text)&&/\b(bao nhieu|so luong|dem|tong)\b/.test(text))return 'vehicle_total';
+ if(/\b(phong nao|phong)\b/.test(text)&&/\b(cu dan|nguoi o|nguoi thue)\b/.test(text)&&/\b(chua dang ky|chua khai bao|chua hoan tat|chua lam|thieu dang ky)\b/.test(text))return 'resident_registration_by_room';
+ if(/\b(phong nao|phong)\b/.test(text)&&/\b(cu dan|nguoi o|nguoi thue)\b/.test(text)&&/\b(nhieu nhat|nhieu cu dan|dong dan nhat|xep hang)\b/.test(text))return 'resident_ranking';
+ if(/\b(nuoc|m3|met khoi)\b/.test(text)&&/\b(nhieu nhat|tieu thu|xai nhieu|dung nhieu|cao nhat|top|xep hang)\b/.test(text))return 'water_ranking';
+ if(/\b(dien|kwh|dien nang)\b/.test(text)&&/(it nhat|thap nhat|dung it|tieu thu it|it dien)/.test(text))return 'electricity_lowest';
+ if(/\b(xe|phuong tien|bai xe)\b/.test(text)&&/(theo tung phong|tung phong|thong ke.*xe|xe gui theo phong|nhieu nhat|nhieu xe|bao nhieu xe|may xe|xe nao|phong nao.*xe)/.test(text))return 'vehicle_counts';
  if(/\b(dien|kwh|dien nang)\b/.test(text)&&/(nhieu nhat|tieu thu|xai nhieu|dung nhieu|cao nhat|tang nhieu|tang cao|top)/.test(text))return 'electricity_ranking';
  if(/\b(phong nao|khu nao)\b/.test(text)&&/\b(hay|thuong|nhieu|nhieu nhat)\b/.test(text)&&/(bao hong|bao hu|hu hong|sua chua|su co|khieu nai|phan anh|yeu cau)/.test(text))return 'frequent_requests';
  if(/\b(bao nhieu|so luong|dem)\b/.test(text)&&/(tin nhan|phan hoi|gop y|y kien)/.test(text)&&/(khach|cu dan|nguoi thue|khach thue)/.test(text))return 'feedback_messages';
  if(/\b(cu dan|nguoi o|nguoi dang o|ho so cu dan|tam tru|tam vang|luu tru)\b/.test(text)&&/(thong ke|bao nhieu|so luong|chua|dang ky|ho so|ai )/.test(text)||/\b(ai|nguoi nao)\b/.test(text)&&/(dang ky|ho so|tam tru|tam vang|cu tru)/.test(text))return 'residents';
- if(/\b(thieu|chua co|chua nhap|chua gui|bo trong)\b/.test(text)&&/\b(chi so|dien nuoc|du lieu|thong tin|hoa don|bill)\b/.test(text))return 'missing';
- if(/\b(chua dong tien|chua thanh toan|con no|no tien|qua han|tre han|chua nop tien|chua tra tien)\b/.test(text))return 'unpaid';
- if(/\b(da thanh toan|thanh toan roi|da tra tien|da nop tien|da dong tien)\b/.test(text))return 'paid';
+ if(/\b(thieu|chua co|chua nhap|chua gui|bo trong)\b/.test(text)&&(/\b(chi so|du lieu|thong tin|hoa don|bill)\b/.test(text)||/\bdien\s*[/-]?\s*nuoc\b/.test(text)))return 'missing';
+ if(/\b(chua dong tien|chua thanh toan|con no|no tien|qua han|tre han|chua nop tien|chua tra tien|phai dong bao nhieu|con phai dong|can dong bao nhieu|con phai nop|can thanh toan bao nhieu)\b/.test(text))return 'unpaid';
+ if(/\b(danh sach|liet ke|phong nao|cac phong)\b/.test(text)&&/\b(da thanh toan|thanh toan roi|da tra tien|da nop tien|da dong tien)\b/.test(text)||/\b(da thanh toan|thanh toan roi|da tra tien|da nop tien|da dong tien)\b/.test(text))return 'paid';
  if(/\b(dien|nuoc|dien nuoc|gia dien|gia nuoc)\b/.test(text)&&/\b(giai thich|tinh|don gia|bao nhieu|sao|vi sao|tang|ky|thang)\b/.test(text))return 'utilities';
+ if(/\b(hop dong|contract)\b/.test(text))return 'contract_management';
+ if(/\b(hoa don|bill)\b/.test(text))return 'invoices';
  if(/\b(con viec|con vuong|can kiem tra|viec nao can|kiem tra .* trong ky|con cai gi can xem)\b/.test(text))return 'overview';
  return null;
 }
@@ -63,15 +86,28 @@ export function ownerEmptyResultMessage(task:string,period=''){
  const messages:Record<string,string>={
   unpaid:'Không có hóa đơn đã chốt nào chưa thanh toán trong kỳ và phạm vi này.',
   paid:'Không có hóa đơn đã thanh toán nào trong kỳ và phạm vi này.',
+  invoices:/^\d{4}-(0[1-9]|1[0-2])$/.test(period)
+   ?`Không có hóa đơn nào trong tháng ${period.slice(5)}/${period.slice(0,4)} theo ngày kết thúc kỳ và phạm vi này.`
+   :'Không có hóa đơn nào trong kỳ và phạm vi này.',
   transaction_lookup:'Không tìm thấy hóa đơn trong tài khoản có mã giao dịch này.',
   requests:'Không có yêu cầu tiện ích hoặc khiếu nại nào phù hợp với kỳ và phạm vi này.',
   missing:'Không có dữ liệu lập hóa đơn nào còn thiếu trong kỳ và phạm vi này.',
   utilities:'Không tìm thấy hóa đơn để giải thích tiền điện nước trong kỳ và phạm vi này.',
-  overview:'Không có hóa đơn cần kiểm tra trong kỳ và phạm vi này.',
+  overview:'Không có hóa đơn cần kiểm tra theo trạng thái và lý do do backend cung cấp trong phạm vi này.',
   available_rooms:'Hiện không có phòng nào còn trống trong phạm vi tài khoản của bạn.',
   vehicle_counts:'Không có xe nào đang được phân công chỗ giữ xe trong phạm vi tài khoản.',
+  vehicle_total:'Không có xe nào đang được phân công chỗ giữ xe trong phạm vi tài khoản.',
+  property_total:'Không có khu trọ nào thuộc tài khoản này.',
   electricity_ranking:'Không có số điện đã chốt hợp lệ trong kỳ và phạm vi này để xếp hạng.',
+  electricity_lowest:'Không có số điện đã chốt hợp lệ trong kỳ và phạm vi này để xếp hạng.',
+  water_ranking:'Không có số nước đã chốt hợp lệ trong kỳ và phạm vi này để xếp hạng.',
   frequent_requests:'Không có yêu cầu hoặc khiếu nại trong kỳ và phạm vi này để thống kê.',
+  open_requests:'Hiện không có yêu cầu hoặc khiếu nại phòng nào đang chờ xử lý hoặc đang được xử lý.',
+  actionable_requests:'Không có yêu cầu phòng nào đang chờ hoặc đang xử lý trong kỳ và phạm vi này.',
+  amenity_requests:'Không thấy yêu cầu đang mở nào về bổ sung tiện ích hoặc thiết bị trong phạm vi này.',
+  common_area_requests:'Không thấy phản ánh nào về khu vực chung trong phạm vi này.',
+  resident_ranking:'Không có số liệu cư dân đang ở theo phòng trong phạm vi này.',
+  resident_registration_by_room:'Không có phòng nào có cư dân đang ở chưa hoàn tất đăng ký trong phạm vi này.',
   feedback_messages:'Không có phản hồi từ khách trong kỳ và phạm vi này.',
  };
  return unpaidEmpty||messages[task]||'Không có dữ liệu phù hợp với kỳ và phạm vi đã chọn.';
@@ -91,9 +127,21 @@ export function namesDifferentOwnerTask(question:string,currentTask:string){
   missing:['thieu du lieu','thieu chi so','lap hoa don','chua lap hoa don'],
   requests:['khieu nai','tien ich','yeu cau tu nguoi thue','phan anh','su co'],
   residents:['thong ke cu dan','bao nhieu cu dan','so luong cu dan','cu dan dang o','nguoi dang o'],
-  available_rooms:['phong trong','phong con trong','phong nao trong','phong chua co nguoi thue','phong chua cho thue','phong nao con trong'],
+  resident_ranking:['phong nao co nhieu cu dan','phong nao nhieu cu dan','nhieu cu dan nhat','phong nao dong dan'],
+  resident_registration_by_room:['phong nao con cu dan chua dang ky','phong nao chua dang ky tam tru','cu dan chua khai bao theo phong'],
+  available_rooms:['phong trong','phong con trong','phong nao trong','phong nao dang trong','phong trong de cho thue','phong nao cho thue','phong chua co nguoi thue','phong chua cho thue','phong nao con trong'],
   vehicle_counts:['phong nao nhieu xe','phong nao co nhieu xe','nhieu xe nhat','bao nhieu xe'],
+  vehicle_total:['tong cong co bao nhieu xe','tong so xe','tong cong bao nhieu xe','tat ca xe'],
+  property_total:['dang quan ly bao nhieu khu tro','bao nhieu khu tro dang quan ly','so khu tro dang quan ly'],
+  open_requests:['bao nhieu yeu cau dang cho xu ly','yeu cau dang cho hoac dang xu ly','so yeu cau dang mo'],
+  actionable_requests:['yeu cau nao thang 10 can xu ly','yeu cau nao can xu ly','cac yeu cau can xu ly'],
+  amenity_requests:['khach dang yeu cau bo sung tien ich','khach yeu cau them tien ich','khach de nghi bo sung thiet bi'],
+  common_area_requests:['liet ke phan anh ve khu vuc chung','phan anh khu vuc chung','khieu nai khu vuc chung'],
+  electricity_lowest:['phong nao dung dien it nhat','phong nao tieu thu dien it nhat','dien thap nhat'],
+  invoices:['hoa don da chot chua','hoa don a02 thang 9 da chot chua','liet ke phong da thanh toan thang 9'],
+  overview:['truoc khi chot hoa don can kiem tra gi','viec can kiem tra trong ky hoa don'],
   electricity_ranking:['phong nao xai dien nhieu','phong nao dung dien nhieu','phong nao tieu thu dien','phong nao tang dien','dien nhieu nhat','tieu thu dien nhieu nhat','kwh cao nhat'],
+  water_ranking:['phong nao dung nuoc nhieu','phong nao tieu thu nuoc','xep hang luong nuoc','nuoc tieu thu nhieu nhat','m3 cao nhat'],
   frequent_requests:['phong nao hay bao hong','phong nao hay bao su co','phong nao nhieu khieu nai','phong nao hay phan anh'],
   feedback_messages:['bao nhieu tin nhan phan hoi tu khach','co bao nhieu tin nhan phan hoi tu khach','so luong phan hoi cua khach','bao nhieu gop y tu cu dan'],
  };

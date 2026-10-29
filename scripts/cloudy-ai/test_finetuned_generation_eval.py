@@ -55,6 +55,22 @@ class GenerationJsonEvaluationTests(unittest.TestCase):
             "task": "clarify", "next_action": "read_only_after_scope_resolution"
         }))
 
+    def test_independent_owner_holdout_loads_separately_from_training(self):
+        ft = EVAL.load_training_module()
+        owner_cases = EVAL.load_evaluation_cases(ft, {"owner"}, str(
+            Path(__file__).parents[2] / "data/cloudy-owner/v3/independent-holdout.json"
+        ))
+        self.assertEqual(len(owner_cases), 46)
+        training_messages = {
+            case["messages"][1]["content"] for case in ft.load_cases("train") if case["flow"] == "owner"
+        }
+        evaluation_messages = {case["messages"][1]["content"] for case in owner_cases}
+        self.assertFalse(training_messages & evaluation_messages)
+        with self.assertRaises(ValueError):
+            EVAL.load_evaluation_cases(ft, {"resident"}, str(
+                Path(__file__).parents[2] / "data/cloudy-owner/v3/independent-holdout.json"
+            ))
+
 
 if __name__ == "__main__":
     unittest.main()

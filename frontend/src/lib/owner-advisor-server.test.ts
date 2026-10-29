@@ -74,11 +74,16 @@ test('vacant-room phrasing is routed before the invoice classifier only for auth
 test('common owner questions route deterministically before the local classifier',async()=>{
  for(const [question,task] of [
   ['Ai chưa đăng ký tạm trú?','residents'],['Phòng nào xài điện nhiều nhất tháng này?','electricity_ranking'],
-  ['Phòng nào có nhiều xe nhất?','vehicle_counts'],['Phòng nào hay báo hỏng nhất tháng này?','frequent_requests'],
+  ['Phòng nào có nhiều xe nhất?','vehicle_counts'],['Thống kê xe gửi theo từng phòng','vehicle_counts'],['T01 đang có mấy xe?','vehicle_counts'],['Phòng nào dùng điện ít nhất tháng 9?','electricity_lowest'],['Phòng nào hay báo hỏng nhất tháng này?','frequent_requests'],
+  ['Phòng nào đang trống để cho thuê?','available_rooms'],['Phòng nào dùng nước nhiều nhất tháng 9?','water_ranking'],['Xếp hạng lượng nước tiêu thụ tháng 9','water_ranking'],
+  ['Có bao nhiêu yêu cầu đang chờ/đang xử lý?','open_requests'],['Yêu cầu nào tháng 10 cần xử lý?','actionable_requests'],['Khách đang yêu cầu bổ sung tiện ích gì?','amenity_requests'],['Liệt kê phản ánh về khu vực chung','common_area_requests'],['Phòng nào còn cư dân chưa đăng ký tạm trú?','resident_registration_by_room'],
+  ['Tổng cộng có bao nhiêu xe?','vehicle_total'],['Phòng nào có nhiều cư dân nhất?','resident_ranking'],
   ['Có bao nhiêu tin nhắn phản hồi từ khách?','feedback_messages'],
   ['Phòng nào hay báo sửa chữa nhất tháng này?','frequent_requests'],['Tiền điện tháng trước tính ra sao?','utilities'],
   ['Kỳ này còn phòng nào chưa có số điện nước để lên bill?','missing'],['Liệt kê phòng chưa có ai thuê nhé.','available_rooms'],
-  ['Phòng nào chưa đóng tiền thuê kỳ này?','unpaid'],['Thế đã thanh toán thì sao?','paid'],['Tìm hóa đơn có mã giao dịch DEMO-1793206220292-3A988AA3','transaction_lookup'],['Tên cư dân ở phòng A02','resident_identity_help'],['Kỳ này còn việc gì cần kiểm tra?','overview'],
+  ['Phòng nào chưa đóng tiền thuê kỳ này?','unpaid'],['T06 còn phải đóng bao nhiêu tiền tháng 9?','unpaid'],['Thế đã thanh toán thì sao?','paid'],['Cho tôi hóa đơn tháng 9','invoices'],['Hóa đơn A02 tháng 9 đã chốt chưa?','invoices'],['Liệt kê các phòng đã thanh toán tháng 9','paid'],['Đang quản lý bao nhiêu khu trọ?','property_total'],['Phòng nào thiếu chỉ số điện/nước?','missing'],['Phòng nào thiếu dữ liệu lập hóa đơn?','missing'],['Trước khi chốt hóa đơn cần kiểm tra gì?','overview'],['Yêu cầu nào tháng 10 cần xử lý?','actionable_requests'],['Khách đang yêu cầu bổ sung tiện ích gì?','amenity_requests'],['Liệt kê phản ánh về khu vực chung','common_area_requests'],['Ai đang thuê phòng A02?','resident_identity_help'],['Kỳ này còn việc gì cần kiểm tra?','overview'],
+  ['Thêm số điện thoại 0901234567 cho cư dân phòng A01','sensitive_data_refusal'],['Cập nhật CCCD 079123456789 cho người thuê','sensitive_data_refusal'],
+  ['Hợp đồng nào đã hết hạn?','contract_management'],
  ] as const){
   let modelCalled=false;const response=await handleOwnerAdvisor(request('gt_session=admin',{question}),{...options,source:'database',interpretImpl:async()=>{modelCalled=true;return {task:'clarify',model:'qwen',reviewRequired:true,message:'chưa hiểu'};}});
   assert.equal((await response.json()).task,task,question);assert.equal(modelCalled,false,question);
@@ -105,7 +110,7 @@ test('all supported read-only tasks run without confirmation; mutations remain s
  };
  const response=await handleOwnerAdvisor(request('gt_session=admin',{task:'residents',period:'',room:''}),{mode:'development',fetchImpl:backendFetch,source:'database'});
  assert.equal(response.status,200);const data=await response.json();assert.match(data.summary,/Toàn tài khoản: 1 cư dân đang ở/);assert.equal(JSON.stringify(data).includes('Không được trả tên'),false);
- for(const task of ['unpaid','paid','utilities','missing','overview','requests','feedback_messages']){
+ for(const task of ['invoices','unpaid','paid','utilities','missing','overview','requests','open_requests','actionable_requests','amenity_requests','common_area_requests','feedback_messages','property_total','electricity_lowest']){
   const direct=await handleOwnerAdvisor(request('gt_session=admin',{task,period:'2026-10',room:''}),{mode:'development',fetchImpl:backendFetch,source:'database'});
   assert.equal(direct.status,200,`${task} should be a direct read-only query`);
  }

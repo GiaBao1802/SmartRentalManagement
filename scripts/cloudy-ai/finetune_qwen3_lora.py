@@ -12,12 +12,6 @@ import time
 from pathlib import Path
 from typing import Any
 
-import torch
-import psutil
-from peft import LoraConfig, TaskType, get_peft_model, prepare_model_for_kbit_training
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, Trainer, TrainingArguments
-
-
 ROOT = Path(__file__).resolve().parents[2]
 MODEL_ID = "Qwen/Qwen3-1.7B"
 SYSTEMS = {
@@ -55,6 +49,7 @@ CORPORA = {
     "resident": ROOT / "data/cloudy-resident/v1/assistant-corpus.json",
     "owner": ROOT / "data/cloudy-owner/v2/assistant-corpus.json",
 }
+OWNER_TARGETED_TRAINING = ROOT / "data/cloudy-owner/v3/targeted-training.json"
 
 
 def load_cases(split: str) -> list[dict[str, Any]]:
@@ -72,6 +67,19 @@ def load_cases(split: str) -> list[dict[str, Any]]:
                 "messages": [
                     {"role": "system", "content": SYSTEMS[flow]},
                     {"role": "user", "content": request},
+                    {"role": "assistant", "content": json.dumps(item["target"], ensure_ascii=False, separators=(",", ":"))},
+                ],
+                "target": item["target"],
+            })
+    if split == "train":
+        corpus = json.loads(OWNER_TARGETED_TRAINING.read_text(encoding="utf-8"))
+        for item in corpus["training_reference"]:
+            cases.append({
+                "flow": "owner",
+                "id": item["id"],
+                "messages": [
+                    {"role": "system", "content": SYSTEMS["owner"]},
+                    {"role": "user", "content": item["message"]},
                     {"role": "assistant", "content": json.dumps(item["target"], ensure_ascii=False, separators=(",", ":"))},
                 ],
                 "target": item["target"],
@@ -109,6 +117,8 @@ class PadBatch:
         self.pad_token_id = pad_token_id
 
     def __call__(self, features: list[dict[str, list[int]]]) -> dict[str, torch.Tensor]:
+        import torch
+
         width = max(len(item["input_ids"]) for item in features)
         batch_ids, batch_masks, batch_labels = [], [], []
         for item in features:
@@ -123,38 +133,40 @@ class PadBatch:
         }
 
 
-@torch.inference_mode()
 def evaluate(model: Any, tokenizer: Any, cases: list[dict[str, Any]]) -> dict[str, Any]:
+    import torch
+
     model.eval()
     results = []
-    for case in cases:
-        messages = case["messages"]
-        prompt_ids = tokenizer.apply_chat_template(
-            messages[:-1], tokenize=True, add_generation_prompt=True, enable_thinking=False
-        )
-        all_ids = tokenizer.apply_chat_template(
-            messages, tokenize=True, add_generation_prompt=False, enable_thinking=False
-        )
-        if all_ids[:len(prompt_ids)] != prompt_ids:
-            raise ValueError(f"Evaluation prompt is not a prefix for {case['flow']}:{case['id']}")
-        input_ids = torch.tensor([all_ids], dtype=torch.long)
-        output = model(input_ids=input_ids, attention_mask=torch.ones_like(input_ids), use_cache=False)
-        gold = input_ids[0, len(prompt_ids):]
-        predictions = output.logits[0, len(prompt_ids) - 1:len(all_ids) - 1].argmax(dim=-1)
-        token_accuracy = float((predictions == gold).float().mean().item()) if len(gold) else 0.0
-        exact = bool(torch.equal(predictions, gold))
-        predicted_text = tokenizer.decode(predictions.tolist(), skip_special_tokens=True)
-        results.append({
-            "flow": case["flow"],
-            "id": case["id"],
-            "expected": json.dumps(case["target"], ensure_ascii=False, separators=(",", ":")),
-            "teacher_forced_prediction": predicted_text[:1200],
-            "answer_tokens": len(gold),
-            "token_accuracy": token_accuracy,
-            "exact_answer": exact,
-        })
-        del output, input_ids, gold, predictions
-        print(f"eval {case['flow']} {case['id']}: token-accuracy={token_accuracy:.3f}, exact={'yes' if exact else 'no'}", flush=True)
+    with torch.inference_mode():
+        for case in cases:
+            messages = case["messages"]
+            prompt_ids = tokenizer.apply_chat_template(
+                messages[:-1], tokenize=True, add_generation_prompt=True, enable_thinking=False
+            )
+            all_ids = tokenizer.apply_chat_template(
+                messages, tokenize=True, add_generation_prompt=False, enable_thinking=False
+            )
+            if all_ids[:len(prompt_ids)] != prompt_ids:
+                raise ValueError(f"Evaluation prompt is not a prefix for {case['flow']}:{case['id']}")
+            input_ids = torch.tensor([all_ids], dtype=torch.long)
+            output = model(input_ids=input_ids, attention_mask=torch.ones_like(input_ids), use_cache=False)
+            gold = input_ids[0, len(prompt_ids):]
+            predictions = output.logits[0, len(prompt_ids) - 1:len(all_ids) - 1].argmax(dim=-1)
+            token_accuracy = float((predictions == gold).float().mean().item()) if len(gold) else 0.0
+            exact = bool(torch.equal(predictions, gold))
+            predicted_text = tokenizer.decode(predictions.tolist(), skip_special_tokens=True)
+            results.append({
+                "flow": case["flow"],
+                "id": case["id"],
+                "expected": json.dumps(case["target"], ensure_ascii=False, separators=(",", ":")),
+                "teacher_forced_prediction": predicted_text[:1200],
+                "answer_tokens": len(gold),
+                "token_accuracy": token_accuracy,
+                "exact_answer": exact,
+            })
+            del output, input_ids, gold, predictions
+            print(f"eval {case['flow']} {case['id']}: token-accuracy={token_accuracy:.3f}, exact={'yes' if exact else 'no'}", flush=True)
     by_flow = {}
     for flow in SYSTEMS:
         flow_results = [item for item in results if item["flow"] == flow]
@@ -174,6 +186,11 @@ def evaluate(model: Any, tokenizer: Any, cases: list[dict[str, Any]]) -> dict[st
 
 
 def main() -> None:
+    import psutil
+    import torch
+    from peft import LoraConfig, TaskType, get_peft_model, prepare_model_for_kbit_training
+    from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, Trainer, TrainingArguments
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", required=True, help="Local directory for adapter and evaluation report")
     parser.add_argument("--epochs", type=float, default=1)

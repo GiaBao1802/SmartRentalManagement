@@ -83,6 +83,34 @@ class CompleteJsonObjectStoppingCriteria(StoppingCriteria):
         return False
 
 
+def load_evaluation_cases(ft: Any, selected_flows: set[str], extra_owner_holdout: str | None = None) -> list[dict[str, Any]]:
+    cases = [case for case in ft.load_cases("holdout") if case["flow"] in selected_flows]
+    if not extra_owner_holdout:
+        return cases
+    if "owner" not in selected_flows:
+        raise ValueError("--extra-owner-holdout requires the owner flow")
+    extra = json.loads(Path(extra_owner_holdout).read_text(encoding="utf-8"))
+    existing_ids = {(case["flow"], case["id"]) for case in cases}
+    existing_messages = {(case["flow"], case["messages"][-2]["content"]) for case in cases}
+    for item in extra.get("cases", []):
+        request = item["message"]
+        if ("owner", item["id"]) in existing_ids or ("owner", request) in existing_messages:
+            raise ValueError(f"Extra evaluation case overlaps existing holdout: {item['id']}")
+        cases.append({
+            "flow": "owner",
+            "id": item["id"],
+            "messages": [
+                {"role": "system", "content": ft.SYSTEMS["owner"]},
+                {"role": "user", "content": request},
+                {"role": "assistant", "content": json.dumps(item["target"], ensure_ascii=False, separators=(",", ":"))},
+            ],
+            "target": item["target"],
+        })
+        existing_ids.add(("owner", item["id"]))
+        existing_messages.add(("owner", request))
+    return cases
+
+
 def generate(model: Any, tokenizer: Any, messages: list[dict[str, str]], max_new_tokens: int) -> str:
     import torch
     from transformers import StoppingCriteriaList
@@ -209,12 +237,15 @@ def main() -> None:
     parser.add_argument("--smoke", action="store_true", help="Run only the original three representative smoke cases")
     parser.add_argument("--flows", nargs="+", choices=("guest", "resident", "owner"),
                         help="Restrict evaluation to selected flows")
+    parser.add_argument(
+        "--extra-owner-holdout",
+        help="Optional independent JSON bank with a top-level `cases` array; never loaded for training",
+    )
     args = parser.parse_args()
     torch.set_num_threads(args.threads)
     ft = load_training_module()
-    cases = ft.load_cases("holdout")
     selected_flows = set(args.flows or ft.SYSTEMS)
-    cases = [case for case in cases if case["flow"] in selected_flows]
+    cases = load_evaluation_cases(ft, selected_flows, args.extra_owner_holdout)
     selected = (
         [next(item for item in cases if item["flow"] == flow and item["id"] == case_id)
          for flow, case_id in SMOKE_CASES.items() if flow in selected_flows]
@@ -234,7 +265,13 @@ def main() -> None:
         low_cpu_mem_usage=True,
         trust_remote_code=False,
     )
-    model = PeftModel.from_pretrained(base, args.adapter_dir)
+    output = Path(args.output)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    offload_dir = output.parent / (output.stem + ".offload")
+    offload_dir.mkdir(parents=True, exist_ok=True)
+    model = PeftModel.from_pretrained(
+        base, args.adapter_dir, offload_folder=str(offload_dir), low_cpu_mem_usage=True
+    )
     model.eval()
     rows = []
     output = Path(args.output)
@@ -285,7 +322,8 @@ def main() -> None:
     report = {
         "model": ft.MODEL_ID,
         "metric": "greedy free generation; strict bare-JSON validity and exact target-object match on untouched holdout",
-        "evaluation_scope": f"smoke subset ({len(selected)} cases)" if args.smoke else "selected untouched holdout cases",
+        "evaluation_scope": f"smoke subset ({len(selected)} cases)" if args.smoke else "original untouched holdout plus optional independent owner holdout",
+        "extra_holdout_source": str(Path(args.extra_owner_holdout).resolve()) if args.extra_owner_holdout else None,
         "max_new_tokens": args.max_new_tokens,
         "database": "not accessed",
         "cases": rows,
