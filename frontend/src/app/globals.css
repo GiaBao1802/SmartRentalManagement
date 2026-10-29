@@ -2660,7 +2660,9 @@ body:has(.explore-results.is-expanded) .cloudy-2d--explorer { visibility: hidden
 
 .resident-profile-avatar img{width:100%;height:100%;border-radius:inherit;object-fit:cover}
 /* Owner operations report — server-derived, owner-scoped portfolio snapshot. */
-.owner-report-page { display: grid; gap: 20px; }
+.owner-report-page { display: grid; min-width: 0; gap: 20px; }
+.owner-report-page > *, .owner-report-columns > * { min-width: 0; }
+.owner-report-page > .admin-card, .owner-report-columns > .admin-card { margin: 0; padding: 18px; }
 .owner-report-heading { align-items: end; }
 .owner-report-actions { display: flex; align-items: end; gap: 10px; }
 .owner-report-actions label { display: grid; gap: 5px; color: var(--mu); font-size: 12px; font-weight: 600; }
@@ -2675,13 +2677,13 @@ body:has(.explore-results.is-expanded) .cloudy-2d--explorer { visibility: hidden
 .owner-report-section-heading { display: flex; align-items: start; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
 .owner-report-section-heading h2 { margin: 0 0 5px; color: var(--tx); font-size: 17px; }
 .owner-report-section-heading p { margin: 0; color: var(--mu); font-size: 12px; line-height: 1.5; }
-.owner-report-section-heading > span, .owner-report-section-heading > a { flex: 0 0 auto; color: var(--mu); font-size: 12px; }
+.owner-report-section-heading > span, .owner-report-section-heading > a { flex: 0 1 auto; max-width: 45%; color: var(--mu); font-size: 12px; text-align: right; overflow-wrap: anywhere; }
 .owner-report-ranking ol { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
-.owner-report-ranking ol li { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; align-items: center; gap: 10px; }
+.owner-report-ranking ol li { display: grid; grid-template-columns: 26px minmax(0, 1fr) minmax(58px, auto); align-items: center; gap: 10px; }
 .owner-report-rank { display: grid; width: 25px; height: 25px; place-items: center; border-radius: 50%; background: #eef5f1; color: var(--sec); font-size: 12px; font-weight: 700; }
 .owner-report-rank-content { display: grid; min-width: 0; gap: 7px; }
 .owner-report-rank-content strong { overflow: hidden; color: var(--tx); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-.owner-report-ranking ol li > b { color: var(--sec); font-size: 12px; white-space: nowrap; }
+.owner-report-ranking ol li > b { min-width: 0; color: var(--sec); font-size: 12px; text-align: right; overflow-wrap: anywhere; }
 .owner-report-bar { height: 5px; overflow: hidden; border-radius: 99px; background: #edf1ee; }
 .owner-report-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--sec); }
 .owner-report-empty { margin: 0; padding: 16px; border: 1px dashed var(--bd); border-radius: 10px; color: var(--mu); font-size: 13px; }
@@ -2690,7 +2692,8 @@ body:has(.explore-results.is-expanded) .cloudy-2d--explorer { visibility: hidden
 .owner-report-category-list strong, .owner-report-busiest b { color: var(--sec); }
 .owner-report-busiest { display: grid; gap: 10px; margin-top: 19px; padding-top: 15px; border-top: 1px solid var(--bd); }
 .owner-report-busiest h3 { margin: 0 0 2px; color: var(--mu); font-size: 12px; }
-.owner-report-room-card .table-wrap { max-height: 620px; overflow: auto; }
+.owner-report-room-card { min-width: 0; }
+.owner-report-room-card .table-wrap { max-height: 620px; overflow: auto; border: 1px solid var(--line); border-radius: 10px; }
 .owner-report-room-card table { min-width: 900px; }
 .owner-report-subline, .owner-report-warning { display: block; margin-top: 4px; color: var(--mu); font-size: 11px; }
 .owner-report-warning { color: #9a6700; }
@@ -2709,14 +2712,33 @@ body:has(.explore-results.is-expanded) .cloudy-2d--explorer { visibility: hidden
 .owner-report-financial-legend .billed, .owner-report-month-bars .billed { background: #82aaa2; }
 .owner-report-financial-legend .settled, .owner-report-month-bars .settled { background: #f2ad32; }
 .owner-report-month-chart { display: grid; gap: 8px; }
-.owner-report-month-row { display: grid; grid-template-columns: 54px minmax(80px, 1fr) minmax(96px, auto); align-items: center; gap: 10px; color: var(--mu); font-size: 11px; }
-.owner-report-month-row > b { color: var(--tx); font-size: 11px; font-weight: 600; text-align: right; }
-.owner-report-month-row > b small { display: block; margin-top: 2px; color: var(--mu); font-size: 10px; font-weight: 400; }
+.owner-report-month-row { display: grid; grid-template-columns: 54px minmax(0, 1fr) minmax(150px, 190px); align-items: center; gap: 10px; min-width: 0; color: var(--mu); font-size: 11px; }
+.owner-report-month-label { white-space: nowrap; }
+.owner-report-month-values { display: grid; min-width: 0; gap: 2px; text-align: right; }
+.owner-report-month-values strong { color: var(--tx); font-size: 11px; font-weight: 600; overflow-wrap: anywhere; }
+.owner-report-month-values small { color: var(--mu); font-size: 10px; font-weight: 400; overflow-wrap: anywhere; }
 .owner-report-month-bars { display: grid; gap: 4px; }
 .owner-report-month-bars > div { height: 7px; overflow: hidden; border-radius: 99px; background: #edf1ee; }
 .owner-report-month-bars i { min-width: 0; }
-@media (max-width: 900px) { .owner-report-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 680px) { .owner-report-heading, .owner-report-actions { align-items: stretch; flex-direction: column; } .owner-report-actions select { width: 100%; min-width: 0; } .owner-report-kpis, .owner-report-columns, .owner-report-financial-kpis { grid-template-columns: 1fr; } .owner-report-kpi { min-height: 112px; } .owner-report-section-heading { flex-direction: column; } .owner-report-month-row { grid-template-columns: 44px minmax(56px, 1fr) minmax(82px, auto); gap: 7px; font-size: 10px; } .owner-report-month-row > b { font-size: 10px; } }
+@media (max-width: 900px) {
+  .owner-report-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .owner-report-columns { grid-template-columns: 1fr; }
+  .owner-report-financial-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 680px) {
+  .owner-report-heading, .owner-report-actions { align-items: stretch; flex-direction: column; }
+  .owner-report-actions select { width: 100%; min-width: 0; }
+  .owner-report-kpis, .owner-report-columns, .owner-report-financial-kpis { grid-template-columns: 1fr; }
+  .owner-report-kpi { min-height: 112px; }
+  .owner-report-page > .admin-card, .owner-report-columns > .admin-card { padding: 14px; }
+  .owner-report-section-heading { flex-direction: column; }
+  .owner-report-section-heading > span, .owner-report-section-heading > a { max-width: 100%; text-align: left; }
+  .owner-report-month-row { grid-template-columns: 44px minmax(0, 1fr); gap: 6px 8px; font-size: 10px; }
+  .owner-report-month-bars { grid-column: 1 / -1; grid-row: 2; }
+  .owner-report-month-values { grid-column: 2; grid-row: 1; }
+  .owner-report-month-values strong { font-size: 10px; }
+  .owner-report-month-values small { font-size: 9px; }
+}
 
 /* Admin requests inbox: branded layout shared with the Góc Trọ admin workspace. */
 .admin-requests-page { display: block; }
