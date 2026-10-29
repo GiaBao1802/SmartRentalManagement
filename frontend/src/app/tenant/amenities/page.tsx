@@ -263,7 +263,7 @@ export default function ResidentAmenitiesPage() {
 
   return <main className="tenant-page resident-home resident-amenities-page">
     <header className="tenant-header resident-topbar">
-      <a href="/" aria-label="Trang chủ Góc Trọ"><BrandLogo /></a>
+      <a href="/tenant/amenities" onClick={(e) => { e.preventDefault(); window.location.reload(); }} aria-label="Tải lại trang dịch vụ"><BrandLogo /></a>
       <ResidentPrimaryNavigation active="amenities" />
       <div className="resident-topbar-actions"><ResidentAccountMenu name={name} email={user?.account.email ?? null} logoutPending={logoutPending} onLogout={() => void handleLogout()} /></div>
     </header>

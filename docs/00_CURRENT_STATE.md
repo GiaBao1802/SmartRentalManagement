@@ -1,5 +1,9 @@
 # Góc Trọ — Current State
 
+### GitHub source synchronization — 2026-10-29
+
+Pulled eight commits/221 paths by fast-forward to `6ad69f8` and integrated the previously saved public-navigation/account-name and Admin/Resident logo changes. Seven content conflicts were resolved while retaining upstream galleries, amenities, account menus and Superadmin boundaries. Both typechecks, frontend 79+17 and backend 41 focused tests, and full frontend/backend production builds pass. Local edits remain unstaged/unpublished; original checkpoint and stash are retained. Development servers were stopped for the update; no database rollout or runtime cleanup ran. See [integration evidence](10_operations/GITHUB_UPDATE_INTEGRATION_20261029.md). The upstream primary Exact Next Task remains unchanged.
+
 ### Cloudy Qwen3 local fine-tuning — 2026-10-29
 
 Trained a local CPU QLoRA NF4 adapter for one epoch on 84 synthetic Guest/Resident/Owner examples; reserved 36 holdouts. Teacher-forced answer-token accuracy improved 48.5%→65.2%, but exact answers remain 0/36 and free-generation smoke is 0/3 for both base and adapter; the adapter also misroutes a Resident invoice question and repeats an Owner JSON key. The candidate is **not cleared for runtime**. Adapter and checksums are in `%LOCALAPPDATA%\GocTro\cloudy-qwen3-candidate-20261029`; app runtime, Ollama and databases are unchanged. Primary Exact Next Task remains the V1.17 rollout after a verified Superadmin email and target authorization. See [fine-tuning report](11_project-reports/CLOUDY_QWEN3_FINETUNE_PREPARATION_20261029.md).
@@ -69,6 +73,10 @@ Neon shared-dev remains V1.16/47 tables. Added a private Owner 6 test Property w
 ### Marketplace room amenities — V1.16 applied to Neon shared-dev — 2026-10-28
 
 Marketplace now has structured Owner-managed room amenities (air conditioning, parking availability, Wi-Fi, elevator, appliances, private facilities, balcony, and pet policy) for Admin editing, public list/detail, filtering, and local Cloudy search. The V1.16 migration is applied on Neon shared-dev `production` after a verified backup and clone rehearsal; exact catalogs match. At the earlier AI-fixture checkpoint, 100 Rooms had synthetic amenities covering all 12 codes, 15 Rooms were occupied and 85 public available, and each Owner had three active Resident profiles. Ten misclassified demo leases were corrected from public/available to occupied/unlisted. The public API returns 10 rooms for confirmed AC+parking filters; live Qwen proposes both codes, waits for confirmation, and then returns those 10 matches. The current Owner 6 data expansion is recorded above. Amenity values are test data, not verified claims about real properties. Local `Goctro_dev_v18` remains V1.15. Parking availability does not indicate a free/included price. One unrelated existing frontend API test failure remains. See [V1.16 report](07_modules/public-marketplace/MARKETPLACE_AMENITIES_V116_IMPLEMENTATION_REPORT.md) and [database changelog](DATABASE_CHANGELOG.md#database-v116--structured-marketplace-amenities-on-neon-shared-dev--2026-10-28).
+
+### Public search navigation and account header — 2026-10-29
+
+Public explorer/detail/login navigation now returns to `/tim-phong`, retaining incoming search filters; the explicit introduction link alone returns to the existing intro at `/intro/index.html`. Explorer/detail headers show the authenticated profile name instead of login links. Frontend typecheck, 8 focused tests, anonymous browser round trips and a 390×844 header check pass; authenticated rendering is covered by profile fixtures, with real-account browser login still pending. No backend/database/env changes. The Active Module and primary Exact Next Task remain unchanged. See [public UX follow-up](07_modules/public-marketplace/PUBLIC_SALES_FUNNEL_RESPONSIVE_UX_AUDIT_FIX_REPORT.md#16-public-navigation-and-account-header--2026-10-29).
 
 ### Scoped intro scroll and startup correction — 2026-10-28
 

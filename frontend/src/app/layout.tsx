@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./brand-fonts.css";
 import "./globals.css";
+import "./components/public-account-links.css";
 import { AuthProvider } from "./components/auth-provider";
 import { Cloudy2D } from "./components/cloudy-2d";
 

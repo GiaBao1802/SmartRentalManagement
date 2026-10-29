@@ -1,5 +1,9 @@
 # Document catalog
 
+## GitHub update integration — 2026-10-29
+
+[Source synchronization report](10_operations/GITHUB_UPDATE_INTEGRATION_20261029.md) — CURRENT. Fast-forward to `6ad69f8` (8 commits/221 paths), preservation of saved local edits, seven conflict resolutions, local Prisma generation and validation evidence. No commit/push/database rollout; upstream V1.17 authorization gate remains the primary next task.
+
 ## Fine-tune Qwen3 cục bộ cho Cloudy — 2026-10-29
 
 [Qwen3 1.7B local fine-tuning](11_project-reports/CLOUDY_QWEN3_FINETUNE_PREPARATION_20261029.md) — TRAINED, NOT PROMOTED: one CPU QLoRA NF4 epoch on 84 synthetic examples; 36 untouched holdouts improved on teacher-forced token accuracy (48.5%→65.2%), but exact matches were 0/36 and free-generation smoke 0/3 for both base and adapter. Adapter misroutes a Resident invoice question and repeats Owner JSON keys. Local artifact checksum recorded; runtime, database, Ollama and production unchanged.
@@ -63,6 +67,10 @@ Marketplace API and filters now expose active shared Facility names, distinct fr
 [Marketplace full-list UX](07_modules/public-marketplace/PUBLIC_SALES_FUNNEL_RESPONSIVE_UX_AUDIT_FIX_REPORT.md#marketplace-full-list-view--2026-10-29) — CURRENT frontend enhancement: a dedicated, responsive full-list search page with map/list navigation, preserved filters, sort and pagination. Typecheck and production build pass; browser visual review remains pending. Public API and database contracts are unchanged.
 
 [Full UI/UX review](08_audits/FULL_UI_UX_REVIEW_2026_10_29.md) — CURRENT, PARTIAL: route/CTA mismatch, desktop map error-banner overlap, unsupported intro claims and nested hotline link are fixed; intro preview mirrors match. Typecheck, 77/77 API/UI tests, production build, and public browser spot-check pass. Authenticated Admin/Resident pages and live API data remain unverified; no database changes.
+
+## Public navigation and account header — 2026-10-29
+
+[Public UX follow-up, section 16](07_modules/public-marketplace/PUBLIC_SALES_FUNNEL_RESPONSIVE_UX_AUDIT_FIX_REPORT.md#16-public-navigation-and-account-header--2026-10-29) — CURRENT. Explorer/detail/login return to `/tim-phong` with search filters; explicit introduction opens `/intro/index.html`. Shared account header hides login links for authenticated profiles. Typecheck, 8 focused tests, anonymous browser navigation and 390×844 header checks pass; real-account browser login remains unverified. Backend/database and primary next task unchanged.
 
 ## Intro scroll performance — 2026-10-28
 

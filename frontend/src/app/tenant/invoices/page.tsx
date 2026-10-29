@@ -231,7 +231,7 @@ export default function ResidentInvoicesPage() {
 
   return <main className="tenant-page resident-home resident-invoices-page">
     <header className="tenant-header resident-topbar">
-      <a href="/" aria-label="Trang chủ Góc trọ"><BrandLogo /></a>
+      <a href="/tenant/invoices" onClick={(e) => { e.preventDefault(); window.location.reload(); }} aria-label="Tải lại trang hóa đơn"><BrandLogo /></a>
       <ResidentPrimaryNavigation active="invoices" />
       <div className="resident-topbar-actions"><ResidentAccountMenu name={name} email={user?.account.email ?? null} logoutPending={logoutPending} onLogout={() => void handleLogout()} /></div>
     </header>

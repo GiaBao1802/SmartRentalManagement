@@ -129,7 +129,7 @@ export default function ResidentParkingPage() {
 
   const name = displayName(user);
   return <main className="tenant-page resident-parking-page">
-    <header className="tenant-header resident-topbar"><a href="/" aria-label="Trang chủ Góc Trọ"><BrandLogo /></a><ResidentPrimaryNavigation active="parking" /><div className="resident-topbar-actions"><ResidentAccountMenu name={name} email={user.account.email} logoutPending={logoutPending} onLogout={() => void handleLogout()} /></div></header>
+    <header className="tenant-header resident-topbar"><a href="/tenant/parking" onClick={(e) => { e.preventDefault(); window.location.reload(); }} aria-label="Tải lại trang gửi xe"><BrandLogo /></a><ResidentPrimaryNavigation active="parking" /><div className="resident-topbar-actions"><ResidentAccountMenu name={name} email={user.account.email} logoutPending={logoutPending} onLogout={() => void handleLogout()} /></div></header>
     <div className="tenant-content resident-layout">
       <section className="resident-parking-hero" aria-labelledby="resident-parking-title">
         <div className="resident-parking-hero-copy"><span className="resident-eyebrow">DỊCH VỤ CỦA BẠN · BÃI XE</span><h1 id="resident-parking-title">Chọn chỗ gửi xe phù hợp</h1><p>Đăng ký phương tiện, xem khu vực và mã chỗ đỗ trước khi gửi yêu cầu. Chỗ đỗ được giữ trong 24 giờ; đăng ký chỉ có hiệu lực sau khi chủ trọ duyệt. Phí (nếu có) sẽ được tính trong kỳ hóa đơn, không thu tại bước gửi yêu cầu.</p><div className="resident-parking-steps"><span><b>01</b> Chọn xe</span><span><b>02</b> Chọn chỗ còn trống</span><span><b>03</b> Chờ duyệt</span></div></div>

@@ -48,7 +48,7 @@ export default function AdminShell({ children, active }: { children: ReactNode; 
   return <div className={`admin-page${mobileNavOpen ? " nav-open" : ""}`}>
     {mobileNavOpen && <button className="admin-nav-scrim" type="button" aria-label="Đóng điều hướng" onClick={() => setMobileNavOpen(false)} />}
     <aside className="admin-sidebar" aria-label="Thanh điều hướng chính">
-      <a className="admin-brand" href="/" aria-label="Góc Trọ - trang chủ"><BrandLogo light /></a>
+      <a className="admin-brand" href={pathname} onClick={(e) => { e.preventDefault(); window.location.reload(); }} aria-label="Tải lại trang quản lý"><BrandLogo light /></a>
       <div className="admin-sidebar-caption"><span className="admin-sidebar-dot" /> KHÔNG GIAN QUẢN LÝ</div>
       {nav}
       <div className="admin-sidebar-footer"><span className="admin-sidebar-footer-status" aria-hidden="true" /><span>Không gian quản lý<small>Vận hành khu trọ</small></span></div>

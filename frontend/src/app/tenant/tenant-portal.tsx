@@ -162,7 +162,7 @@ export default function TenantPortal() {
   const currentPlace = activeOccupancy ? `${activeOccupancy.room?.property?.name ?? "Khu trọ"} · Phòng ${activeOccupancy.room?.room_code ?? activeOccupancy.room_id}` : "Chưa có nơi ở hiện tại";
   return <main className="tenant-page resident-home">
     <header className="tenant-header resident-topbar">
-      <a href="/" aria-label="Trang chủ Góc trọ"><BrandLogo /></a>
+      <a href="/tenant" onClick={(e) => { e.preventDefault(); window.location.reload(); }} aria-label="Tải lại trang cư dân"><BrandLogo /></a>
       <ResidentPrimaryNavigation active="overview" />
       <div className="resident-topbar-actions"><ResidentAccountMenu name={name} email={user.account.email} logoutPending={logoutPending} onLogout={() => void handleLogout()} /></div>
     </header>

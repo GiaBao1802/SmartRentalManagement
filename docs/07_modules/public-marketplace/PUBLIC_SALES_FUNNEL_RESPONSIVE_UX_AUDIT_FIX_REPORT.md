@@ -96,3 +96,22 @@ Use Chrome DevTools responsive mode at each width: **390, 430, 768, 1024, 1200, 
 ## 15. Final status
 
 Responsive CSS fixes and available host-browser smoke checks are complete. The exact six-width viewport matrix is **PARTIAL** until checked in a browser that supports viewport resizing.
+
+## 16. Public navigation and account header — 2026-10-29
+
+Status: CURRENT, scoped frontend follow-up to the user's 2026-10-28 request. Sources reviewed: Requirements sections 4–5, API public explorer/authentication contracts, current checkpoint/catalog, frontend instructions, installed Next.js linking/navigation documentation and the current middleware/public/auth implementation.
+
+The public search home is `/tim-phong`; the existing `/rooms` entry normalizes to that path. Explorer logo, public Room detail logo/footer/breadcrumb/error-state return actions and login's home actions return to the explorer. Room cards use Next Link in the same tab and carry a validated explorer `returnTo` query; public login links preserve that query through `next` for either account role. Only the explicit introduction link returns to `/`, which continues to serve the existing static intro. The map-source attribution no longer opens a new tab.
+
+Explorer and public Room detail share an account header backed by the existing AuthProvider and authenticated profile: loading shows a neutral pending label; an anonymous visitor sees the two login links; authenticated Admin/Resident sees the profile name and a link to the appropriate workspace. Direct-login default destinations, session/CSRF contracts and backend permissions are unchanged. Public return values reject external/private/lookalike routes. Names are rendered as text by React.
+
+Verification:
+
+- Frontend TypeScript check PASS (`tsc -p frontend/tsconfig.json --noEmit --incremental false`).
+- Eight focused navigation/account/credential tests PASS, including both profile shapes, hiding both login links after authentication, loading state, retaining filters and rejecting unsafe redirects.
+- Live anonymous browser: filtered explorer → login → home retains `price_max=1999999` and price sorting; explorer → Room 89 detail → list returns to the same filtered search in the same tab. Public header/footer links on detail point to that search. The explicit introduction link opens the existing intro at `/`.
+- Desktop screenshot at the normal 1280×720 viewport and mobile at 390×844. The mobile check found and corrected a CSS precedence issue where the search field covered the introduction link; after correction, hit-testing confirms the link is unobstructed and document width equals the 390px viewport. Temporary viewport override reset after checking.
+- Screenshots: `.local/public-navigation/desktop.png` and `.local/public-navigation/mobile.png`. These are ignored local evidence, not production assets.
+- Authenticated header states were tested with controlled profile fixtures; a real-account browser login was not performed. No production build or broad device matrix is claimed for this follow-up. Existing Room image load failures were observed and are outside this navigation scope.
+
+No backend/database/schema/env/dependency changes. Seven pre-existing Admin/Resident edits remain byte-identical to their saved hashes. Previously installed Neon skills/MCP files are preserved. No commit/push in this follow-up. The primary project Exact Next Task remains unchanged; the scoped UI handoff is to review the authenticated header with the user's normal Admin/Resident accounts.

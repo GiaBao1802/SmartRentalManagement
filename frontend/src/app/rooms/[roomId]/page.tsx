@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import PublicRoomDetailPage from "./public-room-detail";
 import { getPublicRoom } from "../../../lib/api/publicRoomApi";
+import { publicSearchReturnHref } from "../../../lib/public-navigation";
 
-type Props = { params: Promise<{ roomId: string }> };
+type Props = { params: Promise<{ roomId: string }>; searchParams: Promise<{ returnTo?: string | string[] }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { roomId } = await params;
@@ -17,7 +18,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function PublicRoomPage({ params }: Props) {
+export default async function PublicRoomPage({ params, searchParams }: Props) {
   const { roomId } = await params;
-  return <PublicRoomDetailPage roomId={roomId} />;
+  const { returnTo } = await searchParams;
+  return <PublicRoomDetailPage roomId={roomId} returnTo={publicSearchReturnHref(typeof returnTo === "string" ? returnTo : null)} />;
 }
