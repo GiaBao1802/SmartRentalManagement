@@ -18,7 +18,7 @@ Do not start implementation from memory or a previous session summary.
 
 1. `docs/01_REQUIREMENTS.md` — business rules.
 2. `docs/04_API_SPEC.md` — API contract.
-3. `docs/DATABASE_CHANGELOG.md` and `database/baselines/v1.18/` — shared Neon `production/neondb` has the exact V1.18 catalog after canonical team Cloudy V1.17 and additive Superadmin V1.18 migration on 2026-10-29. The isolated source is uncommitted and undistributed. V1.16 and V1.17 remain historical predecessors; do not rewrite their migrations or seed Neon. See `docs/10_operations/NEON_PLATFORM_V118_APPLY_20261029.md` for direct evidence.
+3. `docs/DATABASE_CHANGELOG.md` and `database/baselines/v1.18/` — shared Neon `production/neondb` has the exact V1.18 catalog after canonical team Cloudy V1.17 and additive Superadmin V1.18 migration on 2026-10-29. V1.16 and V1.17 remain historical predecessors; do not rewrite their migrations or seed Neon. See `docs/10_operations/NEON_PLATFORM_V118_APPLY_20261029.md` for database evidence and `docs/10_operations/V118_TEAM_HANDOFF_20261029.md` for source handoff and limits.
 4. `docs/00_CURRENT_STATE.md` — current project checkpoint.
 5. `docs/DOCUMENT_CATALOG.md` — document index/status.
 6. Reports — evidence and history, interpreted by date and scope.

@@ -23,7 +23,12 @@ def finish(question,items,raw):
  if not isinstance(raw,dict) or set(raw)!={'intent','decisions'} or raw['intent'] not in ['search_rooms','unknown'] or not isinstance(raw['decisions'],dict) or set(raw['decisions'])!=set(ids) or any(v not in ['include','exclude','unclear'] for v in raw['decisions'].values()):
   return {'status':'needs_clarification','questions':['Model chưa đánh giá đủ và đúng các điều kiện.']}
  # Retain strict residual/negation checks, including blocking excluded candidates.
- return base.finalize(question,items,{'intent':raw['intent'],'selected':[i for i in ids if raw['decisions'][i]=='include']})
+ selected=[i for i in ids if raw['decisions'][i]=='include']
+ # A bare monetary amount is clearly a price reference but lacks a comparison.
+ # Preserve it for a targeted clarification even if the small model labels it unclear.
+ if raw['intent']=='search_rooms':
+  selected.extend(c['id'] for c in items if c.get('clarify_price_operator') and c['id'] not in selected)
+ return base.finalize(question,items,{'intent':raw['intent'],'selected':selected})
 
 def extract(question):
  start=time.perf_counter();items=base.candidates(question)

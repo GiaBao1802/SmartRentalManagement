@@ -1,6 +1,10 @@
 # Document catalog
 
-## V1.18 runtime follow-up — 2026-10-29
+## V1.18 team source handoff — 2026-10-29
+
+[Team handoff](10_operations/V118_TEAM_HANDOFF_20261029.md) — CURRENT source package and startup guidance after reconciling `main` through `44bfe660`. Neon is already V1.18. The remaining limits are missing room-image files, absent invitation/reset delivery provider and the incomplete production-style Superadmin transaction test. Verify the merge commit on remote `main` before teammates pull. [Earlier runtime evidence](10_operations/NEON_V118_RUNTIME_READINESS_20261029.md) is a HISTORICAL local-preview snapshot.
+
+## Historical V1.18 runtime follow-up — 2026-10-29
 
 [Runtime readiness and limits](10_operations/NEON_V118_RUNTIME_READINESS_20261029.md) — CURRENT for the isolated source and read-only preview. Exact V1.18 setup guard, production platform route split, private image-root option, direct tests and unresolved disposable-DB/provider/file dependencies. The integration is uncommitted and undistributed; remote `main` advanced separately. The older setup/onboarding instructions below describe their dated V1.15 checkout and must not be used as current V1.18 operating instructions.
 
@@ -49,12 +53,12 @@
 
 ## Owner advisor demo — 2026-10-28
 
-[Owner advisor report](07_modules/invoice-zalo/OWNER_ADVISOR_DEMO_REPORT.md) — CURRENT clarification follow-ups preserve pending requests and reconfirm edits; authenticated chat creates confirmed free shared Facilities through Owner-scoped API routes on the existing table, and paid Fixed Services through existing pricing APIs. No DB schema change. Backend/frontend typechecks PASS; focused routes 7/7 and API client 1/1 PASS using mocks; live DB write and authenticated UI review remain unverified. Historical owner-chat, cookie-path, simulated request and account-isolation evidence remains in the report. Live backend data for Admin Cloudy; standalone remains synthetic. Four read-only billing tasks and Qwen3 1.7B task classification. [100-room dataset/runbook](../data/owner-ai/v1/README.md) bound to existing Admin 1 / Owner 1; 160 synthetic invoices. Older local room-advisor/JSON launch reports are historical for the standalone product direction.
+[Owner advisor report](07_modules/invoice-zalo/OWNER_ADVISOR_DEMO_REPORT.md) — CURRENT: live backend data for Admin Cloudy; standalone remains synthetic. Six read-only queries (billing, utilities, missing data, overview, requests, residents) run immediately when scope is clear; Cloudy asks only for an unavailable/ambiguous month or room. Unknown intent offers supported topics. Service creation and request decisions remain explicitly confirmed. [100-room dataset/runbook](../data/owner-ai/v1/README.md) is historical demo data bound to Admin 1 / Owner 1; 160 synthetic invoices. Focused adapter/intent/route tests and frontend typechecks pass; authenticated visual review remains pending. No database schema change. Older local room-advisor/JSON launch reports are historical for the standalone product direction.
 
 
 ## Cloudy local AI integration — 2026-10-28
 
-[Integration report](07_modules/public-marketplace/CLOUDY_LOCAL_AI_INTEGRATION_REPORT.md) — CURRENT, development-only Qwen3 1.7B through the existing mascot. Guest confirmation precedes read-only retrieval through the public rooms API. Each room links to detail and the preview links to a paginated full-results search using the confirmed criteria; live local DB check yielded 26 matches across three pages. Bounded location scan supports up to 1,000 candidates. Adapter validates room IDs, response rows and pagination. Live Qwen regression covers abbreviated-city price/area filters and continuation (17 Python tests; 42 focused TypeScript tests across Cloudy, listing and API client; frontend typecheck PASS). Rent, area, capacity and public province/address matching are supported; amenities require clarification. Production AI remains deferred. [Runbook](../scripts/cloudy-ai/README.md) — CURRENT. The [chat handoff](07_modules/public-marketplace/CLOUDY_CHAT_FRONTEND_HANDOFF.md) preserves historical mock evidence and links the active integration.
+[Integration report](07_modules/public-marketplace/CLOUDY_LOCAL_AI_INTEGRATION_REPORT.md) — CURRENT, development-only Qwen3 1.7B through the existing mascot. Guest confirmation precedes read-only retrieval through the public rooms API. Each room links to detail and the preview links to a paginated full-results search using confirmed criteria. V1.16 structured Owner-confirmed amenities are now included in public queries. Existing demo rooms still need Owner verification/entry before amenity filters return matches. Qwen recognition of area/AC/parking and API confirmation were live-tested. Production AI remains deferred. See the [V1.16 amenities report](07_modules/public-marketplace/MARKETPLACE_AMENITIES_V116_IMPLEMENTATION_REPORT.md), [runbook](../scripts/cloudy-ai/README.md), and [chat handoff](07_modules/public-marketplace/CLOUDY_CHAT_FRONTEND_HANDOFF.md).
 
 ## JSON-only advisor launch — 2026-10-28
 
@@ -103,7 +107,7 @@
 | `DOCUMENT_CATALOG.md` | Catalog | CURRENT | This inventory. |
 | `01_REQUIREMENTS.md` | Product requirements | CURRENT — CANONICAL | Business requirements authority for SmartRentalManagement. Historical source provenance is retained in the dependency copies and reports. |
 | `04_API_SPEC.md` | API contract | CURRENT — CANONICAL | `/api/v1` contract authority for SmartRentalManagement. Historical source provenance is retained where applicable. |
-| `DATABASE_CHANGELOG.md` | Database changelog | CURRENT — CANONICAL | Local `Goctro_dev_v18` has populated V1.15; Neon `production` has V1.15 plus the documented shared synthetic dataset. |
+| `DATABASE_CHANGELOG.md` | Database changelog | CURRENT — CANONICAL | Local `Goctro_dev_v18` has populated V1.15; Neon shared-dev `production` has V1.16 plus the documented shared synthetic dataset. |
 | `../database/baselines/v1.15/` | Database / Resident Parking requests | PROMOTED_LOCAL — APPLIED AND VERIFIED | Adds slot vehicle type/offer configuration and Resident parking requests on the local V1.14 branch. Backup, restore rehearsal, exact catalog and unchanged predecessor fingerprints verified. |
 | `07_modules/parking/RESIDENT_PARKING_REQUESTS_IMPLEMENTATION_20261028.md` | Parking / Resident request and Admin approval | CURRENT SOURCE IMPLEMENTATION — V1.15 APPLIED; USER REVIEW PENDING | Owner-scoped API, Admin slot offers/approval queue, Resident area-first slot discovery and vehicle add/delete, request/history. Vehicle deletion preserves Parking request/assignment history. |
 | `11_project-reports/SOURCE_OF_TRUTH_CURRENT_STATE_GOVERNANCE_FINALIZATION_REPORT.md` | Project governance / Current State workflow | CURRENT | Records evidence checked, stale API baseline metadata reconciled, authority order, workflow, catalog, and checkpoint finalization. |

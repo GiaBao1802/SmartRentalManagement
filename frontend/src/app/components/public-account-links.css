@@ -1,0 +1,30 @@
+.public-account-links { display: flex; align-items: center; gap: 10px; min-width: 0; flex-shrink: 0; }
+.public-account-links a { text-decoration: none; }
+.public-account-links .public-account-login { display: inline-flex; align-items: center; justify-content: center; min-height: 42px; padding: 9px 12px; border: 1px solid transparent; border-radius: 10px; color: #0E5A4F; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.public-account-links .public-account-login:hover { background: #D9E9E5; }
+.public-account-links .public-account-login-primary { color: #fff; background: #0E5A4F; border-color: #0E5A4F; }
+.public-account-links .public-account-login-primary:hover { background: #0A3F38; }
+.public-account-links .public-account-identity { display: inline-flex; align-items: center; gap: 9px; max-width: 250px; min-height: 44px; padding: 5px 10px 5px 5px; border: 1px solid #D9DEDA; border-radius: 12px; background: #F3F5F2; color: #0B2B2A; }
+.public-account-avatar { display: grid; place-items: center; flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; color: #fff; background: #0E5A4F; font-weight: 600; }
+.public-account-name { display: flex; flex-direction: column; min-width: 0; gap: 3px; }
+.public-account-name strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.public-account-name small, .public-account-loading { color: #5B6A66; font-size: 11px; }
+.public-account-loading { max-width: 180px; }
+.public-account-links a:focus-visible { outline: 3px solid #0E5A4F; outline-offset: 3px; }
+@media (max-width: 1200px) {
+  .public-account-links { gap: 5px; }
+  .public-account-links .public-account-login { font-size: 12px; padding-inline: 8px; }
+  .public-account-links .public-account-identity { max-width: 200px; }
+}
+@media (max-width: 760px) {
+  .explore-header:has(.explore-account-links) { height: 172px; grid-template-rows: 44px 38px 34px 18px; }
+  .explore-header .explore-logo { grid-row: 1; grid-column: 1; }
+  .explore-header .explore-account-links { grid-row: 1; grid-column: 2 / 4; justify-content: flex-end; }
+  .explore-header .explore-header-search { grid-row: 2; grid-column: 1 / 4; }
+  .explore-header:has(.explore-account-links) nav { grid-row: 3; grid-column: 1 / 3; }
+  .explore-header .explore-header-actions { grid-row: 3; grid-column: 3; }
+  .explore-header .explore-mode { grid-row: 4; grid-column: 1 / 4; }
+  .public-account-links .public-account-login { min-height: 38px; padding: 7px; font-size: 11px; }
+  .public-account-links .public-account-identity { max-width: 210px; }
+  .public-detail-page .public-header { flex-wrap: wrap; }
+}

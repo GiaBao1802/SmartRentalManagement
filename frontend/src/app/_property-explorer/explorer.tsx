@@ -3,10 +3,11 @@
 import BrandLogo from "../components/brand-logo";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import PublicAccountLinks from "../components/public-account-links";
+import { PUBLIC_HOME } from "../../lib/public-navigation";
 import { RoomFilters } from "./room-filters";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { PublicRoomCard } from "../public-room-card";
-import { useAuth } from "../components/auth-provider";
 import { useDialogFocus } from "../../lib/ui/dialog-accessibility";
 import { listPublicRooms, serializePublicRoomFilters, type PublicRoomFilters, type PublicRoomListItem, type PublicRoomListResponse } from "../../lib/api/publicRoomApi";
 import { demoOverview, demoResults, emptyFilters, overview, rooms, type Geography, type Overview } from "./explorer-data";
@@ -18,12 +19,11 @@ const money = (value: string) => new Intl.NumberFormat("vi-VN").format(Number(va
 const normalize = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").toLowerCase();
 
 export default function Explorer({ initialFilters }: { initialFilters?: PublicRoomFilters } = {}) {
-  const { status: authStatus, user } = useAuth();
   const [geo, setGeo] = useState<Geography | null>(null), [mapError, setMapError] = useState("");
   const [data, setData] = useState<Overview | null>(null), [error, setError] = useState("");
   const [mock, setMock] = useState(false), [retry, setRetry] = useState(0), [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(""), [search, setSearch] = useState("");
-  // Incoming home and /rooms query links keep the existing public search semantics, including old province strings.
+  // Incoming Market links keep the public search semantics, including old province strings.
   // Selecting a geographic province then switches to the stable-code explorer endpoint.
   const [incomingSearch, setIncomingSearch] = useState(!!initialFilters);
   const [filters, setFilters] = useState<PublicRoomFilters>({ ...emptyFilters, ...initialFilters });
@@ -43,9 +43,9 @@ export default function Explorer({ initialFilters }: { initialFilters?: PublicRo
   const hasResultsScope = !!selected || incomingSearch;
   useEffect(() => {
     const pathname = window.location.pathname;
-    if (!["/", "/rooms"].includes(pathname) || mock) return;
+    if (!["/", "/rooms", "/tim-phong"].includes(pathname) || mock) return;
     const query = incomingSearch ? `?${serializePublicRoomFilters(filters)}` : "";
-    window.history.replaceState(null, "", `${pathname}${query}`);
+    window.history.replaceState(null, "", `${PUBLIC_HOME}${query}`);
   }, [incomingSearch, filters, mock]);
   useDialogFocus(listOpen, listPanel);
   useEffect(() => {
@@ -131,16 +131,18 @@ export default function Explorer({ initialFilters }: { initialFilters?: PublicRo
   const resultLabel = resultsLoading || pendingResults ? "Đang tìm phòng…" : results ? `${results.meta.total_items} phòng khớp tìm kiếm` : resultError ? "Chưa tải được kết quả" : "Chọn tỉnh để khám phá";
   const provinceButtons = () => matches.map(p => <button type="button" key={p.code} aria-pressed={p.code === selected} onClick={() => choose(p.code)}><span>{p.name}</span><small>{data?.provinces.find(s => s.code === p.code)?.public_rooms !== undefined ? `${data.provinces.find(s => s.code === p.code)!.public_rooms} phòng` : "Chưa có số liệu"}</small></button>);
 
+  const returnTo = PUBLIC_HOME + (incomingSearch ? `?${serializePublicRoomFilters(filters)}` : "");
+
   return <main className="explorer" onKeyDown={escape}>
     <header className="explore-header">
-      <Link className="explore-logo" href="/" aria-label="Góc Trọ — Trang tìm phòng"><BrandLogo /></Link>
+      <Link className="explore-logo" href={PUBLIC_HOME} aria-label="Góc Trọ — Trang chủ tìm phòng" onClick={home}><BrandLogo /></Link>
       <form className="explore-header-search" role="search" onSubmit={e => { e.preventDefault(); if (matches[0]) choose(matches[0].code); }}>
         <span aria-hidden="true">⌕</span><input ref={searchInput} aria-label="Tìm tỉnh thành" placeholder="Tìm tỉnh/thành bạn muốn sống…" value={search} onChange={e => setSearch(e.target.value)} />
         {search && <div className="explore-search-results" aria-label="Gợi ý tỉnh thành">{matches.length ? provinceButtons() : <p>Không tìm thấy tỉnh/thành.</p>}</div>}
       </form>
       <div className="explore-header-actions" role="group" aria-label="Chế độ xem phòng"><button type="button" aria-pressed={view === "list"} onClick={() => hasResultsScope ? setView("list") : toggleList()}>Danh sách</button><button ref={mapViewButton} type="button" aria-pressed={view === "map"} onClick={() => setView("map")}>Bản đồ</button></div>
-      <nav aria-label="Điều hướng public"><Link className="explore-about-link" href="/landing">Giới thiệu Góc Trọ</Link>{authStatus === "unauthenticated" && <Link className="explore-resident-link" href="/login?next=%2Ftenant">Đăng nhập cư dân</Link>}{authStatus === "authenticated" && user?.account.role === "resident" && <Link className="explore-resident-link" href="/tenant">Cổng khách thuê</Link>}</nav>
-      {authStatus === "unauthenticated" ? <Link className="explore-login" href="/login">Đăng nhập admin</Link> : authStatus === "authenticated" && user?.account.role === "admin" ? <Link className="explore-login" href="/admin/properties">Quản lý nhà trọ</Link> : null}
+      <nav aria-label="Điều hướng public"><a className="explore-about-link" href="/intro/index.html" onClick={() => { try { sessionStorage.removeItem('pd-trans'); } catch(e){} }}>Giới thiệu Góc Trọ</a></nav>
+      <PublicAccountLinks returnTo={returnTo} className="explore-account-links" />
       <span className={`explore-mode ${mock ? "is-demo" : ""}`}><i />{mock ? "Dữ liệu minh họa" : loading ? "Đang tải tin…" : data ? "Tin đang đăng" : "Chưa tải được tin"}</span>
     </header>
     <section ref={scene} className="explore-scene" aria-label="Không gian khám phá Việt Nam">
@@ -148,7 +150,7 @@ export default function Explorer({ initialFilters }: { initialFilters?: PublicRo
 
       <div className="explore-stats" ref={statsPanel} aria-label="Tổng tin toàn quốc">
         <div><span className="explore-stat-icon">◫</span><p><span>Tỉnh/thành có tin</span><strong>{data ? data.provinces.filter(p => p.public_rooms > 0).length : "—"}<small>/ 34 tỉnh thành</small></strong></p></div>
-        <div><span className="explore-stat-icon">⌂</span><p><span>Cơ sở có tin công khai</span><strong>{properties ?? "—"}<small>có phòng khả dụng</small></strong></p></div>
+        <div><span className="explore-stat-icon">⌂</span><p><span>Khu trọ có tin công khai</span><strong>{properties ?? "—"}<small>có phòng đang cho thuê</small></strong></p></div>
         <div><span className="explore-stat-icon">▦</span><p><span>Phòng đang đăng thuê</span><strong>{total ?? "—"}<small>tin công khai</small></strong></p></div>
       </div>
 
@@ -157,7 +159,7 @@ export default function Explorer({ initialFilters }: { initialFilters?: PublicRo
 
       {infoOpen && <aside ref={infoPanel} className="explore-info explore-panel" aria-label="Thông tin tỉnh">
         <div className="explore-panel-heading"><span className="explore-object-icon">⌖</span><div><small>{selected ? "TỈNH/THÀNH ĐANG CHỌN" : "GÓC TRỌ · KHÁM PHÁ VIỆT NAM"}</small><h1>{selected ? provinceName : "Tìm một nơi gọi là nhà"}</h1></div><button className="explore-icon-button" aria-label="Đóng bảng thông tin" onClick={() => setInfoOpen(false)}>×</button></div>
-        {selected ? <><div className="explore-province-stats"><div><strong>{stat?.public_properties ?? "—"}</strong><span>Cơ sở có tin công khai</span></div><div><strong>{stat?.public_rooms ?? "—"}</strong><span>Phòng đăng thuê toàn tỉnh</span></div></div><p className="explore-availability"><i />{stat ? stat.public_rooms ? "Có phòng đang được công khai" : "Chưa có phòng công khai khả dụng" : "Chưa tải được số liệu tỉnh"}</p>
+        {selected ? <><div className="explore-province-stats"><div><strong>{stat?.public_properties ?? "—"}</strong><span>Khu trọ có tin công khai</span></div><div><strong>{stat?.public_rooms ?? "—"}</strong><span>Phòng đang cho thuê</span></div></div><p className="explore-availability"><i />{stat ? stat.public_rooms ? "Có phòng đang được công khai" : "Hiện chưa có phòng công khai" : "Chưa tải được thông tin khu vực"}</p>
           <details className="explore-data-note"><summary>Phạm vi số liệu</summary><p>Đây là tổng tin toàn tỉnh, chưa áp dụng bộ lọc. Chưa có số liệu công khai về tổng cơ sở dùng hệ thống, phân loại khu trọ/căn hộ hoặc vị trí chính xác.</p></details>
           <div className="explore-info-actions"><button className="explore-primary" onClick={() => setView("list")}>Xem phòng</button><button onClick={home}>Toàn cảnh</button></div></> : <><p className="explore-guide">Bấm trực tiếp một tỉnh trên bản đồ để xem phòng.</p><div className="explore-guide-steps"><span>01 Chọn tỉnh</span><span>02 Xem phòng</span><span>03 Xem chi tiết</span></div><p className="explore-guide-hint">Bản đồ cố định · Chọn tỉnh để khám phá<br />Hoặc dùng tìm kiếm và danh sách tỉnh.</p><button className="explore-primary" onClick={toggleList}>Khám phá 34 tỉnh/thành</button></>}
       </aside>}
@@ -171,18 +173,19 @@ export default function Explorer({ initialFilters }: { initialFilters?: PublicRo
       <section ref={resultPanel} className={`explore-results explore-panel ${expanded && hasResultsScope ? "is-expanded" : ""}`} aria-label="Kết quả phòng">
         <div className="explore-results-heading"><span className="explore-object-icon">▦</span><div><small>{selected ? `${provinceName} · ${stat ? `${stat.public_rooms} phòng công khai toàn tỉnh` : "Chưa tải số liệu toàn tỉnh"}` : incomingSearch ? `Tìm kiếm: ${provinceName} · Kết quả theo bộ lọc trên liên kết` : "TÌM DỄ, Ở YÊN"}</small><h2 aria-live="polite">{hasResultsScope ? resultLabel : "Chọn tỉnh/thành để bắt đầu khám phá"}</h2></div>
           {hasResultsScope ? expanded ? <div className="explore-results-view-switch" role="group" aria-label="Chế độ xem kết quả"><button type="button" aria-pressed={true} onClick={() => setView("list")}>Danh sách</button><button type="button" aria-pressed={false} onClick={() => setView("map")}>Bản đồ</button></div> : <button className="explore-results-toggle" onClick={() => setView("list")}>Xem phòng</button> : <button onClick={toggleList}>Danh sách tỉnh</button>}
+          {hasResultsScope && !mock && <Link className="explore-full-list-link" href={`/tim-phong/danh-sach?${serializePublicRoomFilters(incomingSearch ? filters : { ...filters, province: provinceName })}`}>Danh sách đầy đủ ↗</Link>}
         </div>
         {hasResultsScope && expanded && <div ref={resultsBody} className="explore-results-body" role="region" aria-label="Danh sách phòng và bộ lọc" tabIndex={0}><details className="explore-filter-disclosure"><summary>Bộ lọc phòng <span aria-hidden="true">⌄</span></summary><RoomFilters filters={filters} allowProvince={incomingSearch} onApply={next => { setFilters(next); setSelectedCard(""); }} /></details><div className="explore-results-toolbar"><p>Danh sách phòng đang công khai</p><label>Sắp xếp<select value={filters.sort} onChange={e => { const sort = e.target.value as PublicRoomFilters["sort"]; setFilters({ ...filters, sort, page: 1 }); }}><option value="newest">Mới nhất</option><option value="price_asc">Giá tăng dần</option><option value="price_desc">Giá giảm dần</option><option value="area_asc">Diện tích tăng dần</option><option value="area_desc">Diện tích giảm dần</option></select></label><label>Mỗi trang<select value={filters.page_size} onChange={e => { const page_size = Number(e.target.value); setFilters({ ...filters, page_size, page: 1 }); }}>{Array.from(new Set([6, 12, 24, filters.page_size ?? 12])).sort((a, b) => a - b).map(size => <option key={size} value={size}>{size} phòng</option>)}</select></label>
           {results && <div className="explore-pagination"><button aria-label="Trang trước" disabled={results.meta.page <= 1} onClick={() => setFilters({ ...filters, page: results.meta.page - 1 })}>←</button><span>{results.meta.page} / {Math.max(1, results.meta.total_pages)}</span><button aria-label="Trang sau" disabled={results.meta.page >= results.meta.total_pages} onClick={() => setFilters({ ...filters, page: results.meta.page + 1 })}>→</button></div>}</div>
           {resultsLoading || pendingResults ? <div className="explore-state" aria-busy="true">Đang tìm phòng phù hợp…</div> : resultError ? <div role="alert" className="explore-state"><strong>{resultError}</strong><button onClick={() => setRetry(r => r + 1)}>Thử lại</button></div> : results && !results.data.length ? <div className="explore-state"><strong>{filteredEmpty ? "Không có phòng khớp bộ lọc" : "Chưa có phòng công khai khả dụng tại tỉnh này"}</strong><span>{filteredEmpty ? "Thử mở rộng khoảng giá hoặc diện tích." : "Chưa có số liệu công khai để xác định tình trạng tham gia của các cơ sở."}</span><button onClick={reset}>Đặt lại tìm kiếm</button></div> : null}
           {!resultsLoading && !pendingResults && !resultError && <div className="explore-room-list">{results?.data.map(room => <article key={room.room_id} className={`explore-result-card ${selectedCard === room.room_id ? "is-selected" : ""}`} aria-label={`Phòng ${room.room_code}`} onClick={e => { if (!(e.target as HTMLElement).closest("a,button")) { setSelectedCard(room.room_id); } }}>
-            <span className="explore-room-badge">TIN CẤP PHÒNG</span>{mock ? <div className="explore-demo-room"><div className="explore-demo-art"><img src="/assets/brand-v2/mark.svg" alt="" /><span>Chưa có ảnh · Minh họa</span></div><div><h3>{room.property.name} · {room.room_code}</h3><p>{room.property.address}</p><p>{room.area_m2} m² · {room.default_capacity} người</p><footer><strong>{money(room.default_rent)} đ<small>/tháng</small></strong><button onClick={() => setPreview(room)}>Xem preview</button></footer></div></div> : <PublicRoomCard room={room} />}
+            <span className="explore-room-badge">TIN CẤP PHÒNG</span>{mock ? <div className="explore-demo-room"><div className="explore-demo-art"><img src="/assets/brand-v2/mark.svg" alt="" /><span>Chưa có ảnh · Minh họa</span></div><div><h3>{room.property.name} · {room.room_code}</h3><p>{room.property.address}</p><p>{room.area_m2} m² · {room.default_capacity} người</p><footer><strong>{money(room.default_rent)} đ<small>/tháng</small></strong><button onClick={() => setPreview(room)}>Xem preview</button></footer></div></div> : <PublicRoomCard room={room} returnTo={`/tim-phong?${serializePublicRoomFilters(incomingSearch ? filters : { ...filters, province: provinceName })}`} />}
             <button className="explore-locate" aria-pressed={selectedCard === room.room_id} onClick={() => { setSelectedCard(room.room_id); if (!selected) toggleList(); }}>{selectedCard === room.room_id ? "Đang chọn · " : ""}{selected ? "Xem vùng tỉnh — chưa có vị trí cơ sở" : "Chọn tỉnh trên bản đồ để khám phá vùng"}</button>
           </article>)}</div>}
         </div>}
       </section>
-      <div className="explore-scene-footer"><button onClick={() => { clear(); setMock(v => !v); setInfoOpen(true); camera("home"); }}>{mock ? "Xem tin đang đăng" : "Thử dữ liệu minh họa"}</button><span>{!!data?.unmapped_rooms && `${data.unmapped_rooms} phòng chưa ánh xạ tỉnh · `}Bản đồ cộng đồng, chưa kiểm định ranh giới · <a href="/maps/source.json" target="_blank" rel="noreferrer">Nguồn · MIT ↗</a></span></div>
+      <div className="explore-scene-footer"><button onClick={() => { clear(); setMock(v => !v); setInfoOpen(true); camera("home"); }}>{mock ? "Xem tin đang đăng" : "Thử dữ liệu minh họa"}</button><span>{!!data?.unmapped_rooms && `${data.unmapped_rooms} phòng chưa ánh xạ tỉnh · `}Bản đồ cộng đồng, chưa kiểm định ranh giới · <a href="/maps/source.json">Nguồn · MIT</a></span></div>
     </section>
-    <dialog ref={dialog} onCancel={() => setPreview(null)} onClose={() => setPreview(null)} className="explore-preview"><button aria-label="Đóng preview" className="explore-icon-button" onClick={() => setPreview(null)}>×</button><small>DỮ LIỆU MINH HỌA</small><h2>{preview?.property.name}</h2><p>Phòng {preview?.room_code} · {preview?.area_m2} m² · {preview?.default_capacity} người</p><p>{preview?.property.address}</p><p>{preview?.public_description}</p><strong>{preview && money(preview.default_rent)} đ/tháng</strong><p>Đây là phòng mẫu để xem thử giao diện, chưa phải tin cho thuê thực tế.</p></dialog>
+    <dialog ref={dialog} onCancel={() => setPreview(null)} onClose={() => setPreview(null)} className="explore-preview"><button aria-label="Đóng cửa sổ xem trước" className="explore-icon-button" onClick={() => setPreview(null)}>×</button><small>DỮ LIỆU MINH HỌA</small><h2>{preview?.property.name}</h2><p>Phòng {preview?.room_code} · {preview?.area_m2} m² · {preview?.default_capacity} người</p><p>{preview?.property.address}</p><p>{preview?.public_description}</p><strong>{preview && money(preview.default_rent)} đ/tháng</strong><p>Thông tin phòng mẫu chỉ dùng để minh họa giao diện, không phải tin cho thuê thực tế.</p></dialog>
   </main>;
 }

@@ -261,7 +261,6 @@ export class PrismaPropertyServiceRepository {
         },
       },
     });
-
     const facilities = await this.prisma.propertyFacility.findMany({
       where: { ownerId, propertyId: { in: properties.map((property) => property.propertyId) }, active: true },
       orderBy: [{ propertyId: "asc" }, { name: "asc" }, { propertyFacilityId: "asc" }],
@@ -528,36 +527,42 @@ export class PrismaPropertyServiceRepository {
         `;
         if (!price[0]?.valid) throw serviceError(409, "Giá đã ghi nhận cho yêu cầu không còn hợp lệ; không thể duyệt.");
 
-        const fingerprint = bookingChargeFingerprint({
-          booking_id: String(booking.booking_id),
-          owner_id: String(ownerId),
-          property_id: String(propertyId),
-          room_id: String(booking.room_id),
-          contract_id: String(booking.contract_id),
-          resident_id: String(booking.resident_id),
-          service_id: String(booking.service_id),
-          price_version_id: String(booking.price_version_id),
-          unit_price: String(booking.charge_amount),
-          service_date: booking.service_date!,
-          slot_start: booking.slot_start!,
-          slot_end: booking.slot_end!,
-        });
-        const charges = await tx.$queryRaw<Array<{ flexible_service_charge_id: bigint }>> `
-          INSERT INTO flexible_service_charges (
-            owner_id, property_id, room_id, contract_id, resident_id,
-            property_pricing_item_id, kind, property_price_version_id, occurred_at,
-            quantity, unit, unit_price_snapshot, amount, source_system, source_event_key,
-            payload_fingerprint, status, actor_account_id
-          ) VALUES (
-            ${ownerId}, ${propertyId}, ${booking.room_id}, ${booking.contract_id}, ${booking.resident_id},
-            ${booking.service_id}, 'FLEXIBLE_SERVICE', ${booking.price_version_id},
-            (CAST(${booking.service_date} AS date) + CAST(${booking.slot_start} AS time)) AT TIME ZONE 'Asia/Ho_Chi_Minh',
-            1.000, ${booking.unit_snapshot}, ${booking.charge_amount}, ${booking.charge_amount},
-            'resident_service_booking', 'booking:' || CAST(${booking.booking_id} AS text), ${fingerprint}, 'READY', ${accountId}
-          )
-          RETURNING flexible_service_charge_id
-        `;
-        const chargeId = charges[0].flexible_service_charge_id;
+        // A zero-priced shared amenity booking reserves a slot but is not a
+        // billable event. Paid incidental services create a charge only after
+        // the Owner approves the booking.
+        let chargeId: bigint | null = null;
+        if ((booking.charge_amount ?? 0n) > 0n) {
+          const fingerprint = bookingChargeFingerprint({
+            booking_id: String(booking.booking_id),
+            owner_id: String(ownerId),
+            property_id: String(propertyId),
+            room_id: String(booking.room_id),
+            contract_id: String(booking.contract_id),
+            resident_id: String(booking.resident_id),
+            service_id: String(booking.service_id),
+            price_version_id: String(booking.price_version_id),
+            unit_price: String(booking.charge_amount),
+            service_date: booking.service_date!,
+            slot_start: booking.slot_start!,
+            slot_end: booking.slot_end!,
+          });
+          const charges = await tx.$queryRaw<Array<{ flexible_service_charge_id: bigint }>> `
+            INSERT INTO flexible_service_charges (
+              owner_id, property_id, room_id, contract_id, resident_id,
+              property_pricing_item_id, kind, property_price_version_id, occurred_at,
+              quantity, unit, unit_price_snapshot, amount, source_system, source_event_key,
+              payload_fingerprint, status, actor_account_id
+            ) VALUES (
+              ${ownerId}, ${propertyId}, ${booking.room_id}, ${booking.contract_id}, ${booking.resident_id},
+              ${booking.service_id}, 'FLEXIBLE_SERVICE', ${booking.price_version_id},
+              (CAST(${booking.service_date} AS date) + CAST(${booking.slot_start} AS time)) AT TIME ZONE 'Asia/Ho_Chi_Minh',
+              1.000, ${booking.unit_snapshot}, ${booking.charge_amount}, ${booking.charge_amount},
+              'resident_service_booking', 'booking:' || CAST(${booking.booking_id} AS text), ${fingerprint}, 'READY', ${accountId}
+            )
+            RETURNING flexible_service_charge_id
+          `;
+          chargeId = charges[0].flexible_service_charge_id;
+        }
         const changed = await tx.$queryRaw<ResidentServiceBookingRow[]> `
           UPDATE resident_service_bookings
           SET status = 'APPROVED', decision_by_account_id = ${accountId}, decision_at = now(),
@@ -577,7 +582,7 @@ export class PrismaPropertyServiceRepository {
             accountId: residentAccount.accountId,
             notificationType: "service_booking_approved",
             title: "Yêu cầu đặt tiện ích đã được duyệt",
-            body: booking.service_name_snapshot + " · " + booking.service_date + " · " + booking.slot_start + "–" + booking.slot_end + ". Phí " + booking.charge_amount?.toLocaleString("vi-VN") + " ₫ sẽ vào hóa đơn theo kỳ hợp đồng.",
+            body: booking.service_name_snapshot + " · " + booking.service_date + " · " + booking.slot_start + "–" + booking.slot_end + (chargeId === null ? ". Miễn phí, lịch đã được giữ." : ". Phí " + booking.charge_amount?.toLocaleString("vi-VN") + " ₫ sẽ vào hóa đơn theo kỳ hợp đồng."),
           },
         });
         return { booking: changed[0], replayed: false };

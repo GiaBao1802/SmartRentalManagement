@@ -1,3 +1,5 @@
+import { isPublicExplorerPath } from "../public-navigation";
+
 export function passwordErrors(password: string, confirmation: string) {
   return {
     password: password.length < 12 || password.length > 1024 ? "Mật khẩu cần từ 12 đến 1024 ký tự." : "",
@@ -10,9 +12,9 @@ export function loginTarget(role: "admin" | "resident" | "superadmin", requested
   try {
     const parsed = new URL(requested, origin);
     if (parsed.origin !== origin || requested.startsWith("//")) return fallback;
-    if (role === "resident" && parsed.pathname !== "/tenant") return fallback;
-    if (role === "superadmin" && !parsed.pathname.startsWith("/platform")) return fallback;
-    if (role === "admin" && !parsed.pathname.startsWith("/admin")) return fallback;
+    if (role === "resident" && parsed.pathname !== "/tenant" && !isPublicExplorerPath(parsed.pathname)) return fallback;
+    if (role === "superadmin" && !parsed.pathname.startsWith("/platform") && !isPublicExplorerPath(parsed.pathname)) return fallback;
+    if (role === "admin" && !parsed.pathname.startsWith("/admin") && !isPublicExplorerPath(parsed.pathname)) return fallback;
     return parsed.pathname + parsed.search + parsed.hash;
   } catch { return fallback; }
 }

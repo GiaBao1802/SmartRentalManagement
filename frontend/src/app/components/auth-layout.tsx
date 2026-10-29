@@ -2,12 +2,14 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import styles from "./auth-flow.module.css";
 import BrandLogo from "./brand-logo";
-export default function AuthLayout({ title, description, children, footer }: { title: string; description: string; children: ReactNode; footer?: ReactNode }) {
+import { PUBLIC_HOME, publicHomeHref } from "../../lib/public-navigation";
+export default function AuthLayout({ title, description, children, footer, returnTo = PUBLIC_HOME }: { title: string; description: string; children: ReactNode; footer?: ReactNode; returnTo?: string }) {
+  const homeHref = publicHomeHref(returnTo);
   return <main className={styles.page}>
-    <Link className={styles.back} href="/tim-phong">← Về trang chủ</Link>
+    <Link className={styles.back} href={homeHref}>← Về trang chủ</Link>
     <div className={styles.layout}>
       <aside className={styles.brand} aria-label="Góc trọ">
-        <Link className={styles.logo} href="/tim-phong" aria-label="Góc Trọ · Một góc yên tâm."><BrandLogo light /></Link>
+        <Link className={styles.logo} href={homeHref} aria-label="Góc Trọ · Một góc yên tâm."><BrandLogo light /></Link>
         <div className={styles.windows} aria-hidden="true">{Array.from({ length: 12 }, (_, index) => <span key={index} />)}</div>
         <h2>Một góc yên tâm.</h2><p>Thông tin rõ ràng, việc quản lý gọn gàng. Góc của bạn, có người lo.</p>
       </aside>
