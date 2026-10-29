@@ -12,8 +12,8 @@ test('recognizes add-room commands but not room questions',()=>{
 });
 
 test('prefills a unique owner property and room code, but asks when property is ambiguous',()=>{
- const draft=parseOwnerRoomCreateDraft('Thêm 1 phòng A06 vào khu vực An Bình Biên Hòa',[properties[2]]);
- assert.deepEqual(draft,{propertyId:'3',roomCode:'A06',area:'',rent:'',capacity:''});
+ const draft=parseOwnerRoomCreateDraft('Thêm 1 phòng A06 vào khu vực An Bình Biên Hòa',[properties[0]]);
+ assert.deepEqual(draft,{propertyId:'1',roomCode:'A06',area:'',rent:'',capacity:''});
  assert.equal(nextOwnerRoomCreateStep(draft),'area');
  assert.equal(parseOwnerRoomCreateDraft('Thêm phòng A06 vào An Bình Biên Hòa',properties).propertyId,'');
  assert.equal(nextOwnerRoomCreateStep(parseOwnerRoomCreateDraft('Thêm phòng A06 vào An Bình Biên Hòa',properties)),'property');

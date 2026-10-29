@@ -1,5 +1,9 @@
 # Góc Trọ — Current State
 
+### Cloudy Owner guided room creation — 2026-10-29
+
+Cloudy Admin now recognizes direct add-room requests such as “Thêm 1 phòng A06 vào khu vực An Bình Biên Hòa” and opens a guided flow. It prefills a uniquely matched Property/room code, asks for missing area, monthly rent and capacity, validates inputs, then shows a confirmation summary before calling the existing Owner-scoped create endpoint. New rooms are active/available and hidden from Marketplace. Focused Owner Cloudy tests pass 35/35, frontend typecheck and production build pass. No database/seed/record change; authenticated visual review remains. Exact primary Next Task remains unchanged. See [Owner advisor report](07_modules/invoice-zalo/OWNER_ADVISOR_DEMO_REPORT.md).
+
 ### Cloudy Owner tenant-feedback query — 2026-10-29
 
 Owner Cloudy now deterministically recognizes questions such as “có bao nhiêu tin nhắn phản hồi từ khách” and returns an authenticated Owner-scoped count/list of room-request Complaints by creation month (default current displayed month). It excludes pending service bookings and the Superadmin-only AI-feedback inbox. Since `GET /room-requests` returns at most 100 newest rows, responses disclose that totals can be incomplete at the cap. Admin sidebar links now use Next.js client navigation, and Cloudy stays open across pages in the same Owner scope; a role/account or access-scope change still resets it. No schema/data change. Owner-focused intent/route/live-adapter and chat-session tests pass 35/35; frontend typecheck and full production build pass. Authenticated visual review pending. Exact Next Task remains unchanged.
