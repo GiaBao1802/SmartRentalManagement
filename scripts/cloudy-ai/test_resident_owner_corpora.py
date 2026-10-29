@@ -12,6 +12,11 @@ CORPORA = {
 }
 OWNER_TARGETED = json.loads(ROOT.joinpath("data/cloudy-owner/v3/targeted-training.json").read_text(encoding="utf-8"))
 OWNER_INDEPENDENT_HOLDOUT = json.loads(ROOT.joinpath("data/cloudy-owner/v3/independent-holdout.json").read_text(encoding="utf-8"))
+OWNER_V7_DEVELOPMENT = json.loads(ROOT.joinpath("data/cloudy-owner/v4/development-training.json").read_text(encoding="utf-8"))
+OWNER_V4_HOLDOUT = json.loads(ROOT.joinpath("data/cloudy-owner/v4/independent-holdout.json").read_text(encoding="utf-8"))
+OWNER_V8_TARGETED = json.loads(ROOT.joinpath("data/cloudy-owner/v5/targeted-training.json").read_text(encoding="utf-8"))
+OWNER_V8_DEVELOPMENT = json.loads(ROOT.joinpath("data/cloudy-owner/v5/development-training.json").read_text(encoding="utf-8"))
+OWNER_V5_HOLDOUT = json.loads(ROOT.joinpath("data/cloudy-owner/v5/independent-holdout.json").read_text(encoding="utf-8"))
 RESIDENT_INTENTS = {"services", "meter", "requests", "amenity_choice", "invoice", "help"}
 OWNER_TASKS = {
     "unpaid", "utilities", "missing", "overview", "requests", "residents",
@@ -103,9 +108,64 @@ class ResidentOwnerCorpusTests(unittest.TestCase):
 
     def test_owner_v3_examples_have_no_contact_or_identity_values(self):
         sensitive = re.compile(r"\b[\w.+-]+@[\w.-]+\.\w{2,}\b|\b(?:\+?84|0)\d{8,10}\b|\b\d{12}\b", re.I)
-        for case in OWNER_TARGETED["training_reference"] + OWNER_INDEPENDENT_HOLDOUT["cases"]:
+        for case in (
+            OWNER_TARGETED["training_reference"]
+            + OWNER_INDEPENDENT_HOLDOUT["cases"]
+            + OWNER_V7_DEVELOPMENT["cases"]
+            + OWNER_V4_HOLDOUT["cases"]
+            + OWNER_V8_TARGETED["training_reference"]
+            + OWNER_V8_DEVELOPMENT["cases"]
+            + OWNER_V5_HOLDOUT["cases"]
+        ):
             with self.subTest(case=case["id"]):
                 self.assertIsNone(sensitive.search(case["message"]))
+
+    def test_v7_and_v8_holdouts_are_reclassified_before_next_training(self):
+        self.assertEqual(OWNER_V7_DEVELOPMENT["status"], "agent_curated_development_from_v7_holdout_for_v8_training_not_customer_feedback")
+        self.assertEqual(OWNER_V4_HOLDOUT["status"], "independent_agent_curated_holdout_not_customer_feedback")
+        self.assertEqual(OWNER_V8_DEVELOPMENT["status"], "agent_curated_development_from_v8_holdout_for_v9_training_not_customer_feedback")
+        self.assertEqual(OWNER_V5_HOLDOUT["status"], "independent_agent_curated_holdout_not_customer_feedback")
+        old_ids = {case["id"] for case in OWNER_INDEPENDENT_HOLDOUT["cases"]}
+        dev_ids = {case["id"] for case in OWNER_V7_DEVELOPMENT["cases"]}
+        self.assertEqual(old_ids, dev_ids)
+        self.assertEqual(len(OWNER_V4_HOLDOUT["cases"]), 38)
+        self.assertEqual(len(OWNER_V8_DEVELOPMENT["cases"]), 38)
+        self.assertEqual(len(OWNER_V8_TARGETED["training_reference"]), 20)
+        self.assertEqual(len(OWNER_V5_HOLDOUT["cases"]), 40)
+        old_v4 = {case["id"]: case for case in OWNER_V4_HOLDOUT["cases"]}
+        dev_v8 = {case["id"]: case for case in OWNER_V8_DEVELOPMENT["cases"]}
+        self.assertEqual(old_v4.keys(), dev_v8.keys())
+        for case_id, previous in old_v4.items():
+            self.assertEqual(previous["message"], dev_v8[case_id]["message"])
+            self.assertEqual(previous["target"], dev_v8[case_id]["target"])
+
+        original = CORPORA["owner"]["training_reference"] + CORPORA["owner"]["holdout"]
+        training = (
+            original + OWNER_TARGETED["training_reference"] + OWNER_V7_DEVELOPMENT["cases"]
+            + OWNER_V8_TARGETED["training_reference"] + OWNER_V8_DEVELOPMENT["cases"]
+        )
+        train_ids = {case["id"] for case in training}
+        eval_ids = {case["id"] for case in OWNER_V5_HOLDOUT["cases"]}
+        train_messages = {case["message"] for case in training}
+        eval_messages = {case["message"] for case in OWNER_V5_HOLDOUT["cases"]}
+        self.assertFalse(train_ids & eval_ids)
+        self.assertFalse(train_messages & eval_messages)
+        all_ids = [case["id"] for case in OWNER_V8_TARGETED["training_reference"]]
+        self.assertEqual(len(all_ids), len(set(all_ids)))
+        for case in OWNER_V8_TARGETED["training_reference"] + OWNER_V8_DEVELOPMENT["cases"] + OWNER_V5_HOLDOUT["cases"]:
+            with self.subTest(case=case["id"]):
+                target = case["target"]
+                self.assertIn(target["task"], OWNER_TASKS)
+                self.assertIn(target["next_action"], OWNER_ACTIONS)
+                self.assertTrue(case.get("boundary"))
+                if target["task"] == "clarify":
+                    self.assertIn(target["next_action"], {
+                        "reject_write_from_advisor", "require_separate_confirmed_workflow", "clarify_in_chat"
+                    })
+                else:
+                    self.assertNotIn(target["next_action"], {
+                        "reject_write_from_advisor", "require_separate_confirmed_workflow", "clarify_in_chat"
+                    })
 
     def test_resident_targets_match_known_intents_and_safe_next_steps(self):
         corpus = CORPORA["resident"]

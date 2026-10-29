@@ -2,7 +2,7 @@
 
 ### Final source integration — `main` + `testAI` — 2026-10-29
 
-The final source integration is published to `origin/main` as `123bf88` and combines current V1.18 source with Owner Cloudy intent/query improvements and training/evaluation materials from `testAI`. Shared Neon remains on the already-applied V1.18 baseline (58 tables); this source merge has no database schema change. The V1.18 guarded setup scripts and public Explorer are retained. Focused Owner Cloudy/public-chat tests, Python corpus/parser tests, frontend API tests, frontend/backend builds, typechecks and V1.18 artifact checks pass. Compatible security fixes for transitive `body-parser` and `qs` dependencies are included; `npm audit` reports zero vulnerabilities. Original `testAI` working-tree-only changes are kept outside this integration. No migration, seed, database write or deployment was performed. **Exact next task:** run the production-style Superadmin transaction flow on a dedicated disposable PostgreSQL database with independently provided credentials.
+The final source integration is published to `origin/main`; commit `123bf88` combined current V1.18 source with committed Owner Cloudy intent/query improvements and earlier training/evaluation materials from `testAI`. A follow-up on `main` adds the three previously uncommitted fine-tuning scripts and synthetic Owner corpus additions under `data/cloudy-owner/v4` and `v5`, copied from the original workspace without moving or editing those local changes. The new V4/V5 examples have not been trained or evaluated as a model; V5 remains an independent evaluation split and the runtime model is unchanged. Shared Neon remains on the already-applied V1.18 baseline (58 tables); this source addition has no database schema change. Focused corpus/evaluator tests pass. Original `testAI` working-tree changes remain at their original paths. No migration, seed, database write or deployment was performed. **Exact next task:** run the production-style Superadmin transaction flow on a dedicated disposable PostgreSQL database with independently provided credentials.
 
 ### V1.18 source handoff — 2026-10-29
 
@@ -300,7 +300,7 @@ Workspace code and PostgreSQL read-model integration pass on V1.8 rehearsal. Aut
 
 ## Exact Next Task
 
-**Review the unexpected live `rooms.marketplace_amenities` schema objects and decide the exact predecessor source/catalog for the V1.16 upgrade.** The prior direct-upgrade authorization remains subject to a fresh exact match, protected backup/restore and coordinated write pause.
+**Run the production-style Superadmin transaction flow on a dedicated disposable PostgreSQL database with independently provided credentials.**
 ## Resume Checklist
 
 1. Read repository-wide [AGENTS.md](../AGENTS.md), [Documentation Rules](DOCUMENTATION_RULES.md), this checkpoint, and the [Document Catalog](DOCUMENT_CATALOG.md).

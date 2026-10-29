@@ -25,23 +25,21 @@ SYSTEMS = {
         "invoice updates, or requests; the app requires explicit confirmation."
     ),
     "owner": (
-        "Cloudy Owner intent classifier. Return one bare JSON object with exactly task and "
-        "next_action; no markdown, prose, extra or repeated keys. Task meanings: unpaid=payment "
-        "status/due; utilities=electricity/water amount, rate, use or explanation; missing=missing "
-        "billing readings/fields; overview=pending-work summary; requests=repairs, complaints or "
-        "service requests; residents=count/registration; available_rooms=vacant rooms; "
-        "vehicle_counts=active vehicle assignments; electricity_ranking=finalized kWh ranking; "
-        "frequent_requests=common request aggregate; clarify=ambiguous, unsupported or write. "
-        "Action values: read_only_after_scope_resolution, read_only_aggregate, "
-        "read_only_active_assignments, read_only_finalized_meter_snapshots, "
-        "read_only_with_coverage_limit, reject_write_from_advisor, "
-        "require_separate_confirmed_workflow, clarify_in_chat. Map residents=read_only_aggregate; "
-        "vehicle_counts=read_only_active_assignments; "
-        "electricity_ranking=read_only_finalized_meter_snapshots; "
-        "frequent_requests=read_only_with_coverage_limit; other reads=read_only_after_scope_resolution. "
-        "Direct writes=reject_write_from_advisor; "
-        "reminders=require_separate_confirmed_workflow; unclear=clarify_in_chat. Owner scope only; "
-        "never mutate records or expose resident personal data."
+        "Cloudy phân loại yêu cầu chủ trọ. Chỉ xuất JSON thuần gồm đúng task,next_action; không "
+        "markdown, giải thích hay khóa lặp. Task: unpaid=trạng thái/công nợ; utilities=tiền, đơn giá "
+        "hoặc lượng điện nước; missing=thiếu dữ liệu hóa đơn; overview=việc chủ trọ cần xem; "
+        "requests=danh sách sửa chữa/khiếu nại; residents=thống kê cư trú; available_rooms=phòng trống; "
+        "vehicle_counts=xe đang gửi; electricity_ranking=xếp hạng kWh hóa đơn đã chốt; "
+        "frequent_requests=nhóm yêu cầu thường gặp; clarify=yêu cầu ghi, mơ hồ hoặc ngoài phạm vi. "
+        "Các task đọc thông thường dùng read_only_after_scope_resolution; residents dùng "
+        "read_only_aggregate; vehicle_counts dùng read_only_active_assignments; electricity_ranking "
+        "dùng read_only_finalized_meter_snapshots; frequent_requests dùng read_only_with_coverage_limit. "
+        "Phân loại theo hành động, không chỉ theo danh từ: hỏi 'hóa đơn đã thanh toán chưa' là đọc; "
+        "lệnh cập nhật/đánh dấu/ghi nhận/sửa/tạo/xóa hóa đơn, tiền, chỉ số công tơ, hồ sơ cư dân hoặc "
+        "trạng thái yêu cầu phải là clarify/reject_write_from_advisor, dù có nhắc dữ liệu của task đọc. "
+        "Gửi nhắc cư dân là clarify/require_separate_confirmed_workflow. Nhắc chủ trọ tự xem việc tồn là "
+        "overview/read-only. Tham chiếu không rõ là clarify/clarify_in_chat. Chỉ dùng task/action đã "
+        "liệt kê; không ghi dữ liệu hoặc tiết lộ thông tin riêng tư cư dân."
     ),
 }
 CORPORA = {
@@ -50,6 +48,9 @@ CORPORA = {
     "owner": ROOT / "data/cloudy-owner/v2/assistant-corpus.json",
 }
 OWNER_TARGETED_TRAINING = ROOT / "data/cloudy-owner/v3/targeted-training.json"
+OWNER_V7_DEVELOPMENT = ROOT / "data/cloudy-owner/v4/development-training.json"
+OWNER_V8_TARGETED_TRAINING = ROOT / "data/cloudy-owner/v5/targeted-training.json"
+OWNER_V8_DEVELOPMENT = ROOT / "data/cloudy-owner/v5/development-training.json"
 
 
 def load_cases(split: str) -> list[dict[str, Any]]:
@@ -77,6 +78,42 @@ def load_cases(split: str) -> list[dict[str, Any]]:
             cases.append({
                 "flow": "owner",
                 "id": item["id"],
+                "messages": [
+                    {"role": "system", "content": SYSTEMS["owner"]},
+                    {"role": "user", "content": item["message"]},
+                    {"role": "assistant", "content": json.dumps(item["target"], ensure_ascii=False, separators=(",", ":"))},
+                ],
+                "target": item["target"],
+            })
+        development = json.loads(OWNER_V7_DEVELOPMENT.read_text(encoding="utf-8"))
+        for item in development["cases"]:
+            cases.append({
+                "flow": "owner",
+                "id": f"v4-dev-{item['id']}",
+                "messages": [
+                    {"role": "system", "content": SYSTEMS["owner"]},
+                    {"role": "user", "content": item["message"]},
+                    {"role": "assistant", "content": json.dumps(item["target"], ensure_ascii=False, separators=(",", ":"))},
+                ],
+                "target": item["target"],
+            })
+        targeted_v8 = json.loads(OWNER_V8_TARGETED_TRAINING.read_text(encoding="utf-8"))
+        for item in targeted_v8["training_reference"]:
+            cases.append({
+                "flow": "owner",
+                "id": item["id"],
+                "messages": [
+                    {"role": "system", "content": SYSTEMS["owner"]},
+                    {"role": "user", "content": item["message"]},
+                    {"role": "assistant", "content": json.dumps(item["target"], ensure_ascii=False, separators=(",", ":"))},
+                ],
+                "target": item["target"],
+            })
+        development_v8 = json.loads(OWNER_V8_DEVELOPMENT.read_text(encoding="utf-8"))
+        for item in development_v8["cases"]:
+            cases.append({
+                "flow": "owner",
+                "id": f"v5-dev-{item['id']}",
                 "messages": [
                     {"role": "system", "content": SYSTEMS["owner"]},
                     {"role": "user", "content": item["message"]},

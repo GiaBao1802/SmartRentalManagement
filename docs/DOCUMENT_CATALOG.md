@@ -57,7 +57,7 @@
 
 ## Qwen3 Cloudy fine-tuning evaluation — 2026-10-29
 
-[Iteration report](11_project-reports/CLOUDY_QWEN3_FINETUNE_ITERATION_20261029.md) — SOURCE/EVALUATION CANDIDATE. Records the owner-query training/holdout additions and evaluation approach; it does not promote weights or change runtime model selection. See the separate public room-search corpus report for its training data. No database change.
+[Iteration report](11_project-reports/CLOUDY_QWEN3_FINETUNE_ITERATION_20261029.md) — SOURCE/EVALUATION CANDIDATE. Records Owner V2–V6 training/evaluation results and the later V4/V5 synthetic corpus/training-loader changes. The V4/V5 material has corpus-validation evidence only; it has not been trained or evaluated as a model, does not promote weights, and does not change runtime model selection. See the separate public room-search corpus report for its training data. No database change.
 
 
 ## Cloudy local AI integration — 2026-10-28
