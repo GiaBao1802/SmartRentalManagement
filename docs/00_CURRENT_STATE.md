@@ -2,7 +2,7 @@
 
 ### GitHub source synchronization — 2026-10-29
 
-Pulled eight commits/221 paths by fast-forward to `6ad69f8` and integrated the previously saved public-navigation/account-name and Admin/Resident logo changes. Seven content conflicts were resolved while retaining upstream galleries, amenities, account menus and Superadmin boundaries. Both typechecks, frontend 79+17 and backend 41 focused tests, and full frontend/backend production builds pass. Local edits remain unstaged/unpublished; original checkpoint and stash are retained. Development servers were stopped for the update; no database rollout or runtime cleanup ran. See [integration evidence](10_operations/GITHUB_UPDATE_INTEGRATION_20261029.md). The upstream primary Exact Next Task remains unchanged.
+Pulled eight commits/221 paths by fast-forward to `6ad69f8` and integrated the previously saved public-navigation/account-name and Admin/Resident logo changes. Seven content conflicts were resolved while retaining upstream galleries, amenities, account menus and Superadmin boundaries. Both typechecks, frontend 79+17 and backend 41 focused tests, and full frontend/backend production builds pass. Key routes (/tim-phong, /tim-phong/danh-sach, /intro/index.html, /login) verified HTTP 200. All changes committed as `372522a` and pushed to `origin/main`. Development servers were stopped for the update; no database rollout or runtime cleanup ran. See [integration evidence](10_operations/GITHUB_UPDATE_INTEGRATION_20261029.md). The upstream primary Exact Next Task remains unchanged.
 
 ### Cloudy Qwen3 local fine-tuning — 2026-10-29
 

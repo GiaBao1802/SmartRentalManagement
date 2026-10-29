@@ -1,6 +1,6 @@
 # GitHub update and local-change integration — 2026-10-29
 
-Status: CURRENT — source synchronized; validation recorded below. Scope is pull/review/integration, not database rollout or publishing local work.
+Status: CURRENT — source synchronized; validation recorded below. Scope is pull/review/integration and publishing local work, not database rollout.
 
 ## Source update
 
@@ -46,4 +46,4 @@ No fresh authenticated browser, live database catalog or migration tests were pe
 
 The verified project frontend/backend development processes were stopped before pulling to avoid hot-reloading an intermediate conflicted tree. They have not been restarted as part of this source synchronization; no database migration, seed, demo fixture script, retention cleanup or Superadmin provisioning was invoked.
 
-The repository's primary next task remains the upstream V1.17 rollout gate: obtain the owner's verified Superadmin email and explicit target authorization, then perform the approved rollout/validation procedure. The local public-navigation work remains available for a later review and separate commit/push, as requested by the user.
+The repository's primary next task remains the upstream V1.17 rollout gate: obtain the owner's verified Superadmin email and explicit target authorization, then perform the approved rollout/validation procedure. The local public-navigation, profile header, and dev background jobs work has been committed as `372522a` and pushed to `origin/main`.
