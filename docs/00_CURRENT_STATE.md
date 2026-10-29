@@ -1,5 +1,9 @@
 # Góc Trọ — Current State
 
+### Final source integration — `main` + `testAI` — 2026-10-29
+
+The finalization branch combines the current V1.18 `main` source with Owner Cloudy intent/query improvements and training/evaluation materials from `testAI`. The V1.18 database baseline, guarded setup scripts, public Explorer, and single project next task are retained from `main`; the Owner Cloudy expansion is read-only and does not alter API/database contracts. Focused Owner Cloudy and public-chat tests, Python corpus/parser tests, frontend API tests, frontend/backend builds, typechecks and V1.18 artifact checks pass. Compatible security fixes for transitive `body-parser` and `qs` dependencies are included; `npm audit` reports zero vulnerabilities. Original `testAI` working-tree-only changes are kept outside this integration. No migration, seed, database write or deployment was performed. **Exact next task:** run the production-style Superadmin transaction flow on a dedicated disposable PostgreSQL database with independently provided credentials.
+
 ### V1.18 source handoff — 2026-10-29
 
 The V1.18 integration source has been reconciled with team `main` through `44bfe660`, retaining the public-navigation/account-header/background-job changes from `372522a` alongside Superadmin, Explorer and the canonical V1.16–V1.18 database artifacts. The project owner authorized publication to GitHub `main` with the transactional Superadmin test still incomplete. This source handoff does not apply a migration, seed or reset, does not deploy, and does not configure a Superadmin account. Each teammate must use the full source on `main` after the remote merge is verified and their own ignored Neon configuration. See [team handoff](10_operations/V118_TEAM_HANDOFF_20261029.md). **Exact next task:** run the production-style Superadmin transaction flow on a dedicated disposable PostgreSQL database with independently provided credentials.

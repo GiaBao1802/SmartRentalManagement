@@ -8,6 +8,8 @@ decisions: với mỗi ID, chọn include khi cụm là điều kiện được 
 “Phòng tại Huế có máy lạnh dưới 3 triệu”: cả địa điểm, máy lạnh, giá đều include.
 “Tìm phòng có bãi gửi xe, điều hòa, wifi”: mỗi tiện ích là một điều kiện cần include.
 “Diện tích ít nhất 25m²”: include điều kiện diện tích.
+“Tìm phòng 20m2”: include cụm diện tích dù thiếu phép so sánh; ứng dụng sẽ hỏi khách làm rõ trước khi tìm.
+“Diện tích 20 m”: include như một điều kiện diện tích chưa rõ đơn vị; ứng dụng sẽ hỏi xác nhận m².
 “Phòng không có máy lạnh”: máy lạnh không được include như tiện ích bắt buộc.
 Không đổi số, không bịa điều kiện. Trả đúng JSON theo schema.'''
 
@@ -24,10 +26,11 @@ def finish(question,items,raw):
   return {'status':'needs_clarification','questions':['Model chưa đánh giá đủ và đúng các điều kiện.']}
  # Retain strict residual/negation checks, including blocking excluded candidates.
  selected=[i for i in ids if raw['decisions'][i]=='include']
- # A bare monetary amount is clearly a price reference but lacks a comparison.
- # Preserve it for a targeted clarification even if the small model labels it unclear.
+ # Bare prices and areas are recognized values but lack a safe comparison.
+ # Preserve them for targeted clarification even if the small model labels them unclear.
  if raw['intent']=='search_rooms':
   selected.extend(c['id'] for c in items if c.get('clarify_price_operator') and c['id'] not in selected)
+  selected.extend(c['id'] for c in items if c.get('clarify_area') and c['id'] not in selected)
  return base.finalize(question,items,{'intent':raw['intent'],'selected':selected})
 
 def extract(question):

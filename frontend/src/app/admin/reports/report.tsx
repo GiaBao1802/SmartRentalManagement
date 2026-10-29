@@ -24,9 +24,9 @@ function FinancialPanel({ financial }: { financial: OwnerOperationsReport["finan
     <div className="owner-report-financial-legend"><span><i className="billed" /> Đã lập hóa đơn</span><span><i className="settled" /> Thuộc hóa đơn đã thanh toán</span></div>
     <div className="owner-report-month-chart" role="img" aria-label="Biểu đồ tiền phòng đã lập hóa đơn và tiền phòng thuộc các hóa đơn đã thanh toán theo từng tháng">
       {financial.months.map((month) => <div className="owner-report-month-row" key={month.month}>
-        <span>{month.month.slice(5, 7)}/{month.month.slice(0, 4)}</span>
+        <span className="owner-report-month-label">{month.month.slice(5, 7)}/{month.month.slice(0, 4)}</span>
         <div className="owner-report-month-bars"><div title={`Đã lập hóa đơn: ${money(month.rent_billed)}`}><i className="billed" style={{ width: `${Math.max(0, Number(month.rent_billed) / maximum * 100)}%` }} /></div><div title={`Thuộc hóa đơn đã thanh toán: ${money(month.rent_on_paid_invoices)}`}><i className="settled" style={{ width: `${Math.max(0, Number(month.rent_on_paid_invoices) / maximum * 100)}%` }} /></div></div>
-        <b>{money(month.rent_billed)}<small>Đã thu: {money(month.rent_on_paid_invoices)}</small></b>
+        <div className="owner-report-month-values"><strong>{money(month.rent_billed)}</strong><small>Đã thu: {money(month.rent_on_paid_invoices)}</small></div>
       </div>)}
     </div>
   </section>;

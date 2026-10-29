@@ -37,8 +37,8 @@ export default function LandingPage() {
     <section className={styles.hero}>
       <div className={styles.heroInner}>
         <div className={styles.heroCopy}>
-          <p className={styles.eyebrow}>KHÁM PHÁ NƠI Ở THEO CÁCH TRỰC QUAN HƠN</p>
-          <h1>Tìm một góc<br/><span>để yên tâm ở.</span></h1>
+          <p className={styles.eyebrow}>TÌM PHÒNG TRÊN BẢN ĐỒ</p>
+          <h1>Tìm phòng phù hợp<br/><span>với nhu cầu của bạn.</span></h1>
           <p className={styles.heroLead}>Tìm khu vực trên bản đồ, lọc phòng theo nhu cầu, xem thông tin chi tiết và liên hệ với chủ trọ ngay tại trang phòng.</p>
           <div className={styles.heroActions}>
             <Link className={styles.primary} href="/">Tìm phòng ngay <span aria-hidden="true">→</span></Link>
@@ -55,7 +55,7 @@ export default function LandingPage() {
             <div className={styles.frameBar}><i/><i/><i/><span>Góc Trọ · Khám phá Việt Nam</span></div>
             <div className={styles.frameBody}>
               <aside className={styles.framePanel}>
-                <span className={styles.frameKicker}>TÌM DỄ, Ở YÊN</span>
+                <span className={styles.frameKicker}>KHÁM PHÁ PHÒNG TRỌ</span>
                 <strong>Chọn nơi bạn muốn sống</strong>
                 <p>Tìm tỉnh/thành</p>
                 <span className={styles.frameAction}>Xem phòng</span>
@@ -73,7 +73,7 @@ export default function LandingPage() {
 
     <section className={styles.statement}>
       <Reveal className={styles.statementInner}>
-        <p>“Trọ” không chỉ là một chỗ ở tạm.</p>
+        <p>Xem kỹ trước khi liên hệ.</p>
         <h2>Thông tin rõ ràng giúp bạn chọn được nơi ở phù hợp và chủ động liên hệ với chủ trọ.</h2>
       </Reveal>
     </section>
@@ -81,8 +81,8 @@ export default function LandingPage() {
     <section className={styles.features} id="tim-phong">
       <div className={styles.sectionInner}>
         <Reveal className={styles.sectionHeading}>
-          <p className={styles.eyebrow}>MỘT HÀNH TRÌNH TÌM PHÒNG GỌN HƠN</p>
-          <h2>Từ toàn cảnh đến căn phòng bạn muốn xem.</h2>
+          <p className={styles.eyebrow}>TÌM PHÒNG THEO TỪNG BƯỚC</p>
+          <h2>Từ khu vực đến phòng bạn quan tâm.</h2>
           <p>Góc Trọ giúp bạn tìm khu vực, xem thông tin phòng và liên hệ với chủ trọ ngay trên cùng một nền tảng.</p>
         </Reveal>
         <div className={styles.featureLayout}>
@@ -115,7 +115,7 @@ export default function LandingPage() {
       <div className={styles.sectionInner}>
         <Reveal className={styles.journeyHeading}>
           <p className={styles.eyebrow}>CÁCH HOẠT ĐỘNG</p>
-          <h2>Ba bước, một hướng đi rõ ràng.</h2>
+          <h2>Ba bước để tìm và liên hệ.</h2>
         </Reveal>
         <div className={styles.steps}>
           <Reveal className={styles.step}>
@@ -125,7 +125,7 @@ export default function LandingPage() {
             <strong>02</strong><span className={styles.stepWindow}/><div><h3>Xem phòng chi tiết</h3><p>Đọc giá thuê, diện tích, sức chứa và mô tả công khai.</p></div>
           </Reveal>
           <Reveal className={styles.step} delay={180}>
-            <strong>03</strong><span className={`${styles.stepWindow} ${styles.stepWindowLit}`}/><div><h3>Gửi liên hệ</h3><p>Chuyển nhu cầu của bạn đến đúng nơi đang vận hành phòng.</p></div>
+            <strong>03</strong><span className={`${styles.stepWindow} ${styles.stepWindowLit}`}/><div><h3>Gửi liên hệ</h3><p>Để lại thông tin tại trang phòng để chủ trọ tiếp nhận.</p></div>
           </Reveal>
         </div>
         <Reveal className={styles.journeyAction}><Link className={styles.secondary} href="/">Mở bản đồ tìm phòng <span aria-hidden="true">↗</span></Link></Reveal>
@@ -135,8 +135,8 @@ export default function LandingPage() {
     <section className={styles.management} id="quan-ly">
       <div className={styles.managementInner}>
         <Reveal className={styles.managementCopy}>
-          <p className={styles.eyebrow}>PHÍA SAU MỘT NƠI Ở GỌN GÀNG</p>
-          <h2>Công việc vận hành cũng cần một góc rõ ràng.</h2>
+          <p className={styles.eyebrow}>DÀNH CHO CHỦ TRỌ</p>
+          <h2>Quản lý khu trọ trên cùng một hệ thống.</h2>
           <p>Góc Trọ hỗ trợ chủ trọ quản lý cư dân, hợp đồng, hóa đơn, dịch vụ và phòng. Mỗi tài khoản chỉ xem được những thông tin thuộc phạm vi được cấp quyền.</p>
           <Link className={styles.managementLink} href="/login">Đi đến trang đăng nhập <span aria-hidden="true">→</span></Link>
         </Reveal>
@@ -158,8 +158,8 @@ export default function LandingPage() {
     <section className={styles.finalCta}>
       <Reveal className={styles.finalInner}>
         <div className={styles.finalMark} aria-hidden="true">{Array.from({ length: 9 }, (_, index) => <WindowMark key={index} lit={index === 5} />)}</div>
-        <p className={styles.eyebrow}>GÓC CỦA BẠN CÓ THỂ BẮT ĐẦU TỪ ĐÂY</p>
-        <h2>Tìm một nơi vừa với cuộc sống của mình.</h2>
+        <p className={styles.eyebrow}>BẮT ĐẦU TÌM PHÒNG</p>
+        <h2>Xem phòng phù hợp với nhu cầu của bạn.</h2>
         <p>Khám phá các tin phòng đang được công khai trên Góc Trọ.</p>
         <Link className={styles.primary} href="/">Tìm phòng ngay <span aria-hidden="true">→</span></Link>
       </Reveal>

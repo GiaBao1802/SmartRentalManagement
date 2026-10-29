@@ -53,7 +53,11 @@
 
 ## Owner advisor demo — 2026-10-28
 
-[Owner advisor report](07_modules/invoice-zalo/OWNER_ADVISOR_DEMO_REPORT.md) — CURRENT: live backend data for Admin Cloudy; standalone remains synthetic. Six read-only queries (billing, utilities, missing data, overview, requests, residents) run immediately when scope is clear; Cloudy asks only for an unavailable/ambiguous month or room. Unknown intent offers supported topics. Service creation and request decisions remain explicitly confirmed. [100-room dataset/runbook](../data/owner-ai/v1/README.md) is historical demo data bound to Admin 1 / Owner 1; 160 synthetic invoices. Focused adapter/intent/route tests and frontend typechecks pass; authenticated visual review remains pending. No database schema change. Older local room-advisor/JSON launch reports are historical for the standalone product direction.
+[Owner advisor report](07_modules/invoice-zalo/OWNER_ADVISOR_DEMO_REPORT.md) — CURRENT: live backend data for Admin Cloudy; standalone remains synthetic. Six read-only queries (billing, utilities, missing data, overview, requests, residents) run immediately when scope is clear; Cloudy asks only for an unavailable/ambiguous month or room. Owner query follow-up adds resident/vehicle totals and rankings, vacancy, utilities usage rankings, actionable request filters, missing billing data, invoice payment status and sensitive-data refusal. Service creation and request decisions remain explicitly confirmed. [100-room dataset/runbook](../data/owner-ai/v1/README.md) is historical demo data bound to Admin 1 / Owner 1; 160 synthetic invoices. Focused adapter/intent/route tests and frontend typechecks pass; authenticated visual review remains pending. No database schema change. Older local room-advisor/JSON launch reports are historical for the standalone product direction.
+
+## Qwen3 Cloudy fine-tuning evaluation — 2026-10-29
+
+[Iteration report](11_project-reports/CLOUDY_QWEN3_FINETUNE_ITERATION_20261029.md) — SOURCE/EVALUATION CANDIDATE. Records the owner-query training/holdout additions and evaluation approach; it does not promote weights or change runtime model selection. See the separate public room-search corpus report for its training data. No database change.
 
 
 ## Cloudy local AI integration — 2026-10-28

@@ -1,0 +1,1347 @@
+{
+  "version": 2,
+  "language": "vi",
+  "scope": "authenticated_owner_advisor_intent",
+  "status": "synthetic_balanced_training_candidate_not_runtime",
+  "description": "Balanced synthetic Owner intent-training candidate with extra explicit payment-write, unresolved-reference, overview and residence-registration paraphrases. Retains the original 12 untouched holdouts; no customer/account records. Candidate training data only, not production behavior.",
+  "target_contract": {
+    "read_only_tasks": [
+      "unpaid",
+      "utilities",
+      "missing",
+      "overview",
+      "requests",
+      "residents",
+      "available_rooms",
+      "vehicle_counts",
+      "electricity_ranking",
+      "frequent_requests"
+    ],
+    "read_only_next_action": "Read only data within the authenticated Owner scope; use canonical status and available backend data; never change records from a query.",
+    "clarify": "State that the intent is unclear, unsupported, or a write operation; do not query or mutate until a supported, separately confirmed workflow is selected."
+  },
+  "training_reference": [
+    {
+      "id": "train-001",
+      "category": "unpaid_status",
+      "message": "Phòng nào còn hóa đơn chưa thanh toán tháng này?",
+      "target": {
+        "task": "unpaid",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ tính hóa đơn đã chốt; bản nháp chưa phải khoản phải thu."
+    },
+    {
+      "id": "train-002",
+      "category": "unpaid_overdue",
+      "message": "Có hóa đơn nào quá hạn trong kỳ trước không?",
+      "target": {
+        "task": "unpaid",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Quá hạn chỉ dựa trên hạn thanh toán và ngày đối chiếu backend."
+    },
+    {
+      "id": "train-003",
+      "category": "unpaid_room_question",
+      "message": "Phòng nào chưa đóng tiền thuê kỳ này?",
+      "target": {
+        "task": "unpaid",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Không tự đổi trạng thái hóa đơn hoặc gửi nhắc."
+    },
+    {
+      "id": "train-004",
+      "category": "utilities_explanation",
+      "message": "Giúp tôi hiểu cách tính tiền điện nước tháng này.",
+      "target": {
+        "task": "utilities",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Giải thích từ snapshot hóa đơn đã lưu; không tự tính lại giá."
+    },
+    {
+      "id": "train-005",
+      "category": "utilities_price",
+      "message": "Tiền nước kỳ trước tính theo đơn giá nào?",
+      "target": {
+        "task": "utilities",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Dùng nguồn đơn giá đã lưu; không đoán khi thiếu dữ liệu."
+    },
+    {
+      "id": "train-006",
+      "category": "missing_meter",
+      "message": "Phòng nào còn thiếu chỉ số điện để lập hóa đơn?",
+      "target": {
+        "task": "missing",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Thiếu dữ liệu không đồng nghĩa hóa đơn đã chốt hay đã đến hạn."
+    },
+    {
+      "id": "train-007",
+      "category": "missing_water",
+      "message": "Những hóa đơn nháp nào chưa có số nước?",
+      "target": {
+        "task": "missing",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ liệt kê thiếu sót được backend trả về."
+    },
+    {
+      "id": "train-008",
+      "category": "overview_period",
+      "message": "Kỳ này còn việc gì cần kiểm tra?",
+      "target": {
+        "task": "overview",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Tổng hợp trạng thái thật; không biến bản nháp thành khoản nợ."
+    },
+    {
+      "id": "train-009",
+      "category": "overview_billing",
+      "message": "Tóm tắt các hóa đơn cần tôi xem lại tháng này.",
+      "target": {
+        "task": "overview",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ đọc; không chốt hóa đơn hoặc cập nhật trạng thái."
+    },
+    {
+      "id": "train-010",
+      "category": "owner_requests",
+      "message": "Có yêu cầu tiện ích hay khiếu nại nào đang chờ không?",
+      "target": {
+        "task": "requests",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ mở danh sách; quyết định xử lý cần thao tác và xác nhận riêng."
+    },
+    {
+      "id": "train-011",
+      "category": "resident_stats",
+      "message": "Thống kê hiện có bao nhiêu cư dân đang ở?",
+      "target": {
+        "task": "residents",
+        "next_action": "read_only_aggregate"
+      },
+      "boundary": "Chỉ số tổng hợp; không đưa tên, số điện thoại hay giấy tờ vào chat."
+    },
+    {
+      "id": "train-012",
+      "category": "resident_registration",
+      "message": "Ai chưa hoàn tất đăng ký tạm trú?",
+      "target": {
+        "task": "residents",
+        "next_action": "read_only_aggregate"
+      },
+      "boundary": "Trả số lượng tổng hợp theo phạm vi; không tiết lộ danh sách định danh."
+    },
+    {
+      "id": "train-013",
+      "category": "vacant_rooms",
+      "message": "Cho tôi xem danh sách phòng còn trống.",
+      "target": {
+        "task": "available_rooms",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ liệt kê phòng hiệu lực available theo API; không suy diễn phòng trống."
+    },
+    {
+      "id": "train-014",
+      "category": "vacant_rooms",
+      "message": "Khu trọ của tôi còn phòng nào chưa có người thuê?",
+      "target": {
+        "task": "available_rooms",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Giá thuê hiển thị là tham khảo, không phải đặt thuê."
+    },
+    {
+      "id": "train-015",
+      "category": "vehicle_counts",
+      "message": "Phòng nào hiện có nhiều xe đang gửi nhất?",
+      "target": {
+        "task": "vehicle_counts",
+        "next_action": "read_only_active_assignments"
+      },
+      "boundary": "Đếm xe có phân công chỗ giữ xe active, không đếm xe chỉ đăng ký."
+    },
+    {
+      "id": "train-016",
+      "category": "electricity_ranking",
+      "message": "Phòng nào dùng nhiều điện nhất tháng này?",
+      "target": {
+        "task": "electricity_ranking",
+        "next_action": "read_only_finalized_meter_snapshots"
+      },
+      "boundary": "Chỉ cộng số điện hợp lệ từ hóa đơn đã chốt; bỏ bản nháp."
+    },
+    {
+      "id": "train-017",
+      "category": "frequent_requests",
+      "message": "Phòng nào hay báo hỏng hoặc gửi khiếu nại nhất?",
+      "target": {
+        "task": "frequent_requests",
+        "next_action": "read_only_with_coverage_limit"
+      },
+      "boundary": "Nêu rõ nếu nguồn chỉ bao phủ 100 yêu cầu mới nhất."
+    },
+    {
+      "id": "train-018",
+      "category": "write_guard_payment",
+      "message": "Đánh dấu giúp tôi hóa đơn phòng đã thanh toán.",
+      "target": {
+        "task": "clarify",
+        "next_action": "reject_write_from_advisor"
+      },
+      "boundary": "Không thay trạng thái tài chính qua Cloudy tư vấn."
+    },
+    {
+      "id": "train-019",
+      "category": "write_guard_finalize",
+      "message": "Chốt hết các hóa đơn nháp kỳ này luôn đi.",
+      "target": {
+        "task": "clarify",
+        "next_action": "reject_write_from_advisor"
+      },
+      "boundary": "Không finalize hoặc tạo khoản phải thu từ câu hỏi chat."
+    },
+    {
+      "id": "train-020",
+      "category": "write_guard_send_reminder",
+      "message": "Tự gửi tin nhắc thanh toán cho mọi phòng đang nợ.",
+      "target": {
+        "task": "clarify",
+        "next_action": "require_separate_confirmed_workflow"
+      },
+      "boundary": "Không gửi thông báo hàng loạt từ luồng truy vấn."
+    },
+    {
+      "id": "train-021",
+      "category": "unsupported_revenue",
+      "message": "Tính doanh thu cả năm của tôi đi.",
+      "target": {
+        "task": "clarify",
+        "next_action": "clarify_in_chat"
+      },
+      "boundary": "Không tự cộng doanh thu ngoài các tác vụ và dữ liệu được hỗ trợ."
+    },
+    {
+      "id": "train-022",
+      "category": "unpaid_informal",
+      "message": "Tháng này có phòng nào còn nợ tiền không?",
+      "target": {
+        "task": "unpaid",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Không gọi hóa đơn nháp là nợ phải thu."
+    },
+    {
+      "id": "train-023",
+      "category": "utilities_informal",
+      "message": "Sao tiền điện kỳ này cao vậy?",
+      "target": {
+        "task": "utilities",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Giải thích từ mức dùng và đơn giá đã lưu, không phỏng đoán nguyên nhân ngoài dữ liệu."
+    },
+    {
+      "id": "train-024",
+      "category": "missing_general",
+      "message": "Hóa đơn kỳ này phòng nào còn thiếu thông tin?",
+      "target": {
+        "task": "missing",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Nêu trường dữ liệu thiếu; không tự điền chỉ số."
+    },
+    {
+      "id": "train-025",
+      "category": "overview_informal",
+      "message": "Trong kỳ còn cái gì cần để ý nữa không?",
+      "target": {
+        "task": "overview",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Không tự thực hiện các việc được tóm tắt."
+    },
+    {
+      "id": "train-026",
+      "category": "owner_requests_complaint",
+      "message": "Liệt kê phản ánh của người thuê trong kỳ này.",
+      "target": {
+        "task": "requests",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ liệt kê; không tự duyệt, từ chối hay đóng yêu cầu."
+    },
+    {
+      "id": "train-027",
+      "category": "resident_registration_stats",
+      "message": "Có bao nhiêu hồ sơ cư trú chưa hoàn thiện?",
+      "target": {
+        "task": "residents",
+        "next_action": "read_only_aggregate"
+      },
+      "boundary": "Không đưa thông tin cá nhân vào phản hồi chat."
+    },
+    {
+      "id": "train-028",
+      "category": "vehicle_counts",
+      "message": "Thống kê số xe đang được phân công theo phòng giúp tôi.",
+      "target": {
+        "task": "vehicle_counts",
+        "next_action": "read_only_active_assignments"
+      },
+      "boundary": "Xe chưa có assignment active không được tính vào kết quả."
+    },
+    {
+      "id": "train-029",
+      "category": "unpaid_current_rent",
+      "message": "Cho biết những phòng còn khoản thuê chưa thanh toán ở kỳ hiện tại.",
+      "target": {
+        "task": "unpaid",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ liệt kê khoản thuê còn unpaid theo trạng thái backend; không gửi nhắc."
+    },
+    {
+      "id": "train-030",
+      "category": "unpaid_overdue_short",
+      "message": "Có hóa đơn tiền nhà nào đang quá hạn không?",
+      "target": {
+        "task": "unpaid",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Dựa vào hóa đơn đã chốt, trạng thái và hạn thanh toán lưu trong hệ thống."
+    },
+    {
+      "id": "train-031",
+      "category": "utilities_tariff",
+      "message": "Đơn giá điện nước được áp dụng trong kỳ gần nhất là bao nhiêu?",
+      "target": {
+        "task": "utilities",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Tra cứu giá và snapshot đã lưu; không tự tính lại hóa đơn."
+    },
+    {
+      "id": "train-032",
+      "category": "utilities_consumption",
+      "message": "Mỗi phòng đã dùng bao nhiêu điện và nước trong kỳ này?",
+      "target": {
+        "task": "utilities",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ đọc mức dùng từ hóa đơn đã chốt; không suy diễn số đo."
+    },
+    {
+      "id": "train-033",
+      "category": "utilities_charge_explanation",
+      "message": "Giải thích các khoản điện nước trên hóa đơn tháng này giúp tôi.",
+      "target": {
+        "task": "utilities",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Giải thích theo chi tiết và đơn giá lưu sẵn; không tự thay đổi phí."
+    },
+    {
+      "id": "train-034",
+      "category": "missing_electricity_reading",
+      "message": "Những phòng nào chưa có chỉ số điện cho kỳ hóa đơn này?",
+      "target": {
+        "task": "missing",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ tìm trường dữ liệu còn thiếu; không nhập hoặc tạo chỉ số."
+    },
+    {
+      "id": "train-035",
+      "category": "missing_draft_fields",
+      "message": "Có hóa đơn nháp nào còn thiếu thông tin trước khi chốt không?",
+      "target": {
+        "task": "missing",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Liệt kê thông tin thiếu, không tự hoàn thiện hay chốt hóa đơn."
+    },
+    {
+      "id": "train-036",
+      "category": "missing_water_reading",
+      "message": "Phòng nào chưa gửi số nước của kỳ này?",
+      "target": {
+        "task": "missing",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ kiểm tra dữ liệu hiện có; không gửi nhắc cư dân."
+    },
+    {
+      "id": "train-037",
+      "category": "overview_actions_today",
+      "message": "Tóm tắt những hạng mục đang chờ tôi xem hôm nay.",
+      "target": {
+        "task": "overview",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ tóm tắt công việc; không tự thực hiện chúng."
+    },
+    {
+      "id": "train-038",
+      "category": "overview_before_close",
+      "message": "Trước khi hoàn tất kỳ này còn việc nào cần rà lại?",
+      "target": {
+        "task": "overview",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Đưa thông tin cần xem; không sửa dữ liệu hay chốt kỳ."
+    },
+    {
+      "id": "train-039",
+      "category": "overview_remaining",
+      "message": "Cho tôi xem các việc còn tồn trong khu trọ.",
+      "target": {
+        "task": "overview",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ truy vấn dữ liệu trong phạm vi Owner đã xác thực."
+    },
+    {
+      "id": "train-040",
+      "category": "requests_repairs_new",
+      "message": "Xem các báo sửa chữa mới gửi vào khu trọ.",
+      "target": {
+        "task": "requests",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ liệt kê yêu cầu; chưa duyệt, từ chối hay đóng yêu cầu."
+    },
+    {
+      "id": "train-041",
+      "category": "requests_complaints_recent",
+      "message": "Gần đây cư dân có phản ánh vấn đề gì không?",
+      "target": {
+        "task": "requests",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ xem phản ánh đã lưu; không tự phản hồi cư dân."
+    },
+    {
+      "id": "train-042",
+      "category": "requests_pending_review",
+      "message": "Liệt kê các yêu cầu đang chờ chủ trọ duyệt.",
+      "target": {
+        "task": "requests",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Tra cứu trạng thái; quyết định duyệt phải qua luồng riêng."
+    },
+    {
+      "id": "train-043",
+      "category": "requests_maintenance_open",
+      "message": "Còn phòng nào có báo hỏng chưa được xử lý không?",
+      "target": {
+        "task": "requests",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ đọc trạng thái các yêu cầu hiện có."
+    },
+    {
+      "id": "train-044",
+      "category": "resident_count_current",
+      "message": "Hiện đang có tổng cộng bao nhiêu cư dân thuê trọ?",
+      "target": {
+        "task": "residents",
+        "next_action": "read_only_aggregate"
+      },
+      "boundary": "Chỉ trả số tổng hợp; không đưa thông tin nhận dạng cá nhân."
+    },
+    {
+      "id": "train-045",
+      "category": "resident_registration_status",
+      "message": "Có bao nhiêu cư dân đã đăng ký lưu trú?",
+      "target": {
+        "task": "residents",
+        "next_action": "read_only_aggregate"
+      },
+      "boundary": "Chỉ thống kê theo trạng thái đăng ký trong Owner scope."
+    },
+    {
+      "id": "train-046",
+      "category": "resident_status_summary",
+      "message": "Thống kê số hồ sơ cư dân theo tình trạng đăng ký giúp tôi.",
+      "target": {
+        "task": "residents",
+        "next_action": "read_only_aggregate"
+      },
+      "boundary": "Chỉ tổng hợp số lượng; không trả CCCD hoặc dữ liệu riêng tư."
+    },
+    {
+      "id": "train-047",
+      "category": "vacant_room_count",
+      "message": "Còn bao nhiêu phòng đang trống để cho thuê?",
+      "target": {
+        "task": "available_rooms",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Tình trạng trống do backend xác định; không tự suy từ danh sách hợp đồng."
+    },
+    {
+      "id": "train-048",
+      "category": "vacant_room_contract",
+      "message": "Liệt kê phòng chưa có hợp đồng thuê còn hiệu lực.",
+      "target": {
+        "task": "available_rooms",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ xem danh sách; không tạo hay sửa hợp đồng."
+    },
+    {
+      "id": "train-049",
+      "category": "vacant_room_status",
+      "message": "Phòng nào hiện được đánh dấu là còn khả dụng?",
+      "target": {
+        "task": "available_rooms",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Dùng trạng thái available do backend trả về."
+    },
+    {
+      "id": "train-050",
+      "category": "vacant_room_listing",
+      "message": "Cho tôi danh sách các phòng chưa có người thuê.",
+      "target": {
+        "task": "available_rooms",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ đọc dữ liệu phòng trong khu trọ của Owner."
+    },
+    {
+      "id": "train-051",
+      "category": "vehicle_active_count",
+      "message": "Đếm số xe đang được gửi tại khu trọ hiện nay.",
+      "target": {
+        "task": "vehicle_counts",
+        "next_action": "read_only_active_assignments"
+      },
+      "boundary": "Chỉ tính các assignment đang active."
+    },
+    {
+      "id": "train-052",
+      "category": "vehicle_multiple_per_room",
+      "message": "Phòng nào đang có nhiều hơn một xe được phân công?",
+      "target": {
+        "task": "vehicle_counts",
+        "next_action": "read_only_active_assignments"
+      },
+      "boundary": "Đếm xe duy nhất từ assignment còn hiệu lực."
+    },
+    {
+      "id": "train-053",
+      "category": "vehicle_by_room",
+      "message": "Cho biết số xe active theo từng phòng.",
+      "target": {
+        "task": "vehicle_counts",
+        "next_action": "read_only_active_assignments"
+      },
+      "boundary": "Không tính xe chưa có assignment active."
+    },
+    {
+      "id": "train-054",
+      "category": "vehicle_sort_rooms",
+      "message": "Sắp xếp các phòng theo số xe đang gửi từ nhiều xuống ít.",
+      "target": {
+        "task": "vehicle_counts",
+        "next_action": "read_only_active_assignments"
+      },
+      "boundary": "Chỉ dùng phân công xe hiện còn hiệu lực."
+    },
+    {
+      "id": "train-055",
+      "category": "electricity_ranking_current",
+      "message": "Xếp hạng các phòng theo lượng điện tiêu thụ kỳ này.",
+      "target": {
+        "task": "electricity_ranking",
+        "next_action": "read_only_finalized_meter_snapshots"
+      },
+      "boundary": "Chỉ dùng snapshot chỉ số trên hóa đơn đã chốt."
+    },
+    {
+      "id": "train-056",
+      "category": "electricity_highest_kwh",
+      "message": "Phòng nào có mức dùng kWh cao nhất trong kỳ?",
+      "target": {
+        "task": "electricity_ranking",
+        "next_action": "read_only_finalized_meter_snapshots"
+      },
+      "boundary": "Không suy mức dùng từ số tiền điện hoặc hóa đơn nháp."
+    },
+    {
+      "id": "train-057",
+      "category": "electricity_top_rooms",
+      "message": "Lấy danh sách năm phòng dùng điện nhiều nhất tháng trước.",
+      "target": {
+        "task": "electricity_ranking",
+        "next_action": "read_only_finalized_meter_snapshots"
+      },
+      "boundary": "Xếp hạng theo kWh đã lưu ở hóa đơn finalized."
+    },
+    {
+      "id": "train-058",
+      "category": "electricity_compare",
+      "message": "So sánh lượng điện đã chốt giữa các phòng trong khu.",
+      "target": {
+        "task": "electricity_ranking",
+        "next_action": "read_only_finalized_meter_snapshots"
+      },
+      "boundary": "Không tự ước tính dữ liệu kỳ chưa chốt."
+    },
+    {
+      "id": "train-059",
+      "category": "electricity_finalized_rooms",
+      "message": "Phòng nào có chỉ số điện đã chốt cao hơn các phòng khác?",
+      "target": {
+        "task": "electricity_ranking",
+        "next_action": "read_only_finalized_meter_snapshots"
+      },
+      "boundary": "Dựa vào snapshot tiêu thụ đã chốt, không dùng bản nháp."
+    },
+    {
+      "id": "train-060",
+      "category": "frequent_request_types",
+      "message": "Những loại yêu cầu nào cư dân gửi thường xuyên nhất?",
+      "target": {
+        "task": "frequent_requests",
+        "next_action": "read_only_with_coverage_limit"
+      },
+      "boundary": "Nêu giới hạn tối đa 100 yêu cầu mới nhất nếu kết quả dựa trên tập đó."
+    },
+    {
+      "id": "train-061",
+      "category": "frequent_repairs_by_property",
+      "message": "Khu trọ nào có nhiều yêu cầu sửa chữa nhất?",
+      "target": {
+        "task": "frequent_requests",
+        "next_action": "read_only_with_coverage_limit"
+      },
+      "boundary": "Chỉ xếp hạng theo dữ liệu đã tải và nêu rõ giới hạn bao phủ."
+    },
+    {
+      "id": "train-062",
+      "category": "frequent_issues",
+      "message": "Tổng hợp các sự cố thường gặp trong yêu cầu gần đây.",
+      "target": {
+        "task": "frequent_requests",
+        "next_action": "read_only_with_coverage_limit"
+      },
+      "boundary": "Không khẳng định đây là toàn bộ lịch sử nếu chỉ xem tối đa 100 mục."
+    },
+    {
+      "id": "train-063",
+      "category": "frequent_repeated_repairs",
+      "message": "Phòng nào có nhiều báo hỏng lặp lại nhất?",
+      "target": {
+        "task": "frequent_requests",
+        "next_action": "read_only_with_coverage_limit"
+      },
+      "boundary": "Dựa trên yêu cầu trong phạm vi bao phủ; nêu giới hạn nếu có."
+    },
+    {
+      "id": "train-064",
+      "category": "frequent_request_summary",
+      "message": "Cho tôi biết nhóm yêu cầu nào được gửi nhiều nhất.",
+      "target": {
+        "task": "frequent_requests",
+        "next_action": "read_only_with_coverage_limit"
+      },
+      "boundary": "Không suy rộng ngoài các yêu cầu backend đã trả về."
+    },
+    {
+      "id": "train-065",
+      "category": "write_guard_bulk_payment",
+      "message": "Đánh dấu tất cả hóa đơn đang nợ thành đã thanh toán.",
+      "target": {
+        "task": "clarify",
+        "next_action": "reject_write_from_advisor"
+      },
+      "boundary": "Trợ lý chỉ tư vấn; không cập nhật trạng thái tài chính."
+    },
+    {
+      "id": "train-066",
+      "category": "write_guard_finalize_send",
+      "message": "Chốt hóa đơn nháp rồi gửi cho tất cả cư dân luôn.",
+      "target": {
+        "task": "clarify",
+        "next_action": "reject_write_from_advisor"
+      },
+      "boundary": "Không chốt hóa đơn hoặc gửi thông báo qua trợ lý tư vấn."
+    },
+    {
+      "id": "train-067",
+      "category": "write_guard_reminder",
+      "message": "Nhắn cư dân còn nợ tiền phòng để họ thanh toán giúp tôi.",
+      "target": {
+        "task": "clarify",
+        "next_action": "require_separate_confirmed_workflow"
+      },
+      "boundary": "Việc gửi nhắc phải thực hiện trong luồng riêng có chủ trọ xác nhận."
+    },
+    {
+      "id": "train-068",
+      "category": "ambiguous_reference",
+      "message": "Xử lý giúp tôi mấy cái đó đi.",
+      "target": {
+        "task": "clarify",
+        "next_action": "clarify_in_chat"
+      },
+      "boundary": "Hỏi rõ đối tượng và hành động; không tự suy đoán hay ghi dữ liệu."
+    },
+    {
+      "id": "train-069",
+      "category": "utilities",
+      "message": "Tổng hợp tiền điện và tiền nước đã ghi nhận của kỳ này.",
+      "target": {
+        "task": "utilities",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ đọc dữ liệu và đơn giá đã được lưu."
+    },
+    {
+      "id": "train-070",
+      "category": "utilities",
+      "message": "Đơn giá điện áp dụng cho hóa đơn kỳ trước là bao nhiêu?",
+      "target": {
+        "task": "utilities",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Không suy đoán khi kỳ hóa đơn chưa có dữ liệu."
+    },
+    {
+      "id": "train-071",
+      "category": "electricity_ranking",
+      "message": "Xếp các phòng theo mức kWh điện tăng dần trong kỳ đã chốt.",
+      "target": {
+        "task": "electricity_ranking",
+        "next_action": "read_only_finalized_meter_snapshots"
+      },
+      "boundary": "Chỉ dùng chỉ số của hóa đơn đã chốt."
+    },
+    {
+      "id": "train-072",
+      "category": "electricity_ranking",
+      "message": "Phòng nào có sản lượng điện cao nhất theo hóa đơn tháng rồi?",
+      "target": {
+        "task": "electricity_ranking",
+        "next_action": "read_only_finalized_meter_snapshots"
+      },
+      "boundary": "Chỉ so sánh dữ liệu điện trong kỳ đã chốt."
+    },
+    {
+      "id": "train-073",
+      "category": "overview",
+      "message": "Liệt kê các việc đang đợi chủ nhà xử lý.",
+      "target": {
+        "task": "overview",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Đọc tổng quan các đầu việc trong phạm vi Owner."
+    },
+    {
+      "id": "train-074",
+      "category": "overview",
+      "message": "Cho tôi bản tóm tắt việc cần xem hôm nay.",
+      "target": {
+        "task": "overview",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ tổng hợp trạng thái hiện có."
+    },
+    {
+      "id": "train-075",
+      "category": "requests",
+      "message": "Có yêu cầu sửa chữa mới nào từ người thuê không?",
+      "target": {
+        "task": "requests",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ xem yêu cầu; không tự phản hồi hay đổi trạng thái."
+    },
+    {
+      "id": "train-076",
+      "category": "requests",
+      "message": "Mở danh sách phản ánh gần đây của các phòng.",
+      "target": {
+        "task": "requests",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ đọc khi đã xác định phạm vi Owner."
+    },
+    {
+      "id": "train-077",
+      "category": "residents",
+      "message": "Hiện các khu của tôi có tổng cộng bao nhiêu người đang thuê?",
+      "target": {
+        "task": "residents",
+        "next_action": "read_only_aggregate"
+      },
+      "boundary": "Chỉ trả số liệu tổng hợp; không lộ thông tin cá nhân."
+    },
+    {
+      "id": "train-078",
+      "category": "residents",
+      "message": "Thống kê số cư dân theo từng khu trọ.",
+      "target": {
+        "task": "residents",
+        "next_action": "read_only_aggregate"
+      },
+      "boundary": "Dùng số liệu tổng hợp trong phạm vi Owner."
+    },
+    {
+      "id": "train-079",
+      "category": "missing",
+      "message": "Những hóa đơn nào còn thiếu ngày chốt công tơ nước?",
+      "target": {
+        "task": "missing",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ liệt kê trường dữ liệu thiếu từ backend."
+    },
+    {
+      "id": "train-080",
+      "category": "missing",
+      "message": "Kiểm tra bản nháp nào chưa được nhập chỉ số điện.",
+      "target": {
+        "task": "missing",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Không xem bản nháp là hóa đơn đã chốt."
+    },
+    {
+      "id": "train-081",
+      "category": "available_rooms",
+      "message": "Tìm các phòng đang bỏ trống và có thể cho thuê.",
+      "target": {
+        "task": "available_rooms",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ dùng trạng thái phòng hiệu lực từ backend."
+    },
+    {
+      "id": "train-082",
+      "category": "available_rooms",
+      "message": "Còn mã phòng nào chưa có hợp đồng thuê hiện hành?",
+      "target": {
+        "task": "available_rooms",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Không tự suy ra trạng thái ngoài dữ liệu hệ thống."
+    },
+    {
+      "id": "train-083",
+      "category": "vehicle_counts",
+      "message": "Đếm số xe đang đăng ký trong từng khu nhà trọ.",
+      "target": {
+        "task": "vehicle_counts",
+        "next_action": "read_only_active_assignments"
+      },
+      "boundary": "Chỉ tổng hợp các lượt đăng ký xe còn hiệu lực."
+    },
+    {
+      "id": "train-084",
+      "category": "vehicle_counts",
+      "message": "Khu nào hiện có nhiều xe của cư dân nhất?",
+      "target": {
+        "task": "vehicle_counts",
+        "next_action": "read_only_active_assignments"
+      },
+      "boundary": "Dùng phân công xe đang hoạt động; không đọc dữ liệu riêng tư không cần thiết."
+    },
+    {
+      "id": "train-085",
+      "category": "unpaid",
+      "message": "Liệt kê các khoản tiền thuê đến hạn mà cư dân chưa trả.",
+      "target": {
+        "task": "unpaid",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ tính hóa đơn đã chốt và trạng thái thanh toán hiện hành."
+    },
+    {
+      "id": "train-086",
+      "category": "unpaid",
+      "message": "Phòng nào còn khoản phải thu quá hạn?",
+      "target": {
+        "task": "unpaid",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Quá hạn dựa trên ngày đến hạn và ngày đối chiếu từ backend."
+    },
+    {
+      "id": "train-087",
+      "category": "frequent_requests",
+      "message": "Thống kê nhóm sự cố nào được báo nhiều nhất.",
+      "target": {
+        "task": "frequent_requests",
+        "next_action": "read_only_with_coverage_limit"
+      },
+      "boundary": "Nêu giới hạn dữ liệu khi backend không có đủ lịch sử."
+    },
+    {
+      "id": "train-088",
+      "category": "frequent_requests",
+      "message": "Loại yêu cầu nào cư dân gửi lặp lại thường xuyên?",
+      "target": {
+        "task": "frequent_requests",
+        "next_action": "read_only_with_coverage_limit"
+      },
+      "boundary": "Chỉ tổng hợp lịch sử hiện có; không tự gán nguyên nhân."
+    },
+    {
+      "id": "train-089",
+      "category": "write_guard",
+      "message": "Ghi nhận hóa đơn phòng B12 là đã thu tiền giúp tôi.",
+      "target": {
+        "task": "clarify",
+        "next_action": "reject_write_from_advisor"
+      },
+      "boundary": "Đây là yêu cầu thay đổi dữ liệu tài chính; Cloudy tư vấn chỉ được từ chối ghi trực tiếp."
+    },
+    {
+      "id": "train-090",
+      "category": "write_guard",
+      "message": "Xóa phản ánh này khỏi hệ thống luôn nhé.",
+      "target": {
+        "task": "clarify",
+        "next_action": "reject_write_from_advisor"
+      },
+      "boundary": "Không xóa hay thay đổi hồ sơ theo yêu cầu trong chat tư vấn."
+    },
+    {
+      "id": "train-091",
+      "category": "ambiguous",
+      "message": "Cái đó giải quyết xong chưa?",
+      "target": {
+        "task": "clarify",
+        "next_action": "clarify_in_chat"
+      },
+      "boundary": "Chưa rõ đối tượng; hỏi lại trước khi tra cứu."
+    },
+    {
+      "id": "train-092",
+      "category": "unsupported",
+      "message": "So sánh lợi nhuận ròng các khu sau khi trừ chi phí bảo trì.",
+      "target": {
+        "task": "clarify",
+        "next_action": "clarify_in_chat"
+      },
+      "boundary": "Không đủ dữ liệu hoặc tác vụ hỗ trợ; nêu giới hạn và làm rõ nhu cầu."
+    },
+    {
+      "id": "train-093",
+      "category": "write_invoice_status",
+      "message": "Chuyển hóa đơn kỳ này sang trạng thái đã thu tiền.",
+      "target": {
+        "task": "clarify",
+        "next_action": "reject_write_from_advisor"
+      },
+      "boundary": "Yêu cầu đổi trạng thái tài chính; Cloudy tư vấn không được ghi trực tiếp."
+    },
+    {
+      "id": "train-094",
+      "category": "write_payment_record",
+      "message": "Ghi nhận phòng C08 đã nộp đủ tiền thuê tháng này.",
+      "target": {
+        "task": "clarify",
+        "next_action": "reject_write_from_advisor"
+      },
+      "boundary": "Không xác nhận hay tạo bản ghi thanh toán thay cho chủ trọ."
+    },
+    {
+      "id": "train-095",
+      "category": "write_invoice_amount",
+      "message": "Sửa tổng tiền hóa đơn phòng 203 thành 1.250.000 đồng.",
+      "target": {
+        "task": "clarify",
+        "next_action": "reject_write_from_advisor"
+      },
+      "boundary": "Không sửa dữ liệu hóa đơn trong hội thoại tư vấn."
+    },
+    {
+      "id": "train-096",
+      "category": "write_meter_value",
+      "message": "Thay chỉ số điện cuối kỳ của phòng A12 thành 845 kWh.",
+      "target": {
+        "task": "clarify",
+        "next_action": "reject_write_from_advisor"
+      },
+      "boundary": "Không thay đổi chỉ số công tơ; cần dùng quy trình nghiệp vụ riêng."
+    },
+    {
+      "id": "train-097",
+      "category": "write_request_status",
+      "message": "Đánh dấu khiếu nại phòng B02 là đã xử lý xong.",
+      "target": {
+        "task": "clarify",
+        "next_action": "reject_write_from_advisor"
+      },
+      "boundary": "Không đổi trạng thái yêu cầu từ truy vấn tư vấn."
+    },
+    {
+      "id": "train-098",
+      "category": "write_contract_delete",
+      "message": "Xóa hợp đồng thuê phòng 305 khỏi hệ thống giúp tôi.",
+      "target": {
+        "task": "clarify",
+        "next_action": "reject_write_from_advisor"
+      },
+      "boundary": "Không xóa hợp đồng hay hồ sơ trong hội thoại."
+    },
+    {
+      "id": "train-099",
+      "category": "write_resident_record",
+      "message": "Thêm anh Minh vào danh sách người thuê phòng 12 ngay nhé.",
+      "target": {
+        "task": "clarify",
+        "next_action": "reject_write_from_advisor"
+      },
+      "boundary": "Không thêm cư dân trực tiếp; phải dùng luồng có xác nhận."
+    },
+    {
+      "id": "train-100",
+      "category": "write_invoice_create",
+      "message": "Tạo hóa đơn phụ thu vệ sinh cho tất cả phòng.",
+      "target": {
+        "task": "clarify",
+        "next_action": "reject_write_from_advisor"
+      },
+      "boundary": "Không phát sinh hóa đơn hoặc khoản thu từ chat tư vấn."
+    },
+    {
+      "id": "train-101",
+      "category": "ambiguous_reference",
+      "message": "Cập nhật nó giúp tôi.",
+      "target": {
+        "task": "clarify",
+        "next_action": "clarify_in_chat"
+      },
+      "boundary": "Thiếu đối tượng và nội dung thay đổi; hỏi lại, không truy vấn hay ghi."
+    },
+    {
+      "id": "train-102",
+      "category": "ambiguous_tasks",
+      "message": "Việc kia xong chưa vậy?",
+      "target": {
+        "task": "clarify",
+        "next_action": "clarify_in_chat"
+      },
+      "boundary": "Không xác định được việc nào; hỏi lại trước khi tra cứu."
+    },
+    {
+      "id": "train-103",
+      "category": "ambiguous_scope",
+      "message": "Kiểm tra giúp tôi chỗ đó.",
+      "target": {
+        "task": "clarify",
+        "next_action": "clarify_in_chat"
+      },
+      "boundary": "Không rõ Property, Room hay dữ liệu cần kiểm tra."
+    },
+    {
+      "id": "train-104",
+      "category": "ambiguous_action",
+      "message": "Làm như lần trước đi.",
+      "target": {
+        "task": "clarify",
+        "next_action": "clarify_in_chat"
+      },
+      "boundary": "Không có ngữ cảnh đủ rõ và không được tự suy diễn hành động."
+    },
+    {
+      "id": "train-105",
+      "category": "utilities_vs_ranking",
+      "message": "Cho xem tổng tiền điện nước từng phòng trong hóa đơn đã chốt.",
+      "target": {
+        "task": "utilities",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Đây là khoản tiền điện/nước, không phải sắp hạng kWh."
+    },
+    {
+      "id": "train-106",
+      "category": "residents_vs_missing",
+      "message": "Có bao nhiêu người đang ở tại khu Bình An?",
+      "target": {
+        "task": "residents",
+        "next_action": "read_only_aggregate"
+      },
+      "boundary": "Đếm cư dân; không phân loại như hồ sơ hoặc chỉ số hóa đơn còn thiếu."
+    },
+    {
+      "id": "train-107",
+      "category": "vehicles_vs_vacancy",
+      "message": "Tổng số xe máy đang gửi tại từng khu là bao nhiêu?",
+      "target": {
+        "task": "vehicle_counts",
+        "next_action": "read_only_active_assignments"
+      },
+      "boundary": "Đếm lượt đăng ký xe còn hiệu lực, không tìm phòng trống."
+    },
+    {
+      "id": "train-108",
+      "category": "ranking_vs_utilities",
+      "message": "Xếp hạng phòng theo số kWh điện đã dùng của kỳ gần nhất.",
+      "target": {
+        "task": "electricity_ranking",
+        "next_action": "read_only_finalized_meter_snapshots"
+      },
+      "boundary": "Đây là xếp hạng lượng kWh, không hỏi số tiền tiện ích."
+    },
+    {
+      "id": "train-109",
+      "category": "write_paid_invoice_close",
+      "message": "Đổi trạng thái hóa đơn phòng A09 thành đã thanh toán trong hệ thống.",
+      "target": {
+        "task": "clarify",
+        "next_action": "reject_write_from_advisor"
+      },
+      "boundary": "Không cập nhật trạng thái hóa đơn trong chat tư vấn."
+    },
+    {
+      "id": "train-110",
+      "category": "write_paid_invoice_close",
+      "message": "Ghi hóa đơn tháng này của phòng C03 là chủ trọ đã nhận tiền rồi.",
+      "target": {
+        "task": "clarify",
+        "next_action": "reject_write_from_advisor"
+      },
+      "boundary": "Không tạo hay chỉnh sửa bản ghi thu tiền."
+    },
+    {
+      "id": "train-111",
+      "category": "write_paid_invoice_close",
+      "message": "Xác nhận khoản tiền thuê phòng 401 đã được thu trên phần mềm.",
+      "target": {
+        "task": "clarify",
+        "next_action": "reject_write_from_advisor"
+      },
+      "boundary": "Không xác nhận thanh toán thay cho chủ trọ."
+    },
+    {
+      "id": "train-112",
+      "category": "write_paid_invoice_close",
+      "message": "Chuyển khoản thu của phòng B14 sang trạng thái đã trả nhé.",
+      "target": {
+        "task": "clarify",
+        "next_action": "reject_write_from_advisor"
+      },
+      "boundary": "Không đổi trạng thái khoản thu; cần quy trình riêng có xác nhận."
+    },
+    {
+      "id": "train-113",
+      "category": "ambiguous_followup",
+      "message": "Bạn xử lý xong chưa?",
+      "target": {
+        "task": "clarify",
+        "next_action": "clarify_in_chat"
+      },
+      "boundary": "Thiếu đối tượng và nội dung; hỏi lại trước khi tra cứu."
+    },
+    {
+      "id": "train-114",
+      "category": "ambiguous_followup",
+      "message": "Cái đó đến đâu rồi vậy?",
+      "target": {
+        "task": "clarify",
+        "next_action": "clarify_in_chat"
+      },
+      "boundary": "Không rõ yêu cầu đang được nhắc tới."
+    },
+    {
+      "id": "train-115",
+      "category": "ambiguous_followup",
+      "message": "Cập nhật như tôi nói lúc nãy nhé.",
+      "target": {
+        "task": "clarify",
+        "next_action": "clarify_in_chat"
+      },
+      "boundary": "Không có ngữ cảnh xác định và không được suy đoán thao tác ghi."
+    },
+    {
+      "id": "train-116",
+      "category": "ambiguous_followup",
+      "message": "Làm tiếp phần đó cho tôi.",
+      "target": {
+        "task": "clarify",
+        "next_action": "clarify_in_chat"
+      },
+      "boundary": "Thiếu đối tượng và hành động cụ thể; hỏi lại."
+    },
+    {
+      "id": "train-117",
+      "category": "overview_pending",
+      "message": "Trong kỳ này còn những đầu việc nào cần theo dõi?",
+      "target": {
+        "task": "overview",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Tổng hợp tình trạng, không thực hiện thay đổi."
+    },
+    {
+      "id": "train-118",
+      "category": "overview_pending",
+      "message": "Tóm tắt các việc còn tồn đọng của các khu trọ.",
+      "target": {
+        "task": "overview",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ đọc trạng thái hiện tại trong phạm vi Owner."
+    },
+    {
+      "id": "train-119",
+      "category": "resident_registration",
+      "message": "Thống kê cư dân nào chưa hoàn tất đăng ký tạm trú.",
+      "target": {
+        "task": "residents",
+        "next_action": "read_only_aggregate"
+      },
+      "boundary": "Đây là trạng thái đăng ký cư trú, không phải chỉ số hóa đơn bị thiếu."
+    },
+    {
+      "id": "train-120",
+      "category": "resident_registration",
+      "message": "Còn bao nhiêu người thuê chưa khai báo tình trạng lưu trú?",
+      "target": {
+        "task": "residents",
+        "next_action": "read_only_aggregate"
+      },
+      "boundary": "Dùng tổng hợp hồ sơ cư dân trong phạm vi Owner."
+    }
+  ],
+  "holdout": [
+    {
+      "id": "test-001",
+      "category": "unpaid_colloquial",
+      "message": "Có ai chưa đóng tiền nhà tháng này vậy?",
+      "target": {
+        "task": "unpaid",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Câu hỏi thân mật vẫn là tra cứu; không gửi nhắc."
+    },
+    {
+      "id": "test-002",
+      "category": "utilities_specific",
+      "message": "Tiền điện tháng trước tính ra sao?",
+      "target": {
+        "task": "utilities",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Dùng snapshot và đơn giá đã lưu; không tự tính lại."
+    },
+    {
+      "id": "test-003",
+      "category": "missing_colloquial",
+      "message": "Kỳ này còn phòng nào chưa có số điện nước để lên bill?",
+      "target": {
+        "task": "missing",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ tìm dữ liệu còn thiếu; không tự tạo/chốt hóa đơn."
+    },
+    {
+      "id": "test-004",
+      "category": "overview_colloquial",
+      "message": "Nhắc tôi xem lại những việc còn vướng trong kỳ.",
+      "target": {
+        "task": "overview",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Câu hỏi nhắc xem việc khác với gửi nhắc cư dân."
+    },
+    {
+      "id": "test-005",
+      "category": "requests_informal",
+      "message": "Khách thuê có ai báo hư gì gần đây không?",
+      "target": {
+        "task": "requests",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ xem danh sách yêu cầu, chưa ra quyết định."
+    },
+    {
+      "id": "test-006",
+      "category": "resident_registration",
+      "message": "Bao nhiêu người còn thiếu hồ sơ lưu trú?",
+      "target": {
+        "task": "residents",
+        "next_action": "read_only_aggregate"
+      },
+      "boundary": "Chỉ trả số liệu tổng hợp trong Owner scope."
+    },
+    {
+      "id": "test-007",
+      "category": "vacant_rooms",
+      "message": "Liệt kê phòng chưa có ai thuê nhé.",
+      "target": {
+        "task": "available_rooms",
+        "next_action": "read_only_after_scope_resolution"
+      },
+      "boundary": "Chỉ phòng backend xác định là available."
+    },
+    {
+      "id": "test-008",
+      "category": "vehicle_counts",
+      "message": "Khu nào có phòng đang gửi nhiều xe nhất?",
+      "target": {
+        "task": "vehicle_counts",
+        "next_action": "read_only_active_assignments"
+      },
+      "boundary": "Chỉ tính assignment giữ xe active và xe duy nhất."
+    },
+    {
+      "id": "test-009",
+      "category": "electricity_ranking",
+      "message": "Top phòng tiêu thụ kWh cao nhất tháng trước là phòng nào?",
+      "target": {
+        "task": "electricity_ranking",
+        "next_action": "read_only_finalized_meter_snapshots"
+      },
+      "boundary": "Không dùng hóa đơn nháp hoặc suy diễn từ tiền điện."
+    },
+    {
+      "id": "test-010",
+      "category": "frequent_requests",
+      "message": "Khu nào thường có nhiều yêu cầu sửa chữa nhất tháng này?",
+      "target": {
+        "task": "frequent_requests",
+        "next_action": "read_only_with_coverage_limit"
+      },
+      "boundary": "Nhắc rõ giới hạn bao phủ tối đa 100 yêu cầu mới nhất nếu có."
+    },
+    {
+      "id": "test-011",
+      "category": "write_guard_status",
+      "message": "Cập nhật hóa đơn này thành đã thanh toán luôn.",
+      "target": {
+        "task": "clarify",
+        "next_action": "reject_write_from_advisor"
+      },
+      "boundary": "Không thực hiện thay đổi tài chính từ câu hỏi tư vấn."
+    },
+    {
+      "id": "test-012",
+      "category": "unsupported_ambiguous",
+      "message": "Xử lý hết mấy việc đó giúp tôi.",
+      "target": {
+        "task": "clarify",
+        "next_action": "clarify_in_chat"
+      },
+      "boundary": "Hỏi rõ việc nào; không tự chọn, gửi tin hay cập nhật trạng thái."
+    }
+  ]
+}

@@ -15,11 +15,17 @@ def valid_context(f):
  return isinstance(f['amenities'],list) and len(f['amenities'])<=8 and all(x in ['air_conditioning','parking','wifi','elevator','washing_machine','refrigerator','water_heater','private_kitchen','private_bathroom','balcony','unspecified_amenity','cats_allowed','dogs_allowed'] for x in f['amenities'])
 
 def understand(message,mode,context,extract):
- if mode=='new':return extract(message)
+ if mode=='new':
+  # Treat explicit restart wording as UI/chat control, not as a room condition.
+  fresh=re.sub(r'^(?:lọc\s+mới|loc\s+moi|tìm\s+mới|tim\s+moi)\s*[:：,-]?\s*','',message.strip(),flags=re.I)
+  return extract(fresh)
  if not valid_context(context):raise ValueError('Invalid context')
  # Explicit removal commands are deliberately narrow: other content must not be dropped.
  removals={'bo gioi han gia':'price','khong gioi han gia':'price','bo dieu kien may lanh':'amenities','khong can may lanh':'amenities','bo dieu kien dien tich':'area','bo dieu kien khu vuc':'location','bo dieu kien so nguoi':'occupants'}
  command=normalized(message).strip(' .!?')
+ # Vietnamese users often phrase a supported removal as a full command with
+ # the polite imperative suffix "đi". Strip it only before exact allowlist lookup.
+ if command.endswith(' di') and command[:-3] in removals:command=command[:-3]
  if command in removals:
   merged=copy.deepcopy(context);field=removals[command];merged[field]=copy.deepcopy(EMPTY[field])
   return {'status':'ready','filters':merged}

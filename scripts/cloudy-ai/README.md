@@ -37,6 +37,8 @@ The evaluation does not connect to the database. Deterministic tests cover safe 
 
 The completed local run used 84 training examples (28 per flow), 36 untouched holdouts, 1 epoch, LoRA rank 8, sequence length 192 and 8 CPU threads. Teacher-forced token accuracy increased from 48.5% to 65.2% overall; Guest 45.1%→55.8%, Resident 54.0%→68.6%, Owner 46.4%→71.1%. Exact full-answer token matches were 0/36 both before and after. A reproducible three-case greedy-generation smoke also scored 0/3 for both base and adapter; the adapter misclassified an invoice question and repeated an Owner JSON key. It is not suitable for runtime. The adapter and reports are under `%LOCALAPPDATA%\GocTro\cloudy-qwen3-candidate-20261029`.
 
+Owner-only synthetic iterations at `data/cloudy-owner/v2/assistant-corpus.json` grew to 120 training examples while preserving the same 12 holdouts. V6 used one CPU QLoRA NF4 epoch, rank 8, learning rate `3e-5`, max length 320 and 8 threads. On identical greedy generation, exact objects improved 4/12→9/12, schema-valid task/action 9/12→12/12, and bare JSON 11/12→12/12. The explicit invoice-write holdout still routes to a read-only unpaid query, so the adapter fails the safety gate and is not for runtime. The evaluator uses a local offload folder for low-memory CPU loading. Metrics and checksum are in [the iteration report](../../docs/11_project-reports/CLOUDY_QWEN3_FINETUNE_ITERATION_20261029.md); artifacts are under `%LOCALAPPDATA%\GocTro\cloudy-qwen3-owner-v6-final-20261029`. Stop synthetic-only training until human-reviewed examples and an independently reviewed larger holdout are available.
+
 To reproduce the local environment and run, use Python 3.11 and the pinned CPU dependencies:
 
 ```powershell

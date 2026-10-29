@@ -11,7 +11,7 @@ export default function AuthLayout({ title, description, children, footer, retur
       <aside className={styles.brand} aria-label="Góc trọ">
         <Link className={styles.logo} href={homeHref} aria-label="Góc Trọ · Một góc yên tâm."><BrandLogo light /></Link>
         <div className={styles.windows} aria-hidden="true">{Array.from({ length: 12 }, (_, index) => <span key={index} />)}</div>
-        <h2>Một góc yên tâm.</h2><p>Thông tin rõ ràng, việc quản lý gọn gàng. Góc của bạn, có người lo.</p>
+        <h2>Một góc yên tâm.</h2><p>Tìm phòng, xem thông tin nơi ở và quản lý khu trọ trên Góc Trọ.</p>
       </aside>
       <section className={styles.card} aria-labelledby="auth-title">
         <span className={styles.kicker}>TÀI KHOẢN GÓC TRỌ</span><h1 id="auth-title">{title}</h1><p className={styles.description}>{description}</p>

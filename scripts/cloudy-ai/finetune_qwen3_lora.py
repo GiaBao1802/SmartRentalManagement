@@ -12,12 +12,6 @@ import time
 from pathlib import Path
 from typing import Any
 
-import torch
-import psutil
-from peft import LoraConfig, TaskType, get_peft_model, prepare_model_for_kbit_training
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, Trainer, TrainingArguments
-
-
 ROOT = Path(__file__).resolve().parents[2]
 MODEL_ID = "Qwen/Qwen3-1.7B"
 SYSTEMS = {
@@ -31,16 +25,31 @@ SYSTEMS = {
         "invoice updates, or requests; the app requires explicit confirmation."
     ),
     "owner": (
-        "Cloudy for authenticated property owners. Classify task and safe next_action; return "
-        "only the requested JSON. Read only inside the owner's backend scope. Never mutate "
-        "records or expose resident personal data."
+        "Cloudy Owner intent classifier. Return one bare JSON object with exactly task and "
+        "next_action; no markdown, prose, extra or repeated keys. Task meanings: unpaid=payment "
+        "status/due; utilities=electricity/water amount, rate, use or explanation; missing=missing "
+        "billing readings/fields; overview=pending-work summary; requests=repairs, complaints or "
+        "service requests; residents=count/registration; available_rooms=vacant rooms; "
+        "vehicle_counts=active vehicle assignments; electricity_ranking=finalized kWh ranking; "
+        "frequent_requests=common request aggregate; clarify=ambiguous, unsupported or write. "
+        "Action values: read_only_after_scope_resolution, read_only_aggregate, "
+        "read_only_active_assignments, read_only_finalized_meter_snapshots, "
+        "read_only_with_coverage_limit, reject_write_from_advisor, "
+        "require_separate_confirmed_workflow, clarify_in_chat. Map residents=read_only_aggregate; "
+        "vehicle_counts=read_only_active_assignments; "
+        "electricity_ranking=read_only_finalized_meter_snapshots; "
+        "frequent_requests=read_only_with_coverage_limit; other reads=read_only_after_scope_resolution. "
+        "Direct writes=reject_write_from_advisor; "
+        "reminders=require_separate_confirmed_workflow; unclear=clarify_in_chat. Owner scope only; "
+        "never mutate records or expose resident personal data."
     ),
 }
 CORPORA = {
     "guest": ROOT / "data/cloudy-guest/v2/room-search-corpus.json",
     "resident": ROOT / "data/cloudy-resident/v1/assistant-corpus.json",
-    "owner": ROOT / "data/cloudy-owner/v1/assistant-corpus.json",
+    "owner": ROOT / "data/cloudy-owner/v2/assistant-corpus.json",
 }
+OWNER_TARGETED_TRAINING = ROOT / "data/cloudy-owner/v3/targeted-training.json"
 
 
 def load_cases(split: str) -> list[dict[str, Any]]:
@@ -62,6 +71,19 @@ def load_cases(split: str) -> list[dict[str, Any]]:
                 ],
                 "target": item["target"],
             })
+    if split == "train":
+        corpus = json.loads(OWNER_TARGETED_TRAINING.read_text(encoding="utf-8"))
+        for item in corpus["training_reference"]:
+            cases.append({
+                "flow": "owner",
+                "id": item["id"],
+                "messages": [
+                    {"role": "system", "content": SYSTEMS["owner"]},
+                    {"role": "user", "content": item["message"]},
+                    {"role": "assistant", "content": json.dumps(item["target"], ensure_ascii=False, separators=(",", ":"))},
+                ],
+                "target": item["target"],
+            })
     return cases
 
 
@@ -78,7 +100,11 @@ def tokenize_training(cases: list[dict[str, Any]], tokenizer: Any, max_length: i
         # Safety: only train on the answer tokens, never the prompt.
         if full_ids[: len(prompt_ids)] != prompt_ids:
             raise ValueError(f"Chat template prompt is not a prefix for {case['flow']}:{case['id']}")
-        full_ids = full_ids[:max_length]
+        if len(full_ids) > max_length:
+            raise ValueError(
+                f"Training sample {case['flow']}:{case['id']} has {len(full_ids)} tokens, "
+                f"exceeding max_length={max_length}; refusing to truncate the target."
+            )
         labels = [-100] * min(len(prompt_ids), len(full_ids)) + full_ids[len(prompt_ids):]
         if not any(label != -100 for label in labels):
             raise ValueError(f"No answer tokens survived truncation for {case['flow']}:{case['id']}")
@@ -91,6 +117,8 @@ class PadBatch:
         self.pad_token_id = pad_token_id
 
     def __call__(self, features: list[dict[str, list[int]]]) -> dict[str, torch.Tensor]:
+        import torch
+
         width = max(len(item["input_ids"]) for item in features)
         batch_ids, batch_masks, batch_labels = [], [], []
         for item in features:
@@ -105,38 +133,40 @@ class PadBatch:
         }
 
 
-@torch.inference_mode()
 def evaluate(model: Any, tokenizer: Any, cases: list[dict[str, Any]]) -> dict[str, Any]:
+    import torch
+
     model.eval()
     results = []
-    for case in cases:
-        messages = case["messages"]
-        prompt_ids = tokenizer.apply_chat_template(
-            messages[:-1], tokenize=True, add_generation_prompt=True, enable_thinking=False
-        )
-        all_ids = tokenizer.apply_chat_template(
-            messages, tokenize=True, add_generation_prompt=False, enable_thinking=False
-        )
-        if all_ids[:len(prompt_ids)] != prompt_ids:
-            raise ValueError(f"Evaluation prompt is not a prefix for {case['flow']}:{case['id']}")
-        input_ids = torch.tensor([all_ids], dtype=torch.long)
-        output = model(input_ids=input_ids, attention_mask=torch.ones_like(input_ids), use_cache=False)
-        gold = input_ids[0, len(prompt_ids):]
-        predictions = output.logits[0, len(prompt_ids) - 1:len(all_ids) - 1].argmax(dim=-1)
-        token_accuracy = float((predictions == gold).float().mean().item()) if len(gold) else 0.0
-        exact = bool(torch.equal(predictions, gold))
-        predicted_text = tokenizer.decode(predictions.tolist(), skip_special_tokens=True)
-        results.append({
-            "flow": case["flow"],
-            "id": case["id"],
-            "expected": json.dumps(case["target"], ensure_ascii=False, separators=(",", ":")),
-            "teacher_forced_prediction": predicted_text[:1200],
-            "answer_tokens": len(gold),
-            "token_accuracy": token_accuracy,
-            "exact_answer": exact,
-        })
-        del output, input_ids, gold, predictions
-        print(f"eval {case['flow']} {case['id']}: token-accuracy={token_accuracy:.3f}, exact={'yes' if exact else 'no'}", flush=True)
+    with torch.inference_mode():
+        for case in cases:
+            messages = case["messages"]
+            prompt_ids = tokenizer.apply_chat_template(
+                messages[:-1], tokenize=True, add_generation_prompt=True, enable_thinking=False
+            )
+            all_ids = tokenizer.apply_chat_template(
+                messages, tokenize=True, add_generation_prompt=False, enable_thinking=False
+            )
+            if all_ids[:len(prompt_ids)] != prompt_ids:
+                raise ValueError(f"Evaluation prompt is not a prefix for {case['flow']}:{case['id']}")
+            input_ids = torch.tensor([all_ids], dtype=torch.long)
+            output = model(input_ids=input_ids, attention_mask=torch.ones_like(input_ids), use_cache=False)
+            gold = input_ids[0, len(prompt_ids):]
+            predictions = output.logits[0, len(prompt_ids) - 1:len(all_ids) - 1].argmax(dim=-1)
+            token_accuracy = float((predictions == gold).float().mean().item()) if len(gold) else 0.0
+            exact = bool(torch.equal(predictions, gold))
+            predicted_text = tokenizer.decode(predictions.tolist(), skip_special_tokens=True)
+            results.append({
+                "flow": case["flow"],
+                "id": case["id"],
+                "expected": json.dumps(case["target"], ensure_ascii=False, separators=(",", ":")),
+                "teacher_forced_prediction": predicted_text[:1200],
+                "answer_tokens": len(gold),
+                "token_accuracy": token_accuracy,
+                "exact_answer": exact,
+            })
+            del output, input_ids, gold, predictions
+            print(f"eval {case['flow']} {case['id']}: token-accuracy={token_accuracy:.3f}, exact={'yes' if exact else 'no'}", flush=True)
     by_flow = {}
     for flow in SYSTEMS:
         flow_results = [item for item in results if item["flow"] == flow]
@@ -156,11 +186,19 @@ def evaluate(model: Any, tokenizer: Any, cases: list[dict[str, Any]]) -> dict[st
 
 
 def main() -> None:
+    import psutil
+    import torch
+    from peft import LoraConfig, TaskType, get_peft_model, prepare_model_for_kbit_training
+    from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, Trainer, TrainingArguments
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", required=True, help="Local directory for adapter and evaluation report")
     parser.add_argument("--epochs", type=float, default=1)
     parser.add_argument("--max-length", type=int, default=384)
     parser.add_argument("--threads", type=int, default=min(8, os.cpu_count() or 4))
+    parser.add_argument("--flows", nargs="+", choices=tuple(SYSTEMS), default=list(SYSTEMS),
+                        help="Train/evaluate only selected Cloudy flows (default: all)")
+    parser.add_argument("--learning-rate", type=float, default=1e-4)
     parser.add_argument("--dry-run", action="store_true", help="Validate train/holdout formatting without loading model weights")
     args = parser.parse_args()
     output_dir = Path(args.output_dir).expanduser().resolve()
@@ -172,7 +210,8 @@ def main() -> None:
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "right"
-    train_cases, holdout_cases = load_cases("train"), load_cases("holdout")
+    train_cases = [case for case in load_cases("train") if case["flow"] in args.flows]
+    holdout_cases = [case for case in load_cases("holdout") if case["flow"] in args.flows]
     encoded = tokenize_training(train_cases, tokenizer, args.max_length)
     train_ids = {(item["flow"], item["id"]) for item in train_cases}
     holdout_ids = {(item["flow"], item["id"]) for item in holdout_cases}
@@ -185,6 +224,7 @@ def main() -> None:
             "holdout_examples": len(holdout_cases),
             "train_examples_by_flow": {flow: sum(item["flow"] == flow for item in train_cases) for flow in SYSTEMS},
             "holdout_examples_by_flow": {flow: sum(item["flow"] == flow for item in holdout_cases) for flow in SYSTEMS},
+            "selected_flows": args.flows,
             "max_training_tokens": max(len(item["input_ids"]) for item in encoded),
             "answer_only_loss": all(any(label != -100 for label in item["labels"]) for item in encoded),
             "split_overlap": len(train_ids & holdout_ids),
@@ -238,7 +278,7 @@ def main() -> None:
         per_device_train_batch_size=1,
         gradient_accumulation_steps=4,
         num_train_epochs=args.epochs,
-        learning_rate=1e-4,
+        learning_rate=args.learning_rate,
         lr_scheduler_type="cosine",
         warmup_ratio=0.05,
         optim="adamw_torch",
@@ -271,13 +311,13 @@ def main() -> None:
         "base_model": MODEL_ID,
         "method": "QLoRA adapter, CPU, NF4 4-bit base weights with double quantization, fp32 compute, assistant-answer-only loss",
         "license": "Apache-2.0 (upstream Qwen3-1.7B)",
-        "dataset": {"synthetic_train_examples": len(train_cases), "untouched_holdout_examples": len(holdout_cases), "flows": list(SYSTEMS)},
-        "config": {"epochs": args.epochs, "max_length": args.max_length, "lora_r": 8, "lora_alpha": 16, "quantization": "NF4 4-bit + double quantization", "seed": 42},
+        "dataset": {"synthetic_train_examples": len(train_cases), "untouched_holdout_examples": len(holdout_cases), "flows": args.flows},
+        "config": {"epochs": args.epochs, "learning_rate": args.learning_rate, "max_length": args.max_length, "lora_r": 8, "lora_alpha": 16, "quantization": "NF4 4-bit + double quantization", "seed": 42},
         "training_seconds": training_seconds,
         "baseline": {key: value for key, value in baseline.items() if key != "results"},
         "candidate": {key: value for key, value in candidate.items() if key != "results"},
         "meets_no_regression_gate": candidate["mean_token_accuracy"] >= baseline["mean_token_accuracy"] and all(
-            candidate["by_flow"][flow]["mean_token_accuracy"] >= baseline["by_flow"][flow]["mean_token_accuracy"] for flow in SYSTEMS
+            candidate["by_flow"][flow]["mean_token_accuracy"] >= baseline["by_flow"][flow]["mean_token_accuracy"] for flow in args.flows
         ),
         "database": "not accessed",
         "runtime_model_changed": False,
