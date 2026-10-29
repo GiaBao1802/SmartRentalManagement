@@ -1,12 +1,30 @@
 # Góc Trọ — Current State
 
+### Cloudy Owner tenant-feedback query — 2026-10-29
+
+Owner Cloudy now deterministically recognizes questions such as “có bao nhiêu tin nhắn phản hồi từ khách” and returns an authenticated Owner-scoped count/list of room-request Complaints by creation month (default current displayed month). It excludes pending service bookings and the Superadmin-only AI-feedback inbox. Since `GET /room-requests` returns at most 100 newest rows, responses disclose that totals can be incomplete at the cap. Admin sidebar links now use Next.js client navigation, and Cloudy stays open across pages in the same Owner scope; a role/account or access-scope change still resets it. No schema/data change. Owner-focused intent/route/live-adapter and chat-session tests pass 35/35; frontend typecheck and full production build pass. Authenticated visual review pending. Exact Next Task remains unchanged.
+
 ### Cloudy Qwen3 local fine-tuning — 2026-10-29
 
 Trained a local CPU QLoRA NF4 adapter for one epoch on 84 synthetic Guest/Resident/Owner examples; reserved 36 holdouts. Teacher-forced answer-token accuracy improved 48.5%→65.2%, but exact answers remain 0/36 and free-generation smoke is 0/3 for both base and adapter; the adapter also misroutes a Resident invoice question and repeats an Owner JSON key. The candidate is **not cleared for runtime**. Adapter and checksums are in `%LOCALAPPDATA%\GocTro\cloudy-qwen3-candidate-20261029`; app runtime, Ollama and databases are unchanged. Primary Exact Next Task remains the V1.17 rollout after a verified Superadmin email and target authorization. See [fine-tuning report](11_project-reports/CLOUDY_QWEN3_FINETUNE_PREPARATION_20261029.md).
 
+Follow-up Owner-only iterations improved the fixed Owner holdout: V2 free-generation exact objects 6/12 vs base 4/12, schema-valid task/action 11/12 vs 9/12, and bare JSON 12/12 vs 11/12. One explicit invoice-write request and one ambiguous request still fail expected classification, so no adapter is promoted. The Owner V2 candidate is at `%LOCALAPPDATA%\GocTro\cloudy-qwen3-owner-balanced-fast-candidate-20261029`; see [iteration report](11_project-reports/CLOUDY_QWEN3_FINETUNE_ITERATION_20261029.md). The synthetic corpus is not a substitute for human-reviewed examples.
+
 ### Owner rent and profitability dashboard — 2026-10-29
 
 Expanded `/admin/reports` with a 12-month view of finalized rent billed by Invoice period, rent on Invoices currently paid, current-month totals, and the unpaid rent component. Every metric is grouped by `Invoice.periodStart`, not payment receipt date. The UI explicitly says net profit is unavailable because the schema has no operating-expense ledger; rent is not labeled profit. Backend 4/4 focused tests, frontend API/UI 79/79, workspace typechecks and full build pass. No schema, migration, seed or business-data changes. Authenticated browser visual review remains. See [Owner operations report](11_project-reports/OWNER_OPERATIONS_REPORT_IMPLEMENTATION_20261029.md). Exact Next Task remains unchanged.
+
+### Owner Cloudy unpaid-query scope clarity — 2026-10-29
+
+The Admin invoice list shows all periods by default, while an unqualified Owner Cloudy unpaid query is scoped to the current displayed month. Cloudy now names that month and, on an empty monthly result, points to other `period_end` months with finalized unpaid invoices in the same authenticated Owner/Room scope. It continues returning only the selected/current month until the Owner asks for another month. Owner-focused tests pass 28/28 and frontend typecheck passes. No API, database, or Invoice lifecycle change. Authenticated visual review remains. See [Owner advisor report](07_modules/invoice-zalo/OWNER_ADVISOR_DEMO_REPORT.md). The exact next task remains unchanged.
+
+### Owner Cloudy paid-invoice follow-up — 2026-10-29
+
+Cloudy now recognizes “đã thanh toán” as an authenticated Owner-scoped read-only query for finalized paid invoices. The elliptical “thế đã thanh toán” after an unpaid query reuses its period and room scope, unless the user supplies a new period or room. Focused intent/live-adapter/route tests pass 30/30 and frontend typecheck passes. No backend API, database, or payment lifecycle change; authenticated visual review remains. The exact next task remains unchanged. See [Owner advisor report](07_modules/invoice-zalo/OWNER_ADVISOR_DEMO_REPORT.md).
+
+### Owner Cloudy payment-code lookup and identity boundary — 2026-10-29
+
+Cloudy now resolves demo payment codes from the signed-in account's payment notifications and joins them to Owner-scoped paid invoices, linking to the invoice. Resident identity queries receive an explicit privacy explanation per Requirement §21.5, rather than a generic unknown-intent response. Focused intent/live-adapter/route tests pass 32/32 and frontend typecheck passes. No backend endpoint, database, or business data changed; authenticated visual review remains. The exact next task remains unchanged. See [Owner advisor report](07_modules/invoice-zalo/OWNER_ADVISOR_DEMO_REPORT.md).
 
 ### Owner operations report — 2026-10-29
 
@@ -22,7 +40,7 @@ Cloudy now distinguishes a question it understands but lacks public listing data
 
 ### Cloudy room-search training candidate corpus — 2026-10-29
 
-Added a separate 40-example structured corpus: 28 training-reference cases and 12 holdout cases covering mixed filters, colloquial phrasing, corrections/continuations and safe clarifications. Current Qwen3 1.7B passed 12/12 holdout cases; Python Cloudy suite passed 51/51. Fixed two location parsing errors and a false FAQ route for “cần phòng” plus a pet condition. At this checkpoint the corpus was not loaded into the application or used for fine-tuning; the training-reference split was later included in the local QLoRA candidate. No API, database, room-data or production behavior changed. Exact Next Task remains unchanged. See [corpus report](07_modules/public-marketplace/CLOUDY_ROOM_SEARCH_TRAINING_CORPUS_V2_20261029.md), [JSON](../data/cloudy-guest/v2/room-search-corpus.json), and [holdout evaluator](../scripts/cloudy-ai/evaluate_room_search_corpus.py).
+Added a separate 40-example structured corpus: 28 training-reference cases and 12 holdout cases covering mixed filters, colloquial phrasing, corrections/continuations and safe clarifications. Current Qwen3 1.7B passed 12/12 holdout cases; Python Cloudy suite passed 51/51. Fixed two location parsing errors and a false FAQ route for “cần phòng” plus a pet condition. A later chat check exposed that a bare “20m2” was treated as unknown; the parser now recognizes m²/m2 and asks for a minimum, maximum or range before searching, while a bare “m” prompts for unit confirmation. The corpus was not loaded into the application or used for fine-tuning; the training-reference split was later included in the local QLoRA candidate. No API, database, room-data or production behavior changed. Exact Next Task remains unchanged. See [corpus report](07_modules/public-marketplace/CLOUDY_ROOM_SEARCH_TRAINING_CORPUS_V2_20261029.md), [JSON](../data/cloudy-guest/v2/room-search-corpus.json), and [holdout evaluator](../scripts/cloudy-ai/evaluate_room_search_corpus.py).
 
 ### Cloudy Resident and Owner intent corpora — 2026-10-29
 

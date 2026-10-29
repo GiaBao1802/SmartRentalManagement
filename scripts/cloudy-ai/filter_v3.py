@@ -4,7 +4,7 @@ from decimal import Decimal, InvalidOperation
 from filter_v2 import ask_model, norm
 
 N = r'\d+(?:[.,]\d+)?'
-U = r'(?:trieu|tr|nghin|ngan|k|dong|vnd|met vuong|m2)'
+U = r'(?:trieu|tr|nghin|ngan|k|dong|vnd|met vuong|m2|m)'
 TOKEN = rf'{N}\s*{U}(?:(?<=tr)\d+|\s+{N}\s*(?:nghin|ngan)|\s+ruoi)?'
 RANGE = re.compile(rf'(?<!\w)(tu)\s+({N})\s*({U})?\s*den\s*({N})\s*({U})(?!\w)')
 SINGLE = re.compile(rf'(?<![\w.,])({TOKEN})(?!\w)')
@@ -39,7 +39,7 @@ def numeric_value(token):
     # 2.800 can mean 2800 or 2.8; clarify instead of making a locale assumption.
     if re.search(r'[.,]\d{3}$',num): raise ValueError('Dấu phân cách số chưa rõ; hãy viết số tiền bằng đồng, không dấu phân cách.')
     v=Decimal(num.replace(',','.'))
-    kind='area' if unit in ['m2','met vuong'] else 'price'
+    kind='area' if unit in ['m2','met vuong','m'] else 'price'
     factor=1000000 if unit in ['trieu','tr'] else 1000 if unit in ['nghin','ngan','k'] else 1
     v*=factor
     if tail:

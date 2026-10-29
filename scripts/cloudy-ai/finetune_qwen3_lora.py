@@ -31,15 +31,29 @@ SYSTEMS = {
         "invoice updates, or requests; the app requires explicit confirmation."
     ),
     "owner": (
-        "Cloudy for authenticated property owners. Classify task and safe next_action; return "
-        "only the requested JSON. Read only inside the owner's backend scope. Never mutate "
-        "records or expose resident personal data."
+        "Cloudy Owner intent classifier. Return one bare JSON object with exactly task and "
+        "next_action; no markdown, prose, extra or repeated keys. Task meanings: unpaid=payment "
+        "status/due; utilities=electricity/water amount, rate, use or explanation; missing=missing "
+        "billing readings/fields; overview=pending-work summary; requests=repairs, complaints or "
+        "service requests; residents=count/registration; available_rooms=vacant rooms; "
+        "vehicle_counts=active vehicle assignments; electricity_ranking=finalized kWh ranking; "
+        "frequent_requests=common request aggregate; clarify=ambiguous, unsupported or write. "
+        "Action values: read_only_after_scope_resolution, read_only_aggregate, "
+        "read_only_active_assignments, read_only_finalized_meter_snapshots, "
+        "read_only_with_coverage_limit, reject_write_from_advisor, "
+        "require_separate_confirmed_workflow, clarify_in_chat. Map residents=read_only_aggregate; "
+        "vehicle_counts=read_only_active_assignments; "
+        "electricity_ranking=read_only_finalized_meter_snapshots; "
+        "frequent_requests=read_only_with_coverage_limit; other reads=read_only_after_scope_resolution. "
+        "Direct writes=reject_write_from_advisor; "
+        "reminders=require_separate_confirmed_workflow; unclear=clarify_in_chat. Owner scope only; "
+        "never mutate records or expose resident personal data."
     ),
 }
 CORPORA = {
     "guest": ROOT / "data/cloudy-guest/v2/room-search-corpus.json",
     "resident": ROOT / "data/cloudy-resident/v1/assistant-corpus.json",
-    "owner": ROOT / "data/cloudy-owner/v1/assistant-corpus.json",
+    "owner": ROOT / "data/cloudy-owner/v2/assistant-corpus.json",
 }
 
 
@@ -78,7 +92,11 @@ def tokenize_training(cases: list[dict[str, Any]], tokenizer: Any, max_length: i
         # Safety: only train on the answer tokens, never the prompt.
         if full_ids[: len(prompt_ids)] != prompt_ids:
             raise ValueError(f"Chat template prompt is not a prefix for {case['flow']}:{case['id']}")
-        full_ids = full_ids[:max_length]
+        if len(full_ids) > max_length:
+            raise ValueError(
+                f"Training sample {case['flow']}:{case['id']} has {len(full_ids)} tokens, "
+                f"exceeding max_length={max_length}; refusing to truncate the target."
+            )
         labels = [-100] * min(len(prompt_ids), len(full_ids)) + full_ids[len(prompt_ids):]
         if not any(label != -100 for label in labels):
             raise ValueError(f"No answer tokens survived truncation for {case['flow']}:{case['id']}")
@@ -161,6 +179,9 @@ def main() -> None:
     parser.add_argument("--epochs", type=float, default=1)
     parser.add_argument("--max-length", type=int, default=384)
     parser.add_argument("--threads", type=int, default=min(8, os.cpu_count() or 4))
+    parser.add_argument("--flows", nargs="+", choices=tuple(SYSTEMS), default=list(SYSTEMS),
+                        help="Train/evaluate only selected Cloudy flows (default: all)")
+    parser.add_argument("--learning-rate", type=float, default=1e-4)
     parser.add_argument("--dry-run", action="store_true", help="Validate train/holdout formatting without loading model weights")
     args = parser.parse_args()
     output_dir = Path(args.output_dir).expanduser().resolve()
@@ -172,7 +193,8 @@ def main() -> None:
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "right"
-    train_cases, holdout_cases = load_cases("train"), load_cases("holdout")
+    train_cases = [case for case in load_cases("train") if case["flow"] in args.flows]
+    holdout_cases = [case for case in load_cases("holdout") if case["flow"] in args.flows]
     encoded = tokenize_training(train_cases, tokenizer, args.max_length)
     train_ids = {(item["flow"], item["id"]) for item in train_cases}
     holdout_ids = {(item["flow"], item["id"]) for item in holdout_cases}
@@ -185,6 +207,7 @@ def main() -> None:
             "holdout_examples": len(holdout_cases),
             "train_examples_by_flow": {flow: sum(item["flow"] == flow for item in train_cases) for flow in SYSTEMS},
             "holdout_examples_by_flow": {flow: sum(item["flow"] == flow for item in holdout_cases) for flow in SYSTEMS},
+            "selected_flows": args.flows,
             "max_training_tokens": max(len(item["input_ids"]) for item in encoded),
             "answer_only_loss": all(any(label != -100 for label in item["labels"]) for item in encoded),
             "split_overlap": len(train_ids & holdout_ids),
@@ -238,7 +261,7 @@ def main() -> None:
         per_device_train_batch_size=1,
         gradient_accumulation_steps=4,
         num_train_epochs=args.epochs,
-        learning_rate=1e-4,
+        learning_rate=args.learning_rate,
         lr_scheduler_type="cosine",
         warmup_ratio=0.05,
         optim="adamw_torch",
@@ -271,13 +294,13 @@ def main() -> None:
         "base_model": MODEL_ID,
         "method": "QLoRA adapter, CPU, NF4 4-bit base weights with double quantization, fp32 compute, assistant-answer-only loss",
         "license": "Apache-2.0 (upstream Qwen3-1.7B)",
-        "dataset": {"synthetic_train_examples": len(train_cases), "untouched_holdout_examples": len(holdout_cases), "flows": list(SYSTEMS)},
-        "config": {"epochs": args.epochs, "max_length": args.max_length, "lora_r": 8, "lora_alpha": 16, "quantization": "NF4 4-bit + double quantization", "seed": 42},
+        "dataset": {"synthetic_train_examples": len(train_cases), "untouched_holdout_examples": len(holdout_cases), "flows": args.flows},
+        "config": {"epochs": args.epochs, "learning_rate": args.learning_rate, "max_length": args.max_length, "lora_r": 8, "lora_alpha": 16, "quantization": "NF4 4-bit + double quantization", "seed": 42},
         "training_seconds": training_seconds,
         "baseline": {key: value for key, value in baseline.items() if key != "results"},
         "candidate": {key: value for key, value in candidate.items() if key != "results"},
         "meets_no_regression_gate": candidate["mean_token_accuracy"] >= baseline["mean_token_accuracy"] and all(
-            candidate["by_flow"][flow]["mean_token_accuracy"] >= baseline["by_flow"][flow]["mean_token_accuracy"] for flow in SYSTEMS
+            candidate["by_flow"][flow]["mean_token_accuracy"] >= baseline["by_flow"][flow]["mean_token_accuracy"] for flow in args.flows
         ),
         "database": "not accessed",
         "runtime_model_changed": False,

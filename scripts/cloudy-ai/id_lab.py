@@ -22,9 +22,11 @@ def candidates(question):
    for field in ['price','area','occupants','amenity']:
     out=parser.normalize('phòng '+quote,{'intent':'search_rooms','spans':[{'field':field,'quote':quote}]})
     is_bare_price=field=='price' and out['status']=='needs_clarification' and out.get('questions')==['Chưa rõ phép so sánh'] and out.get('clarificationHints')
-    if out['status']=='ready' or is_bare_price:
+    is_bare_area=field=='area' and out['status']=='needs_clarification' and any(hint.get('type') in ['area_operator','area_unit'] for hint in out.get('clarificationHints',[]) if isinstance(hint,dict))
+    if out['status']=='ready' or is_bare_price or is_bare_area:
      item={'field':field,'quote':quote,'start':a,'end':b}
      if is_bare_price:item['clarify_price_operator']=True
+     if is_bare_area:item['clarify_area']=True
      items.append(item);break
  # Longest nonoverlapping supported spans avoid selecting both a range and its bounds.
  chosen=[]

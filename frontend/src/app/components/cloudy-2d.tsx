@@ -109,7 +109,7 @@ export function Cloudy2D() {
     chatOpenRef.current = false;
     restoreFocusRef.current = false;
     setChatOpen(false);
-  }, [suggestionKey, chatScopeKey, visible]);
+  }, [chatScopeKey, visible]);
 
   const positionBubble = useCallback(() => {
     const root = rootRef.current;

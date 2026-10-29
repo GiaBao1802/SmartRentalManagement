@@ -1,7 +1,19 @@
 export type OwnerCatalog={tasks:Record<string,string>;rooms:string[];periods:string[];asOf:string};
 export type OwnerIntent={task:string;period:string;room:string|null};
-export const ownerPeriodFreeTasks=new Set(['residents','available_rooms','vehicle_counts']);
+export type OwnerResidentRequest={kind:'create'|'search';name:string|null};
+export const ownerPeriodFreeTasks=new Set(['residents','available_rooms','vehicle_counts','transaction_lookup']);
 const normalizeOwnerQuestion=(question:string)=>question.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/gi,'d').toLowerCase();
+export function parseOwnerResidentRequest(question:string):OwnerResidentRequest|null{
+ const text=normalizeOwnerQuestion(question);
+ if(!/\b(cu dan|nguoi thue|khach thue|ho so cu dan)\b/.test(text))return null;
+ const kind=/\b(them|tao|bo sung|lap ho so)\b/.test(text)?'create':null;
+ const search=/(?:^|\s)(tim|tra cuu|xem ho so)\b/.test(text);
+ if(!kind&&(!search||/\b(thong ke|bao nhieu|so luong|chua|dang ky|tam tru|tam vang|luu tru|dang o)\b/.test(text)))return null;
+ const nameMatch=question.match(/\bt[eê]n\s+(.+?)(?=\s+(?:vào|cho|ở|tại|phòng|khu trọ|số điện thoại|sđt|cccd)(?:\s|$)|[,.!?]|$)/iu)
+  ||(!kind?question.match(/(?:^|\s)(?:tìm|tra cứu|xem hồ sơ)\s+(?:cư dân|người thuê|khách thuê)\s+(.+?)(?:[,.!?]|$)/iu):null);
+ const name=nameMatch?.[1]?.trim().replace(/[.!?,;:]+$/,'').slice(0,120)||null;
+ return {kind:kind||'search',name};
+}
 export function isOwnerAvailableRoomsQuestion(question:string){
  const text=normalizeOwnerQuestion(question);
  return /\b(phong|danh sach)\b/.test(text)&&/\b(con trong|phong trong|chua co (?:nguoi|ai) thue|chua duoc thue|chua cho thue|chua ai thue)\b/.test(text);
@@ -9,13 +21,17 @@ export function isOwnerAvailableRoomsQuestion(question:string){
 export function ownerQuestionTask(question:string):string|null{
  const text=normalizeOwnerQuestion(question);
  if(/\b(danh dau|cap nhat|chot hoa don|xoa hoa don|gui nhac|gui tin|xu ly het|xu ly luon|giai quyet het|hoan tat het)\b/.test(text))return null;
+ if(/\bDEMO-\d{10,}-[A-F0-9]{8}\b/i.test(question))return 'transaction_lookup';
+ if(/\b(ten|danh tinh|so dien thoai|cccd)\b/.test(text)&&/\b(cu dan|nguoi thue|khach thue)\b/.test(text))return 'resident_identity_help';
  if(isOwnerAvailableRoomsQuestion(question))return 'available_rooms';
  if(/\b(xe|phuong tien|bai xe)\b/.test(text)&&/(nhieu nhat|nhieu xe|bao nhieu xe|xe nao|phong nao.*xe)/.test(text))return 'vehicle_counts';
  if(/\b(dien|kwh|dien nang)\b/.test(text)&&/(nhieu nhat|tieu thu|xai nhieu|dung nhieu|cao nhat|tang nhieu|tang cao|top)/.test(text))return 'electricity_ranking';
  if(/\b(phong nao|khu nao)\b/.test(text)&&/\b(hay|thuong|nhieu|nhieu nhat)\b/.test(text)&&/(bao hong|bao hu|hu hong|sua chua|su co|khieu nai|phan anh|yeu cau)/.test(text))return 'frequent_requests';
+ if(/\b(bao nhieu|so luong|dem)\b/.test(text)&&/(tin nhan|phan hoi|gop y|y kien)/.test(text)&&/(khach|cu dan|nguoi thue|khach thue)/.test(text))return 'feedback_messages';
  if(/\b(cu dan|nguoi o|nguoi dang o|ho so cu dan|tam tru|tam vang|luu tru)\b/.test(text)&&/(thong ke|bao nhieu|so luong|chua|dang ky|ho so|ai )/.test(text)||/\b(ai|nguoi nao)\b/.test(text)&&/(dang ky|ho so|tam tru|tam vang|cu tru)/.test(text))return 'residents';
  if(/\b(thieu|chua co|chua nhap|chua gui|bo trong)\b/.test(text)&&/\b(chi so|dien nuoc|du lieu|thong tin|hoa don|bill)\b/.test(text))return 'missing';
  if(/\b(chua dong tien|chua thanh toan|con no|no tien|qua han|tre han|chua nop tien|chua tra tien)\b/.test(text))return 'unpaid';
+ if(/\b(da thanh toan|thanh toan roi|da tra tien|da nop tien|da dong tien)\b/.test(text))return 'paid';
  if(/\b(dien|nuoc|dien nuoc|gia dien|gia nuoc)\b/.test(text)&&/\b(giai thich|tinh|don gia|bao nhieu|sao|vi sao|tang|ky|thang)\b/.test(text))return 'utilities';
  if(/\b(con viec|con vuong|can kiem tra|viec nao can|kiem tra .* trong ky|con cai gi can xem)\b/.test(text))return 'overview';
  return null;
@@ -35,9 +51,19 @@ export function ownerQuestionMentionsPeriod(question:string){
  const text=question.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/gi,'d').toLowerCase();
  return /\b(thang|ky)\b|thang nay|ky nay|thang truoc|ky truoc|\b20\d{2}-(?:0[1-9]|1[0-2])\b/.test(text);
 }
-export function ownerEmptyResultMessage(task:string){
+export function shouldContinueUnpaidInvoiceScope(question:string,currentTask:string,nextTask:string){
+ const text=normalizeOwnerQuestion(question);
+ return currentTask==='unpaid'&&nextTask==='paid'&&!ownerQuestionMentionsPeriod(question)&&!/\b(phong|tat ca|toan bo|k\d+-p\d+)\b/.test(text);
+}
+export function ownerTransactionCode(question:string){return question.match(/\bDEMO-\d{10,}-[A-F0-9]{8}\b/i)?.[0].toUpperCase()||null;}
+export function ownerEmptyResultMessage(task:string,period=''){
+ const unpaidEmpty=task==='unpaid'&&/^\d{4}-(0[1-9]|1[0-2])$/.test(period)
+  ?`Không có hóa đơn đã chốt nào chưa thanh toán trong tháng ${period.slice(5)}/${period.slice(0,4)} (theo ngày kết thúc kỳ) và phạm vi này.`
+  :null;
  const messages:Record<string,string>={
   unpaid:'Không có hóa đơn đã chốt nào chưa thanh toán trong kỳ và phạm vi này.',
+  paid:'Không có hóa đơn đã thanh toán nào trong kỳ và phạm vi này.',
+  transaction_lookup:'Không tìm thấy hóa đơn trong tài khoản có mã giao dịch này.',
   requests:'Không có yêu cầu tiện ích hoặc khiếu nại nào phù hợp với kỳ và phạm vi này.',
   missing:'Không có dữ liệu lập hóa đơn nào còn thiếu trong kỳ và phạm vi này.',
   utilities:'Không tìm thấy hóa đơn để giải thích tiền điện nước trong kỳ và phạm vi này.',
@@ -46,12 +72,13 @@ export function ownerEmptyResultMessage(task:string){
   vehicle_counts:'Không có xe nào đang được phân công chỗ giữ xe trong phạm vi tài khoản.',
   electricity_ranking:'Không có số điện đã chốt hợp lệ trong kỳ và phạm vi này để xếp hạng.',
   frequent_requests:'Không có yêu cầu hoặc khiếu nại trong kỳ và phạm vi này để thống kê.',
+  feedback_messages:'Không có phản hồi từ khách trong kỳ và phạm vi này.',
  };
- return messages[task]||'Không có dữ liệu phù hợp với kỳ và phạm vi đã chọn.';
+ return unpaidEmpty||messages[task]||'Không có dữ liệu phù hợp với kỳ và phạm vi đã chọn.';
 }
 export function ownerUnknownIntentMessage(question:string,catalog:Pick<OwnerCatalog,'tasks'>){
  const excerpt=question.trim().replace(/\s+/g,' ').slice(0,120);
- const understood=['Ai chưa hoàn tất đăng ký cư trú?','Phòng nào dùng điện nhiều nhất?','Phòng nào đang có nhiều xe nhất?','Phòng nào thường gửi yêu cầu hoặc báo sự cố?','Danh sách phòng còn trống','Tạo tiện ích miễn phí hoặc có phí','Gửi nhắc nhở trong ứng dụng cho cư dân theo phòng',...Object.values(catalog.tasks)];
+ const understood=['Ai chưa hoàn tất đăng ký cư trú?','Phòng nào dùng điện nhiều nhất?','Phòng nào đang có nhiều xe nhất?','Phòng nào thường gửi yêu cầu hoặc báo sự cố?','Có bao nhiêu phản hồi từ khách?','Tìm hóa đơn theo mã giao dịch DEMO-…','Danh sách phòng còn trống','Tạo tiện ích miễn phí hoặc có phí','Gửi nhắc nhở trong ứng dụng cho cư dân theo phòng',...Object.values(catalog.tasks)];
  const features=understood.filter((value,index,all)=>all.findIndex(other=>other.toLowerCase()===value.toLowerCase())===index).join(', ');
  return `Mình chưa hiểu yêu cầu “${excerpt}”; nội dung này có thể chưa được cập nhật. Có phải bạn muốn hỏi về ${features.toLowerCase()} không? Bạn có thể viết lại rõ hơn, mình sẽ tra cứu ngay khi nhận ra đúng mục.`;
 }
@@ -59,6 +86,7 @@ export function namesDifferentOwnerTask(question:string,currentTask:string){
  const text=question.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/gi,'d').toLowerCase();
  const cues:Record<string,string[]>={
   unpaid:['chua dong tien','chua thanh toan','qua han','no tien'],
+  paid:['da thanh toan','thanh toan roi','da tra tien','da nop tien','da dong tien'],
   utilities:['tien dien','tien nuoc','dien nuoc','gia dien','gia nuoc'],
   missing:['thieu du lieu','thieu chi so','lap hoa don','chua lap hoa don'],
   requests:['khieu nai','tien ich','yeu cau tu nguoi thue','phan anh','su co'],
@@ -67,6 +95,7 @@ export function namesDifferentOwnerTask(question:string,currentTask:string){
   vehicle_counts:['phong nao nhieu xe','phong nao co nhieu xe','nhieu xe nhat','bao nhieu xe'],
   electricity_ranking:['phong nao xai dien nhieu','phong nao dung dien nhieu','phong nao tieu thu dien','phong nao tang dien','dien nhieu nhat','tieu thu dien nhieu nhat','kwh cao nhat'],
   frequent_requests:['phong nao hay bao hong','phong nao hay bao su co','phong nao nhieu khieu nai','phong nao hay phan anh'],
+  feedback_messages:['bao nhieu tin nhan phan hoi tu khach','co bao nhieu tin nhan phan hoi tu khach','so luong phan hoi cua khach','bao nhieu gop y tu cu dan'],
  };
  return Object.entries(cues).some(([task,phrases])=>task!==currentTask&&phrases.some(phrase=>text.includes(phrase)));
 }

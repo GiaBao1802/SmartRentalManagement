@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).parents[2]
 CORPORA = {
     "resident": json.loads(ROOT.joinpath("data/cloudy-resident/v1/assistant-corpus.json").read_text(encoding="utf-8")),
-    "owner": json.loads(ROOT.joinpath("data/cloudy-owner/v1/assistant-corpus.json").read_text(encoding="utf-8")),
+    "owner": json.loads(ROOT.joinpath("data/cloudy-owner/v2/assistant-corpus.json").read_text(encoding="utf-8")),
 }
 RESIDENT_INTENTS = {"services", "meter", "requests", "amenity_choice", "invoice", "help"}
 OWNER_TASKS = {
@@ -35,12 +35,24 @@ class ResidentOwnerCorpusTests(unittest.TestCase):
         for assistant, corpus in CORPORA.items():
             with self.subTest(assistant=assistant):
                 reference, holdout = corpus["training_reference"], corpus["holdout"]
-                self.assertEqual(len(reference), 28)
+                self.assertEqual(len(reference), 28 if assistant == "resident" else 92)
                 self.assertEqual(len(holdout), 12)
+                self.assertFalse({case["id"] for case in reference} & {case["id"] for case in holdout})
+                self.assertFalse({case["message"] for case in reference} & {case["message"] for case in holdout})
                 cases = reference + holdout
-                self.assertEqual(len({case["id"] for case in cases}), 40)
-                self.assertEqual(len({case["message"] for case in cases}), 40)
-                self.assertEqual(corpus["status"], "used_in_local_qwen3_candidate_training_only")
+                self.assertEqual(len({case["id"] for case in cases}), len(cases))
+                self.assertEqual(len({case["message"] for case in cases}), len(cases))
+                if assistant == "resident":
+                    self.assertEqual(corpus["status"], "used_in_local_qwen3_candidate_training_only")
+                else:
+                    self.assertEqual(corpus["version"], 2)
+                    self.assertEqual(corpus["status"], "synthetic_balanced_training_candidate_not_runtime")
+                    task_counts = {}
+                    for case in reference:
+                        task = case["target"]["task"]
+                        task_counts[task] = task_counts.get(task, 0) + 1
+                    self.assertEqual({task_counts[key] for key in OWNER_TASKS if key != "clarify"}, {8})
+                    self.assertEqual(task_counts["clarify"], 12)
                 self.assertTrue(all(case.get("boundary") for case in cases))
 
     def test_resident_targets_match_known_intents_and_safe_next_steps(self):

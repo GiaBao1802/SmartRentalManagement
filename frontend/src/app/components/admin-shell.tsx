@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "./auth-provider";
@@ -38,9 +39,9 @@ export default function AdminShell({ children, active }: { children: ReactNode; 
       const items = group.items.filter((item) => !item.adminOnly || user.account.role === "admin");
       return <div className="admin-nav-group" key={group.label}><span className="admin-nav-label">{group.label}</span>{items.map((item) => {
         const selected = active === item.href || (item.href === "/admin/properties" && pathname.startsWith("/admin/properties/"));
-        return <a key={item.href} className={`admin-nav-link${selected ? " active" : ""}`} href={item.href} aria-current={selected ? "page" : undefined}>
+        return <Link key={item.href} className={`admin-nav-link${selected ? " active" : ""}`} href={item.href} aria-current={selected ? "page" : undefined}>
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d={item.icon} /></svg><span>{item.label}</span>
-        </a>;
+        </Link>;
       })}</div>;
     })}
   </nav>;
@@ -48,7 +49,7 @@ export default function AdminShell({ children, active }: { children: ReactNode; 
   return <div className={`admin-page${mobileNavOpen ? " nav-open" : ""}`}>
     {mobileNavOpen && <button className="admin-nav-scrim" type="button" aria-label="Đóng điều hướng" onClick={() => setMobileNavOpen(false)} />}
     <aside className="admin-sidebar" aria-label="Thanh điều hướng chính">
-      <a className="admin-brand" href="/" aria-label="Góc Trọ - trang chủ"><BrandLogo light /></a>
+      <Link className="admin-brand" href="/" aria-label="Góc Trọ - trang chủ"><BrandLogo light /></Link>
       <div className="admin-sidebar-caption"><span className="admin-sidebar-dot" /> KHÔNG GIAN QUẢN LÝ</div>
       {nav}
       <div className="admin-sidebar-footer"><span className="admin-sidebar-footer-status" aria-hidden="true" /><span>Không gian quản lý<small>Vận hành khu trọ</small></span></div>
@@ -57,7 +58,7 @@ export default function AdminShell({ children, active }: { children: ReactNode; 
       <header className="admin-header">
         <div className="admin-header-inner">
           <button className="admin-menu-toggle" type="button" aria-label={mobileNavOpen ? "Đóng menu" : "Mở menu"} aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen((open) => !open)}><span /><span /><span /></button>
-          <div className="admin-header-context"><span className="admin-context-label">GÓC TRỌ <span aria-hidden="true">/</span> QUẢN TRỊ</span><strong>{[...ADMIN_NAV_GROUPS.flatMap((group) => group.items)].find((item) => item.href === active)?.label ?? "Không gian quản lý"}</strong></div>
+          <div className="admin-header-context"><span className="admin-context-label">GÓC TRỌ <span aria-hidden="true">/</span> CHỦ TRỌ</span><strong>{[...ADMIN_NAV_GROUPS.flatMap((group) => group.items)].find((item) => item.href === active)?.label ?? "Quản lý khu trọ"}</strong></div>
           <div className="admin-user"><AdminNotificationBell /><AdminAccountMenu name={name} email={user.account.email} logoutPending={logoutPending} onLogout={() => { if (logoutPending) return; setLogoutPending(true); setLogoutError(""); void logout().catch(() => setLogoutError("Không thể kết thúc phiên với máy chủ. Hãy thử lại.")).finally(() => setLogoutPending(false)); }} /></div>
         </div>
       </header>

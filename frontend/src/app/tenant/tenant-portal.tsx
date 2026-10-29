@@ -169,7 +169,7 @@ export default function TenantPortal() {
     {logoutError && <p className="notice resident-top-notice" role="alert">{logoutError}</p>}
     <div className="tenant-content resident-layout">
       <section className="resident-hero" aria-labelledby="resident-welcome-title">
-        <div className="resident-hero-copy"><span className="resident-eyebrow">CỔNG CƯ DÂN <span aria-hidden="true">·</span> TÌM DỄ, Ở YÊN</span><h1 id="resident-welcome-title">Xin chào,<br /><span>{name}</span></h1><p>Chào mừng bạn trở về góc nhỏ của mình. Thông tin nơi ở và hợp đồng được đồng bộ từ hồ sơ cư dân.</p><div className="resident-trust-note"><span><ResidentIcon name="shield" /></span><span>Thông tin riêng tư, chỉ dành cho tài khoản cư dân của bạn.</span></div></div>
+        <div className="resident-hero-copy"><span className="resident-eyebrow">THÔNG TIN CƯ TRÚ CỦA BẠN</span><h1 id="resident-welcome-title">Xin chào,<br /><span>{name}</span></h1><p>Xem thông tin nơi ở và hợp đồng gắn với hồ sơ của bạn.</p><div className="resident-trust-note"><span><ResidentIcon name="shield" /></span><span>Thông tin này chỉ hiển thị cho tài khoản của bạn.</span></div></div>
         <div className="resident-hero-art">
           <div className="resident-art-grid"><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /></div><span className="resident-art-sun" />
           <div className="resident-art-window"><div className="resident-art-window-bar"><span className="resident-art-lights"><i /><i /><i /></span><span>Góc Trọ <b>·</b> Không gian của bạn</span></div><ResidentHeroScene key={activeOccupancy?.occupancy_id ?? "no-occupancy"} occupancy={activeOccupancy} /></div>

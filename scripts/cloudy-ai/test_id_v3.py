@@ -133,6 +133,45 @@ class LocationCandidateTests(unittest.TestCase):
         self.assertEqual(result['status'], 'needs_clarification')
         self.assertEqual(result['draftFilters']['area'], [])
 
+    def test_bare_area_measurement_is_understood_and_comparison_is_clarified(self):
+        cases = [
+            ('Tìm phòng 20m2', '20m2', True),
+            ('diện tích 20 m²', 'diện tích 20 m²', True),
+            ('diện tích 20 m', 'diện tích 20 m', False),
+            ('dien tich 20 m', 'dien tich 20 m', False),
+        ]
+        for question, quote, unit_confirmed in cases:
+            with self.subTest(question=question):
+                result = normalize(question, {'intent': 'search_rooms', 'spans': []})
+                self.assertEqual(result['status'], 'needs_clarification')
+                self.assertEqual(result['draftFilters']['area'], [])
+                self.assertEqual(result['clarificationHints'], [{
+                    'type': 'area_operator' if unit_confirmed else 'area_unit',
+                    'quote': quote,
+                    'value': 20,
+                    'unit_confirmed': unit_confirmed,
+                    'operator': None,
+                }])
+
+    def test_room_search_candidate_keeps_bare_area_for_clarification_when_model_is_uncertain(self):
+        for question, expected_hint in [('Tìm phòng 20m2', 'area_operator'), ('diện tích 20 m', 'area_unit')]:
+            with self.subTest(question=question):
+                candidates = id_lab.candidates(question)
+                area_candidates = [item for item in candidates if item['field'] == 'area']
+                self.assertTrue(area_candidates)
+                result = id_v3.finish(question, candidates, {
+                    'intent': 'search_rooms',
+                    'decisions': {item['id']: 'unclear' for item in candidates},
+                })
+                self.assertEqual(result['status'], 'needs_clarification')
+                self.assertEqual(result['clarificationHints'][0]['type'], expected_hint)
+                self.assertEqual(result['draftFilters']['area'], [])
+
+    def test_explicit_area_limit_survives_qwen_omitting_its_span(self):
+        result = normalize('Tìm phòng diện tích tối thiểu 20m2', {'intent': 'search_rooms', 'spans': []})
+        self.assertEqual(result['status'], 'ready', result)
+        self.assertEqual(result['filters']['area'], [{'op': 'gte', 'value': 20}])
+
     def test_search_phrase_does_not_turn_following_amenity_into_a_location(self):
         for question in ['Tìm phòng có máy lạnh', 'Tìm phòng cho 2 người', 'Tìm phòng tại Huế']:
             with self.subTest(question=question):

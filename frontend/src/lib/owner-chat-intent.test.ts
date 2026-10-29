@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {proposeOwnerScope,ownerConfirmation,parseOwnerClarificationReply,namesDifferentOwnerTask,ownerUnknownIntentMessage,ownerQuestionMentionsPeriod,ownerEmptyResultMessage,parseOwnerRoomReminder,isOwnerAvailableRoomsQuestion,ownerQuestionTask,ownerPeriodFreeTasks} from './owner-chat-intent';
+import {proposeOwnerScope,ownerConfirmation,parseOwnerClarificationReply,namesDifferentOwnerTask,ownerUnknownIntentMessage,ownerQuestionMentionsPeriod,ownerEmptyResultMessage,parseOwnerRoomReminder,isOwnerAvailableRoomsQuestion,ownerQuestionTask,ownerPeriodFreeTasks,shouldContinueUnpaidInvoiceScope,ownerTransactionCode,parseOwnerResidentRequest} from './owner-chat-intent';
 const catalog={tasks:{unpaid:'Hóa đơn chưa thanh toán',requests:'Yêu cầu từ người thuê'},asOf:'2026-10-28',periods:['2026-10','2026-09'],rooms:['K1-P01','K2-P02']};
 test('explicit task and scope are restated for confirmation, never marked confirmed',()=>{
  const p=proposeOwnerScope('Chưa đóng tiền tháng 10 phòng K1-P01','unpaid',catalog);
@@ -17,6 +17,17 @@ test('only questions with no month reference receive the current-month default',
  assert.equal(ownerQuestionMentionsPeriod('Phòng nào chưa đóng tiền?'),false);
  for(const q of ['tháng 8','tháng này','kỳ trước','2026-09','tháng 9 và 10'])assert.equal(ownerQuestionMentionsPeriod(q),true,q);
 });
+test('elliptical paid-invoice follow-ups retain the prior unpaid query scope only when scope is omitted',()=>{
+ assert.equal(shouldContinueUnpaidInvoiceScope('thế đã thanh toán','unpaid','paid'),true);
+ assert.equal(shouldContinueUnpaidInvoiceScope('thế tháng 9 đã thanh toán','unpaid','paid'),false);
+ assert.equal(shouldContinueUnpaidInvoiceScope('phòng K1-P01 đã thanh toán','unpaid','paid'),false);
+ assert.equal(shouldContinueUnpaidInvoiceScope('thế đã thanh toán','utilities','paid'),false);
+});
+test('demo transaction codes are extracted exactly for a read-only invoice lookup',()=>{
+ assert.equal(ownerTransactionCode('Tìm hóa đơn có mã giao dịch DEMO-1793206220292-3A988AA3'),'DEMO-1793206220292-3A988AA3');
+ assert.equal(ownerTransactionCode('mã DEMO-1793206220292-3A988AAA'),'DEMO-1793206220292-3A988AAA');
+ assert.equal(ownerTransactionCode('tìm mã giao dịch bất kỳ'),null);
+});
 test('vacant-room questions are recognized explicitly and stay separate from invoice questions',()=>{
  for(const q of ['danh sach cac phong con trong','Liệt kê phòng trống','phòng nào chưa có người thuê?','Phòng 302 còn trống không'])assert.equal(isOwnerAvailableRoomsQuestion(q),true,q);
  for(const q of ['phòng nào còn thiếu dữ liệu lập hóa đơn?','phòng nào chưa đóng tiền?','xem hóa đơn tháng này'])assert.equal(isOwnerAvailableRoomsQuestion(q),false,q);
@@ -31,8 +42,9 @@ test('common owner questions route to the matching live read task',()=>{
   ['Phòng nào đang có nhiều xe nhất?','vehicle_counts'],['Phòng nào nhiều xe?','vehicle_counts'],
   ['Phòng nào hay báo hỏng nhất tháng trước?','frequent_requests'],['Phòng nào hay báo hư nhất tháng này?','frequent_requests'],['Phòng nào có nhiều khiếu nại tháng này?','frequent_requests'],
   ['Phòng nào hay báo sửa chữa nhất tháng này?','frequent_requests'],['Tiền điện tháng trước tính ra sao?','utilities'],
+  ['Có bao nhiêu tin nhắn phản hồi từ khách?','feedback_messages'],['Thống kê số lượng góp ý từ cư dân tháng này','feedback_messages'],
   ['Kỳ này còn phòng nào chưa có số điện nước để lên bill?','missing'],['Liệt kê phòng chưa có ai thuê nhé.','available_rooms'],
-  ['Phòng nào chưa đóng tiền thuê kỳ này?','unpaid'],['Kỳ này còn việc gì cần kiểm tra?','overview'],
+  ['Phòng nào chưa đóng tiền thuê kỳ này?','unpaid'],['Thế đã thanh toán thì sao?','paid'],['Hóa đơn nào đã đóng tiền tháng này?','paid'],['Tìm hóa đơn có mã giao dịch DEMO-1793206220292-3A988AA3','transaction_lookup'],['Tên cư dân ở khu vực An Bình Biên Hòa · Phòng A02','resident_identity_help'],['Kỳ này còn việc gì cần kiểm tra?','overview'],
  ];
  for(const [question,task] of cases)assert.equal(ownerQuestionTask(question),task,question);
  assert.equal(ownerQuestionTask('Tổng doanh thu năm nay'),null);
@@ -40,6 +52,12 @@ test('common owner questions route to the matching live read task',()=>{
  assert.ok(ownerPeriodFreeTasks.has('vehicle_counts'));
  assert.ok(!ownerPeriodFreeTasks.has('electricity_ranking'));
  assert.match(ownerUnknownIntentMessage('Số xe từng phòng',catalog),/phòng nào đang có nhiều xe nhất/);
+});
+test('resident create and name-search requests are separated from resident statistics',()=>{
+ assert.deepEqual(parseOwnerResidentRequest('Thêm 1 cư dân tên Võ Công Phi'),{kind:'create',name:'Võ Công Phi'});
+ assert.deepEqual(parseOwnerResidentRequest('Tìm người thuê Võ Thanh Hà'),{kind:'search',name:'Võ Thanh Hà'});
+ assert.deepEqual(parseOwnerResidentRequest('Thêm cư dân'),{kind:'create',name:null});
+ for(const question of ['Thống kê cư dân đang ở','Ai chưa hoàn tất đăng ký tạm trú?','Có bao nhiêu người thuê?'])assert.equal(parseOwnerResidentRequest(question),null,question);
 });
 test('unknown or multiple named rooms require clarification; no room means explicit all-room proposal',()=>{
  for(const q of ['phòng A01','phòng K9-P99','phòng K1-P01 và K2-P02'])assert.equal(proposeOwnerScope(q,'unpaid',catalog).room,null,q);
@@ -62,6 +80,8 @@ test('a different supported task starts a new interpretation but the current tas
  assert.equal(namesDifferentOwnerTask('kiểm tra yêu cầu từ người thuê','utilities'),true);
  assert.equal(namesDifferentOwnerTask('thống kê cư dân đang ở','unpaid'),true);
  assert.equal(namesDifferentOwnerTask('danh sách các phòng còn trống','unpaid'),true);
+ assert.equal(namesDifferentOwnerTask('thế đã thanh toán','unpaid'),true);
+ assert.equal(namesDifferentOwnerTask('chưa thanh toán','paid'),true);
  assert.match(ownerConfirmation({task:'residents',period:'2026-10',room:''},catalog),/thống kê cư dân hiện tại/);
 });
 test('unknown owner questions say they are not understood and suggest supported topics',()=>{
@@ -77,6 +97,8 @@ test('unknown owner questions say they are not understood and suggest supported 
 });
 test('empty results use copy that matches the selected owner task',()=>{
  assert.match(ownerEmptyResultMessage('unpaid'),/hóa đơn.*chưa thanh toán/);
+ assert.match(ownerEmptyResultMessage('paid'),/hóa đơn đã thanh toán/);
+ assert.match(ownerEmptyResultMessage('unpaid','2026-09'),/tháng 09\/2026.*ngày kết thúc kỳ/);
  assert.match(ownerEmptyResultMessage('requests'),/yêu cầu tiện ích hoặc khiếu nại/);
  assert.match(ownerEmptyResultMessage('missing'),/dữ liệu lập hóa đơn.*còn thiếu/);
  assert.match(ownerEmptyResultMessage('utilities'),/điện nước/);

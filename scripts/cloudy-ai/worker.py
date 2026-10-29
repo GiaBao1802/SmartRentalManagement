@@ -15,6 +15,12 @@ def clarification_text(message='',parsed=None):
  if re.search(r'\b(?:gan|cach)\b',request) and re.search(r'\b(?:truong|dai hoc|cong ty|cho lam|noi lam viec)\b',request):
   return 'Mình hiểu bạn muốn tìm phòng gần trường hoặc nơi làm việc, nhưng dữ liệu tin đăng hiện chưa hỗ trợ lọc khoảng cách. Bạn cho mình tỉnh/thành hoặc khu vực ghi trong địa chỉ phòng nhé; mình sẽ chờ bạn cập nhật rồi mới tìm.'
  hints=(parsed or {}).get('clarificationHints',[])
+ area_hint=next((hint for hint in hints if isinstance(hint,dict) and hint.get('type') in ['area_operator','area_unit'] and type(hint.get('value')) in [int,float] and hint['value']>0),None)
+ if area_hint:
+  value=f"{area_hint['value']:g}"
+  if area_hint.get('type')=='area_unit' or area_hint.get('unit_confirmed') is False:
+   return f'Mình hiểu “{area_hint.get("quote", "diện tích "+value+" m") }” có thể là diện tích {value} m². Bạn xác nhận đơn vị m² và cho biết muốn diện tích tối thiểu hay khoảng cụ thể nhé; mình sẽ chờ rồi mới tìm phòng.'
+  return f'Mình hiểu “{area_hint.get("quote", value+"m²") }” là diện tích {value} m². Bạn muốn diện tích tối thiểu {value} m², tối đa {value} m², hay trong một khoảng cụ thể? Mình sẽ chờ bạn xác nhận rồi mới tìm.'
  price_hint=next((hint for hint in hints if isinstance(hint,dict) and hint.get('type')=='price_operator' and type(hint.get('value')) in [int,float] and hint['value']>0),None)
  if price_hint:
   amount=f"{price_hint['value']:,.0f}".replace(',','.')

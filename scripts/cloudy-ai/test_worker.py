@@ -1,4 +1,6 @@
 import unittest
+import id_lab
+import id_v3
 from worker import respond,handle_request
 
 class WorkerTests(unittest.TestCase):
@@ -41,6 +43,20 @@ class WorkerTests(unittest.TestCase):
   self.assertIn('“2tr” là 2.000.000 đồng tiền thuê mỗi tháng',result['text'])
   self.assertIn('tối đa 2.000.000đ/tháng hay phòng có giá đúng',result['text'])
   self.assertNotIn('chưa hiểu cụm “2tr”',result['text'])
+  self.assertIsNone(result['context'])
+ def test_area_measurement_is_acknowledged_before_asking_for_a_limit(self):
+  def extract(question):
+   candidates=id_lab.candidates(question)
+   return id_v3.finish(question,candidates,{'intent':'search_rooms','decisions':{item['id']:'unclear' for item in candidates}})
+  result=handle_request({'message':'tìm phòng 20m2','mode':'new'},extract)
+  self.assertIn('diện tích 20 m²',result['text'])
+  self.assertIn('tối thiểu',result['text'])
+  self.assertIn('chờ bạn xác nhận',result['text'])
+  self.assertIsNone(result['context'])
+ def test_area_with_bare_m_unit_asks_for_confirmation(self):
+  parsed={'status':'needs_clarification','clarificationHints':[{'type':'area_unit','quote':'diện tích 20 m','value':20,'unit_confirmed':False,'operator':None}]}
+  result=handle_request({'message':'diện tích 20 m','mode':'new'},lambda _:parsed)
+  self.assertIn('xác nhận đơn vị m²',result['text'])
   self.assertIsNone(result['context'])
  def test_unsupported_nearby_search_explains_supported_location_input(self):
   result=handle_request({'message':'phòng gần trường đại học'},lambda _:{'status':'needs_clarification','questions':['Chưa xử lý hết câu: gan truong dai hoc'],'unrecognizedTerms':['gần trường đại học']})

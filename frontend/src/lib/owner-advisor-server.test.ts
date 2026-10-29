@@ -75,9 +75,10 @@ test('common owner questions route deterministically before the local classifier
  for(const [question,task] of [
   ['Ai chưa đăng ký tạm trú?','residents'],['Phòng nào xài điện nhiều nhất tháng này?','electricity_ranking'],
   ['Phòng nào có nhiều xe nhất?','vehicle_counts'],['Phòng nào hay báo hỏng nhất tháng này?','frequent_requests'],
+  ['Có bao nhiêu tin nhắn phản hồi từ khách?','feedback_messages'],
   ['Phòng nào hay báo sửa chữa nhất tháng này?','frequent_requests'],['Tiền điện tháng trước tính ra sao?','utilities'],
   ['Kỳ này còn phòng nào chưa có số điện nước để lên bill?','missing'],['Liệt kê phòng chưa có ai thuê nhé.','available_rooms'],
-  ['Phòng nào chưa đóng tiền thuê kỳ này?','unpaid'],['Kỳ này còn việc gì cần kiểm tra?','overview'],
+  ['Phòng nào chưa đóng tiền thuê kỳ này?','unpaid'],['Thế đã thanh toán thì sao?','paid'],['Tìm hóa đơn có mã giao dịch DEMO-1793206220292-3A988AA3','transaction_lookup'],['Tên cư dân ở phòng A02','resident_identity_help'],['Kỳ này còn việc gì cần kiểm tra?','overview'],
  ] as const){
   let modelCalled=false;const response=await handleOwnerAdvisor(request('gt_session=admin',{question}),{...options,source:'database',interpretImpl:async()=>{modelCalled=true;return {task:'clarify',model:'qwen',reviewRequired:true,message:'chưa hiểu'};}});
   assert.equal((await response.json()).task,task,question);assert.equal(modelCalled,false,question);
@@ -96,6 +97,7 @@ test('all supported read-only tasks run without confirmation; mutations remain s
   if(path==='/properties/1/rooms')return Response.json({data:[{room_id:'11',room_code:'P101',status:'available',area_m2:'22.00',default_rent:'2500000'}],meta:{total_pages:1}});
   if(path==='/residents')return Response.json({data:[{resident_id:'private',full_name:'Không được trả tên',residence_status:'living',residence_registration_status:'not_completed',room_residents:[{room_id:'11',status:'active'}]}],meta:{total_pages:1}});
   if(path==='/invoices')return Response.json({data:[],meta:{total_pages:1}});
+  if(path==='/notifications')return Response.json({data:[],meta:{total_pages:1}});
   if(path==='/billing/workspace')return Response.json({data:[],meta:{total_pages:1}});
   if(path==='/room-requests')return Response.json({data:[]});
   if(path==='/properties/1/service-bookings')return Response.json({data:[]});
@@ -103,10 +105,12 @@ test('all supported read-only tasks run without confirmation; mutations remain s
  };
  const response=await handleOwnerAdvisor(request('gt_session=admin',{task:'residents',period:'',room:''}),{mode:'development',fetchImpl:backendFetch,source:'database'});
  assert.equal(response.status,200);const data=await response.json();assert.match(data.summary,/Toàn tài khoản: 1 cư dân đang ở/);assert.equal(JSON.stringify(data).includes('Không được trả tên'),false);
- for(const task of ['unpaid','utilities','missing','overview','requests']){
+ for(const task of ['unpaid','paid','utilities','missing','overview','requests','feedback_messages']){
   const direct=await handleOwnerAdvisor(request('gt_session=admin',{task,period:'2026-10',room:''}),{mode:'development',fetchImpl:backendFetch,source:'database'});
   assert.equal(direct.status,200,`${task} should be a direct read-only query`);
  }
+ const lookup=await handleOwnerAdvisor(request('gt_session=admin',{task:'transaction_lookup',period:'',room:'',transactionCode:'DEMO-1793206220292-3A988AA3'}),{mode:'development',fetchImpl:backendFetch,source:'database'});
+ assert.equal(lookup.status,200);assert.match((await lookup.json()).summary,/Không tìm thấy hóa đơn/);
  const vacancies=await handleOwnerAdvisor(request('gt_session=admin',{task:'available_rooms',period:'',room:''}),{mode:'development',fetchImpl:backendFetch,source:'database'});
  assert.equal(vacancies.status,200);const vacancyData=await vacancies.json();assert.equal(vacancyData.cards.length,1);assert.equal(vacancyData.cards[0].room,'P101');
  assert.equal((await handleOwnerAdvisor(request('gt_session=admin',{task:'create-service',period:'2026-10',room:''}),options)).status,400);

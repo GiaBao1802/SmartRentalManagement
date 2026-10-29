@@ -28,6 +28,8 @@ Khi chạy corpus qua parser, câu “rẻ hơn nữa” có thể bị nhầm l
 - Qwen3 1.7B trên holdout: **12/12** đạt. Một câu OR về mèo/chó được xử lý bởi luật an toàn tất định trước model; 11 câu còn lại gọi model. Không xác nhận tìm phòng và không đọc database/phòng.
 - Không đổi API, database, dữ liệu phòng hoặc trọng số model. Corpus không được app nạp tự động; holdout không phải bằng chứng cho độ chính xác tổng quát của Cloudy.
 
+Sau đó, kiểm tra chat thực tế cho thấy các câu ngắn như “tìm phòng 20m2” bị báo là cụm không hiểu. Parser hiện nhận diện m²/m2 kể cả khi model bỏ sót, rồi hỏi khách chọn diện tích tối thiểu, tối đa hay khoảng trước khi tìm. Cách ghi “20 m” được nhận diện là diện tích nhưng hỏi xác nhận đơn vị m². Python tests cho candidate/parser 18/18, worker 11/11 và corpus structure 3/3 đạt; holdout Qwen vẫn đạt 12/12.
+
 Chạy kiểm tra cục bộ:
 
 ```powershell

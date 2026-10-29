@@ -1,14 +1,17 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {createLiveAdvisor} from './owner-advisor-live';
 import {proposeOwnerScope} from './owner-chat-intent';
-const invoice=(id:string,status='unpaid')=>({invoice_id:id,status,finalized_at:status==='draft'?null:'2026-10-20',period_start:'2026-09-21',period_end:'2026-10-20',due_date:'2026-10-25',is_overdue:true,total_amount:'1234567.89',contract:{room_code:'P101',property:{name:'Khu A'}}});
+const invoice=(id:string,status='unpaid',periodEnd='2026-10-20')=>({invoice_id:id,invoice_no:`INV-${id}`,status,finalized_at:status==='draft'?null:periodEnd,due_date:'2026-10-25',period_start:'2026-09-21',period_end:periodEnd,is_overdue:true,total_amount:'1234567.89',contract:{room_id:'11',room_code:'P101',property:{name:'Khu A'}}});
 function fixture(){const calls:string[]=[];const fetchImpl:typeof fetch=async(input,init)=>{
  const url=new URL(String(input));calls.push(url.pathname+url.search);assert.equal((init?.headers as Record<string,string>).Cookie,'gt_session=test');assert.equal(init?.method,undefined);assert.equal(init?.redirect,'error');
  const path=url.pathname.replace('/api/v1','');
  if(path==='/properties')return Response.json({data:[{property_id:'1',name:'Khu A'}],meta:{total_pages:1}});
  if(path==='/properties/1/rooms')return Response.json({data:[{room_id:'11',room_code:'P101'}],meta:{total_pages:1}});
- if(path==='/invoices')return Response.json({data:url.searchParams.get('page')==='1'?[invoice('1')]:[invoice('2','draft')],meta:{total_pages:2}});
+ if(path==='/invoices'&&url.searchParams.get('status')==='paid')return Response.json({data:[invoice('4','paid')],meta:{total_pages:1}});
+ if(path==='/invoices')return Response.json({data:url.searchParams.get('page')==='1'?[invoice('1')]:[invoice('2','draft'),invoice('4','paid'),invoice('3','unpaid','2026-09-30')],meta:{total_pages:2}});
+ if(path==='/notifications')return Response.json({data:url.searchParams.get('type')==='invoice_demo_payment'?[{title:'Hóa đơn được thanh toán (demo)',body:'INV-4 đã được đánh dấu Đã thanh toán. Mã giao dịch: DEMO-1793206220292-3A988AA3.',created_at:'2026-10-29T01:00:00.000Z'}]:[],meta:{total_pages:1}});
  if(path==='/invoices/1')return Response.json({data:{...invoice('1'),electricity_previous_kwh:'10',electricity_current_kwh:'20',electricity_amount:'30000',water_previous_m3:'1',water_current_m3:'3',water_amount:'20000',itemization_available:false,invoice_items:[]}});
+ if(path==='/invoices/4')return Response.json({data:{...invoice('4','paid'),electricity_previous_kwh:'10',electricity_current_kwh:'20',electricity_amount:'30000',water_previous_m3:'1',water_current_m3:'3',water_amount:'20000',itemization_available:false,invoice_items:[]}});
  if(path==='/billing/workspace')return Response.json({data:[{contract_id:'c1',period:{period_end:'2026-10-20'},room:{room_code:'P101'},property:{name:'Khu A'},state:{label:'Thiếu dữ liệu'},missing_or_invalid:[{message:'Thiếu chỉ số điện'}]}],meta:{total_pages:1}});
  if(path==='/room-requests')return Response.json({data:[{complaint_id:'c1',room_id:'11',room_code:'P101',property_name:'Khu A',created_at:'2026-10-25',status:'pending',category:'Sự cố',content:'Rò nước'}]});
  if(path==='/properties/1/service-bookings')return Response.json({data:[{booking_id:'b1',room_code:'P101',service_name:'Máy giặt',service_date:'2026-10-29',start_time:'09:00',end_time:'10:00'}]});
@@ -17,7 +20,10 @@ function fixture(){const calls:string[]=[];const fetchImpl:typeof fetch=async(in
 test('live adapter follows all invoice pages, excludes drafts from debt and uses backend snapshot totals',async()=>{
  const {client,calls}=fixture();const catalog=await client.catalog();assert.equal(catalog.synthetic,false);assert.equal(catalog.rooms.length,1);
  const response=await client.answer({task:'unpaid',period:'2026-10',room:''});assert.equal(response.cards.length,1);assert.equal(response.cards[0].total,1234567.89);assert.ok(calls.some(p=>p.includes('page=2')));
- assert.equal(response.cards[0].status,'Chưa thanh toán · Quá hạn');assert.match(response.summary,/1 quá hạn, 0 đến hạn hôm nay, 0 còn hạn/);assert.match(response.summary,/Bản nháp và hóa đơn đã thanh toán không nằm trong danh sách/);
+ assert.equal(response.cards[0].status,'Chưa thanh toán · Quá hạn');assert.match(response.summary,/1 quá hạn, 0 đến hạn hôm nay, 0 còn hạn/);assert.match(response.summary,/Bản nháp và hóa đơn đã thanh toán không nằm trong danh sách/);assert.match(response.summary,/tháng 10\/2026/);
+ const empty=await client.answer({task:'unpaid',period:'2026-11',room:''});assert.equal(empty.cards.length,0);assert.match(empty.summary,/trong tháng 11\/2026/);assert.match(empty.summary,/xem tháng 10\/2026/);
+ const paid=await client.answer({task:'paid',period:'2026-10',room:''});assert.equal(paid.cards.length,1);assert.equal(paid.cards[0].id,'4');assert.match(paid.summary,/1 hóa đơn đã thanh toán trong tháng 10\/2026/);
+ const transaction=await client.answer({task:'transaction_lookup',period:'',room:'',transactionCode:'DEMO-1793206220292-3A988AA3'});assert.equal(transaction.cards.length,1);assert.equal(transaction.cards[0].href,'/admin/invoices/4');assert.match(transaction.cards[0].details.join(' '),/DEMO-1793206220292-3A988AA3/);assert.match(transaction.summary,/giao dịch mô phỏng/);
  const utilities=await client.answer({task:'utilities',period:'2026-10',room:''});assert.match(utilities.cards[0].details.join(' '),/không dựng thêm bậc giá/);assert.equal(utilities.cards[1].total,null);
 });
 test('missing and requests use canonical read endpoints, unknown room fails closed',async()=>{
@@ -95,6 +101,20 @@ test('frequent-request ranking discloses its backend list limit',async()=>{
  };
  const result=await createLiveAdvisor('gt_session=test',fetchImpl).answer({task:'frequent_requests',period:'2026-10',room:''});
  assert.equal(result.cards.length,1);assert.match(result.summary,/tối đa 100 yêu cầu gần nhất/);
+});
+test('feedback count reports only Owner-scoped room requests in selected month and discloses coverage',async()=>{
+ const fetchImpl:typeof fetch=async(input)=>{const path=new URL(String(input)).pathname.replace('/api/v1','');
+  if(path==='/properties')return Response.json({data:[{property_id:'1',name:'Khu A'}],meta:{total_pages:1}});
+  if(path==='/properties/1/rooms')return Response.json({data:[{room_id:'11',room_code:'A01',status:'occupied'}],meta:{total_pages:1}});
+  if(path==='/room-requests')return Response.json({data:[
+   {complaint_id:'1',room_id:'11',room_code:'A01',property_name:'Khu A',category:'Góp ý',content:'Thêm máy giặt',created_at:'2026-10-20',status:'pending'},
+   {complaint_id:'2',room_id:'11',room_code:'A01',property_name:'Khu A',category:'Báo hỏng',content:'Rò nước',created_at:'2026-09-20',status:'resolved'},
+  ]});
+  throw new Error('Unexpected endpoint '+path);
+ };
+ const result=await createLiveAdvisor('gt_session=test',fetchImpl).answer({task:'feedback_messages',period:'2026-10',room:''});
+ assert.match(result.summary,/Có 1 phản hồi từ khách trong tháng 10\/2026/);
+ assert.equal(result.cards.length,1);assert.equal(result.cards[0]?.amountLabel,'Phản hồi từ khách');
 });
 test('live room-code duplicates require explicit clarification',()=>{
  const base={tasks:{unpaid:'Chưa đóng'},periods:['2026-10'],asOf:'2026-10-28',rooms:['Khu A / P101 [11]']};

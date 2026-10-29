@@ -7,7 +7,7 @@ import type {Resident} from './api/residentApi';
 import type {ParkingAssignment} from './api/parkingApi';
 import {invoiceDisplayStatus,invoiceDueStateLabel} from './invoice-status';
 const money=(value:string|number)=>new Intl.NumberFormat('vi-VN').format(Number(value))+' đ';
-const tasks={unpaid:'Hóa đơn chưa thanh toán',utilities:'Giải thích tiền điện nước',missing:'Thiếu dữ liệu lập hóa đơn',overview:'Việc cần kiểm tra trong kỳ',requests:'Yêu cầu tiện ích và khiếu nại',residents:'Thống kê cư dân',available_rooms:'Danh sách phòng còn trống',vehicle_counts:'Thống kê xe đang gửi',electricity_ranking:'Xếp hạng phòng dùng điện',frequent_requests:'Phòng có nhiều yêu cầu / sự cố'};
+const tasks={unpaid:'Hóa đơn chưa thanh toán',paid:'Hóa đơn đã thanh toán',transaction_lookup:'Tìm hóa đơn theo mã giao dịch',resident_identity_help:'Quyền xem thông tin cư dân',utilities:'Giải thích tiền điện nước',missing:'Thiếu dữ liệu lập hóa đơn',overview:'Việc cần kiểm tra trong kỳ',requests:'Yêu cầu tiện ích và khiếu nại',feedback_messages:'Thống kê phản hồi từ khách',residents:'Thống kê cư dân',available_rooms:'Danh sách phòng còn trống',vehicle_counts:'Thống kê xe đang gửi',electricity_ranking:'Xếp hạng phòng dùng điện',frequent_requests:'Phòng có nhiều yêu cầu / sự cố'};
 type Complaint={complaint_id:string;room_id:string|null;room_code:string|null;property_name:string;category:string;content:string;status:string;created_at:string};
 export function createLiveAdvisor(cookie:string,fetchImpl:typeof fetch=fetch,signal?:AbortSignal){
  const base=process.env.OWNER_ADVISOR_API_BASE||process.env.NEXT_PUBLIC_API_BASE_URL||'http://localhost:4000/api/v1';
@@ -42,13 +42,25 @@ export function createLiveAdvisor(cookie:string,fetchImpl:typeof fetch=fetch,sig
    const bookingMonths:string[]=[];for(const p of properties){const data=(await get<{data:AdminServiceBooking[]}>(`/properties/${p.property_id}/service-bookings?status=PENDING`)).data;bookingMonths.push(...data.map(b=>b.service_date.slice(0,7)));}
    return {source:'database',synthetic:false,asOf:today(),tasks,properties:properties.map(({property_id,name,province})=>({property_id,name,province})),rooms:rooms.map(r=>r.key),room_targets:rooms.map(({id,propertyId,propertyName,roomCode})=>({room_id:id,property_id:propertyId,property_name:propertyName,room_code:roomCode})),periods:[...new Set([today().slice(0,7),...invoices.map(i=>i.period_end.slice(0,7)),...complaints.map(c=>c.created_at.slice(0,7)),...bookingMonths])].sort().reverse()};
   },
-  async answer(input:{task:string;period:string;room:string}){
-   if(!Object.hasOwn(tasks,input.task)||(!['residents','available_rooms','vehicle_counts'].includes(input.task)&&!/^\d{4}-(0[1-9]|1[0-2])$/.test(input.period))||typeof input.room!=='string'||input.room.length>500)throw new AccessError(400,'Phạm vi tra cứu không hợp lệ.');
+  async answer(input:{task:string;period:string;room:string;transactionCode?:string}){
+   if(!Object.hasOwn(tasks,input.task)||(!['residents','available_rooms','vehicle_counts','transaction_lookup'].includes(input.task)&&!/^\d{4}-(0[1-9]|1[0-2])$/.test(input.period))||typeof input.room!=='string'||input.room.length>500)throw new AccessError(400,'Phạm vi tra cứu không hợp lệ.');
    const {rooms,properties}=await inventory();const selected=rooms.find(r=>r.key===input.room);
    if(input.room&&!selected)throw new AccessError(404,'Không tìm thấy phòng trong tài khoản.');
    const cards:{id:string;room:string;property:string;status:string;total:number|null;details:string[];href?:string;amountLabel?:string}[]=[];
    let summary='';
-   if(input.task==='available_rooms'){
+   if(input.task==='transaction_lookup'){
+    if(!/^DEMO-\d{10,}-[A-F0-9]{8}$/.test(input.transactionCode||''))throw new AccessError(400,'Mã giao dịch không hợp lệ.');
+    const code=input.transactionCode!.toUpperCase();
+    const notifications=await pages<{title:string;body:string;created_at:string}>('/notifications?type=invoice_demo_payment');
+    const matchingNotifications=notifications.filter(notification=>notification.body.toUpperCase().includes(code));
+    const paidInvoices=await pages<InvoiceResource>('/invoices?status=paid');
+    const found=matchingNotifications.flatMap(notification=>paidInvoices.filter(invoice=>invoice.status==='paid'&&notification.body.includes(invoice.invoice_no)).map(invoice=>({invoice,notification})));
+    for(const {invoice,notification} of found){
+     const room=rooms.find(item=>item.id===invoice.contract?.room_id);
+     cards.push({id:invoice.invoice_id,room:room?.roomCode||invoice.contract?.room_code||'Không có mã phòng',property:room?.propertyName||invoice.contract?.property?.name||'Khu trọ',status:'Đã thanh toán · Demo',total:Number(invoice.total_amount),details:[`Mã hóa đơn: ${invoice.invoice_no}.`,`Mã giao dịch: ${code}.`,`Thanh toán mô phỏng lúc ${new Date(notification.created_at).toLocaleString('vi-VN')}; không có tiền thật được chuyển.`],href:`/admin/invoices/${invoice.invoice_id}`});
+    }
+    summary=found.length?`Tìm thấy ${found.length} hóa đơn đã thanh toán có mã giao dịch ${code}. Đây là giao dịch mô phỏng.`:`Không tìm thấy hóa đơn trong tài khoản có mã giao dịch ${code}.`;
+   }else if(input.task==='available_rooms'){
     const available=rooms.filter(r=>r.status==='available'&&(!selected||r.id===selected.id));
     for(const r of available)cards.push({id:r.id,room:r.roomCode,property:r.propertyName,status:'Còn trống',total:null,amountLabel:'Phòng có thể cho thuê',details:[`Diện tích: ${r.areaM2} m².`,`Giá thuê mặc định: ${money(r.rent)}/tháng.`],href:`/admin/properties/${r.propertyId}/rooms`});
     summary=selected?`${selected.key} ${available.length?'đang còn trống':'hiện không còn trống'}. Trạng thái được lấy từ dữ liệu phòng hiện tại.`:`Có ${available.length} phòng đang còn trống trên ${properties.length} khu trọ thuộc tài khoản. Danh sách chỉ gồm phòng có trạng thái hiện tại là còn trống; giá thuê là giá mặc định của phòng.`;
@@ -93,6 +105,12 @@ export function createLiveAdvisor(cookie:string,fetchImpl:typeof fetch=fetch,sig
     const details=selected?`${living.length} cư dân đang ở; ${registrationPending} người chưa hoàn tất đăng ký tạm trú/tạm vắng.`:`${living.length} cư dân đang ở, ${left} hồ sơ đã rời đi; trong số đang ở có ${registrationPending} người chưa hoàn tất đăng ký, ${temporaryResidents} người đã đăng ký tạm trú và ${temporaryAbsences} người đăng ký tạm vắng.`;
     summary=`${selected?`${selected.key}: `:'Toàn tài khoản: '}${details} Cloudy chỉ tổng hợp số lượng trong chat; mở Hồ sơ cư dân để xem từng người.`;
     cards.push({id:'resident-summary',room:selected?.roomCode||'Toàn khu',property:selected?.propertyName||`${properties.length} khu trọ`,status:'Tổng hợp cư trú',total:null,amountLabel:'Thống kê',details:[details,'Danh tính từng cư dân không hiển thị trong hội thoại.'],href:'/admin/tenants'});
+   }else if(input.task==='feedback_messages'){
+    const complaints=(await get<{data:Complaint[]}>('/room-requests')).data;
+    const matches=complaints.filter(r=>r.created_at.slice(0,7)===input.period&&(!selected||r.room_id===selected.id));
+    for(const r of matches)cards.push({id:`feedback-${r.complaint_id}`,room:r.room_code||'Theo khu trọ',property:r.property_name,status:({pending:'Chờ xử lý',in_progress:'Đang xử lý',resolved:'Đã giải quyết',rejected:'Đã từ chối'} as Record<string,string>)[r.status]||r.status,total:null,amountLabel:'Phản hồi từ khách',details:[r.category,r.content],href:'/admin/requests'});
+    const coverage=complaints.length===100?'Đã đạt giới hạn 100 phản hồi gần nhất nên tổng có thể chưa bao quát toàn bộ lịch sử.':'Số lượng tính trên danh sách phản hồi mà API hiện trả về.';
+    summary=`Có ${matches.length} phản hồi từ khách trong tháng ${input.period.slice(5)}/${input.period.slice(0,4)}${selected?` tại ${selected.key}`:' trong các khu trọ thuộc tài khoản'}. ${coverage}`;
    }else if(input.task==='requests'){
     const complaints=(await get<{data:Complaint[]}>('/room-requests')).data;
     for(const r of complaints.filter(r=>r.created_at.slice(0,7)===input.period&&(!selected||r.room_id===selected.id)))cards.push({id:`complaint-${r.complaint_id}`,room:r.room_code||'Theo khu trọ',property:r.property_name,status:({pending:'Chờ xử lý',in_progress:'Đang xử lý',resolved:'Đã giải quyết',rejected:'Đã từ chối'} as Record<string,string>)[r.status]||r.status,total:null,amountLabel:'Yêu cầu / khiếu nại',details:[r.category,r.content],href:'/admin/requests'});
@@ -107,8 +125,9 @@ export function createLiveAdvisor(cookie:string,fetchImpl:typeof fetch=fetch,sig
    }else{
     const invoices=await pages<InvoiceResource>('/invoices'+(selected?`?room_id=${selected.id}`:''));
     const scoped=invoices.filter(i=>i.period_end.slice(0,7)===input.period);
+    const allOutstanding=invoices.filter(i=>i.status==='unpaid'&&i.finalized_at);
     const outstanding=scoped.filter(i=>i.status==='unpaid'&&i.finalized_at);
-    const chosen=input.task==='unpaid'?outstanding:input.task==='overview'?scoped.filter(i=>i.status!=='paid'):scoped;
+    const chosen=input.task==='unpaid'?outstanding:input.task==='paid'?scoped.filter(i=>i.status==='paid'&&i.finalized_at):input.task==='overview'?scoped.filter(i=>i.status!=='paid'):scoped;
     for(const i of chosen){
      const dueDateText=i.due_date?new Intl.DateTimeFormat('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(`${i.due_date}T00:00:00+07:00`)):'chưa có';
      const details=[`Kỳ thực tế: ${i.period_start} → ${i.period_end}.`,`Hạn thanh toán: ${dueDateText}.`];
@@ -127,8 +146,14 @@ export function createLiveAdvisor(cookie:string,fetchImpl:typeof fetch=fetch,sig
       const needsReview=countDue('Cần kiểm tra hạn')+countDue('Thiếu hạn thanh toán');
       const dueSummary=`${overdue} quá hạn, ${dueToday} đến hạn hôm nay, ${inTime} còn hạn${needsReview?`, ${needsReview} cần kiểm tra hạn`:''}`;
       const total=outstanding.reduce((sum,i)=>sum+Number(i.total_amount),0);
-      summary=`${outstanding.length} hóa đơn đã chốt, chưa thanh toán · tổng ${money(total)}. Trong đó: ${dueSummary}. Bản nháp và hóa đơn đã thanh toán không nằm trong danh sách. “Chưa thanh toán” là trạng thái hóa đơn; nhãn hạn thanh toán mô tả riêng ngày đến hạn. Lọc kỳ theo ngày kết thúc hóa đơn.`;
-    }else summary=`${cards.length} hóa đơn phù hợp; ${outstanding.length} đã chốt chưa thanh toán, ${outstanding.filter(i=>i.is_overdue).length} quá hạn. Lọc tháng theo ngày kết thúc kỳ; số tiền lấy từ backend.`;
+      const periodLabel=`${input.period.slice(5)}/${input.period.slice(0,4)}`;
+      const otherPeriods=[...new Set(allOutstanding.map(i=>i.period_end.slice(0,7)).filter(period=>period!==input.period))].sort().reverse();
+      const otherPeriodHint=!outstanding.length&&otherPeriods.length
+       ?` Ở các kỳ khác có hóa đơn chưa thanh toán kết thúc vào tháng ${otherPeriods.slice(0,5).map(period=>`${period.slice(5)}/${period.slice(0,4)}`).join(', ')}. Bạn có thể nhắn “xem tháng ${otherPeriods[0].slice(5)}/${otherPeriods[0].slice(0,4)}” để tra cứu kỳ đó.`
+       :'';
+      summary=`${outstanding.length} hóa đơn đã chốt, chưa thanh toán trong tháng ${periodLabel} · tổng ${money(total)}. Trong đó: ${dueSummary}. Bản nháp và hóa đơn đã thanh toán không nằm trong danh sách. “Chưa thanh toán” là trạng thái hóa đơn; nhãn hạn thanh toán mô tả riêng ngày đến hạn. Tháng được xác định theo ngày kết thúc kỳ.${otherPeriodHint}`;
+    }else if(input.task==='paid')summary=`${cards.length} hóa đơn đã thanh toán trong tháng ${input.period.slice(5)}/${input.period.slice(0,4)}. Chỉ tính hóa đơn đã chốt, lọc theo ngày kết thúc kỳ; số tiền lấy từ backend.`;
+    else summary=`${cards.length} hóa đơn phù hợp; ${outstanding.length} đã chốt chưa thanh toán, ${outstanding.filter(i=>i.is_overdue).length} quá hạn. Lọc tháng theo ngày kết thúc kỳ; số tiền lấy từ backend.`;
    }
    return {synthetic:false,source:'database',summary,cards};
   },

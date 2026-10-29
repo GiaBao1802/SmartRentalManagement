@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     default: "Góc Trọ – Một góc yên tâm.",
     template: "%s | Góc trọ",
   },
-  description: "Tìm phòng trọ phù hợp và quản lý nhà trọ trên Góc trọ.",
+  description: "Tìm phòng trọ phù hợp và quản lý nhà trọ trên Góc Trọ.",
 };
 
 export default function RootLayout({

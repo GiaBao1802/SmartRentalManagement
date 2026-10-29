@@ -39,7 +39,7 @@ export default function MarketplaceSearchResults({ initialFilters }: { initialFi
   return <main className="market-results-page">
     <header className="market-results-header">
       <Link href="/" className="market-results-brand" aria-label="Góc Trọ — Trang chủ"><BrandLogo /></Link>
-      <div className="market-results-header-copy"><small>MARKETPLACE · TÌM PHÒNG</small><h1>Tìm nơi ở phù hợp</h1></div>
+      <div className="market-results-header-copy"><small>DANH SÁCH PHÒNG CHO THUÊ</small><h1>Tìm nơi ở phù hợp</h1></div>
       <Link className="market-results-map-link" href={mapHref}>← Quay lại bản đồ</Link>
     </header>
 
@@ -68,7 +68,7 @@ export default function MarketplaceSearchResults({ initialFilters }: { initialFi
 
         {results && results.meta.total_pages > 1 && <div className="market-results-pagination market-results-pagination--bottom" aria-label="Phân trang kết quả"><button type="button" aria-label="Trang trước" disabled={results.meta.page <= 1} onClick={() => changePage(results.meta.page - 1)}>←</button><span>Trang {results.meta.page} / {results.meta.total_pages}</span><button type="button" aria-label="Trang sau" disabled={results.meta.page >= results.meta.total_pages} onClick={() => changePage(results.meta.page + 1)}>→</button></div>}
       </section>
-      <aside className="market-results-aside"><strong>Tìm dễ, ở yên</strong><p>So sánh giá, diện tích và tiện ích đã được chủ trọ xác nhận. Mở chi tiết phòng để xem thông tin và gửi yêu cầu liên hệ.</p><Link href={mapHref}>Khám phá lại trên bản đồ →</Link></aside>
+      <aside className="market-results-aside"><strong>Chọn phòng theo nhu cầu</strong><p>So sánh giá, diện tích và tiện ích do chủ trọ cung cấp. Mở trang phòng để xem chi tiết và gửi thông tin liên hệ.</p><Link href={mapHref}>Xem lại trên bản đồ →</Link></aside>
     </div>
   </main>;
 }

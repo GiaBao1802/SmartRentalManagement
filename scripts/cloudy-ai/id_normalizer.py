@@ -33,7 +33,26 @@ def normalize(question,raw):
  if not isinstance(raw,dict) or set(raw)!={'intent','spans'} or raw['intent'] not in ['search_rooms','unknown'] or not isinstance(raw['spans'],list) or len(raw['spans'])>12:
   return {'status':'needs_clarification','questions':['Cấu trúc trích xuất không hợp lệ.'],'draftFilters':filters}
  if raw['intent']!='search_rooms':issues.append('Chưa xác định yêu cầu tìm phòng.')
- for span in raw['spans']:
+ spans=list(raw['spans'])
+ # Measurements with an explicit m² unit are unambiguously area even when Qwen
+ # omits them. A bare "m" is only treated as an area candidate beside an area word,
+ # and still requires the renter to confirm the unit.
+ if not any(isinstance(span,dict) and span.get('field')=='area' for span in spans):
+  area_pattern=re.compile(r'(?i)(?<![\w.])(?P<quote>(?:(?:diện\s+tích|dien\s+tich|rộng|rong)\s+)?(?:(?:tối\s+đa|toi\s+da|ít\s+nhất|it\s+nhat|tối\s+thiểu|toi\s+thieu|không\s+quá|khong\s+qua|không\s+dưới|khong\s+duoi|trên|tren|dưới|duoi|từ|tu|lớn\s+hơn|lon\s+hon|nhỏ\s+hơn|nho\s+hon)\s+)?\d+(?:[.,]\d+)?\s*m(?:²|2)?)(?!\w)')
+  for match in area_pattern.finditer(question):
+   quote=match.group('quote')
+   unit=re.search(r'm(²|2)?$',normalized(quote))
+   if not unit or (unit.group(1) is None and not re.search(r'(?i)\b(?:diện\s+tích|dien\s+tich|rộng|rong)\b',quote)):
+    continue
+   overlaps=False
+   for span in spans:
+    if not isinstance(span,dict) or not isinstance(span.get('quote'),str):continue
+    existing=list(re.finditer(re.escape(span['quote']),question,re.IGNORECASE))
+    if any(match.start()<item.end() and match.end()>item.start() for item in existing):
+     overlaps=True
+     break
+   if not overlaps:spans.append({'field':'area','quote':quote})
+ for span in spans:
   try:
    if not isinstance(span,dict) or set(span)!={'field','quote'} or span['field'] not in FIELDS:raise ValueError('Trường trích xuất sai')
    field,q=span['field'],span['quote']
@@ -62,11 +81,17 @@ def normalize(question,raw):
      if op:operator=OPS[op[1]]
      elif field=='price' and suffix=='do lai':operator='lte'
      elif not prefix.strip() and field=='price' and re.match(r'^(?:ngan sach|budget)\b',normalized(q)):operator='lte'
-     elif not prefix.strip() and field=='price':operator=None
+     elif not prefix.strip() and field in ['price','area']:operator=None
      else:raise ValueError('Chưa rõ phép so sánh')
      k,v=numeric_value(token[0])
      if k!=field:raise ValueError('Đơn vị không khớp trường')
-     if operator is None:
+     if field=='area' and re.search(r'm\s*$',normalized(token[0])) and not re.search(r'm(?:2|et vuong)\s*$',normalized(token[0])):
+      issues.append('Đơn vị diện tích cần xác nhận là mét vuông.')
+      clarification_hints.append({'type':'area_unit','quote':q,'value':v,'unit_confirmed':False,'operator':operator})
+     elif operator is None and field=='area':
+      issues.append('Chưa rõ giới hạn diện tích')
+      clarification_hints.append({'type':'area_operator','quote':q,'value':v,'unit_confirmed':True,'operator':None})
+     elif operator is None:
       issues.append('Chưa rõ phép so sánh')
       clarification_hints.append({'type':'price_operator','quote':token[0],'value':v})
      else:filters[field].append({'op':operator,'value':v})
