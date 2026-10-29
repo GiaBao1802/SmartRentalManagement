@@ -1,5 +1,9 @@
 # Document catalog
 
+## Neon synthetic meter readings — 2026-10-30
+
+[Operation report](10_operations/NEON_DEMO_METER_READINGS_20261030.md) — CURRENT: 10 synthetic electricity/water ending readings added to existing overdue demo invoice drafts on shared Neon V1.18; no schema changes or finalization.
+
 ## V1.18 team source handoff — 2026-10-29
 
 [Team handoff](10_operations/V118_TEAM_HANDOFF_20261029.md) — CURRENT source package and startup guidance, published to `main` at `123bf88` with Owner Cloudy updates. Shared Neon is already V1.18; this merge did not add or apply a migration. Remaining limits: missing room-image files, absent invitation/reset delivery provider and the incomplete production-style Superadmin transaction test. Teammates should pull `main` and verify this commit or a later descendant. [Earlier runtime evidence](10_operations/NEON_V118_RUNTIME_READINESS_20261029.md) is a HISTORICAL local-preview snapshot.
@@ -111,7 +115,7 @@
 | `DOCUMENT_CATALOG.md` | Catalog | CURRENT | This inventory. |
 | `01_REQUIREMENTS.md` | Product requirements | CURRENT — CANONICAL | Business requirements authority for SmartRentalManagement. Historical source provenance is retained in the dependency copies and reports. |
 | `04_API_SPEC.md` | API contract | CURRENT — CANONICAL | `/api/v1` contract authority for SmartRentalManagement. Historical source provenance is retained where applicable. |
-| `DATABASE_CHANGELOG.md` | Database changelog | CURRENT — CANONICAL | Local `Goctro_dev_v18` has populated V1.15; Neon shared-dev `production` has V1.16 plus the documented shared synthetic dataset. |
+| `DATABASE_CHANGELOG.md` | Database changelog | CURRENT — CANONICAL | Local `Goctro_dev_v18` has populated V1.15; Neon shared-dev `production` has applied V1.18 and documented synthetic dataset/readings. |
 | `../database/baselines/v1.15/` | Database / Resident Parking requests | PROMOTED_LOCAL — APPLIED AND VERIFIED | Adds slot vehicle type/offer configuration and Resident parking requests on the local V1.14 branch. Backup, restore rehearsal, exact catalog and unchanged predecessor fingerprints verified. |
 | `07_modules/parking/RESIDENT_PARKING_REQUESTS_IMPLEMENTATION_20261028.md` | Parking / Resident request and Admin approval | CURRENT SOURCE IMPLEMENTATION — V1.15 APPLIED; USER REVIEW PENDING | Owner-scoped API, Admin slot offers/approval queue, Resident area-first slot discovery and vehicle add/delete, request/history. Vehicle deletion preserves Parking request/assignment history. |
 | `11_project-reports/SOURCE_OF_TRUTH_CURRENT_STATE_GOVERNANCE_FINALIZATION_REPORT.md` | Project governance / Current State workflow | CURRENT | Records evidence checked, stale API baseline metadata reconciled, authority order, workflow, catalog, and checkpoint finalization. |

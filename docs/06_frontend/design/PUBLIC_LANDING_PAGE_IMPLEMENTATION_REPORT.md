@@ -5,7 +5,7 @@
 
 ## Scope
 
-Triển khai landing page giới thiệu Góc Trọ tại `/landing` bằng Next.js App Router, React, TypeScript và CSS Modules hiện có. Trang `/` tiếp tục là Public Explorer tìm phòng; không thay route, API hoặc tương tác bản đồ hiện hành.
+Triển khai landing page giới thiệu Góc Trọ tại `/landing` bằng Next.js App Router, React, TypeScript và CSS Modules hiện có. Trang tìm phòng chính là `/tim-phong`; lần đầu mở `/` trong một tab sẽ dùng intro animation hiện có rồi các lần sau chuyển tới `/tim-phong`. Không thay API hoặc tương tác bản đồ hiện hành.
 
 Nguồn thiết kế đã đọc gồm toàn bộ chín board được đóng gói trong `Góc Trọ – Bộ nhận diện thương hiệu.html`, bao gồm board 09 Landing page. Implementation giữ logo **Ô cửa sáng**, Xanh Hiên, Mực Hiên, Vàng Đèn, nền Vôi, Be Vietnam Pro, JetBrains Mono và nguyên tắc dùng Vàng cho hành động chính. Nội dung AI/demo/giá/liên hệ chưa có căn cứ trong board tham khảo không được đưa vào sản phẩm.
 
@@ -22,6 +22,10 @@ Nguồn thiết kế đã đọc gồm toàn bộ chín board được đóng g�
 Không cài dependency, không tạo hệ thống token song song, không dùng iframe/3D cho landing, không đổi backend/API/database/Prisma/env/nghiệp vụ và không ghi `Goctro_test3`.
 
 ## Validation
+
+### First-entry intro follow-up — 2026-10-29
+
+The first visit to `/` in a browser tab now opens the existing animated intro at `/intro/index.html`; subsequent visits in that tab go straight to `/tim-phong`. The intro page marks the tab as seen, and its brand/logo plus all landing-page search links point directly to `/tim-phong` to avoid re-entering the intro. The intro remains accessible from its existing “Giới thiệu Góc Trọ” link. A focused session-storage decision test was added. Browser visual verification has not yet been performed.
 
 | Kiểm tra | Kết quả |
 |---|---|

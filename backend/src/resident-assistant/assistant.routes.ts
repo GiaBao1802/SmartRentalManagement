@@ -42,7 +42,7 @@ export async function recognizeMeter(image: Buffer) {
   finally { if(timer) clearTimeout(timer); if(worker) await worker.terminate().catch(()=>{}); ocrBusy=false; }
 }
 let chatBusy=false;
-export type ResidentIntent="services"|"requests"|"amenity_choice"|"meter"|"invoice"|"help";
+export type ResidentIntent="services"|"requests"|"amenity_choice"|"meter"|"meter_readings"|"invoice"|"help";
 export type ResidentContextIntent="services"|"requests"|"meter"|"invoice";
 const normalizeResidentIntentText=(message:string)=>message.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/gi,"d").toLocaleLowerCase("vi-VN");
 export function parseResidentContext(value:unknown):ResidentContextIntent|null {
@@ -55,10 +55,11 @@ export function parseResidentContext(value:unknown):ResidentContextIntent|null {
 export function contextualResidentFollowup(message:string,lastIntent:ResidentContextIntent|null):ResidentContextIntent|null {
   if(!lastIntent)return null;
   const text=normalizeResidentIntentText(message).trim();
+  const shortAffirmation=/^(?:ok(?:ay|i)?|u|uh|duoc|duoc roi|dung|dung roi|dong y|tiep tuc|tiep di|lam tiep|lam di|xac nhan)[.!?,…]*$/.test(text);
   const refersBack=/\b(cai do|cai nay|no|dich vu do|hoa don do|ky do|phong do|viec do|lich do|muc do)\b/.test(text);
   const ellipticalReply=/^(?:con|vay|the)(?:\s+thi)?\s+(?:sao|nhu the nao|bao nhieu|duoc khong|co duoc khong|cai nao nua|con nua)\b/.test(text);
   const periodFollowup=lastIntent==="invoice"&&/\b(?:thang nay|thang truoc|ky nay|ky truoc)\b/.test(text)&&text.length<=100;
-  return refersBack||ellipticalReply||periodFollowup?lastIntent:null;
+  return shortAffirmation||refersBack||ellipticalReply||periodFollowup?lastIntent:null;
 }
 export function needsAmenityChoice(message:string):boolean {
   const text=normalizeResidentIntentText(message);
@@ -86,6 +87,18 @@ export function isMeterSubmissionQuestion(message:string):boolean {
   const submissionAction=/\b(gui|nop|chup|nhap|bao cao|cach gui)\b/.test(text);
   return meterTopic&&submissionAction;
 }
+export function isMeterReadingQuestion(message:string):boolean {
+  const text=normalizeResidentIntentText(message);
+  const meterTopic=/\b(chi so|dong ho|cong to)\b/.test(text)&&/\b(dien|nuoc|dien nuoc)\b/.test(text);
+  const readAction=/\b(xem|tra cuu|kiem tra|doc|bao nhieu|hien thi|the nao)\b/.test(text);
+  return meterTopic&&readAction&&!isMeterSubmissionQuestion(message);
+}
+export function isServiceStatusQuestion(message:string):boolean {
+  const text=normalizeResidentIntentText(message);
+  const statusTopic=/\b(dich vu|tien ich|dat lich|dang ky)\b/.test(text);
+  const statusAction=/\b(tinh trang|trang thai|ket qua|duyet chua|chap nhan chua|den dau|the nao)\b/.test(text);
+  return statusTopic&&statusAction;
+}
 export function isExplicitResidentComplaint(message:string):boolean {
   const text=normalizeResidentIntentText(message);
   return /\b(khieu nai|phan nan|bao su co|bao hong)\b/.test(text);
@@ -101,9 +114,16 @@ export function isInvoiceQuestion(message:string):boolean {
   const explicitMeterSubmission=/\b(gui|nop|chup|nhap|bao cao)\b/.test(text)&&/\b(chi so|dong ho|anh dong ho)\b/.test(text);
   return invoiceTopic&&amountOrStatusQuestion&&!explicitMeterSubmission;
 }
+export function isRoomRentQuestion(message:string):boolean {
+  const text=normalizeResidentIntentText(message);
+  return /\b(tien phong|tien thue|gia phong|gia thue|tien nha|tien can tra)\b/.test(text);
+}
 export async function classifyResidentMessage(message: string,context:ResidentContextIntent|null=null):Promise<ResidentIntent> {
   if(isExplicitEquipmentRequest(message)) return "requests";
   if(needsAmenityChoice(message)) return "amenity_choice";
+  if(isRoomRentQuestion(message)) return "invoice";
+  if(isMeterReadingQuestion(message)) return "meter_readings";
+  if(isServiceStatusQuestion(message)) return "services";
   if(isServiceCatalogQuestion(message)) return "services";
   if(isExplicitResidentComplaint(message)) return "requests";
   if(isServiceBookingQuestion(message)) return "services";
@@ -127,6 +147,7 @@ export function residentAssistantReply(intent:ResidentIntent):string {
   if(intent==="requests")return "Mình đã nhận diện khiếu nại/yêu cầu. Kiểm tra phòng và nội dung đã điền rồi xác nhận gửi; chủ trọ sẽ tiếp nhận. Thiết bị phòng chỉ cập nhật khi chủ trọ xác nhận đã bổ sung.";
   if(intent==="amenity_choice")return "Bạn muốn xem/đặt tiện ích đang có, hay đề nghị chủ trọ bổ sung thiết bị cho phòng?";
   if(intent==="meter")return "Bạn chọn phòng/kỳ hóa đơn nháp, tải ảnh đồng hồ và kiểm tra chỉ số trước khi gửi chủ trọ duyệt.";
+  if(intent==="meter_readings")return "Mình sẽ tra cứu chỉ số điện và nước đã ghi trên hóa đơn của bạn. Đây chỉ là xem thông tin, không gửi chỉ số mới.";
   if(intent==="invoice")return "Mình sẽ tra cứu hóa đơn gần nhất gắn với hồ sơ thuê của bạn. Đây chỉ là tra cứu, không gửi chỉ số hay tạo yêu cầu.";
   return "Mình chưa hiểu rõ câu hỏi này nên chưa thể trả lời chính xác. Bạn nói rõ hơn một chút nhé.";
 }
@@ -154,7 +175,8 @@ export function createResidentAssistantRouter(auth:AuthDependencies,repository:M
       const code=error&&typeof error==="object"&&"code" in error&&typeof error.code==="string"?error.code:"UNEXPECTED_ERROR";
       console.warn(JSON.stringify({event:"cloudy_unresolved_feedback_capture_failed",error_code:code}));
     }}
-    sendJson(res,200,{data:{intent,text:contextualIntent?residentContextualReply(contextualIntent):residentAssistantReply(intent),contextual:contextualIntent!==null,...(intent==="help"?{feedback_saved:feedbackSaved}:{})}});
+    const reply=contextualIntent?residentContextualReply(contextualIntent):isServiceStatusQuestion(message)?"Mình sẽ kiểm tra các lượt đăng ký dịch vụ của bạn và trạng thái chủ trọ đã duyệt hay chưa.":residentAssistantReply(intent);
+    sendJson(res,200,{data:{intent,text:reply,contextual:contextualIntent!==null,...(intent==="help"?{feedback_saved:feedbackSaved}:{})}});
   }catch(e){next(e);}});
   router.get("/me/meter-targets",...resident,async(req,res,next)=>{try{sendJson(res,200,{data:await repository.targets(req.auth!.ownerId!,req.auth!.residentId!)});}catch(e){next(e);}});
   router.post("/me/meter-ocr",...resident,async(req,res,next)=>{try{

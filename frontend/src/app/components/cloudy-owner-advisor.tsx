@@ -1,6 +1,6 @@
 "use client";
 import {useEffect,useRef,useState} from 'react';
-import {proposeOwnerScope,ownerConfirmation,parseOwnerClarificationReply,namesDifferentOwnerTask,ownerUnknownIntentMessage,ownerQuestionMentionsPeriod,ownerEmptyResultMessage,parseOwnerRoomReminder,ownerPeriodFreeTasks,shouldContinueUnpaidInvoiceScope,ownerTransactionCode,parseOwnerResidentRequest,isOwnerSensitiveDataRequest,ownerSensitiveDataRefusalMessage} from '../../lib/owner-chat-intent';
+import {proposeOwnerScope,ownerConfirmation,parseOwnerClarificationReply,namesDifferentOwnerTask,ownerUnknownIntentMessage,ownerQuestionMentionsPeriod,ownerEmptyResultMessage,parseOwnerRoomReminder,ownerPeriodFreeTasks,shouldContinueUnpaidInvoiceScope,ownerTransactionCode,parseOwnerResidentRequest,isOwnerSensitiveDataRequest,isOwnerResidentProfileLookup,ownerSensitiveDataRefusalMessage,isOwnerAffirmativeReply} from '../../lib/owner-chat-intent';
 import {OWNER_ADVISOR_ENDPOINT} from '../../lib/owner-advisor-endpoint';
 import {CloudyPortrait} from './cloudy-portrait';
 import {CloudyOwnerRequests,type OwnerRequest} from './cloudy-owner-requests';
@@ -15,7 +15,7 @@ type Result={summary:string;requests?:OwnerRequest[];cards:{id:string;room:strin
 type ServiceDraft={kind:'free'|'paid'|'flexible'|null;propertyId:string;name:string;unit:string;price:string;effectiveFrom:string;location:string;serviceMode:'BOOKING'|'SUBSCRIPTION'|null;weekdays:number[];opensAt:string;closesAt:string;slotDurationMinutes:string;capacityPerSlot:string;packageDurationCount:string;packageDurationUnit:'MONTH'|'YEAR'};
 const emptyRoomCreateDraft=():OwnerRoomCreateDraft=>({propertyId:'',roomCode:'',area:'',rent:'',capacity:''});
 const emptyServiceDraft=():ServiceDraft=>({kind:null,propertyId:'',name:'',unit:'',price:'',location:'',effectiveFrom:new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),serviceMode:null,weekdays:[],opensAt:'',closesAt:'',slotDurationMinutes:'60',capacityPerSlot:'1',packageDurationCount:'1',packageDurationUnit:'MONTH'});
-const readOnlyTasks=new Set(['invoices','unpaid','paid','transaction_lookup','utilities','missing','overview','requests','open_requests','actionable_requests','amenity_requests','common_area_requests','feedback_messages','residents','resident_ranking','resident_registration_by_room','available_rooms','vehicle_counts','vehicle_total','property_total','electricity_ranking','electricity_lowest','water_ranking','frequent_requests']);
+const readOnlyTasks=new Set(['invoices','unpaid','paid','transaction_lookup','utilities','missing','overview','requests','open_requests','actionable_requests','amenity_requests','common_area_requests','feedback_messages','residents','resident_ranking','resident_registration_by_room','resident_profile_lookup','available_rooms','vehicle_counts','vehicle_total','property_total','electricity_ranking','electricity_lowest','water_ranking','frequent_requests']);
 const normalized=(value:string)=>value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/gi,'d').toLowerCase();
 const requestsServiceCreation=(value:string)=>/\b(tao|them|dang ky|bo sung|mo)\b/.test(normalized(value))&&/\b(tien ich|dich vu|wifi|internet|rac|ve sinh)\b/.test(normalized(value));
 const serviceCode=(value:string)=>normalized(value).toUpperCase().replace(/[^A-Z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,60)||'DICH-VU-MOI';
@@ -216,7 +216,7 @@ export function CloudyOwnerAdvisor(){
   try{const r=await fetch(OWNER_ADVISOR_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:controller.signal,cache:'no-store',credentials:'same-origin'});const data=await r.json();if(!r.ok)throw new Error(data.error);if(pending.current!==controller)return;
    if(kind==='interpret'){setQuestion('');
     if(data.task==='sensitive_data_refusal'){setProposed(false);setMessages(m=>[...m,{role:'cloudy',text:ownerSensitiveDataRefusalMessage}]);}
-    else if(data.task==='resident_identity_help'){setProposed(false);setMessages(m=>[...m,{role:'cloudy',text:'Vì bảo vệ thông tin cá nhân, mình không hiển thị tên, số điện thoại hoặc CCCD cư dân trong chat. Bạn có thể xem hồ sơ tại mục Cư dân; mình vẫn có thể thống kê tình trạng cư trú theo phòng.'}]);}
+    else if(data.task==='resident_profile_lookup'){setProposed(false);void run({task:'resident_profile_lookup',period:'',room:'',residentQuery:asked},'answer');}
     else if(data.task==='contract_management'){setProposed(false);setContractAction(true);setMessages(m=>[...m,{role:'cloudy',text:'Mình hiểu bạn đang hỏi về hợp đồng, không phải hóa đơn. Chat chưa tra cứu danh sách hợp đồng; bạn có thể mở Quản lý hợp đồng để lọc trạng thái “Đã hết hạn”, hoặc mở Tình hình khu trọ để xem số hợp đồng sẽ hết hạn trong 30 ngày.'}]);}
     else if(data.task==='clarify'||!catalog?.tasks[data.task]){setProposed(false);setMessages(m=>[...m,{role:'cloudy',text:ownerUnknownIntentMessage(asked,catalog||{tasks:{},rooms:[],periods:[],asOf:''})}]);}
     else{const scope=proposeOwnerScope(asked,data.task,catalog);const hasPeriod=ownerQuestionMentionsPeriod(asked);const periodFree=ownerPeriodFreeTasks.has(scope.task);const continueInvoiceScope=shouldContinueUnpaidInvoiceScope(asked,task,scope.task);const resolvedPeriod=periodFree?(hasPeriod?scope.period:''):scope.period||(!hasPeriod?(continueInvoiceScope&&period?period:catalog.asOf.slice(0,7)):'');const resolvedRoom=continueInvoiceScope?room:scope.room??'';const transactionCode=scope.task==='transaction_lookup'?ownerTransactionCode(asked):null;const periodScopeValid=periodFree?(!hasPeriod||Boolean(scope.period)):Boolean(resolvedPeriod);setTask(scope.task);setPeriod(resolvedPeriod);setRoom(resolvedRoom);setRoomUnknown(continueInvoiceScope?false:scope.room===null);
@@ -232,8 +232,9 @@ export function CloudyOwnerAdvisor(){
    invalidate();setQuestion('');setResult(null);setResidentAction(null);setContractAction(false);
    setMessages(m=>[...m,{role:'user',text:'Yêu cầu liên quan đến dữ liệu cá nhân nhạy cảm'},{role:'cloudy',text:ownerSensitiveDataRefusalMessage}]);return;
   }
-  if(roomCreateStep){addRoomCreateReply(text);return;}
-  if(serviceStep){addServiceReply(text);return;}
+  if(roomCreateStep){if(isOwnerAffirmativeReply(text)){setQuestion('');setMessages(m=>[...m,{role:'user',text},{role:'cloudy',text:roomCreateStep==='confirm'?'Bạn kiểm tra tóm tắt rồi bấm “Xác nhận tạo phòng” để lưu nhé. Mình chưa tạo phòng chỉ từ câu đồng ý.':'Mình đang chờ thông tin ở bước này. Bạn gửi giá trị cụ thể hoặc chọn trong danh sách nhé.'}]);return;}addRoomCreateReply(text);return;}
+  if(serviceStep){if(isOwnerAffirmativeReply(text)){setQuestion('');setMessages(m=>[...m,{role:'user',text},{role:'cloudy',text:serviceStep==='confirm'?'Bạn kiểm tra tóm tắt rồi bấm “Xác nhận lưu” để tạo tiện ích nhé. Mình chưa lưu thay đổi chỉ từ câu đồng ý.':'Mình đang chờ thông tin ở bước này. Bạn gửi giá trị cụ thể hoặc chọn trong danh sách nhé.'}]);return;}addServiceReply(text);return;}
+  if(roomReminder&&isOwnerAffirmativeReply(text)){setQuestion('');setMessages(m=>[...m,{role:'user',text},{role:'cloudy',text:'Thông báo đã được chuẩn bị. Bạn kiểm tra phòng và nội dung rồi bấm nút “Xác nhận gửi”; mình chưa gửi chỉ từ câu đồng ý.'}]);return;}
   if(isOwnerRoomCreationRequest(text)){startRoomCreation(text);return;}
   if(requestsServiceCreation(text)&&!(/\b(khach|cu dan|nguoi thue|khach thue)\b/.test(normalized(text))&&/\b(yeu cau|de nghi|phan anh)\b/.test(normalized(text)))){startServiceCreation(text);return;}
   if(startRoomReminder(text))return;
@@ -250,6 +251,7 @@ export function CloudyOwnerAdvisor(){
    invalidate();setMessages(m=>[...m,{role:'user',text}]);void run({question:text},'interpret');return;
   }
   if(proposed&&(!period||roomUnknown)){
+   if(isOwnerAffirmativeReply(text)){setQuestion('');setMessages(m=>[...m,{role:'user',text},{role:'cloudy',text:!period?'Mình đang chờ bạn chọn tháng cần xem. Chọn một tháng trong danh sách hoặc nhập tháng cụ thể nhé.':'Mình đang chờ bạn chọn phòng cần xem. Chọn một phòng trong danh sách hoặc ghi “tất cả phòng” nhé.'}]);return;}
    setQuestion('');setResult(null);setMessages(m=>[...m,{role:'user',text}]);
    const kind:'period'|'room'=period?'room':'period';
    const parsed=parseOwnerClarificationReply(text,kind,catalog);
@@ -263,6 +265,11 @@ export function CloudyOwnerAdvisor(){
    else setMessages(m=>[...m,{role:'cloudy',text:'Mình chưa tìm thấy đúng mã phòng. Bạn nhập mã phòng, hoặc ghi “tất cả phòng”.'}]);
    return;
   }
+  if(proposed&&isOwnerAffirmativeReply(text)){
+   setQuestion('');setMessages(m=>[...m,{role:'user',text},{role:'cloudy',text:ownerConfirmation({task,period,room},catalog!)}]);
+   if(readOnlyTasks.has(task)&&(ownerPeriodFreeTasks.has(task)||Boolean(period))){setProposed(false);void run({task,period,room,confirmed:true},'answer');}
+   return;
+  }
   if(proposed){
    const parsedPeriod=parseOwnerClarificationReply(text,'period',catalog!);
    const mentionsPeriod=/\b(thang|ky)\b|\b20\d{2}-(?:0[1-9]|1[0-2])\b/.test(text.normalize('NFD').replace(/[\u0300-\u036f]/g,''));
@@ -273,6 +280,9 @@ export function CloudyOwnerAdvisor(){
    if(nextPeriod!==period||nextRoom!==room){setQuestion('');setPeriod(nextPeriod);setRoom(nextRoom);setRoomUnknown(false);setResult(null);setMessages(m=>[...m,{role:'user',text}]);
     if(readOnlyTasks.has(task)&&(ownerPeriodFreeTasks.has(task)||nextPeriod)) {setProposed(false);void run({task,period:nextPeriod,room:nextRoom},'answer');}
     else setMessages(m=>[...m,{role:'cloudy',text:`Đã rõ. ${ownerConfirmation({task,period:nextPeriod,room:nextRoom},catalog!)}`}]);return;}
+  }
+  if(!proposed&&result&&isOwnerAffirmativeReply(text)){
+   setQuestion('');setMessages(m=>[...m,{role:'user',text},{role:'cloudy',text:'Được nhé. Mình đã ghi nhận câu trả lời vừa rồi. Bạn muốn mình kiểm tra thêm nội dung nào?'}]);return;
   }
   invalidate();setMessages(m=>[...m,{role:'user',text}]);void run({question:text},'interpret');
  }

@@ -1,36 +1,38 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { apiRequest } from "../../lib/api/apiClient";
-import { residentServiceApi, type ResidentServiceProperty, type ResidentServiceAvailability } from "../../lib/api/residentServiceApi";
+import { residentServiceApi, type ResidentServiceProperty, type ResidentServiceAvailability, type ResidentServiceBooking } from "../../lib/api/residentServiceApi";
+import { invoiceApi, type InvoiceResource } from "../../lib/api/invoiceApi";
 import { ResidentRoomRequests } from "./room-requests";
 import { useAuth } from "./auth-provider";
+import { CloudyPortrait } from "./cloudy-portrait";
 
 type Target={invoice_id:string;room_code:string;property_name:string;period_start:string;period_end:string};
+type ResidentChatEntry={id:number;role:"user"|"cloudy";text:string};
 export type MeterRequest={submission_id:string;invoice_id:string;room_code:string;property_name:string;period_start:string;period_end:string;utility:string;reading:string;status:string;decision_note:string|null};
 const label=(s:string)=>({PENDING:"Chờ chủ trọ duyệt",APPROVED:"Đã duyệt",REJECTED:"Đã từ chối"}[s]??s);
 const period=(t:{period_start:string;period_end:string})=>`${t.period_start.slice(0,10)} → ${t.period_end.slice(0,10)}`;
 const today=()=>new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Ho_Chi_Minh",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
-function invoiceLocationReply(targets:Target[]) {
-  if(!targets.length)return "Mình hiểu bạn đang hỏi hóa đơn thuộc địa điểm nào. Hiện chưa có hóa đơn nháp hợp lệ gắn với phòng bạn đang thuê. Bạn xác nhận sẽ kiểm tra lại với chủ trọ nhé?";
-  const rows=targets.map(t=>`${t.property_name} – phòng ${t.room_code}, kỳ ${period(t)}`);
-  if(rows.length===1)return `Mình hiểu bạn hỏi hóa đơn ở địa điểm nào: hiện có hóa đơn tại ${rows[0]}. Bạn xác nhận muốn chọn đúng kỳ này để gửi chỉ số chứ? Mình chưa gửi gì cho chủ trọ.`;
-  const listed=rows.slice(0,4).map((row,i)=>`${i+1}) ${row}`).join("; ");
-  return `Mình tìm thấy ${rows.length} kỳ hóa đơn thuộc phòng/khu trọ bạn đang ở: ${listed}${rows.length>4?`; còn ${rows.length-4} kỳ khác trong danh sách bên dưới`:""}. Bạn chọn đúng địa điểm và kỳ cần hỏi nhé; mình chưa gửi chỉ số.`;
-}
-
-export function ResidentAssistant({onClose}:{onClose:()=>void}) {
+const bookingStatus=(status:ResidentServiceBooking["status"])=>({PENDING:"Chờ chủ trọ duyệt",APPROVED:"Đã được duyệt",REJECTED:"Bị từ chối",CANCELLED:"Đã hủy"}[status]);
+export function ResidentAssistant() {
   const {status,user}=useAuth();
   if(status!=="authenticated"||user?.account.role!=="resident") return null;
-  return <ResidentAssistantContent key={user.account.account_id} onClose={onClose}/>;
+  return <ResidentAssistantContent key={user.account.account_id}/>;
 }
-function ResidentAssistantContent({onClose}:{onClose:()=>void}) {
-  const [tab,setTab]=useState<"services"|"meter"|"requests"|"help">("help");
+function ResidentAssistantContent() {
+  const [tab,setTab]=useState<"services"|"meter"|"readings"|"invoices"|"requests"|"help">("help");
   const [amenityChoice,setAmenityChoice]=useState(false);
   const [requestContent,setRequestContent]=useState("");
   const [text,setText]=useState("");
+  const [lastIntent,setLastIntent]=useState<"services"|"requests"|"meter"|"invoice"|null>(null);
   const [reply,setReply]=useState("Mình giúp bạn đặt tiện ích, gửi ảnh điện/nước hoặc khiếu nại và yêu cầu bổ sung thiết bị cho phòng.");
+  const [chatMessages,setChatMessages]=useState<ResidentChatEntry[]>([{id:0,role:"cloudy",text:"Chào bạn, mình là Cloudy. Bạn có thể hỏi tiền phòng, chỉ số điện nước, đăng ký dịch vụ hoặc tình trạng yêu cầu."}]);
   const [groups,setGroups]=useState<ResidentServiceProperty[]>([]);
+  const [serviceBookings,setServiceBookings]=useState<ResidentServiceBooking[]>([]);
+  const [invoices,setInvoices]=useState<InvoiceResource[]>([]);
+  const [readingError,setReadingError]=useState("");
   const [targets,setTargets]=useState<Target[]>([]);
   const [history,setHistory]=useState<MeterRequest[]>([]);
   const [serviceId,setServiceId]=useState("");
@@ -45,10 +47,19 @@ function ResidentAssistantContent({onClose}:{onClose:()=>void}) {
   const [busy,setBusy]=useState(false);
   const lock=useRef(false);
   const [notice,setNotice]=useState("");
-  const dialog=useRef<HTMLElement>(null);
+  const chatScroll=useRef<HTMLDivElement>(null);
+  const workflowPopup=useRef<HTMLElement>(null);
+  const nextChatMessageId=useRef(1);
   const service=groups.flatMap(g=>g.services).find(s=>s.service_id===serviceId);
+  useEffect(()=>{const node=chatScroll.current;if(node)node.scrollTop=node.scrollHeight;},[chatMessages,busy]);
   useEffect(()=>{
-    dialog.current?.focus();
+    if(tab==="help"&&!amenityChoice&&!notice)return;
+    const closeOnEscape=(event:KeyboardEvent)=>{if(event.key==="Escape"){setTab("help");setAmenityChoice(false);}};
+    window.addEventListener("keydown",closeOnEscape);
+    workflowPopup.current?.focus();
+    return()=>window.removeEventListener("keydown",closeOnEscape);
+  },[tab,amenityChoice,notice]);
+  useEffect(()=>{
     const controller=new AbortController();
     Promise.all([residentServiceApi.list(),apiRequest<Target[]>("/me/meter-targets",{signal:controller.signal}),apiRequest<MeterRequest[]>("/me/meter-submissions",{signal:controller.signal})]).then(([g,t,h])=>{if(!controller.signal.aborted){setGroups(g);setTargets(t);setHistory(h);}}).catch(e=>{if(!controller.signal.aborted)setNotice(e.message);});
     return()=>controller.abort();
@@ -58,20 +69,46 @@ function ResidentAssistantContent({onClose}:{onClose:()=>void}) {
     lock.current=true;setBusy(true);setNotice("");
     try{await action();}catch(e){setNotice(e instanceof Error?e.message:"Không thực hiện được. Bạn thử lại nhé.");}finally{setBusy(false);lock.current=false;}
   }
+  async function loadServiceBookings(){setServiceBookings(await residentServiceApi.bookings());}
+  async function loadInvoices(){
+    setReadingError("");
+    try{const page=await invoiceApi.list({page:1,page_size:100});setInvoices(page.data);}
+    catch(error){setReadingError(error instanceof Error?error.message:"Không tải được chỉ số điện nước.");}
+  }
   function resetSlot(){setAvailability(null);setTime("");}
-  return <div className="resident-assistant-backdrop" onClick={onClose}><section id="cloudy-chat-panel" className="resident-assistant" role="dialog" aria-modal="true" aria-labelledby="resident-assistant-title" ref={dialog} tabIndex={-1} onClick={e=>e.stopPropagation()} onKeyDown={e=>{
-    if(e.key==="Escape")onClose();
-    if(e.key==="Tab") {const nodes=Array.from(dialog.current?.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href]')??[]);const first=nodes[0],last=nodes.at(-1);if(e.shiftKey&&(document.activeElement===first||document.activeElement===dialog.current)){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}}
-  }}>
-    <header><div><small>TRỢ LÝ KHÁCH THUÊ</small><h2 id="resident-assistant-title">Cloudy giúp bạn</h2></div><button type="button" onClick={onClose} aria-label="Đóng Cloudy">×</button></header>
-    <p>{reply}</p>
-    {tab==="help"&&<form onSubmit={e=>{e.preventDefault();void run(async()=>{const r=await apiRequest<{intent:"services"|"requests"|"amenity_choice"|"meter"|"invoice"|"help";text:string}>("/me/assistant/chat",{method:"POST",body:JSON.stringify({message:text})});setReply(r.intent==="invoice"?invoiceLocationReply(targets):r.text);setAmenityChoice(r.intent==="amenity_choice");setTab(r.intent==="invoice"?"meter":r.intent==="amenity_choice"?"help":r.intent);if(r.intent==="requests")setRequestContent(text);setText("");});}}>
-      <label>Bạn cần hỗ trợ gì?<input value={text} maxLength={500} disabled={busy} onChange={e=>setText(e.target.value)} placeholder="Ví dụ: tôi muốn đăng ký hồ bơi"/></label><button disabled={busy||!text.trim()}>Gửi</button>
-    </form>}
+  return <>
+    <div ref={chatScroll} className="resident-assistant cloudy-chat__messages" role="log" aria-label="Tin nhắn với Cloudy" aria-live="polite">
+    {chatMessages.map(message=><div className={`cloudy-chat__message-row cloudy-chat__message-row--${message.role}`} key={message.id}>
+      {message.role==="cloudy"&&<CloudyPortrait/>}
+      <p className={`cloudy-chat__message${message.role==="cloudy"&&message.id===0?" cloudy-chat__welcome":""}`}><span className="sr-only">{message.role==="user"?"Bạn: ":"Cloudy: "}</span>{message.text}</p>
+    </div>)}
+    {busy&&<div className="cloudy-chat__message-row cloudy-chat__message-row--cloudy"><CloudyPortrait/><p className="cloudy-chat__message cloudy-chat__message--pending">Cloudy đang kiểm tra…</p></div>}
+    </div>
+    {(tab!=="help"||amenityChoice||notice)&&typeof document!=="undefined"&&createPortal(<div className="resident-assistant-workflow-backdrop" onMouseDown={event=>{if(event.target===event.currentTarget){setTab("help");setAmenityChoice(false);}}}>
+      <section className="resident-assistant-workflow-popup" role="dialog" aria-modal="true" aria-labelledby="resident-assistant-workflow-title" tabIndex={-1} ref={workflowPopup}>
+        <header className="resident-assistant-workflow-header">
+          <div><h2 id="resident-assistant-workflow-title">{tab==="services"?"Dịch vụ & tiện ích":tab==="meter"?"Gửi chỉ số điện, nước":tab==="readings"?"Xem chỉ số điện, nước":tab==="invoices"?"Hóa đơn & tiền phòng":tab==="requests"?"Khiếu nại / yêu cầu":amenityChoice?"Tiện ích": "Cloudy"}</h2><p>{tab==="services"?"Đăng ký tiện ích và theo dõi các yêu cầu đã gửi.":tab==="meter"?"Gửi chỉ số mới để chủ trọ kiểm tra.":tab==="readings"?"Tra cứu chỉ số đã ghi trên hóa đơn.":tab==="invoices"?"Xem các khoản tiền và trạng thái thanh toán.":tab==="requests"?"Gửi và theo dõi yêu cầu liên quan đến nơi ở.":"Chọn nội dung bạn muốn thực hiện."}</p></div>
+          <button type="button" className="resident-assistant-workflow-close" aria-label="Đóng popup" onClick={()=>{setTab("help");setAmenityChoice(false);}}>×</button>
+        </header>
+        <div className="resident-assistant-workflow-content">
     {amenityChoice&&tab==="help"&&<div className="resident-assistant-fields" aria-label="Chọn việc cần làm với tiện ích"><button type="button" disabled={busy} onClick={()=>{setAmenityChoice(false);setTab("services");setReply("Đây là tiện ích đang áp dụng cho phòng thuê. Chọn tiện ích để xem lịch hoặc gửi yêu cầu đặt; chủ trọ sẽ duyệt.");}}>Xem / đặt tiện ích đang có</button><button type="button" disabled={busy} onClick={()=>{setAmenityChoice(false);setRequestContent("Tôi muốn đề nghị bổ sung thiết bị cho phòng.");setTab("requests");setReply("Bạn chọn thiết bị cần bổ sung và phòng đang ở. Yêu cầu sẽ chờ chủ trọ duyệt; phòng chỉ cập nhật khi chủ trọ xác nhận đã thêm.");}}>Đề nghị bổ sung thiết bị</button></div>}
-    <nav aria-label="Chọn hỗ trợ"><button type="button" disabled={busy} aria-pressed={tab==="services"} onClick={()=>{setTab("services");setReply("Chọn tiện ích và khung giờ còn chỗ để gửi yêu cầu đặt. Chủ trọ sẽ duyệt lịch của bạn.");}}>Đặt tiện ích</button><button type="button" disabled={busy} aria-pressed={tab==="meter"} onClick={()=>{setTab("meter");setReply("Bạn đang gửi chỉ số điện/nước. Chọn phòng và kỳ hóa đơn, chụp ảnh đồng hồ rồi đối chiếu chỉ số trước khi gửi chủ trọ duyệt.");}}>Gửi chỉ số điện/nước</button><button type="button" disabled={busy} aria-pressed={tab==="requests"} onClick={()=>{setTab("requests");setReply("Gửi khiếu nại hoặc yêu cầu cho phòng đang ở. Chủ trọ sẽ tiếp nhận và phản hồi.");}}>Khiếu nại / yêu cầu</button>{tab!=="help"&&<button type="button" disabled={busy} onClick={()=>{setTab("help");setReply("Mình giúp bạn đặt tiện ích, gửi ảnh điện/nước hoặc khiếu nại và yêu cầu bổ sung thiết bị cho phòng.");}}>Hỏi Cloudy</button>}</nav>
     {tab==="requests"&&<ResidentRoomRequests initialContent={requestContent}/>}
+    {tab==="invoices"&&<div className="resident-assistant-fields" aria-label="Hóa đơn và tiền phòng">
+      <h3>Hóa đơn của bạn</h3>
+      <a href="/tenant/invoices">Mở danh sách hóa đơn</a>
+      {readingError&&<p role="alert">Chưa tải được hóa đơn: {readingError} <button type="button" disabled={busy} onClick={()=>void run(loadInvoices)}>Thử lại</button></p>}
+      {!readingError&&!invoices.length&&<p>Chưa tìm thấy hóa đơn cho hồ sơ thuê của bạn.</p>}
+      {invoices.slice(0,10).map(invoice=><article key={invoice.invoice_id}><strong>{invoice.contract?.property?.name??"Nơi ở của bạn"} · Phòng {invoice.contract?.room_code??"—"}</strong><p>Kỳ {period(invoice)}</p><p>Tiền phòng: {Number(invoice.rent_amount).toLocaleString("vi-VN")} ₫</p><p>Điện: {Number(invoice.electricity_amount).toLocaleString("vi-VN")} ₫ · Nước: {Number(invoice.water_amount).toLocaleString("vi-VN")} ₫</p><p>Tổng: {Number(invoice.total_amount).toLocaleString("vi-VN")} ₫</p><small>{invoice.status==="draft"?"Bản nháp, chưa phải hóa đơn cần thanh toán":invoice.status==="paid"?"Đã thanh toán":invoice.is_overdue?"Chưa thanh toán · quá hạn":"Chưa thanh toán"}</small></article>)}
+    </div>}
+    {tab==="readings"&&<div className="resident-assistant-fields" aria-label="Chỉ số điện nước đã ghi">
+      <h3>Chỉ số điện, nước trên hóa đơn</h3>
+      <a href="/tenant/invoices">Mở danh sách hóa đơn</a>
+      {readingError&&<p role="alert">Chưa tải được hóa đơn: {readingError} <button type="button" disabled={busy} onClick={()=>void run(loadInvoices)}>Thử lại</button></p>}
+      {!readingError&&!invoices.length&&<p>Chưa có hóa đơn ghi nhận chỉ số cho hồ sơ thuê của bạn.</p>}
+      {invoices.slice(0,10).map(invoice=><article key={invoice.invoice_id}><strong>{invoice.contract?.property?.name??"Nơi ở của bạn"} · Phòng {invoice.contract?.room_code??"—"}</strong><p>Kỳ {period(invoice)}</p><p>Điện: {invoice.electricity_previous_kwh??"—"} → {invoice.electricity_current_kwh??"—"} kWh</p><p>Nước: {invoice.water_previous_m3??"—"} → {invoice.water_current_m3??"—"} m³</p><small>{invoice.status==="draft"?"Bản nháp, chưa phải hóa đơn cần thanh toán":invoice.status==="paid"?"Đã thanh toán":"Hóa đơn chưa thanh toán"}</small></article>)}
+    </div>}
     {tab==="services"&&<div className="resident-assistant-fields">
+      <section aria-label="Trạng thái đăng ký dịch vụ"><h3>Yêu cầu đã gửi</h3>{!serviceBookings.length&&<p>Bạn chưa có yêu cầu đặt dịch vụ nào.</p>}{serviceBookings.map(booking=><article key={booking.booking_id}><strong>{booking.service_name}{booking.property_name?` · ${booking.property_name}`:""}</strong><p>{booking.service_date.slice(0,10)} · {booking.start_time}–{booking.end_time}</p><p><span className={`resident-assistant-booking-status is-${booking.status.toLowerCase()}`}>{bookingStatus(booking.status)}</span></p>{booking.decision_note&&<small>Ghi chú: {booking.decision_note}</small>}</article>)}</section>
       <label>Tiện ích<select value={serviceId} disabled={busy} onChange={e=>{setServiceId(e.target.value);resetSlot();}}><option value="">Chọn tiện ích</option>{groups.map(g=><optgroup key={g.property_id} label={g.property_name}>{g.services.map(s=><option key={s.service_id} value={s.service_id}>{s.name}</option>)}</optgroup>)}</select></label>
       {!groups.length&&<p>Chưa có tiện ích trong khu trọ đang ở.</p>}
       {service?.service_configuration?.service_mode==="SUBSCRIPTION"&&<p>Gói này chưa hỗ trợ đăng ký trực tuyến. Bạn liên hệ chủ trọ để đăng ký nhé.</p>}
@@ -81,7 +118,7 @@ function ResidentAssistantContent({onClose}:{onClose:()=>void}) {
         {availability&&<><label>Khung giờ<select value={time} disabled={busy} onChange={e=>setTime(e.target.value)}><option value="">Chọn khung giờ</option>{availability.slots.map(s=><option key={s.start_time} value={s.start_time}>{s.start_time}–{s.end_time} · còn {s.remaining_capacity} chỗ</option>)}</select></label>
           {!availability.slots.length&&<p>Ngày này không còn suất phù hợp.</p>}
           <p>Phí dự kiến: {availability.unit_price===null?"Chưa có giá":`${Number(availability.unit_price).toLocaleString("vi-VN")} đ / ${availability.unit}`}. Chỉ ghi phí sau khi chủ trọ duyệt.</p>
-          <button disabled={busy||!time||availability.unit_price===null} onClick={()=>void run(async()=>{await residentServiceApi.book(serviceId,date,time);resetSlot();setNotice("Đã gửi yêu cầu đặt tiện ích. Chờ chủ trọ duyệt.");})}>Xác nhận gửi yêu cầu</button>
+          <button disabled={busy||!time||availability.unit_price===null} onClick={()=>void run(async()=>{await residentServiceApi.book(serviceId,date,time);resetSlot();setNotice("Đã gửi yêu cầu đặt tiện ích. Chờ chủ trọ duyệt.");await loadServiceBookings();})}>Xác nhận gửi yêu cầu</button>
         </>}
       </>}
       <a href="/tenant/amenities">Xem lịch tiện ích của bạn</a>
@@ -98,5 +135,12 @@ function ResidentAssistantContent({onClose}:{onClose:()=>void}) {
       <h3>Yêu cầu đã gửi</h3>{history.map(h=><article key={h.submission_id}><strong>{h.room_code} · {h.utility==="ELECTRICITY"?"Điện":"Nước"}: {h.reading}</strong><p>{period(h)} · {label(h.status)}</p>{h.decision_note&&<p>{h.decision_note}</p>}</article>)}
     </div>}
     {busy&&<p role="status">Đang xử lý…</p>}{notice&&<p role="status" className="notice">{notice}</p>}
-  </section></div>;
+        </div>
+      </section>
+    </div>,document.body)}
+    <form className="cloudy-chat__composer resident-assistant-composer" onSubmit={e=>{e.preventDefault();const message=text.trim();if(!message)return;setChatMessages(previous=>[...previous,{id:nextChatMessageId.current++,role:"user",text:message}]);setText("");void run(async()=>{try{const r=await apiRequest<{intent:"services"|"requests"|"amenity_choice"|"meter"|"meter_readings"|"invoice"|"help";text:string;contextual:boolean}>("/me/assistant/chat",{method:"POST",body:JSON.stringify({message,...(lastIntent?{context:{last_intent:lastIntent}}:{})})});const answer=r.text;setReply(answer);setChatMessages(previous=>[...previous,{id:nextChatMessageId.current++,role:"cloudy",text:answer}]);setAmenityChoice(r.intent==="amenity_choice");setTab(r.intent==="invoice"?"invoices":r.intent==="meter_readings"?"readings":r.intent==="amenity_choice"?"help":r.intent);if(r.intent==="services")await loadServiceBookings();if(r.intent==="invoice"||r.intent==="meter_readings")await loadInvoices();setLastIntent(["services","requests","meter","invoice"].includes(r.intent)?r.intent as "services"|"requests"|"meter"|"invoice":null);if(r.intent==="requests"&&!r.contextual)setRequestContent(message);}catch(error){const answer=error instanceof Error?error.message:"Mình chưa xử lý được câu hỏi. Bạn thử lại nhé.";setReply(answer);setChatMessages(previous=>[...previous,{id:nextChatMessageId.current++,role:"cloudy",text:answer}]);}});}}>
+      <label className="sr-only" htmlFor="resident-cloudy-message">Bạn cần hỗ trợ gì?</label>
+      <div className="cloudy-chat__composer-controls"><textarea id="resident-cloudy-message" value={text} maxLength={500} disabled={busy} onChange={e=>setText(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();e.currentTarget.form?.requestSubmit();}}} placeholder="Nhắn cho Cloudy…" rows={1}/><button disabled={busy||!text.trim()}>Gửi</button></div>
+    </form>
+  </>;
 }

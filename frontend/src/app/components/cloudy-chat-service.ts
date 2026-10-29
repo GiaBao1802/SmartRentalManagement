@@ -14,6 +14,7 @@ export interface CloudyChatService {
   send(message: string, history: readonly CloudyChatMessage[], signal: AbortSignal, mode?: FilterMode): Promise<string>;
   hasContext?(): boolean;
   hasProposal?(): boolean;
+  resetContext?(): void;
   discardProposal?(): void;
   confirm?(signal: AbortSignal): Promise<string>;
 }
@@ -21,6 +22,16 @@ export interface CloudyChatService {
 export function normalizeCloudyChatInput(value: string): string | null {
   const text = value.trim();
   return text && text.length <= CLOUDY_CHAT_MAX_LENGTH ? text : null;
+}
+
+function normalizeShortReply(value: string): string {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/gi, "d").toLocaleLowerCase("vi-VN").replace(/[.!?,…]+$/g, "").trim().replace(/\s+/g, " ");
+}
+export function isCloudyAffirmativeReply(value: string): boolean {
+  return /^(?:ok(?:ay|i)?|u|uh|duoc|duoc roi|dung|dung roi|dong y|tiep tuc|tiep di|lam tiep|lam di|xac nhan)$/.test(normalizeShortReply(value));
+}
+function isCloudyNegativeReply(value: string): boolean {
+  return /^(?:khong|khong can|thoi|huy|huy bo|bo qua|khong phai)$/.test(normalizeShortReply(value));
 }
 
 // Only validated filters carry over; raw chat history is never sent.
@@ -41,23 +52,31 @@ export function createLocalCloudyChatService(fetchImpl: typeof fetch = fetch): C
     if (!reply || typeof reply.text !== "string" || !reply.text || reply.text.length > 16000 || reply.source !== "public_database" || !["preview","no_matches","needs_clarification","awaiting_confirmation"].includes(reply.status) || (reply.status === "needs_clarification" ? reply.context !== null : !isFilterContext(reply.context))) throw new Error("Phản hồi không hợp lệ. Hãy thử lại.");
     return reply;
   }
+  async function confirmProposal(signal: AbortSignal): Promise<string> {
+    if (!proposal) throw new Error("Hãy gửi yêu cầu để Cloudy xác nhận lại trước.");
+    const version = revision;
+    const accepted = proposal;
+    const reply = await request({ action: "confirm", context: accepted }, signal);
+    if (version !== revision) throw new DOMException("Aborted", "AbortError");
+    if (!["preview","no_matches"].includes(reply.status) || JSON.stringify(reply.context) !== JSON.stringify(accepted)) throw new Error("Bộ lọc xác nhận không khớp. Hãy gửi lại yêu cầu.");
+    context = accepted; proposal = null;
+    return reply.text;
+  }
   return {
     hasContext: () => context !== null,
     hasProposal: () => proposal !== null,
+    resetContext: () => { context = null; proposal = null; revision++; },
     discardProposal: () => { proposal = null; revision++; },
-    async confirm(signal) {
-      if (!proposal) throw new Error("Hãy gửi yêu cầu để Cloudy xác nhận lại trước.");
-      const version = revision;
-      const accepted = proposal;
-      const reply = await request({ action: "confirm", context: accepted }, signal);
-      if (version !== revision) throw new DOMException("Aborted", "AbortError");
-      if (!["preview","no_matches"].includes(reply.status) || JSON.stringify(reply.context) !== JSON.stringify(accepted)) throw new Error("Bộ lọc xác nhận không khớp. Hãy gửi lại yêu cầu.");
-      context = accepted; proposal = null;
-      return reply.text;
-    },
+    confirm: confirmProposal,
     async send(message, _history, signal, mode = "new") {
       const text = normalizeCloudyChatInput(message);
       if (!text) throw new Error("Hãy nhập từ 1 đến 500 ký tự.");
+      if (proposal && isCloudyAffirmativeReply(text)) return confirmProposal(signal);
+      if (proposal && isCloudyNegativeReply(text)) {
+        proposal = null;
+        revision++;
+        return "Đã rõ, mình chưa tìm phòng. Bạn có thể sửa tiêu chí rồi gửi lại khi sẵn sàng.";
+      }
       if (mode === "continue" && !context) throw new Error("Hãy lọc mới trước khi lọc tiếp.");
       proposal = null;
       const version = ++revision;

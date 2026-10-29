@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "./auth-provider";
-import { ResidentAssistant } from "./resident-assistant";
 import { CloudyChatSession } from "./cloudy-chat-panel";
 import { cloudyChatSessionKey } from "./cloudy-chat-session-key";
 import { cloudySuggestionSource, validateCloudySuggestion, type CloudySuggestion, type CloudySuggestionScope } from "./cloudy-suggestion-source";
@@ -484,6 +483,6 @@ export function Cloudy2D() {
         <span>{suggestionView.value.text}</span>
       </div>}
     </div>
-    {status === "authenticated" && role === "resident" ? (chatOpen && <ResidentAssistant key={chatScopeKey} onClose={closeChat} />) : <CloudyChatSession ownerMode={role === "admin"} key={chatScopeKey} open={chatOpen} mascotRef={rootRef} onClose={closeChat} />}
+    <CloudyChatSession ownerMode={role === "admin"} residentMode={status === "authenticated" && role === "resident"} key={chatScopeKey} open={chatOpen} mascotRef={rootRef} onClose={closeChat} />
   </>;
 }

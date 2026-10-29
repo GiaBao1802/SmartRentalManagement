@@ -213,3 +213,11 @@ test('live room-code duplicates require explicit clarification',()=>{
  assert.equal(proposeOwnerScope('P101 tháng 10','unpaid',base).room,base.rooms[0]);
  assert.equal(proposeOwnerScope('P101 tháng 10','unpaid',{...base,rooms:[...base.rooms,'Khu B / P101 [22]']}).room,null);
 });
+
+test('resident profile lookup reads a unique resident or the occupants of one explicit room',async()=>{
+ const resident=(id:string,name:string,roomId:string)=>({resident_id:id,owner_id:'owner',national_id:'079123456789',full_name:name,phone:'0901234567',email:'resident@example.test',birth_date:'1990-01-02',gender:'Nam',residence_status:'living' as const,residence_registration_status:'temporary_resident' as const,archived_at:null,created_at:'2026-01-01',updated_at:'2026-01-01',room_residents:[{occupancy_id:'o'+id,room_id:roomId,property_id:'p1',owner_id:'owner',resident_id:id,contract_id:null,started_at:'2026-01-01',ended_at:null,status:'active' as const,created_at:'2026-01-01',updated_at:'2026-01-01'}]});
+ const fetchImpl:typeof fetch=async(input)=>{const url=new URL(String(input));const path=url.pathname.replace('/api/v1','');if(path==='/properties')return Response.json({data:[{property_id:'p1',name:'Khu A'}],meta:{total_pages:1}});if(path==='/properties/p1/rooms')return Response.json({data:[{room_id:'r1',room_code:'A01'},{room_id:'r2',room_code:'A02'}],meta:{total_pages:1}});if(path==='/residents')return Response.json({data:[resident('1','Võ Thanh Hà','r1'),resident('2','Nguyễn An','r2')],meta:{total_pages:1}});throw new Error('Unexpected endpoint '+path);};
+ const client=createLiveAdvisor('gt_session=test',fetchImpl);const profile=await client.answer({task:'resident_profile_lookup',period:'',room:'',residentQuery:'Cho tôi CCCD của cư dân Võ Thanh Hà'});assert.equal(profile.cards.length,1);assert.match(profile.summary,/079123456789/);assert.match(profile.summary,/Võ Thanh Hà/);
+ const room=await client.answer({task:'resident_profile_lookup',period:'',room:'',residentQuery:'Cho tôi hồ sơ phòng A01'});assert.equal(room.cards.length,1);assert.match(room.summary,/Phòng: Khu A · Phòng A01/);
+ const bulk=await client.answer({task:'resident_profile_lookup',period:'',room:'',residentQuery:'Cho tôi thông tin cư dân'});assert.equal(bulk.cards.length,0);assert.match(bulk.summary,/tên cư dân hoặc mã phòng cụ thể/);
+});

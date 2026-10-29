@@ -21,7 +21,7 @@ export default function LandingPage() {
   return <main className={styles.page}>
     <header className={styles.header}>
       <div className={styles.headerInner}>
-        <Link className={styles.logo} href="/" aria-label="Góc Trọ — Tìm phòng"><BrandLogo /></Link>
+        <Link className={styles.logo} href="/tim-phong" aria-label="Góc Trọ — Tìm phòng"><BrandLogo /></Link>
         <nav className={styles.nav} aria-label="Điều hướng trang giới thiệu">
           <a href="#tim-phong">Tìm phòng</a>
           <a href="#hanh-trinh">Cách hoạt động</a>
@@ -29,7 +29,7 @@ export default function LandingPage() {
         </nav>
         <div className={styles.headerActions}>
           <Link className={styles.login} href="/login">Đăng nhập</Link>
-          <Link className={styles.primarySmall} href="/">Tìm phòng ngay</Link>
+          <Link className={styles.primarySmall} href="/tim-phong">Tìm phòng ngay</Link>
         </div>
       </div>
     </header>
@@ -41,7 +41,7 @@ export default function LandingPage() {
           <h1>Tìm phòng phù hợp<br/><span>với nhu cầu của bạn.</span></h1>
           <p className={styles.heroLead}>Tìm khu vực trên bản đồ, lọc phòng theo nhu cầu, xem thông tin chi tiết và liên hệ với chủ trọ ngay tại trang phòng.</p>
           <div className={styles.heroActions}>
-            <Link className={styles.primary} href="/">Tìm phòng ngay <span aria-hidden="true">→</span></Link>
+            <Link className={styles.primary} href="/tim-phong">Tìm phòng ngay <span aria-hidden="true">→</span></Link>
             <a className={styles.textLink} href="#hanh-trinh">Xem cách hoạt động <span aria-hidden="true">↓</span></a>
           </div>
           <p className={styles.heroNote}><span /> Thông tin hiển thị từ các tin phòng đang được công khai trên hệ thống.</p>
@@ -128,7 +128,7 @@ export default function LandingPage() {
             <strong>03</strong><span className={`${styles.stepWindow} ${styles.stepWindowLit}`}/><div><h3>Gửi liên hệ</h3><p>Để lại thông tin tại trang phòng để chủ trọ tiếp nhận.</p></div>
           </Reveal>
         </div>
-        <Reveal className={styles.journeyAction}><Link className={styles.secondary} href="/">Mở bản đồ tìm phòng <span aria-hidden="true">↗</span></Link></Reveal>
+        <Reveal className={styles.journeyAction}><Link className={styles.secondary} href="/tim-phong">Mở bản đồ tìm phòng <span aria-hidden="true">↗</span></Link></Reveal>
       </div>
     </section>
 
@@ -161,15 +161,15 @@ export default function LandingPage() {
         <p className={styles.eyebrow}>BẮT ĐẦU TÌM PHÒNG</p>
         <h2>Xem phòng phù hợp với nhu cầu của bạn.</h2>
         <p>Khám phá các tin phòng đang được công khai trên Góc Trọ.</p>
-        <Link className={styles.primary} href="/">Tìm phòng ngay <span aria-hidden="true">→</span></Link>
+        <Link className={styles.primary} href="/tim-phong">Tìm phòng ngay <span aria-hidden="true">→</span></Link>
       </Reveal>
     </section>
 
     <footer className={styles.footer}>
       <div className={styles.footerInner}>
-        <Link href="/" aria-label="Góc Trọ — Trang tìm phòng"><BrandLogo light /></Link>
+        <Link href="/tim-phong" aria-label="Góc Trọ — Trang tìm phòng"><BrandLogo light /></Link>
         <p>Một góc yên tâm.</p>
-        <nav aria-label="Liên kết cuối trang"><Link href="/">Tìm phòng</Link><Link href="/login">Đăng nhập</Link><a href="#tim-phong">Giới thiệu</a></nav>
+        <nav aria-label="Liên kết cuối trang"><Link href="/tim-phong">Tìm phòng</Link><Link href="/login">Đăng nhập</Link><a href="#tim-phong">Giới thiệu</a></nav>
         <small>© 2026 Góc Trọ</small>
       </div>
     </footer>

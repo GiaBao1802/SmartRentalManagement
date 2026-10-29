@@ -1,11 +1,16 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { CLOUDY_CHAT_MAX_LENGTH, createLocalCloudyChatService, createMockCloudyChatService, normalizeCloudyChatInput } from "./cloudy-chat-service";
+import { CLOUDY_CHAT_MAX_LENGTH, createLocalCloudyChatService, createMockCloudyChatService, isCloudyAffirmativeReply, normalizeCloudyChatInput } from "./cloudy-chat-service";
 
 test("Cloudy rejects blank and overlong text, but trims valid input", () => {
   assert.equal(normalizeCloudyChatInput("  \n  "), null);
   assert.equal(normalizeCloudyChatInput(`x`.repeat(CLOUDY_CHAT_MAX_LENGTH + 1)), null);
   assert.equal(normalizeCloudyChatInput("  Xin chào  "), "Xin chào");
+});
+
+test("Cloudy recognizes short Vietnamese acknowledgments exactly",()=>{
+ for(const phrase of ["ok","OK!","u","ừ","được rồi","đúng rồi","đồng ý","tiếp tục","tiếp đi"])assert.equal(isCloudyAffirmativeReply(phrase),true,phrase);
+ for(const phrase of ["ok phòng dưới 4 triệu","không","ừm"] )assert.equal(isCloudyAffirmativeReply(phrase),false,phrase);
 });
 
 test("mock reply is explicitly labeled and never claims room data", async () => {
@@ -52,6 +57,24 @@ test("only explicit confirmation commits exact proposed filters and enables cont
  await service.send("phòng",[],signal());await service.confirm!(signal());
  assert.deepEqual(bodies[1],{action:"confirm",context});assert.equal(service.hasContext?.(),true);assert.equal(service.hasProposal?.(),false);
  await service.send("thêm máy lạnh",[],signal(),"continue");assert.deepEqual(bodies[2],{message:"thêm máy lạnh",mode:"continue",context});
+});
+
+test("short yes confirms only the pending search proposal; no starts a separate request",async()=>{
+ const bodies:any[]=[];
+ const service=createLocalCloudyChatService((async(_url,options)=>{const body=JSON.parse(String(options?.body));bodies.push(body);return response(body.action==="confirm"?"preview":"awaiting_confirmation");}) as typeof fetch);
+ await service.send("phòng dưới 4 triệu",[],signal());
+ assert.equal(await service.send("ừ",[],signal()),"Tin phòng");
+ assert.deepEqual(bodies,[{message:"phòng dưới 4 triệu",mode:"new"},{action:"confirm",context}]);
+ assert.equal(service.hasContext?.(),true);assert.equal(service.hasProposal?.(),false);
+ assert.equal(bodies.length,2);
+ service.resetContext?.();assert.equal(service.hasContext?.(),false);
+});
+
+test("declining a pending search clears its proposal without querying rooms",async()=>{
+ let calls=0;const service=createLocalCloudyChatService((async()=>{calls++;return response();}) as typeof fetch);
+ await service.send("phòng dưới 4 triệu",[],signal());
+ assert.match(await service.send("không",[],signal()),/chưa tìm phòng/);
+ assert.equal(calls,1);assert.equal(service.hasProposal?.(),false);assert.equal(service.hasContext?.(),false);
 });
 
 test("editing invalidates proposal; late preparation cannot restore it",async()=>{

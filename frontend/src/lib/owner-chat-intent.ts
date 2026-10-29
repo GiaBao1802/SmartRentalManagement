@@ -1,14 +1,41 @@
 export type OwnerCatalog={tasks:Record<string,string>;rooms:string[];periods:string[];asOf:string};
 export type OwnerIntent={task:string;period:string;room:string|null};
 export type OwnerResidentRequest={kind:'create'|'search';name:string|null};
-export const ownerPeriodFreeTasks=new Set(['residents','resident_ranking','resident_registration_by_room','available_rooms','vehicle_counts','vehicle_total','property_total','open_requests','actionable_requests','amenity_requests','common_area_requests','transaction_lookup']);
+export const ownerPeriodFreeTasks=new Set(['residents','resident_ranking','resident_registration_by_room','resident_profile_lookup','available_rooms','vehicle_counts','vehicle_total','property_total','open_requests','actionable_requests','amenity_requests','common_area_requests','transaction_lookup']);
 const normalizeOwnerQuestion=(question:string)=>question.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/gi,'d').toLowerCase();
+export function isOwnerAffirmativeReply(value:string){
+ const text=normalizeOwnerQuestion(value).replace(/[.!?,…]+$/g,'').trim().replace(/\s+/g,' ');
+ return /^(?:ok(?:ay|i)?|u|uh|duoc|duoc roi|dung|dung roi|dong y|tiep tuc|tiep di|lam tiep|lam di|xac nhan)$/.test(text);
+}
 const ownerSensitiveDataFieldPattern=/\b(sdt|so dien thoai|dien thoai|cccd|cmnd|can cuoc|so dinh danh|giay to tuy than|thong tin nhay cam|du lieu nhay cam|thong tin ca nhan|du lieu ca nhan|thong tin rieng tu|ngay sinh|dia chi rieng|dia chi nha|dia chi cu dan|tai khoan ngan hang|so tai khoan|ho chieu|email ca nhan|mat khau|ma xac thuc|ma otp|token truy cap|ho so suc khoe|thong tin suc khoe)\b/;
-const ownerSensitiveDataActionPattern=/\b(them|tao|bo sung|nhap|ghi|luu|cap nhat|sua|doi|thu thap|thu|lay|tim|tra|tra cuu|xem|doc|dua|hien thi|xuat|in|cho xem|cung cap|gui|xin|yeu cau|luu lai|cho toi)\b/;
-export const ownerSensitiveDataRefusalMessage='Vì bảo vệ dữ liệu cá nhân, Cloudy không thể nhận, thêm, cập nhật hoặc hiển thị số điện thoại, CCCD/CMND, email, ngày sinh, địa chỉ riêng, thông tin tài chính, mật khẩu hay dữ liệu nhạy cảm khác qua chat. Đừng gửi giá trị thật ở đây. Nếu nghiệp vụ bắt buộc, hãy tự nhập trực tiếp vào biểu mẫu quản lý có quyền truy cập và chỉ cung cấp trường thật sự cần thiết.';
+const ownerSensitiveDataActionPattern=/\b(them|tao|bo sung|nhap|ghi|luu|cap nhat|sua|doi|thu thap|thu|xuat|in|cong khai|chia se)\b/;
+const ownerBulkSensitiveDataPattern=/\b(tat ca|toan bo|danh sach|liet ke|hang loat)\b.*\b(cu dan|nguoi thue|khach thue)\b|\b(cu dan|nguoi thue|khach thue)\b.*\b(tat ca|toan bo|danh sach|liet ke|hang loat)\b/;
+const ownerSensitiveLookupFieldPattern=/\b(sdt|so dien thoai|dien thoai|cccd|cmnd|can cuoc|so dinh danh|giay to tuy than|thong tin ca nhan|du lieu ca nhan|ngay sinh|email ca nhan|email|gioi tinh|ho so cu dan|thong tin cu dan)\b/;
+export const ownerSensitiveDataRefusalMessage='Vì bảo vệ dữ liệu cá nhân, Cloudy không thể liệt kê hàng loạt hồ sơ hoặc thêm, sửa, thu thập, xuất hay chia sẻ dữ liệu cư dân qua chat. Bạn hãy dùng biểu mẫu Quản lý cư dân cho các thay đổi. Cloudy chỉ tra cứu hồ sơ cụ thể trong phạm vi tài khoản chủ trọ đang đăng nhập.';
 export function isOwnerSensitiveDataRequest(question:string){
  const text=normalizeOwnerQuestion(question);
- return ownerSensitiveDataFieldPattern.test(text)&&ownerSensitiveDataActionPattern.test(text);
+ const hasSpecificPerson=Boolean(ownerResidentProfileName(question)||parseOwnerResidentRequest(question)?.name);
+ const hasSpecificRoom=/\bphong\s+[a-z0-9-]+\b/.test(text);
+ return ownerSensitiveDataFieldPattern.test(text)&&(ownerSensitiveDataActionPattern.test(text)||!isOwnerResidentProfileLookup(question)||(ownerBulkSensitiveDataPattern.test(text)&&!hasSpecificPerson&&!hasSpecificRoom));
+}
+export function isOwnerResidentProfileLookup(question:string){
+ const text=normalizeOwnerQuestion(question);
+ if(/\b(thong ke|bao nhieu|so luong|dem|xep hang|nhieu nhat|chua dang ky|chua hoan tat)\b/.test(text))return false;
+ if(/\b(ai|nguoi nao)\b/.test(text)&&/\b(dang thue|dang o|thue phong|o phong)\b/.test(text)&&/\bphong\b/.test(text))return true;
+ const residentReference=/\b(cu dan|nguoi thue|khach thue|ho so cu dan)\b/.test(text)||Boolean(ownerResidentProfileName(question));
+ const profileAction=/\b(tim|tra cuu|xem|cho toi|cung cap|la gi|bao nhieu|hien thi|thong tin|ho so|lay)\b/.test(text);
+ return residentReference&&ownerSensitiveLookupFieldPattern.test(text)&&profileAction;
+}
+export function ownerResidentProfileName(question:string):string|null{
+ if(ownerBulkSensitiveDataPattern.test(normalizeOwnerQuestion(question)))return null;
+ const patterns=[
+  /(?:cư dân|người thuê|khách thuê)\s+(?:có tên\s+|tên\s+)?(.+?)(?=\s+(?:có|ở|tại|phòng|số điện thoại|sđt|cccd|cmnd|email|ngày sinh|thông tin|đang|là)\b|[,.!?]|$)/iu,
+  /(?:của|tên)\s+(.+?)(?=\s+(?:cư dân|người thuê|khách thuê|ở|tại|phòng|số điện thoại|sđt|cccd|cmnd|email|ngày sinh|thông tin)\b|[,.!?]|$)/iu,
+  /(?:hồ sơ|thông tin)\s+(.+?)(?=\s+(?:cư dân|người thuê|khách thuê|ở|tại|phòng|số điện thoại|sđt|cccd|cmnd|email|ngày sinh)\b|[,.!?]|$)/iu,
+  /(?:tìm|tra cứu|xem hồ sơ)\s+(?:cư dân|người thuê|khách thuê)\s+(.+?)(?:[,.!?]|$)/iu,
+ ];
+ for(const pattern of patterns){const value=question.match(pattern)?.[1]?.trim().replace(/[.!?,;:]+$/,'');if(value&&value.length<=120&&!['cu dan','nguoi thue','khach thue','ho so','thong tin','ho so cu dan','thong tin cu dan'].includes(normalizeOwnerQuestion(value)))return value;}
+ return null;
 }
 export function parseOwnerResidentRequest(question:string):OwnerResidentRequest|null{
  const text=normalizeOwnerQuestion(question);
@@ -31,8 +58,10 @@ export function ownerQuestionTask(question:string):string|null{
  if(/\b(truoc khi chot hoa don|chot hoa don can kiem tra|viec can kiem tra trong ky hoa don|can kiem tra gi truoc khi chot)\b/.test(text))return 'overview';
  if(/\b(danh dau|cap nhat|chot hoa don|xoa hoa don|gui nhac|gui tin|xu ly het|xu ly luon|giai quyet het|hoan tat het)\b/.test(text))return null;
  if(/\bDEMO-\d{10,}-[A-F0-9]{8}\b/i.test(question))return 'transaction_lookup';
- if(/\b(ten|danh tinh|so dien thoai|cccd)\b/.test(text)&&/\b(cu dan|nguoi thue|khach thue)\b/.test(text))return 'resident_identity_help';
- if(/\b(ai|nguoi nao)\b/.test(text)&&/\b(dang thue|dang o|thue phong|o phong)\b/.test(text)&&/\bphong\b/.test(text))return 'resident_identity_help';
+ if(isOwnerResidentProfileLookup(question))return 'resident_profile_lookup';
+ if(parseOwnerResidentRequest(question)?.kind==='search')return 'resident_profile_lookup';
+ if(/\b(ten|danh tinh|so dien thoai|cccd|cmnd)\b/.test(text)&&/\b(cu dan|nguoi thue|khach thue)\b/.test(text))return 'resident_profile_lookup';
+ if(/\b(ai|nguoi nao)\b/.test(text)&&/\b(dang thue|dang o|thue phong|o phong)\b/.test(text)&&/\bphong\b/.test(text))return 'resident_profile_lookup';
  if(isOwnerAvailableRoomsQuestion(question))return 'available_rooms';
  if(/\b(khach|cu dan|nguoi thue|khach thue)\b/.test(text)&&/\b(yeu cau|de nghi|phan anh|bao)\b/.test(text)&&/\b(tien ich|thiet bi|bo sung|do dung)\b/.test(text))return 'amenity_requests';
  if(/\b(yeu cau|khieu nai|phan anh|gop y)\b/.test(text)&&/\b(khu vuc chung|khong gian chung|hanh lang|san chung|cong chung|cau thang|khu de xe chung)\b/.test(text))return 'common_area_requests';

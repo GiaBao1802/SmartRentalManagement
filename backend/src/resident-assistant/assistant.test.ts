@@ -10,11 +10,42 @@ import {makeCsrfToken} from "../middleware/csrf.js";
 import {errorHandler} from "../middleware/error-handler.js";
 import {createV1Router} from "../auth/v1.router.js";
 import {meterInput} from "./meter.repository.js";
-import {isInvoiceLocationQuestion,isServiceCatalogQuestion,needsAmenityChoice,normalizeMeterImage,ocrCandidate,residentAssistantReply} from "./assistant.routes.js";
+import {classifyResidentMessage,contextualResidentFollowup,isInvoiceLocationQuestion,isMeterReadingQuestion,isRoomRentQuestion,isServiceCatalogQuestion,isServiceStatusQuestion,needsAmenityChoice,normalizeMeterImage,ocrCandidate,residentAssistantReply} from "./assistant.routes.js";
+
+test("resident Cloudy treats short acknowledgments as follow-ups only with a known topic",()=>{
+  for(const message of ["ok","OK!","ừ","u","được rồi","tiếp tục","tiếp đi"])assert.equal(contextualResidentFollowup(message,"invoice"),"invoice",message);
+  assert.equal(contextualResidentFollowup("ok",null),null);
+  assert.equal(contextualResidentFollowup("cho tôi hóa đơn", "services"),null);
+});
 
 test("Cloudy recognizes invoice location questions in Vietnamese",()=>{
   for(const message of ["hóa đơn ở địa điểm nào","hóa đơn này thuộc phòng nào","hóa đơn ở đâu"]){assert.equal(isInvoiceLocationQuestion(message),true,message);}
   assert.equal(isInvoiceLocationQuestion("Tôi muốn gửi chỉ số điện nước"),false);
+});
+test("Cloudy separates meter-reading lookup from submitting a new reading",async()=>{
+  for(const message of ["Cho tôi xem chỉ số điện nước","Kiểm tra chỉ số điện phòng tôi","Chỉ số nước kỳ này thế nào?"]){
+    assert.equal(isMeterReadingQuestion(message),true,message);
+    assert.equal(await classifyResidentMessage(message),"meter_readings");
+  }
+  for(const message of ["Gửi chỉ số điện nước","Chụp ảnh đồng hồ nước để gửi chủ trọ"]){
+    assert.equal(isMeterReadingQuestion(message),false,message);
+    assert.equal(await classifyResidentMessage(message),"meter");
+  }
+});
+test("Cloudy routes rent and room-price questions to invoice amounts, never meter readings",async()=>{
+  for(const message of ["Hỏi tiền phòng","Tiền phòng tháng này bao nhiêu?","Phòng A01 tiền thuê bao nhiêu","Giá thuê phòng của tôi là sao?"]){
+    assert.equal(isRoomRentQuestion(message),true,message);
+    assert.equal(await classifyResidentMessage(message),"invoice");
+  }
+  assert.equal(isRoomRentQuestion("Chỉ số điện nước phòng tôi bao nhiêu?"),false);
+  assert.equal(await classifyResidentMessage("Chỉ số điện nước phòng tôi bao nhiêu?"),"meter_readings");
+});
+test("Cloudy routes service-status questions to booking history",async()=>{
+  for(const message of ["Tình trạng đăng ký dịch vụ của tôi thế nào?","Dịch vụ hồ bơi đã được duyệt chưa?","Xem trạng thái đặt lịch giặt đồ"]){
+    assert.equal(isServiceStatusQuestion(message),true,message);
+    assert.equal(await classifyResidentMessage(message),"services");
+  }
+  assert.equal(isServiceStatusQuestion("Đăng ký dịch vụ hồ bơi"),false);
 });
 test("Cloudy clarifies broad amenity requests and routes amenity browsing",()=>{
   assert.equal(needsAmenityChoice("Tôi muốn thêm tiện ích"),true);
@@ -66,6 +97,17 @@ test("HTTP auth, CSRF, role, session revocation and server-derived scope",async(
     const invoiceQuestion=await fetch(`${base}/me/assistant/chat`,{method:"POST",headers:r.headers,body:JSON.stringify({message:"hóa đơn ở địa điểm nào"})});
     assert.equal(invoiceQuestion.status,200);
     assert.equal((await invoiceQuestion.json() as any).data.intent,"invoice");
+    const meterLookup=await fetch(`${base}/me/assistant/chat`,{method:"POST",headers:r.headers,body:JSON.stringify({message:"Cho tôi xem chỉ số điện nước"})});
+    assert.equal(meterLookup.status,200);
+    const meterLookupData=(await meterLookup.json() as any).data;
+    assert.equal(meterLookupData.intent,"meter_readings");assert.match(meterLookupData.text,/không gửi chỉ số mới/i);
+    const rentQuestion=await fetch(`${base}/me/assistant/chat`,{method:"POST",headers:r.headers,body:JSON.stringify({message:"Hỏi tiền phòng"})});
+    assert.equal(rentQuestion.status,200);
+    assert.equal((await rentQuestion.json() as any).data.intent,"invoice");
+    const serviceStatus=await fetch(`${base}/me/assistant/chat`,{method:"POST",headers:r.headers,body:JSON.stringify({message:"Tình trạng đăng ký dịch vụ của tôi thế nào?"})});
+    assert.equal(serviceStatus.status,200);
+    const serviceStatusData=(await serviceStatus.json() as any).data;
+    assert.equal(serviceStatusData.intent,"services");assert.match(serviceStatusData.text,/trạng thái chủ trọ/i);
     const amenityQuestion=await fetch(`${base}/me/assistant/chat`,{method:"POST",headers:r.headers,body:JSON.stringify({message:"Tôi muốn thêm tiện ích"})});
     assert.equal(amenityQuestion.status,200);
     assert.equal((await amenityQuestion.json() as any).data.intent,"amenity_choice");

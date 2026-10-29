@@ -22,6 +22,12 @@ class ConversationTests(unittest.TestCase):
  def test_new_drops_context(self):
   r=understand('phòng','new',self.context,lambda q:self.parsed(location='Dương Mơ'))
   self.assertEqual(r['filters']['price'],[])
+ def test_explicit_restart_prefix_is_removed_before_parsing_fresh_criteria(self):
+  for message in ['lọc lại dưới 3 triệu','lọc lại từ đầu dưới 3 triệu','lọc mới dưới 3 triệu']:
+   with self.subTest(message=message):
+    seen=[];result=understand(message,'new',self.context,lambda q:(seen.append(q) or self.parsed(price=[{'op':'lt','value':3000000}])))
+    self.assertEqual(result['filters']['price'],[{'op':'lt','value':3000000}]);self.assertEqual(result['filters']['location'],None)
+    self.assertNotIn('lọc lại',seen[0])
  def test_remove_explicit_condition(self):
   for phrase in ['bỏ giới hạn giá','thôi bỏ giới hạn giá','bỏ giới hạn giá đi']:
    with self.subTest(phrase=phrase):

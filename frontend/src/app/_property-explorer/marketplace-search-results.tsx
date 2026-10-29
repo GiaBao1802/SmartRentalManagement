@@ -38,7 +38,7 @@ export default function MarketplaceSearchResults({ initialFilters }: { initialFi
 
   return <main className="market-results-page">
     <header className="market-results-header">
-      <Link href="/" className="market-results-brand" aria-label="Góc Trọ — Trang chủ"><BrandLogo /></Link>
+      <Link href="/tim-phong" className="market-results-brand" aria-label="Góc Trọ — Trang chủ"><BrandLogo /></Link>
       <div className="market-results-header-copy"><small>DANH SÁCH PHÒNG CHO THUÊ</small><h1>Tìm nơi ở phù hợp</h1></div>
       <Link className="market-results-map-link" href={mapHref}>← Quay lại bản đồ</Link>
     </header>

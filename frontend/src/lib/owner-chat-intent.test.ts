@@ -1,7 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {proposeOwnerScope,ownerConfirmation,parseOwnerClarificationReply,namesDifferentOwnerTask,ownerUnknownIntentMessage,ownerQuestionMentionsPeriod,ownerEmptyResultMessage,parseOwnerRoomReminder,isOwnerAvailableRoomsQuestion,ownerQuestionTask,ownerPeriodFreeTasks,shouldContinueUnpaidInvoiceScope,ownerTransactionCode,parseOwnerResidentRequest,isOwnerSensitiveDataRequest,ownerSensitiveDataRefusalMessage} from './owner-chat-intent';
+import {proposeOwnerScope,ownerConfirmation,parseOwnerClarificationReply,namesDifferentOwnerTask,ownerUnknownIntentMessage,ownerQuestionMentionsPeriod,ownerEmptyResultMessage,parseOwnerRoomReminder,isOwnerAvailableRoomsQuestion,ownerQuestionTask,ownerPeriodFreeTasks,shouldContinueUnpaidInvoiceScope,ownerTransactionCode,parseOwnerResidentRequest,isOwnerSensitiveDataRequest,isOwnerResidentProfileLookup,ownerResidentProfileName,ownerSensitiveDataRefusalMessage,isOwnerAffirmativeReply} from './owner-chat-intent';
 const catalog={tasks:{unpaid:'Hóa đơn chưa thanh toán',requests:'Yêu cầu từ người thuê'},asOf:'2026-10-28',periods:['2026-10','2026-09'],rooms:['K1-P01','K2-P02']};
+test('owner Cloudy recognizes only standalone acknowledgments as confirmations',()=>{
+ for(const phrase of ['ok','OK!','u','ừ','được rồi','đúng rồi','đồng ý','tiếp tục','tiếp đi'])assert.equal(isOwnerAffirmativeReply(phrase),true,phrase);
+ for(const phrase of ['ok tháng 9','không','ừm'])assert.equal(isOwnerAffirmativeReply(phrase),false,phrase);
+});
 test('explicit task and scope are restated for confirmation, never marked confirmed',()=>{
  const p=proposeOwnerScope('Chưa đóng tiền tháng 10 phòng K1-P01','unpaid',catalog);
  assert.deepEqual(p,{task:'unpaid',period:'2026-10',room:'K1-P01'});
@@ -50,7 +54,7 @@ test('common owner questions route to the matching live read task',()=>{
   ['Kỳ này còn phòng nào chưa có số điện nước để lên bill?','missing'],['Liệt kê phòng chưa có ai thuê nhé.','available_rooms'],
   ['Cho tôi hóa đơn tháng 9','invoices'],['Liệt kê hóa đơn tháng này','invoices'],['Hóa đơn A02 tháng 9 đã chốt chưa?','invoices'],
   ['Hợp đồng nào đã hết hạn?','contract_management'],['Hợp đồng phòng A01 sắp hết hạn','contract_management'],
-  ['Phòng nào chưa đóng tiền thuê kỳ này?','unpaid'],['T06 còn phải đóng bao nhiêu tiền tháng 9?','unpaid'],['Thế đã thanh toán thì sao?','paid'],['Hóa đơn nào đã đóng tiền tháng này?','paid'],['Liệt kê các phòng đã thanh toán tháng 9','paid'],['Tìm hóa đơn có mã giao dịch DEMO-1793206220292-3A988AA3','transaction_lookup'],['Tên cư dân ở khu vực An Bình Biên Hòa · Phòng A02','resident_identity_help'],['Ai đang thuê phòng A02?','resident_identity_help'],['Đang quản lý bao nhiêu khu trọ?','property_total'],['Phòng nào thiếu chỉ số điện/nước?','missing'],['Phòng nào thiếu dữ liệu lập hóa đơn?','missing'],['Trước khi chốt hóa đơn cần kiểm tra gì?','overview'],['Việc cần kiểm tra trong kỳ hóa đơn','overview'],['Kỳ này còn việc gì cần kiểm tra?','overview'],
+  ['Phòng nào chưa đóng tiền thuê kỳ này?','unpaid'],['T06 còn phải đóng bao nhiêu tiền tháng 9?','unpaid'],['Thế đã thanh toán thì sao?','paid'],['Hóa đơn nào đã đóng tiền tháng này?','paid'],['Liệt kê các phòng đã thanh toán tháng 9','paid'],['Tìm hóa đơn có mã giao dịch DEMO-1793206220292-3A988AA3','transaction_lookup'],['Tên cư dân ở khu vực An Bình Biên Hòa · Phòng A02','resident_profile_lookup'],['Ai đang thuê phòng A02?','resident_profile_lookup'],['Đang quản lý bao nhiêu khu trọ?','property_total'],['Phòng nào thiếu chỉ số điện/nước?','missing'],['Phòng nào thiếu dữ liệu lập hóa đơn?','missing'],['Trước khi chốt hóa đơn cần kiểm tra gì?','overview'],['Việc cần kiểm tra trong kỳ hóa đơn','overview'],['Kỳ này còn việc gì cần kiểm tra?','overview'],
  ];
  for(const [question,task] of cases)assert.equal(ownerQuestionTask(question),task,question);
  assert.deepEqual(proposeOwnerScope('Cho tôi hóa đơn tháng 9','invoices',catalog),{task:'invoices',period:'2026-09',room:''});
@@ -138,4 +142,9 @@ test('room reminder requests extract a specific room and editable notice text',(
  assert.deepEqual(parseOwnerRoomReminder('Nhắc phòng A-02: nhớ đóng cổng'),{roomCode:'A-02',message:'Chủ trọ nhắc: nhớ đóng cổng.'});
  assert.deepEqual(parseOwnerRoomReminder('Thông báo phòng'),{roomCode:null,message:''});
  assert.equal(parseOwnerRoomReminder('Xem phòng 302 có hóa đơn không'),null);
+});
+
+test('scoped resident profile lookup permits one named person and refuses account-wide identity lists',()=>{
+ for(const [question,name] of [['Cho tôi CCCD của cư dân Võ Thanh Hà','Võ Thanh Hà'],['Tìm số điện thoại người thuê Nguyễn An','Nguyễn An'],['Xem hồ sơ cư dân tên Lê Minh Anh','Lê Minh Anh'],['Thông tin cư dân Võ Thanh Hà','Võ Thanh Hà']] as const){assert.equal(isOwnerSensitiveDataRequest(question),false,question);assert.equal(isOwnerResidentProfileLookup(question),true,question);assert.equal(ownerQuestionTask(question),'resident_profile_lookup',question);assert.equal(ownerResidentProfileName(question),name,question);}
+ assert.equal(ownerQuestionTask('Ai đang thuê phòng A02?'),'resident_profile_lookup');assert.equal(ownerQuestionTask('Liệt kê CCCD của tất cả cư dân'),'sensitive_data_refusal');
 });

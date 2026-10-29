@@ -17,12 +17,14 @@ def valid_context(f):
 def understand(message,mode,context,extract):
  if mode=='new':
   # Treat explicit restart wording as UI/chat control, not as a room condition.
-  fresh=re.sub(r'^(?:lọc\s+mới|loc\s+moi|tìm\s+mới|tim\s+moi)\s*[:：,-]?\s*','',message.strip(),flags=re.I)
+  fresh=re.sub(r'^(?:lọc\s+(?:mới|lại(?:\s+từ\s+đầu)?)|loc\s+(?:moi|lai(?:\s+tu\s+dau)?)|tìm\s+mới|tim\s+moi|bắt\s+đầu\s+lại|bat\s+dau\s+lai)\s*[:：,-]?\s*','',message.strip(),flags=re.I)
   return extract(fresh)
  if not valid_context(context):raise ValueError('Invalid context')
  # Explicit removal commands are deliberately narrow: other content must not be dropped.
- removals={'bo gioi han gia':'price','khong gioi han gia':'price','bo dieu kien may lanh':'amenities','khong can may lanh':'amenities','bo dieu kien dien tich':'area','bo dieu kien khu vuc':'location','bo dieu kien so nguoi':'occupants'}
+ removals={'bo gia':'price','bo gioi han gia':'price','khong gioi han gia':'price','bo dieu kien may lanh':'amenities','khong can may lanh':'amenities','bo dieu kien dien tich':'area','bo dieu kien khu vuc':'location','bo dieu kien so nguoi':'occupants'}
  command=normalized(message).strip(' .!?')
+ if command.startswith('thoi '):command=command[5:]
+ if command.endswith(' nhe'):command=command[:-4]
  # Vietnamese users often phrase a supported removal as a full command with
  # the polite imperative suffix "đi". Strip it only before exact allowlist lookup.
  if command.endswith(' di') and command[:-3] in removals:command=command[:-3]
@@ -31,7 +33,8 @@ def understand(message,mode,context,extract):
   return {'status':'ready','filters':merged}
  # Strip only leading conversational update markers; the parser still checks all remaining words.
  additive=bool(re.match(r'^(?:thêm|them)\s+',normalized(message.strip())))
- delta=re.sub(r'^(?:(?:thêm|them|đổi sang|doi sang|đổi thành|doi thanh|đổi|doi|chuyển sang|chuyen sang|giữ nguyên,?|giu nguyen,?)\s+)+','',message.strip(),flags=re.I)
+ delta=re.sub(r'^(?:(?:thêm|them|đổi qua|doi qua|đổi sang|doi sang|đổi thành|doi thanh|đổi|doi|chuyển sang|chuyen sang|giữ nguyên,?|giu nguyen,?)\s+)+','',message.strip(),flags=re.I)
+ delta=re.sub(r'\s*,?\s*(?:còn\s+)?(?:giá|mức giá)\s+(?:(?:vẫn|cứ)\s+)?(?:như cũ|giữ nguyên)(?:\s+nha)?[.!?]*$','',delta,flags=re.I)
  parsed=extract('Tìm phòng '+delta)
  if parsed.get('status')!='ready':return parsed
  merged=copy.deepcopy(context)

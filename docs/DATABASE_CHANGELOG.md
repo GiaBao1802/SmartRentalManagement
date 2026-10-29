@@ -1,5 +1,9 @@
 # Góc Trọ V1 — Database changelog and audit
 
+## Neon synthetic utility readings — 2026-10-30
+
+At the user's request, populated the ending electricity and water readings on 10 existing overdue demo invoice drafts in shared Neon `goctro-shared-dev` / `production` / `neondb`. The exact V1.18 catalog (58 tables) was verified before and after; no schema or migration changed. All readings are synthetic, invoices remain draft and unfinalized, and no charges, totals, payments, meter-history rows or snapshots were generated. Vacant rooms and newer tenancies whose first billing period has not ended were left alone. The guarded script defaults to dry-run; see the [operation report](10_operations/NEON_DEMO_METER_READINGS_20261030.md).
+
 ## Shared Neon Cloudy V1.17 and Superadmin V1.18 — applied 2026-10-29
 
 The shared `goctro-shared-dev` / `production` / `neondb` target was verified as exact Marketplace V1.16, then upgraded with the canonical team Cloudy V1.16→V1.17 migration followed by the additive platform V1.17→V1.18 migration in one guarded transaction. A fresh protected backup restored into a new local PostgreSQL database; exact catalog, row counts and UTC-normalized contents matched for all 47 predecessor tables. Post-commit V1.18 has the exact 58-table catalog and passed the runtime validator; Cloudy feedback, Marketplace amenities, Parking, meter, room requests and old data were preserved. No seed/reset/account/grant was run. [Direct evidence](10_operations/NEON_PLATFORM_V118_APPLY_20261029.md). Source publication status is tracked in the V1.18 team handoff; the V1.17 candidate wording below is historical.

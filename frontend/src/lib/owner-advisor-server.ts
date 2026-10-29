@@ -36,11 +36,13 @@ export async function handleOwnerAdvisor(request:Request,{mode=process.env.NODE_
   if(live&&Object.hasOwn(body,'action'))return json({error:'Mở màn quản lý để xác nhận xử lý yêu cầu thật.'},400);
   if(Object.keys(body).sort().join()==='action,confirmed,reason,requestId,revision')return json(ownerRequestDemo.decide(identity.ownerId,identity.accountId,body));
   const keys=Object.keys(body).sort().join();
-  const readOnlyTasks=['invoices','unpaid','paid','utilities','missing','overview','requests','open_requests','actionable_requests','amenity_requests','common_area_requests','feedback_messages','residents','resident_ranking','resident_registration_by_room','available_rooms','vehicle_counts','vehicle_total','property_total','electricity_ranking','electricity_lowest','water_ranking','frequent_requests'];
+  const readOnlyTasks=['invoices','unpaid','paid','utilities','missing','overview','requests','open_requests','actionable_requests','amenity_requests','common_area_requests','feedback_messages','residents','resident_ranking','resident_registration_by_room','resident_profile_lookup','available_rooms','vehicle_counts','vehicle_total','property_total','electricity_ranking','electricity_lowest','water_ranking','frequent_requests'];
   const directRead=readOnlyTasks.includes(body.task)&&keys==='period,room,task'||body.task==='transaction_lookup'&&keys==='period,room,task,transactionCode'&&typeof body.transactionCode==='string';
+  const profileRead=body.task==='resident_profile_lookup'&&keys==='period,residentQuery,room,task'&&body.period===''&&body.room===''&&typeof body.residentQuery==='string'&&body.residentQuery.trim().length>0&&body.residentQuery.length<=500;
   const confirmedRead=keys==='confirmed,period,room,task'&&body.confirmed===true;
-  if(!directRead&&!confirmedRead)return json({error:'Phạm vi tra cứu không hợp lệ hoặc thiếu xác nhận.'},400);
-  const query={task:body.task,period:body.period,room:body.room,...(body.task==='transaction_lookup'?{transactionCode:body.transactionCode}: {})};
+  if(!directRead&&!profileRead&&!confirmedRead)return json({error:'Phạm vi tra cứu không hợp lệ hoặc thiếu xác nhận.'},400);
+  if(profileRead&&!live)return json({error:'Tra cứu hồ sơ cư dân chỉ dùng dữ liệu quản lý đang đăng nhập.'},503);
+  const query={task:body.task,period:body.period,room:body.room,...(body.task==='transaction_lookup'?{transactionCode:body.transactionCode}:{}),...(profileRead?{residentQuery:body.residentQuery as string}:{})};
   if(live)return json(await live.answer(query));
   if(query.task==='requests')return json({synthetic:true,summary:'Yêu cầu giả lập. Thao tác chỉ lưu trong bộ nhớ máy chủ, mất khi khởi động lại. Không tạo phí hoặc thay đổi yêu cầu thật.',requests:ownerRequestDemo.list(identity.ownerId,identity.accountId,query.period,query.room),cards:[]});
   return json(answer(query,{...identity,asOf:manifest.asOf,synthetic:true},rows));
