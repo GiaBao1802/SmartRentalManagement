@@ -106,8 +106,8 @@ try {
   Write-Host 'Mã ứng dụng phải chạy từ nhánh Git main mới nhất; database dùng nhánh Neon production.'
   Assert-LatestMainBranch
   Write-Host 'Cảnh báo: đây là database cloud dùng chung. Mọi người trong nhóm có thể nhìn thấy thay đổi của nhau.' -ForegroundColor Yellow
-  Write-Host 'Database dùng chung hiện có schema V1.15 và bộ dữ liệu demo tổng hợp; mọi thay đổi ứng dụng sẽ được cả nhóm nhìn thấy.'
-  Write-Host 'Setup chỉ kiểm tra kết nối/schema; không seed, import, reset hoặc migrate database cloud.'
+  Write-Host 'Database dùng chung cần có đầy đủ catalog V1.17 của ứng dụng; các object bổ sung sẽ được giữ nguyên.'
+  Write-Host 'Setup chỉ kiểm tra catalog bằng truy vấn đọc; không seed, import, reset hoặc migrate database cloud.'
   $confirm = (Read-Host 'Nhập DUNG để tiếp tục').Trim()
   if ($confirm -cne 'DUNG') { throw 'Đã hủy trước khi lấy cấu hình hoặc kết nối database.' }
 
