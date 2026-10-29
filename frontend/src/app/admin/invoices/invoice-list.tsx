@@ -10,6 +10,7 @@ import { residentApi, type Resident } from "../../../lib/api/residentApi";
 import { BusinessCombobox } from "./business-combobox";
 import { filterProperties, filterResidents, filtersForInvoiceApi, propertyOption, residentOption, roomOption, type BusinessOption } from "./invoice-list.logic";
 import { InvoiceListContent } from "./invoice-list-content";
+import MeterApproval from "./meter-approval";
 
 type InvoiceFilters = Pick<InvoiceListQuery, "property_id" | "room_id" | "resident_id" | "status" | "period_start" | "period_end">;
 const emptyFilters: InvoiceFilters = {};
@@ -167,6 +168,7 @@ export default function InvoiceList() {
       </section>
 
       <InvoiceListContent rows={rows} meta={meta} page={page} loading={loading} error={loadError} onRetry={() => setReloadKey((value) => value + 1)} onPage={setPage} residents={knownResidents} />
+      <MeterApproval />
     </main>
   </AdminShell>;
 }
