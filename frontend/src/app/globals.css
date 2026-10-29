@@ -963,10 +963,18 @@ tbody tr:hover td { background: #fffcf8; }
 .public-detail-skeleton > span { width: 70%; height: 18px; border-radius: 6px; background: #f0ede7; }
 .public-detail-skeleton > span:last-child { width: 45%; }
 .public-admin-loading { padding: 28px; color: var(--mu); text-align: center; }
+.contact-inbox-page { min-width: 0; }
 .contact-inbox-page .page-heading { align-items: center; }
 .contact-inbox-filter { display: grid; grid-template-columns: minmax(200px,1.2fr) minmax(170px,.8fr) minmax(160px,.7fr) auto; align-items: end; gap: 12px; margin-bottom: 17px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
 .contact-inbox-filter label { display: grid; gap: 6px; color: #374151; font-size: 12px; font-weight: 600; }
 .contact-inbox-filter input, .contact-inbox-filter select, .contact-request-status select { min-width: 0; min-height: 40px; padding: 8px 10px; border: 1px solid var(--bd); border-radius: 8px; background: #fff; font: inherit; }
+.contact-inbox-page .table-card { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: #fff; box-shadow: 0 2px 8px #1f293708; }
+.contact-inbox-page .table-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 14px 17px; border-bottom: 1px solid var(--line); }
+.contact-inbox-page .table-heading strong { color: var(--color-brand-green); font-size: 14px; font-weight: 700; }
+.contact-inbox-page .table-heading span { display: inline-flex; min-height: 26px; align-items: center; padding: 4px 9px; border-radius: 99px; background: #eef5f1; color: var(--color-text-secondary); font-size: 12px; white-space: nowrap; }
+.contact-inbox-page .table-scroll { min-width: 0; overflow-x: auto; }
+.contact-inbox-page .table-scroll table { min-width: 760px; }
+.contact-inbox-page .table-card > .empty-cell { padding: 28px 18px; }
 .contact-request-detail h3 { margin: 18px 0 8px; color: var(--sec); font-size: 14px; }
 .contact-request-message { padding: 12px; border-radius: 8px; background: #f7f5f0; color: #4f5962; font-size: 13px; white-space: pre-wrap; }
 .contact-request-status { display: grid; max-width: 240px; gap: 6px; margin-top: 16px; color: #374151; font-size: 12px; font-weight: 600; }
