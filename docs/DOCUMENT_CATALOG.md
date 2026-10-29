@@ -2,11 +2,11 @@
 
 ## V1.18 team source handoff — 2026-10-29
 
-[Team handoff](10_operations/V118_TEAM_HANDOFF_20261029.md) — CURRENT source package and startup guidance after reconciling `main` through `44bfe660`. Neon is already V1.18. The remaining limits are missing room-image files, absent invitation/reset delivery provider and the incomplete production-style Superadmin transaction test. Verify the merge commit on remote `main` before teammates pull. [Earlier runtime evidence](10_operations/NEON_V118_RUNTIME_READINESS_20261029.md) is a HISTORICAL local-preview snapshot.
+[Team handoff](10_operations/V118_TEAM_HANDOFF_20261029.md) — CURRENT source package and startup guidance, published to `main` at `123bf88` with Owner Cloudy updates. Shared Neon is already V1.18; this merge did not add or apply a migration. Remaining limits: missing room-image files, absent invitation/reset delivery provider and the incomplete production-style Superadmin transaction test. Teammates should pull `main` and verify this commit or a later descendant. [Earlier runtime evidence](10_operations/NEON_V118_RUNTIME_READINESS_20261029.md) is a HISTORICAL local-preview snapshot.
 
 ## Historical V1.18 runtime follow-up — 2026-10-29
 
-[Runtime readiness and limits](10_operations/NEON_V118_RUNTIME_READINESS_20261029.md) — CURRENT for the isolated source and read-only preview. Exact V1.18 setup guard, production platform route split, private image-root option, direct tests and unresolved disposable-DB/provider/file dependencies. The integration is uncommitted and undistributed; remote `main` advanced separately. The older setup/onboarding instructions below describe their dated V1.15 checkout and must not be used as current V1.18 operating instructions.
+[Runtime readiness and limits](10_operations/NEON_V118_RUNTIME_READINESS_20261029.md) — HISTORICAL snapshot of the isolated source and read-only preview before publication. It records the V1.18 setup guard, production platform route split, private image-root option, direct tests and unresolved disposable-DB/provider/file dependencies at that time; the source was later published and extended at `123bf88`. The older setup/onboarding instructions below describe their dated V1.15 checkout and must not be used as current V1.18 operating instructions.
 
 ## Shared Neon V1.18 promotion — 2026-10-29
 
@@ -94,9 +94,9 @@
 |---|---|---|---|
 | `README.md` | Navigation | CURRENT | Entry point for this documentation tree. |
 | `../AGENTS.md` | Repository-wide agent working rules | CURRENT | Governance/instructions only; not business Source of Truth. Frontend work also follows `frontend/AGENTS.md`. |
-| `00_CURRENT_STATE.md` | Project Checkpoint / Navigation | CURRENT | Shared Neon V1.18 and isolated source runtime follow-up; exact next task is a disposable PostgreSQL production-flow test connection. |
+| `00_CURRENT_STATE.md` | Project Checkpoint / Navigation | CURRENT | Shared Neon V1.18, final `main` + `testAI` source at `123bf88`; exact next task is a disposable PostgreSQL production-flow test connection. |
 | `DOCUMENTATION_RULES.md` | Governance | CURRENT | Placement, report/history rules, Source of Truth order, task-start/end workflow, and conflict handling. |
-| `07_modules/superadmin/SUPERADMIN_REQUIREMENTS_SPEC.md` | Superadmin / platform administration | CURRENT — REQUIREMENTS APPROVED | V1.18 schema is applied and isolated source implements guarded routes; provider, image files, account designation, production database test and distribution remain open. |
+| `07_modules/superadmin/SUPERADMIN_REQUIREMENTS_SPEC.md` | Superadmin / platform administration | CURRENT — REQUIREMENTS APPROVED | V1.18 schema is applied and guarded source is published on `main`; provider, image files, account designation and production database test remain open. |
 | `07_modules/superadmin/SUPERADMIN_SCHEMA_API_GAP_REPORT.md` | Superadmin / schema and API gap analysis | REFERENCE — REVIEW ONLY | Snapshot against V1.8, before the V1.9/V1.10 database changes; identified gaps remain subject to fresh review. |
 | `07_modules/superadmin/SUPERADMIN_IDENTITY_REPORT_AUDIT_DESIGN.md` | Superadmin / account, report and audit design | REFERENCE — BUSINESS DIRECTION APPROVED | Business direction approved; detailed API/database implementation pending. |
 | `07_modules/superadmin/SUPERADMIN_SCREEN_API_DESIGN.md` | Superadmin / screen and API proposal | REFERENCE — DRAFT | Proposed flows; not current API contract. |
@@ -225,7 +225,7 @@
 | `08_audits/PRE_GIT_STEP_4_LEGACY_RETIREMENT_AUDIT.md` | Cross-domain repository cleanup / legacy retirement | REFERENCE — PRE-PHASE-1 SNAPSHOT | Preserves the earlier inventory before source removal. Current cleanup status, fresh diagnostic measurements and phased next steps are in LEGACY_TO_CURRENT_MIGRATION_PLAN.md; historical no-deletion claims apply only to the earlier audit. |
 | `10_operations/LOCAL_DEV_STARTUP_REPORT.md` | Local operations | REFERENCE | Windows local development startup procedure and diagnostics. |
 | `10_operations/NEON_SHARED_DATABASE_SETUP.md` | Shared cloud database operations | CURRENT TOP V1.18 NOTE; HISTORICAL V1.15 BODY | Current integrated option 5 behavior and limits appear at the top; the original setup, synthetic data and access record remain dated historical evidence. |
-| `10_operations/NEON_TEAMMATE_ONBOARDING.md` | Shared cloud database / teammate onboarding | HISTORICAL V1.15 CHECKOUT | Signup and access principles still help, but its Git branch, catalog and option 5 instructions are not valid for the undistributed V1.18 integration. |
+| `10_operations/NEON_TEAMMATE_ONBOARDING.md` | Shared cloud database / teammate onboarding | HISTORICAL V1.15 CHECKOUT | Signup and access principles still help, but its Git branch, catalog and option 5 instructions are not valid for current V1.18; use the current V1.18 team handoff. |
 | `10_operations/DATABASE_V1_8_SETUP.md` | Database operations / Windows menu setup | HISTORICAL — V1.8 PREDECESSOR | Preserves setup and PostgreSQL 18.6 V1.8 rehearsal evidence. Current local baseline and V1.8 migration instructions are in the V1.9 guide. |
 | `10_operations/DATABASE_V1_9_SETUP.md` | Database operations / V1.9 clean install and V1.8 upgrade | CURRENT — CLEAN INSTALL, POPULATED REHEARSAL AND LOCAL APPLY PASS | V1.9 clean schema+seed, V1.8 migration, backup verification, 40-table preservation fingerprints and runtime validator 85/85. Goctro_test3 was not touched. |
 | `10_operations/GITHUB_HANDOFF_READINESS_2026_10_26.md` | Repository-wide GitHub handoff preparation | CURRENT — CLOUDY PUSHED; LOGO REVIEW PENDING | Git/asset/logo decisions, source-versus-reported status, clone guidance, offline checks, unresolved historical links, and scoped Cloudy push `f793f33`. Does not change the single next product task. |

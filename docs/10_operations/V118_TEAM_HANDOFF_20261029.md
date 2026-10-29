@@ -1,10 +1,10 @@
 # Bàn giao source V1.18 cho nhóm — 2026-10-29
 
-**Trạng thái:** gói source đã đối chiếu `main` qua `44bfe660` và được chủ dự án cho phép đưa lên GitHub. Xác minh commit cuối trên `origin/main` trước khi dùng. Neon `goctro-shared-dev / production / neondb` đã ở catalog V1.18 (58 bảng) từ lượt nâng trước; nhiệm vụ phân phối source này không nâng database.
+**Trạng thái:** source V1.18 đã được tích hợp với các cập nhật Cloudy chủ trọ và push lên GitHub `main` tại `123bf88`. Neon `goctro-shared-dev / production / neondb` đã ở catalog V1.18 (58 bảng) từ lượt nâng trước; lần tích hợp source này không thay đổi schema và không chạy migration. Thành viên kéo `main` rồi kiểm tra `git log -1 --oneline` ở commit này hoặc commit mới hơn trước khi dùng.
 
 ## Nhận và khởi động source
 
-1. Trên checkout của từng thành viên, kiểm tra `git status`. Bảo toàn thay đổi riêng trước khi cập nhật. Khi checkout sạch, dùng `git switch main`, `git pull --ff-only origin main`, rồi kiểm tra `git log -1 --oneline` có commit bàn giao V1.18. Không force pull hoặc xóa thay đổi riêng.
+1. Trên checkout của từng thành viên, kiểm tra `git status`. Bảo toàn thay đổi riêng trước khi cập nhật. Khi checkout sạch, dùng `git switch main`, `git pull --ff-only origin main`, rồi kiểm tra `git log -1 --oneline` có commit `123bf88` hoặc commit mới hơn. Không force pull hoặc xóa thay đổi riêng.
 2. Cài dependency theo lockfile bằng `npm ci` nếu cần. Mỗi người đăng nhập Neon bằng quyền của mình và giữ `.env.neon` ở máy cá nhân; không gửi connection string vào Git. Không sao chép file `.env.neon` hay backup từ máy người khác.
 3. Chạy `setup.bat`, chọn **5. Dùng database chung Neon**. Option này xác minh source/provenance, target và **catalog V1.18 chính xác bằng truy vấn chỉ đọc**, tạo Prisma Client tại máy nếu thiếu, và chỉ hỏi khởi động sau khi kiểm tra đạt. Nó không migrate, seed, reset, fetch/switch Git hoặc tự dừng process. Cổng 3000/4000 phải trống; nếu đang bận, xác minh và đóng đúng ứng dụng của mình trước khi thử lại.
 4. Sau lần cấu hình đầu, có thể chạy `npm run dev:neon`. Frontend mặc định `http://localhost:3000`, API `http://localhost:4000`. Runner cũng kiểm tra source, target và catalog trước khi mở dịch vụ. Không chạy các lệnh `db:migrate`, `db:seed`, `db:bootstrap`, `db push` hoặc reset trên Neon chung.
